@@ -44,7 +44,8 @@ def getmatch(mctx, x):
     return methods[x[0]](mctx, *x[1:])
 
 def getmatchwithstatus(mctx, x, hint):
-    return getmatch(mctx, x)
+    keys = set(getstring(hint, 'status hint must be a string').split())
+    return getmatch(mctx.withstatus(keys), x)
 
 def stringmatch(mctx, x):
     return mctx.matcher([x])
@@ -97,9 +98,6 @@ def func(mctx, a, b):
 #  mctx - current matchctx instance
 #  x - argument in tree form
 symbols = filesetlang.symbols
-
-# filesets using matchctx.status()
-_statuscallers = set()
 
 predicate = registrar.filesetpredicate()
 
@@ -390,7 +388,6 @@ def revs(mctx, x):
     for r in revs:
         ctx = repo[r]
         mc = mctx.switch(ctx.p1(), ctx)
-        mc.buildstatus(x)
         matchers.append(getmatch(mc, x))
     if not matchers:
         return mctx.never()
@@ -419,7 +416,6 @@ def status(mctx, x):
         raise error.ParseError(reverr)
     basectx, ctx = scmutil.revpair(repo, [baserevspec, revspec])
     mc = mctx.switch(basectx, ctx)
-    mc.buildstatus(x)
     return getmatch(mc, x)
 
 @predicate('subrepo([pattern])')
@@ -466,15 +462,17 @@ class matchctx(object):
         self._badfn = badfn
         self._status = None
 
-    def buildstatus(self, tree):
-        if not _intree(_statuscallers, tree):
-            return
-        unknown = _intree(['unknown'], tree)
-        ignored = _intree(['ignored'], tree)
+    def withstatus(self, keys):
+        """Create matchctx which has precomputed status specified by the keys"""
+        mctx = matchctx(self._basectx, self.ctx, self._badfn)
+        mctx._buildstatus(keys)
+        return mctx
+
+    def _buildstatus(self, keys):
         self._status = self._basectx.status(self.ctx,
-                                            listignored=ignored,
+                                            listignored='ignored' in keys,
                                             listclean=True,
-                                            listunknown=unknown)
+                                            listunknown='unknown' in keys)
 
     def status(self):
         return self._status
@@ -533,32 +531,12 @@ class matchctx(object):
     def switch(self, basectx, ctx):
         return matchctx(basectx, ctx, self._badfn)
 
-# filesets using matchctx.switch()
-_switchcallers = [
-    'revs',
-    'status',
-]
-
-def _intree(funcs, tree):
-    if isinstance(tree, tuple):
-        if tree[0] == 'func' and tree[1][0] == 'symbol':
-            if tree[1][1] in funcs:
-                return True
-            if tree[1][1] in _switchcallers:
-                # arguments won't be evaluated in the current context
-                return False
-        for s in tree[1:]:
-            if _intree(funcs, s):
-                return True
-    return False
-
 def match(ctx, expr, badfn=None):
     """Create a matcher for a single fileset expression"""
     tree = filesetlang.parse(expr)
     tree = filesetlang.analyze(tree)
     tree = filesetlang.optimize(tree)
     mctx = matchctx(ctx.p1(), ctx, badfn=badfn)
-    mctx.buildstatus(tree)
     return getmatch(mctx, tree)
 
 
@@ -567,10 +545,8 @@ def loadpredicate(ui, extname, registrarobj):
     """
     for name, func in registrarobj._table.iteritems():
         symbols[name] = func
-        if func._callstatus:
-            _statuscallers.add(name)
 
-# load built-in predicates explicitly to setup _statuscallers
+# load built-in predicates explicitly
 loadpredicate(None, None, predicate)
 
 # tell hggettext to extract docstrings from these functions:

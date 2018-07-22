@@ -486,7 +486,7 @@ class matchctx(object):
     def _buildstatus(self, keys):
         self._status = self._basectx.status(self.ctx, self._match,
                                             listignored='ignored' in keys,
-                                            listclean=True,
+                                            listclean='clean' in keys,
                                             listunknown='unknown' in keys)
 
     def status(self):

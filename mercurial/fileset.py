@@ -99,7 +99,7 @@ def func(mctx, a, b):
 #  x - argument in tree form
 symbols = filesetlang.symbols
 
-predicate = registrar.filesetpredicate()
+predicate = registrar.filesetpredicate(symbols)
 
 @predicate('modified()', callstatus=True, weight=_WEIGHT_STATUS)
 def modified(mctx, x):
@@ -557,9 +557,6 @@ def loadpredicate(ui, extname, registrarobj):
     """
     for name, func in registrarobj._table.iteritems():
         symbols[name] = func
-
-# load built-in predicates explicitly
-loadpredicate(None, None, predicate)
 
 # tell hggettext to extract docstrings from these functions:
 i18nfunctions = symbols.values()

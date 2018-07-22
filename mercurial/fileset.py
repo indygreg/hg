@@ -386,7 +386,8 @@ def revs(mctx, x):
     matchers = []
     for r in revs:
         ctx = repo[r]
-        mc = mctx.switch(ctx.p1(), ctx, _buildstatus(ctx.p1(), ctx, x))
+        mc = mctx.switch(ctx.p1(), ctx)
+        mc.buildstatus(x)
         matchers.append(getmatch(mc, x))
     if not matchers:
         return mctx.never()
@@ -414,7 +415,8 @@ def status(mctx, x):
     if not revspec:
         raise error.ParseError(reverr)
     basectx, ctx = scmutil.revpair(repo, [baserevspec, revspec])
-    mc = mctx.switch(basectx, ctx, _buildstatus(basectx, ctx, x))
+    mc = mctx.switch(basectx, ctx)
+    mc.buildstatus(x)
     return getmatch(mc, x)
 
 @predicate('subrepo([pattern])')
@@ -454,11 +456,21 @@ methods = {
 }
 
 class matchctx(object):
-    def __init__(self, basectx, ctx, status=None, badfn=None):
+    def __init__(self, basectx, ctx, badfn=None):
         self._basectx = basectx
         self.ctx = ctx
-        self._status = status
         self._badfn = badfn
+        self._status = None
+
+    def buildstatus(self, tree):
+        if not _intree(_statuscallers, tree):
+            return
+        unknown = _intree(['unknown'], tree)
+        ignored = _intree(['ignored'], tree)
+        self._status = self._basectx.status(self.ctx,
+                                            listignored=ignored,
+                                            listclean=True,
+                                            listunknown=unknown)
 
     def status(self):
         return self._status
@@ -514,8 +526,8 @@ class matchctx(object):
         return matchmod.nevermatcher(repo.root, repo.getcwd(),
                                      badfn=self._badfn)
 
-    def switch(self, basectx, ctx, status=None):
-        return matchctx(basectx, ctx, status, self._badfn)
+    def switch(self, basectx, ctx):
+        return matchctx(basectx, ctx, self._badfn)
 
 # filesets using matchctx.switch()
 _switchcallers = [
@@ -541,21 +553,10 @@ def match(ctx, expr, badfn=None):
     tree = filesetlang.parse(expr)
     tree = filesetlang.analyze(tree)
     tree = filesetlang.optimize(tree)
-    mctx = matchctx(ctx.p1(), ctx, _buildstatus(ctx.p1(), ctx, tree),
-                    badfn=badfn)
+    mctx = matchctx(ctx.p1(), ctx, badfn=badfn)
+    mctx.buildstatus(tree)
     return getmatch(mctx, tree)
 
-def _buildstatus(basectx, ctx, tree):
-    # do we need status info?
-
-    if _intree(_statuscallers, tree):
-        unknown = _intree(['unknown'], tree)
-        ignored = _intree(['ignored'], tree)
-
-        return basectx.status(ctx, listunknown=unknown, listignored=ignored,
-                              listclean=True)
-    else:
-        return None
 
 def loadpredicate(ui, extname, registrarobj):
     """Load fileset predicates from specified registrarobj

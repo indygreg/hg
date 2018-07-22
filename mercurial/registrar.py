@@ -250,6 +250,15 @@ class filesetpredicate(_funcregistrarbase):
     Optional argument 'weight' indicates the estimated run-time cost, useful
     for static optimization, default is 1. Higher weight means more expensive.
 
+    ====== =============================================================
+    Weight Description and examples
+    ====== =============================================================
+    0.5    basic match patterns (e.g. a symbol)
+    10     computing status (e.g. added()) or accessing a few files
+    30     reading file content for each (e.g. grep())
+    50     scanning working directory (ignored())
+    ====== =============================================================
+
     'filesetpredicate' instance in example above can be used to
     decorate multiple functions.
 

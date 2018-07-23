@@ -2566,6 +2566,12 @@ class revlog(object):
                 (textlen >> deltainfo.snapshotdepth) < deltainfo.deltalen):
             return False
 
+        # bad delta if new intermediate snapshot is larger than the previous
+        # snapshot
+        if (deltainfo.snapshotdepth
+                and self.length(deltainfo.base) < deltainfo.deltalen):
+            return False
+
         return True
 
     def _addrevision(self, node, rawtext, transaction, link, p1, p2, flags,

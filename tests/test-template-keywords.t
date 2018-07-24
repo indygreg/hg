@@ -91,7 +91,7 @@ Keys work:
   $ for key in author branch branches date desc file_adds file_dels file_mods \
   >         file_copies file_copies_switch files \
   >         manifest node parents rev tags diffstat extras \
-  >         p1rev p2rev p1node p2node; do
+  >         p1rev p2rev p1node p2node user; do
   >     for mode in '' --verbose --debug; do
   >         hg log $mode --template "$key$mode: {$key}\n"
   >     done
@@ -702,6 +702,33 @@ Keys work:
   p2node--debug: 0000000000000000000000000000000000000000
   p2node--debug: 0000000000000000000000000000000000000000
   p2node--debug: 0000000000000000000000000000000000000000
+  user: test
+  user: User Name <user@hostname>
+  user: person
+  user: person
+  user: person
+  user: person
+  user: other@place
+  user: A. N. Other <other@place>
+  user: User Name <user@hostname>
+  user--verbose: test
+  user--verbose: User Name <user@hostname>
+  user--verbose: person
+  user--verbose: person
+  user--verbose: person
+  user--verbose: person
+  user--verbose: other@place
+  user--verbose: A. N. Other <other@place>
+  user--verbose: User Name <user@hostname>
+  user--debug: test
+  user--debug: User Name <user@hostname>
+  user--debug: person
+  user--debug: person
+  user--debug: person
+  user--debug: person
+  user--debug: other@place
+  user--debug: A. N. Other <other@place>
+  user--debug: User Name <user@hostname>
 
 Add a dummy commit to make up for the instability of the above:
 

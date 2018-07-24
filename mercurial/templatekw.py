@@ -168,9 +168,8 @@ templatekeyword = registrar.templatekeyword(keywords)
 
 @templatekeyword('author', requires={'ctx'})
 def showauthor(context, mapping):
-    """String. The unmodified author of the changeset."""
-    ctx = context.resource(mapping, 'ctx')
-    return ctx.user()
+    """Alias for ``{user}``"""
+    return showuser(context, mapping)
 
 @templatekeyword('bisect', requires={'repo', 'ctx'})
 def showbisect(context, mapping):
@@ -756,6 +755,12 @@ def showtermwidth(context, mapping):
     """Integer. The width of the current terminal."""
     ui = context.resource(mapping, 'ui')
     return ui.termwidth()
+
+@templatekeyword('user', requires={'ctx'})
+def showuser(context, mapping):
+    """String. The unmodified author of the changeset."""
+    ctx = context.resource(mapping, 'ctx')
+    return ctx.user()
 
 @templatekeyword('instabilities', requires={'ctx'})
 def showinstabilities(context, mapping):

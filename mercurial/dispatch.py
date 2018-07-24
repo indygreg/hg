@@ -370,9 +370,8 @@ def _callcatch(ui, func):
             ui.warn(_("hg %s: %s\n") % (inst.args[0], msgbytes))
             commands.help_(ui, inst.args[0], full=False, command=True)
         else:
-            ui.pager('help')
             ui.warn(_("hg: %s\n") % inst.args[1])
-            commands.help_(ui, 'shortlist')
+            ui.warn(_("(use 'hg help -v' for a list of global options)\n"))
     except error.ParseError as inst:
         _formatparse(ui.warn, inst)
         return -1

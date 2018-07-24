@@ -1683,6 +1683,7 @@ Prohibit registration of commands that don't use @command (issue5137)
   *** failed to import extension deprecatedcmd from $TESTTMP/deprecated/deprecatedcmd.py: missing attributes: norepo, optionalrepo, inferrepo
   *** (use @command decorator to register 'deprecatedcmd')
   hg: unknown command 'deprecatedcmd'
+  (use 'hg help' for a list of commands)
   [255]
 
  the extension shouldn't be loaded at all so the mq works:

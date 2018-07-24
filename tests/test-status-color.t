@@ -393,6 +393,7 @@ color coding of error message with current availability of curses
 
   $ hg unknowncommand > /dev/null
   hg: unknown command 'unknowncommand'
+  (use 'hg help' for a list of commands)
   [255]
 
 color coding of error message without curses
@@ -400,6 +401,7 @@ color coding of error message without curses
   $ echo 'raise ImportError' > curses.py
   $ PYTHONPATH=`pwd`:$PYTHONPATH hg unknowncommand > /dev/null
   hg: unknown command 'unknowncommand'
+  (use 'hg help' for a list of commands)
   [255]
 
   $ cd ..

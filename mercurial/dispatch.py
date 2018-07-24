@@ -394,9 +394,8 @@ def _callcatch(ui, func):
                     _reportsimilar(ui.warn, sim)
                     suggested = True
             if not suggested:
-                ui.pager('help')
                 ui.warn(nocmdmsg)
-                commands.help_(ui, 'shortlist')
+                ui.warn(_("(use 'hg help' for a list of commands)\n"))
     except IOError:
         raise
     except KeyboardInterrupt:

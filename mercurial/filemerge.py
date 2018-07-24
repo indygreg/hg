@@ -208,9 +208,10 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
     if uimerge:
         # external tools defined in uimerge won't be able to handle
         # change/delete conflicts
-        if uimerge not in names and not changedelete:
-            return (uimerge, uimerge)
-        tools.insert(0, (None, uimerge)) # highest priority
+        if check(uimerge, path, symlink, binary, changedelete):
+            if uimerge not in names and not changedelete:
+                return (uimerge, uimerge)
+            tools.insert(0, (None, uimerge)) # highest priority
     tools.append((None, "hgmerge")) # the old default, if found
     for p, t in tools:
         if check(t, None, symlink, binary, changedelete):

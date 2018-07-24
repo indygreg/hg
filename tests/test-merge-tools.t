@@ -1748,7 +1748,9 @@ missingbinary is a merge-tool that doesn't exist:
   missingbinary.executable=doesnotexist
   # hg update -C 1
   $ hg merge -y -r 2 --config ui.merge=missingbinary
+  couldn't find merge tool missingbinary (for pattern f)
   merging f
+  couldn't find merge tool missingbinary (for pattern f)
   revision 1
   space
   revision 0

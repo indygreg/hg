@@ -1737,6 +1737,27 @@ cat is a bad merge-tool and doesn't change:
   # hg resolve --list
   U f
 
+missingbinary is a merge-tool that doesn't exist:
+
+  $ echo "missingbinary.executable=doesnotexist" >> .hg/hgrc
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  missingbinary.executable=doesnotexist
+  # hg update -C 1
+  $ hg merge -y -r 2 --config ui.merge=missingbinary
+  merging f
+  revision 1
+  space
+  revision 0
+  space
+  revision 2
+  space
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+
 #if symlink
 
 internal merge cannot handle symlinks and shouldn't try:
@@ -1790,6 +1811,7 @@ specified file as expected
   false.whatever=
   true.priority=1
   true.executable=cat
+  missingbinary.executable=doesnotexist
   # hg update -C 1
 
 (default behavior: checking files in the working parent context)

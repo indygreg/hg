@@ -570,6 +570,7 @@ def phabsend(ui, repo, *revs, **opts):
                 drevid = drevids[i]
                 drev = [d for d in drevs if int(d[r'id']) == drevid][0]
                 newdesc = getdescfromdrev(drev)
+                newdesc = encoding.unitolocal(newdesc)
                 # Make sure commit message contain "Differential Revision"
                 if old.description() != newdesc:
                     parents = [

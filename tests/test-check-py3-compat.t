@@ -27,7 +27,7 @@
   > -X hgdemandimport/demandimportpy2.py \
   > -X hgext/fsmonitor/pywatchman \
   > -X mercurial/thirdparty/cbor \
-  > | sed 's|\\|/|g' | xargs $PYTHON3 contrib/check-py3-compat.py \
+  > | sed 's|\\|/|g' | xargs python3 contrib/check-py3-compat.py \
   > | sed 's/[0-9][0-9]*)$/*)/'
   contrib/python-zstandard/setup.py not using absolute_import
   contrib/python-zstandard/setup_zstd.py not using absolute_import
@@ -48,6 +48,6 @@
 
 #if py3exe py3pygments
   $ testrepohg files 'set:(**.py) and grep(pygments)' | sed 's|\\|/|g' \
-  > | xargs $PYTHON3 contrib/check-py3-compat.py \
+  > | xargs python3 contrib/check-py3-compat.py \
   > | sed 's/[0-9][0-9]*)$/*)/'
 #endif

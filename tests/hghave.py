@@ -631,7 +631,7 @@ def has_py3k():
 
 @check("py3exe", "a Python 3.x interpreter is available")
 def has_python3exe():
-    return 'PYTHON3' in os.environ
+    return matchoutput('python3 -V', br'^Python 3.(5|6|7|8|9)')
 
 @check("py3pygments", "Pygments available on Python 3.x")
 def has_py3pygments():

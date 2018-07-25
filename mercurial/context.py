@@ -2327,7 +2327,12 @@ class memfilectx(committablefilectx):
         revision being committed, or None."""
         super(memfilectx, self).__init__(repo, path, None, changectx)
         self._data = data
-        self._flags = (islink and 'l' or '') + (isexec and 'x' or '')
+        if islink:
+            self._flags = 'l'
+        elif isexec:
+            self._flags = 'x'
+        else:
+            self._flags = ''
         self._copied = None
         if copied:
             self._copied = (copied, nullid)

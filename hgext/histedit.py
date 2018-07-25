@@ -1084,7 +1084,7 @@ def _validateargs(ui, repo, state, freeargs, opts, goal, rules, revs):
             raise error.Abort(_('only --commands argument allowed with '
                                '--edit-plan'))
     else:
-        if os.path.exists(os.path.join(repo.path, 'histedit-state')):
+        if state.inprogress():
             raise error.Abort(_('history edit already in progress, try '
                                '--continue or --abort'))
         if outg:
@@ -1624,8 +1624,8 @@ def cleanupnode(ui, repo, nodes, nobackup=False):
 def stripwrapper(orig, ui, repo, nodelist, *args, **kwargs):
     if isinstance(nodelist, str):
         nodelist = [nodelist]
-    if os.path.exists(os.path.join(repo.path, 'histedit-state')):
-        state = histeditstate(repo)
+    state = histeditstate(repo)
+    if state.inprogress():
         state.read()
         histedit_nodes = {action.node for action
                           in state.actions if action.node}
@@ -1638,9 +1638,9 @@ def stripwrapper(orig, ui, repo, nodelist, *args, **kwargs):
 extensions.wrapfunction(repair, 'strip', stripwrapper)
 
 def summaryhook(ui, repo):
-    if not os.path.exists(repo.vfs.join('histedit-state')):
-        return
     state = histeditstate(repo)
+    if not state.inprogress():
+        return
     state.read()
     if state.actions:
         # i18n: column positioning for "hg summary"

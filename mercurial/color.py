@@ -83,6 +83,8 @@ _defaultstyles = {
     'grep.filename': 'magenta',
     'grep.user': 'magenta',
     'grep.date': 'magenta',
+    'addremove.added': 'green',
+    'addremove.removed': 'red',
     'bookmarks.active': 'green',
     'branches.active': 'none',
     'branches.closed': 'black bold',

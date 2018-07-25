@@ -168,10 +168,10 @@ Make sure ui.formatted=False works
   $ touch modified removed deleted ignored
   $ echo "^ignored$" > .hgignore
   $ hg ci -A -m 'initial checkin'
-  adding .hgignore
-  adding deleted
-  adding modified
-  adding removed
+  \x1b[0;32madding .hgignore\x1b[0m (esc)
+  \x1b[0;32madding deleted\x1b[0m (esc)
+  \x1b[0;32madding modified\x1b[0m (esc)
+  \x1b[0;32madding removed\x1b[0m (esc)
   $ hg log --color=debug
   [log.changeset changeset.draft|changeset:   0:389aef86a55e]
   [log.tag|tag:         tip]
@@ -296,10 +296,10 @@ check 'status -q' and some combinations
   $ touch modified removed deleted ignored
   $ echo "^ignored$" > .hgignore
   $ hg commit -A -m 'initial checkin'
-  adding .hgignore
-  adding deleted
-  adding modified
-  adding removed
+  \x1b[0;32madding .hgignore\x1b[0m (esc)
+  \x1b[0;32madding deleted\x1b[0m (esc)
+  \x1b[0;32madding modified\x1b[0m (esc)
+  \x1b[0;32madding removed\x1b[0m (esc)
   $ touch added unknown ignored
   $ hg add added
   $ echo "test" >> modified

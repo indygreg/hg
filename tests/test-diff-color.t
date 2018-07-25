@@ -22,7 +22,7 @@ Setup
   > c
   > EOF
   $ hg ci -Am adda
-  adding a
+  \x1b[0;32madding a\x1b[0m (esc)
   $ cat > a <<EOF
   > c
   > c
@@ -218,7 +218,7 @@ issue3712: test colorization of subrepo diff
   $ hg init sub
   $ echo b > sub/b
   $ hg -R sub commit -Am 'create sub'
-  adding b
+  \x1b[0;32madding b\x1b[0m (esc)
   $ echo 'sub = sub' > .hgsub
   $ hg add .hgsub
   $ hg commit -m 'add subrepo sub'

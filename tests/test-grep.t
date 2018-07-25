@@ -491,3 +491,13 @@ but it should be available in template dict:
   ]
 
   $ cd ..
+
+test -rMULTIREV with --all-files
+
+  $ cd sng
+  $ hg rm um
+  $ hg commit -m "deletes um"
+  $ hg grep -r "0:2" "unmod" --all-files
+  um:0:unmod
+  um:1:unmod
+  $ cd ..

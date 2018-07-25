@@ -1889,9 +1889,6 @@ def walkchangerevs(repo, match, opts, prepare):
     revs = _walkrevs(repo, opts)
     if not revs:
         return []
-    if allfiles and len(revs) > 1:
-        raise error.Abort(_("multiple revisions not supported with "
-                            "--all-files"))
     wanted = set()
     slowpath = match.anypats() or (not match.always() and opts.get('removed'))
     fncache = {}

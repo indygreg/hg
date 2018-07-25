@@ -2533,6 +2533,7 @@ def grep(ui, repo, pattern, *pats, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     diff = opts.get('all') or opts.get('diff')
+    all_files = opts.get('all_files')
     if diff and opts.get('all_files'):
         raise error.Abort(_('--diff and --all-files are mutually exclusive'))
     # TODO: remove "not opts.get('rev')" if --all-files -rMULTIREV gets working
@@ -2757,7 +2758,7 @@ def grep(ui, repo, pattern, *pats, **opts):
             if pstates or states:
                 r = display(fm, fn, ctx, pstates, states)
                 found = found or r
-                if r and not diff:
+                if r and not diff and not all_files:
                     skip[fn] = True
                     if copy:
                         skip[copy] = True

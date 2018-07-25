@@ -136,7 +136,7 @@ class requestcontext(object):
         logourl = self.config('web', 'logourl')
         logoimg = self.config('web', 'logoimg')
         staticurl = (self.config('web', 'staticurl')
-                     or req.apppath + '/static/')
+                     or req.apppath.rstrip('/') + '/static/')
         if not staticurl.endswith('/'):
             staticurl += '/'
 

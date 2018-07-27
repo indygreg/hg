@@ -750,7 +750,11 @@ class _deltacomputer(object):
         deltaparent = self.revlog.deltaparent
 
         deltainfo = None
+        deltas_limit = revinfo.textlen * LIMIT_DELTA2TEXT
         for candidaterevs in self._getcandidaterevs(p1, p2, cachedelta):
+            # filter out delta base that will never produce good delta
+            candidaterevs = [r for r in candidaterevs
+                             if self.revlog.length(r) <= deltas_limit]
             nominateddeltas = []
             for candidaterev in candidaterevs:
                 # skip over empty delta (no need to include them in a chain)

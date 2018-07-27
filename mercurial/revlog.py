@@ -743,10 +743,20 @@ class _deltacomputer(object):
         p2 = revinfo.p2
         revlog = self.revlog
 
+        deltalength = self.revlog.length
+        deltaparent = self.revlog.deltaparent
+
         deltainfo = None
         for candidaterevs in self._getcandidaterevs(p1, p2, cachedelta):
             nominateddeltas = []
             for candidaterev in candidaterevs:
+                # skip over empty delta (no need to include them in a chain)
+                while candidaterev != nullrev and not deltalength(candidaterev):
+                    candidaterev = deltaparent(candidaterev)
+                # no need to try a delta against nullid, this will be handled
+                # by fulltext later.
+                if candidaterev == nullrev:
+                    continue
                 # no delta for rawtext-changing revs (see "candelta" for why)
                 if revlog.flags(candidaterev) & REVIDX_RAWTEXT_CHANGING_FLAGS:
                     continue

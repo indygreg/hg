@@ -267,7 +267,7 @@ test maxdeltachainspan
        51       4        3       50    prev        356        594        611   1.02862       611         0    0.00000
        52       4        4       51      p1         58        640        669   1.04531       669         0    0.00000
        53       5        1       -1    base          0          0          0   0.00000         0         0    0.00000
-       54       5        2       53      p1        376        640        376   0.58750       376         0    0.00000
+       54       6        1       -1    base        369        640        369   0.57656       369         0    0.00000
   $ hg clone --pull source-repo --config experimental.maxdeltachainspan=2800 relax-chain --config format.generaldelta=yes
   requesting all changes
   adding changesets
@@ -333,7 +333,7 @@ test maxdeltachainspan
        51       2       13       17      p1         58        594        739   1.24411      2781      2042    2.76319
        52       5        1       -1    base        369        640        369   0.57656       369         0    0.00000
        53       6        1       -1    base          0          0          0   0.00000         0         0    0.00000
-       54       6        2       53      p1        376        640        376   0.58750       376         0    0.00000
+       54       7        1       -1    base        369        640        369   0.57656       369         0    0.00000
   $ hg clone --pull source-repo --config experimental.maxdeltachainspan=0 noconst-chain --config format.generaldelta=yes
   requesting all changes
   adding changesets
@@ -399,4 +399,4 @@ test maxdeltachainspan
        51       2       13       17      p1         58        594        739   1.24411      2642      1903    2.57510
        52       2       14       51      p1         58        640        797   1.24531      2700      1903    2.38770
        53       4        1       -1    base          0          0          0   0.00000         0         0    0.00000
-       54       4        2       53      p1        376        640        376   0.58750       376         0    0.00000
+       54       5        1       -1    base        369        640        369   0.57656       369         0    0.00000

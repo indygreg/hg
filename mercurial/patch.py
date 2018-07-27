@@ -2326,7 +2326,7 @@ def diffhunks(repo, node1=None, node2=None, match=None, changes=None,
         relfiltered = True
 
     if not changes:
-        changes = repo.status(ctx1, ctx2, match=match)
+        changes = ctx1.status(ctx2, match=match)
     modified, added, removed = changes[:3]
 
     if not modified and not added and not removed:

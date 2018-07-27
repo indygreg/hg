@@ -293,15 +293,14 @@ def showextras(context, mapping):
                    lambda k: '%s=%s' % (k, stringutil.escapestr(extras[k])))
 
 def _showfilesbystat(context, mapping, name, index):
-    repo = context.resource(mapping, 'repo')
     ctx = context.resource(mapping, 'ctx')
     revcache = context.resource(mapping, 'revcache')
     if 'files' not in revcache:
-        revcache['files'] = repo.status(ctx.p1(), ctx)[:3]
+        revcache['files'] = ctx.p1().status(ctx)[:3]
     files = revcache['files'][index]
     return compatlist(context, mapping, name, files, element='file')
 
-@templatekeyword('file_adds', requires={'repo', 'ctx', 'revcache'})
+@templatekeyword('file_adds', requires={'ctx', 'revcache'})
 def showfileadds(context, mapping):
     """List of strings. Files added by this changeset."""
     return _showfilesbystat(context, mapping, 'file_add', 1)
@@ -345,12 +344,12 @@ def showfilecopiesswitch(context, mapping):
                       key='name', value='source', fmt='%s (%s)',
                       plural='file_copies')
 
-@templatekeyword('file_dels', requires={'repo', 'ctx', 'revcache'})
+@templatekeyword('file_dels', requires={'ctx', 'revcache'})
 def showfiledels(context, mapping):
     """List of strings. Files removed by this changeset."""
     return _showfilesbystat(context, mapping, 'file_del', 2)
 
-@templatekeyword('file_mods', requires={'repo', 'ctx', 'revcache'})
+@templatekeyword('file_mods', requires={'ctx', 'revcache'})
 def showfilemods(context, mapping):
     """List of strings. Files modified by this changeset."""
     return _showfilesbystat(context, mapping, 'file_mod', 0)

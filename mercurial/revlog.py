@@ -738,6 +738,9 @@ class _deltacomputer(object):
         Returns the first acceptable candidate revision, as ordered by
         _getcandidaterevs
         """
+        if not revinfo.textlen:
+            return None # empty file do not need delta
+
         cachedelta = revinfo.cachedelta
         p1 = revinfo.p1
         p2 = revinfo.p2

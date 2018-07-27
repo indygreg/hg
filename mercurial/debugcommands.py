@@ -2089,6 +2089,8 @@ def debugrevlog(ui, repo, file_=None, **opts):
     nummerges = 0
 
     ### tracks ways the "delta" are build
+    # nodelta
+    numempty = 0
     # full file content
     numfull = 0
     # delta against previous revision
@@ -2135,27 +2137,33 @@ def debugrevlog(ui, repo, file_=None, **opts):
             chainlengths.append(0)
             chainbases.append(r.start(rev))
             chainspans.append(size)
-            numfull += 1
-            addsize(size, fullsize)
+            if size == 0:
+                numempty += 1
+            else:
+                numfull += 1
+                addsize(size, fullsize)
         else:
             chainlengths.append(chainlengths[delta] + 1)
             baseaddr = chainbases[delta]
             revaddr = r.start(rev)
             chainbases.append(baseaddr)
             chainspans.append((revaddr - baseaddr) + size)
-            addsize(size, deltasize)
-            if delta == rev - 1:
-                numprev += 1
-                if delta == p1:
-                    nump1prev += 1
+            if size == 0:
+                numempty += 1
+            else:
+                addsize(size, deltasize)
+                if delta == rev - 1:
+                    numprev += 1
+                    if delta == p1:
+                        nump1prev += 1
+                    elif delta == p2:
+                        nump2prev += 1
+                elif delta == p1:
+                    nump1 += 1
                 elif delta == p2:
-                    nump2prev += 1
-            elif delta == p1:
-                nump1 += 1
-            elif delta == p2:
-                nump2 += 1
-            elif delta != nullrev:
-                numother += 1
+                    nump2 += 1
+                elif delta != nullrev:
+                    numother += 1
 
         # Obtain data on the raw chunks in the revlog.
         segment = r._getsegmentforrevs(rev, rev)[1]
@@ -2176,15 +2184,15 @@ def debugrevlog(ui, repo, file_=None, **opts):
         if size[0] is None:
             size[0] = 0
 
-    numdeltas = numrevs - numfull
+    numdeltas = numrevs - numfull - numempty
     numoprev = numprev - nump1prev - nump2prev
     totalrawsize = datasize[2]
     datasize[2] /= numrevs
     fulltotal = fullsize[2]
     fullsize[2] /= numfull
     deltatotal = deltasize[2]
-    if numrevs - numfull > 0:
-        deltasize[2] /= numrevs - numfull
+    if numdeltas > 0:
+        deltasize[2] /= numdeltas
     totalsize = fulltotal + deltatotal
     avgchainlen = sum(chainlengths) / numrevs
     maxchainlen = max(chainlengths)
@@ -2217,6 +2225,7 @@ def debugrevlog(ui, repo, file_=None, **opts):
     ui.write(('    merges    : ') + fmt % pcfmt(nummerges, numrevs))
     ui.write(('    normal    : ') + fmt % pcfmt(numrevs - nummerges, numrevs))
     ui.write(('revisions     : ') + fmt2 % numrevs)
+    ui.write(('    empty     : ') + fmt % pcfmt(numempty, numrevs))
     ui.write(('    full      : ') + fmt % pcfmt(numfull, numrevs))
     ui.write(('    deltas    : ') + fmt % pcfmt(numdeltas, numrevs))
     ui.write(('revision size : ') + fmt2 % totalsize)

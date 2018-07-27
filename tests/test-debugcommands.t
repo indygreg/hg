@@ -23,7 +23,8 @@
       merges    :  0 ( 0.00%)
       normal    :  3 (100.00%)
   revisions     :  3
-      full      :  3 (100.00%)
+      empty     :  1 (33.33%)
+      full      :  2 (66.67%)
       deltas    :  0 ( 0.00%)
   revision size : 88
       full      : 88 (100.00%)
@@ -42,7 +43,7 @@
   compression ratio :  0
   
   uncompressed data size (min/max/avg) : 0 / 43 / 28
-  full revision size (min/max/avg)     : 0 / 44 / 29
+  full revision size (min/max/avg)     : 44 / 44 / 44
   delta size (min/max/avg)             : 0 / 0 / 0
 #endif
 

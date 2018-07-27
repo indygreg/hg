@@ -182,7 +182,7 @@ def uncommit(ui, repo, *pats, **opts):
 
             with repo.dirstate.parentchange():
                 repo.dirstate.setparents(newid, node.nullid)
-                s = repo.status(old.p1(), old, match=match)
+                s = old.p1().status(old, match=match)
                 _fixdirstate(repo, old, repo[newid], s)
 
 def predecessormarkers(ctx):

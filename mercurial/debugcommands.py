@@ -2085,18 +2085,30 @@ def debugrevlog(ui, repo, file_=None, **opts):
     if not flags:
         flags = ['(none)']
 
+    ### tracks merge vs single parent
     nummerges = 0
+
+    ### tracks ways the "delta" are build
+    # full file content
     numfull = 0
+    # delta against previous revision
     numprev = 0
+    # delta against first or second parent (not prev)
     nump1 = 0
     nump2 = 0
+    # delta against neither prev nor parents
     numother = 0
+    # delta against prev that are also first or second parent
+    # (details of `numprev`)
     nump1prev = 0
     nump2prev = 0
+
+    # data about delta chain of each revs
     chainlengths = []
     chainbases = []
     chainspans = []
 
+    # data about each revision
     datasize = [None, 0, 0]
     fullsize = [None, 0, 0]
     deltasize = [None, 0, 0]

@@ -60,3 +60,57 @@ copy
   temporarily included 2 file(s) in the sparse checkout for merging
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
+
+  $ cd ..
+
+Tests merging a file which is modified in one branch and deleted in another and
+file is excluded from sparse checkout
+
+  $ hg init ytest
+  $ cd ytest
+  $ echo "syntax: glob" >> .hgignore
+  $ echo "*.orig" >> .hgignore
+  $ hg ci -Aqm "added .hgignore"
+  $ for ch in a d; do echo foo > $ch; hg ci -Aqm "added "$ch; done;
+  $ cat >> .hg/hgrc <<EOF
+  > [alias]
+  > glog = log -GT "{rev}:{node|short} {desc}"
+  > [extensions]
+  > sparse =
+  > EOF
+
+  $ hg glog
+  @  2:f29feff37cfc added d
+  |
+  o  1:617125d27d6b added a
+  |
+  o  0:53f3774ed939 added .hgignore
+  
+  $ hg rm d
+  $ hg ci -m "removed d"
+
+  $ hg up '.^'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg debugsparse --reset
+  $ echo bar >> d
+  $ hg ci -Am "added bar to d"
+  created new head
+
+  $ hg glog
+  @  4:6527874a90e4 added bar to d
+  |
+  | o  3:372c8558de45 removed d
+  |/
+  o  2:f29feff37cfc added d
+  |
+  o  1:617125d27d6b added a
+  |
+  o  0:53f3774ed939 added .hgignore
+  
+  $ hg debugsparse --exclude "d"
+  $ ls
+  a
+
+  $ hg merge
+  abort: $ENOENT$: '$TESTTMP/ytest/d'
+  [255]

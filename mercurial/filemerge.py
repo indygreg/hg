@@ -916,14 +916,17 @@ def _onfilemergefailure(ui):
         _haltmerge()
     # default action is 'continue', in which case we neither prompt nor halt
 
+def hasconflictmarkers(data):
+    return bool(re.search("^(<<<<<<< .*|=======|>>>>>>> .*)$", data,
+                          re.MULTILINE))
+
 def _check(repo, r, ui, tool, fcd, files):
     fd = fcd.path()
     unused, unused, unused, back = files
 
     if not r and (_toolbool(ui, tool, "checkconflicts") or
                   'conflicts' in _toollist(ui, tool, "check")):
-        if re.search("^(<<<<<<< .*|=======|>>>>>>> .*)$", fcd.data(),
-                     re.MULTILINE):
+        if hasconflictmarkers(fcd.data()):
             r = 1
 
     checked = False

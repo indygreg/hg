@@ -373,4 +373,53 @@ resolve -l should be empty
 
   $ hg resolve -l
 
+resolve -m can be configured to look for remaining conflict markers
+  $ hg up -qC 2
+  $ hg merge -q --tool=internal:merge 1
+  warning: conflicts while merging file1! (edit, then use 'hg resolve --mark')
+  warning: conflicts while merging file2! (edit, then use 'hg resolve --mark')
+  [1]
+  $ hg resolve -l
+  U file1
+  U file2
+  $ echo 'remove markers' > file1
+  $ hg --config experimental.resolve.mark-check=abort resolve -m
+  warning: the following files still have conflict markers:
+    file2
+  abort: conflict markers detected
+  (use --all to mark anyway)
+  [255]
+  $ hg resolve -l
+  U file1
+  U file2
+Try with --all from the hint
+  $ hg --config experimental.resolve.mark-check=abort resolve -m --all
+  warning: the following files still have conflict markers:
+    file2
+  (no more unresolved files)
+  $ hg resolve -l
+  R file1
+  R file2
+  $ hg resolve --unmark
+  $ hg resolve -l
+  U file1
+  U file2
+  $ hg --config experimental.resolve.mark-check=warn resolve -m
+  warning: the following files still have conflict markers:
+    file2
+  (no more unresolved files)
+  $ hg resolve -l
+  R file1
+  R file2
+If the file is already marked as resolved, we don't warn about it
+  $ hg resolve --unmark file1
+  $ hg resolve -l
+  U file1
+  R file2
+  $ hg --config experimental.resolve.mark-check=warn resolve -m
+  (no more unresolved files)
+  $ hg resolve -l
+  R file1
+  R file2
+
   $ cd ..

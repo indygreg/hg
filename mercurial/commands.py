@@ -35,6 +35,7 @@ from . import (
     error,
     exchange,
     extensions,
+    filemerge,
     formatter,
     graphmod,
     hbisect,
@@ -4594,6 +4595,9 @@ def resolve(ui, repo, *pats, **opts):
         runconclude = False
 
         tocomplete = []
+        hasconflictmarkers = []
+        if mark:
+            markcheck = ui.config('experimental', 'resolve.mark-check')
         for f in ms:
             if not m(f):
                 continue
@@ -4629,6 +4633,12 @@ def resolve(ui, repo, *pats, **opts):
                 continue
 
             if mark:
+                if markcheck:
+                    with repo.wvfs(f) as fobj:
+                        fdata = fobj.read()
+                    if filemerge.hasconflictmarkers(fdata) and \
+                        ms[f] != mergemod.MERGE_RECORD_RESOLVED:
+                        hasconflictmarkers.append(f)
                 ms.mark(f, mergemod.MERGE_RECORD_RESOLVED)
             elif unmark:
                 ms.mark(f, mergemod.MERGE_RECORD_UNRESOLVED)
@@ -4662,6 +4672,13 @@ def resolve(ui, repo, *pats, **opts):
                     except OSError as inst:
                         if inst.errno != errno.ENOENT:
                             raise
+
+        if hasconflictmarkers:
+            ui.warn(_('warning: the following files still have conflict '
+                      'markers:\n  ') + '\n  '.join(hasconflictmarkers) + '\n')
+            if markcheck == 'abort' and not all:
+                raise error.Abort(_('conflict markers detected'),
+                                  hint=_('use --all to mark anyway'))
 
         for f in tocomplete:
             try:

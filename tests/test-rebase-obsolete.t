@@ -2022,3 +2022,79 @@ Test --stop raise errors with conflicting options:
   $ hg rebase --stop --continue
   abort: cannot use --stop with --abort or --continue
   [255]
+
+Test --stop moves bookmarks of original revisions to new rebased nodes:
+======================================================================
+  $ cd ..
+  $ hg init repo
+  $ cd repo
+
+  $ echo a > a
+  $ hg ci -Am A
+  adding a
+
+  $ echo b > b
+  $ hg ci -Am B
+  adding b
+  $ hg book X
+  $ hg book Y
+
+  $ echo c > c
+  $ hg ci -Am C
+  adding c
+  $ hg book Z
+
+  $ echo d > d
+  $ hg ci -Am D
+  adding d
+
+  $ hg up 0 -q
+  $ echo e > e
+  $ hg ci -Am E
+  adding e
+  created new head
+
+  $ echo doubt > d
+  $ hg ci -Am "conflict with d"
+  adding d
+
+  $ hg log -GT "{rev}: {node|short} '{desc}' bookmarks: {bookmarks}\n"
+  @  5: 39adf30bc1be 'conflict with d' bookmarks:
+  |
+  o  4: 9c1e55f411b6 'E' bookmarks:
+  |
+  | o  3: 67a385d4e6f2 'D' bookmarks: Z
+  | |
+  | o  2: 49cb3485fa0c 'C' bookmarks: Y
+  | |
+  | o  1: 6c81ed0049f8 'B' bookmarks: X
+  |/
+  o  0: 1994f17a630e 'A' bookmarks:
+  
+  $ hg rebase -s 1 -d 5
+  rebasing 1:6c81ed0049f8 "B" (X)
+  rebasing 2:49cb3485fa0c "C" (Y)
+  rebasing 3:67a385d4e6f2 "D" (Z)
+  merging d
+  warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg rebase --stop
+  1 new orphan changesets
+  $ hg log -GT "{rev}: {node|short} '{desc}' bookmarks: {bookmarks}\n"
+  o  7: 9c86c650b686 'C' bookmarks: Y
+  |
+  o  6: 9b87b54e5fd8 'B' bookmarks: X
+  |
+  @  5: 39adf30bc1be 'conflict with d' bookmarks:
+  |
+  o  4: 9c1e55f411b6 'E' bookmarks:
+  |
+  | *  3: 67a385d4e6f2 'D' bookmarks: Z
+  | |
+  | x  2: 49cb3485fa0c 'C' bookmarks:
+  | |
+  | x  1: 6c81ed0049f8 'B' bookmarks:
+  |/
+  o  0: 1994f17a630e 'A' bookmarks:
+  

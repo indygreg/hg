@@ -1424,14 +1424,13 @@ def calculateupdates(repo, wctx, mctx, ancestors, branchmerge, force,
                 del actions[f]
         repo.ui.note(_('end of auction\n\n'))
 
-    _resolvetrivial(repo, wctx, mctx, ancestors[0], actions)
-
     if wctx.rev() is None:
         fractions = _forgetremoved(wctx, mctx, branchmerge)
         actions.update(fractions)
 
     prunedactions = sparse.filterupdatesactions(repo, wctx, mctx, branchmerge,
                                                 actions)
+    _resolvetrivial(repo, wctx, mctx, ancestors[0], actions)
 
     return prunedactions, diverge, renamedelete
 

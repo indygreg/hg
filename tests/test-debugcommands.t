@@ -27,9 +27,11 @@
                      text  :   0 (100.00%)
                      delta :   0 (100.00%)
       full      :   3 (100.00%)
+      inter     :   0 ( 0.00%)
       deltas    :   0 ( 0.00%)
   revision size : 191
       full      : 191 (100.00%)
+      inter     :   0 ( 0.00%)
       deltas    :   0 ( 0.00%)
   
   chunks        :   3
@@ -57,9 +59,11 @@
                      text  :  1 (100.00%)
                      delta :  0 ( 0.00%)
       full      :  2 (66.67%)
+      inter     :  0 ( 0.00%)
       deltas    :  0 ( 0.00%)
   revision size : 88
       full      : 88 (100.00%)
+      inter     :  0 ( 0.00%)
       deltas    :  0 ( 0.00%)
   
   chunks        :  3
@@ -89,9 +93,11 @@
                      text  : 0 (100.00%)
                      delta : 0 (100.00%)
       full      : 1 (100.00%)
+      inter     : 0 ( 0.00%)
       deltas    : 0 ( 0.00%)
   revision size : 3
       full      : 3 (100.00%)
+      inter     : 0 ( 0.00%)
       deltas    : 0 ( 0.00%)
   
   chunks        : 1

@@ -2095,6 +2095,8 @@ def debugrevlog(ui, repo, file_=None, **opts):
     numemptydelta = 0
     # full file content
     numfull = 0
+    # intermediate snapshot against a prior snapshot
+    numsemi = 0
     # delta against previous revision
     numprev = 0
     # delta against first or second parent (not prev)
@@ -2115,6 +2117,7 @@ def debugrevlog(ui, repo, file_=None, **opts):
     # data about each revision
     datasize = [None, 0, 0]
     fullsize = [None, 0, 0]
+    semisize = [None, 0, 0]
     deltasize = [None, 0, 0]
     chunktypecounts = {}
     chunktypesizes = {}
@@ -2154,6 +2157,9 @@ def debugrevlog(ui, repo, file_=None, **opts):
             if size == 0:
                 numempty += 1
                 numemptydelta += 1
+            elif r.issnapshot(rev):
+                addsize(size, semisize)
+                numsemi += 1
             else:
                 addsize(size, deltasize)
                 if delta == rev - 1:
@@ -2187,20 +2193,23 @@ def debugrevlog(ui, repo, file_=None, **opts):
         chunktypesizes[chunktype] += size
 
     # Adjust size min value for empty cases
-    for size in (datasize, fullsize, deltasize):
+    for size in (datasize, fullsize, semisize, deltasize):
         if size[0] is None:
             size[0] = 0
 
-    numdeltas = numrevs - numfull - numempty
+    numdeltas = numrevs - numfull - numempty - numsemi
     numoprev = numprev - nump1prev - nump2prev
     totalrawsize = datasize[2]
     datasize[2] /= numrevs
     fulltotal = fullsize[2]
     fullsize[2] /= numfull
+    semitotal = semisize[2]
+    if 0 < numsemi:
+        semisize[2] /= numsemi
     deltatotal = deltasize[2]
     if numdeltas > 0:
         deltasize[2] /= numdeltas
-    totalsize = fulltotal + deltatotal
+    totalsize = fulltotal + semitotal + deltatotal
     avgchainlen = sum(chainlengths) / numrevs
     maxchainlen = max(chainlengths)
     maxchainspan = max(chainspans)
@@ -2238,9 +2247,11 @@ def debugrevlog(ui, repo, file_=None, **opts):
     ui.write(('                   delta : ')
              + fmt % pcfmt(numemptydelta, numemptytext + numemptydelta))
     ui.write(('    full      : ') + fmt % pcfmt(numfull, numrevs))
+    ui.write(('    inter     : ') + fmt % pcfmt(numsemi, numrevs))
     ui.write(('    deltas    : ') + fmt % pcfmt(numdeltas, numrevs))
     ui.write(('revision size : ') + fmt2 % totalsize)
     ui.write(('    full      : ') + fmt % pcfmt(fulltotal, totalsize))
+    ui.write(('    inter     : ') + fmt % pcfmt(semitotal, totalsize))
     ui.write(('    deltas    : ') + fmt % pcfmt(deltatotal, totalsize))
 
     def fmtchunktype(chunktype):

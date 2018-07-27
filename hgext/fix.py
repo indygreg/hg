@@ -267,8 +267,8 @@ def pathstofix(ui, repo, pats, opts, match, basectxs, fixctx):
     """
     files = set()
     for basectx in basectxs:
-        stat = repo.status(
-            basectx, fixctx, match=match, clean=bool(pats), unknown=bool(pats))
+        stat = basectx.status(fixctx, match=match, listclean=bool(pats),
+                              listunknown=bool(pats))
         files.update(
             set(itertools.chain(stat.added, stat.modified, stat.clean,
                                 stat.unknown)))

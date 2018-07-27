@@ -647,11 +647,10 @@ def _buildstatus(ctx, tree, basectx=None):
         unknown = _intree(['unknown'], tree)
         ignored = _intree(['ignored'], tree)
 
-        r = ctx.repo()
         if basectx is None:
             basectx = ctx.p1()
-        return r.status(basectx, ctx,
-                        unknown=unknown, ignored=ignored, clean=True)
+        return basectx.status(ctx, listunknown=unknown, listignored=ignored,
+                              listclean=True)
     else:
         return None
 

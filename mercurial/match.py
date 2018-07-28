@@ -692,7 +692,7 @@ class prefixdirmatcher(basematcher):
     The prefix path should usually be the relative path from the root of
     this matcher to the root of the wrapped matcher.
 
-    >>> m1 = match(b'root/d/e', b'f', [b'../a.txt', b'b.txt'])
+    >>> m1 = match(util.localpath(b'root/d/e'), b'f', [b'../a.txt', b'b.txt'])
     >>> m2 = prefixdirmatcher(b'root', b'd/e/f', b'd/e', m1)
     >>> bool(m2(b'a.txt'),)
     False

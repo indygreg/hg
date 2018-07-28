@@ -12,7 +12,6 @@ from mercurial import (
     changegroup,
     error,
     extensions,
-    manifest,
     mdiff,
     node,
     pycompat,
@@ -21,15 +20,6 @@ from mercurial import (
 )
 
 def setup():
-    def prune(orig, self, revlog, missing, commonrevs):
-        if isinstance(revlog, manifest.manifestrevlog):
-            if not self._filematcher.visitdir(revlog._dir[:-1] or '.'):
-                return []
-
-        return orig(self, revlog, missing, commonrevs)
-
-    extensions.wrapfunction(changegroup.cg1packer, 'prune', prune)
-
     def generatefiles(orig, self, changedfiles, linknodes, commonrevs,
                       source):
         changedfiles = list(filter(self._filematcher, changedfiles))

@@ -21,6 +21,7 @@ from .node import (
 from . import (
     dagutil,
     error,
+    manifest,
     match as matchmod,
     mdiff,
     phases,
@@ -589,6 +590,11 @@ class cg1packer(object):
 
     # filter any nodes that claim to be part of the known set
     def prune(self, revlog, missing, commonrevs):
+        # TODO this violates storage abstraction for manifests.
+        if isinstance(revlog, manifest.manifestrevlog):
+            if not self._filematcher.visitdir(revlog._dir[:-1] or '.'):
+                return []
+
         rr, rl = revlog.rev, revlog.linkrev
         return [n for n in missing if rl(rr(n)) not in commonrevs]
 

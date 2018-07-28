@@ -60,10 +60,8 @@ def _packellipsischangegroup(repo, common, match, relevant_nodes,
     # set, we know we have an ellipsis node and we should defer
     # sending that node's data. We override close() to detect
     # pending ellipsis nodes and flush them.
-    packer = changegroup.getbundler(version, repo)
-    # Let the packer have access to the narrow matcher so it can
-    # omit filelogs and dirlogs as needed
-    packer._narrow_matcher = lambda : match
+    packer = changegroup.getbundler(version, repo,
+                                    filematcher=match)
     # Give the packer the list of nodes which should not be
     # ellipsis nodes. We store this rather than the set of nodes
     # that should be an ellipsis because for very large histories
@@ -107,13 +105,9 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
         outgoing = exchange._computeoutgoing(repo, heads, common)
         if not outgoing.missing:
             return
-        def wrappedgetbundler(orig, *args, **kwargs):
-            bundler = orig(*args, **kwargs)
-            bundler._narrow_matcher = lambda : newmatch
-            return bundler
-        with extensions.wrappedfunction(changegroup, 'getbundler',
-                                        wrappedgetbundler):
-            cg = changegroup.makestream(repo, outgoing, version, source)
+
+        cg = changegroup.makestream(repo, outgoing, version, source,
+                                    filematcher=newmatch)
         part = bundler.newpart('changegroup', data=cg)
         part.addparam('version', version)
         if 'treemanifest' in repo.requirements:

@@ -21,6 +21,7 @@ from .node import (
 from . import (
     dagutil,
     error,
+    match as matchmod,
     mdiff,
     phases,
     pycompat,
@@ -496,14 +497,20 @@ class headerlessfixup(object):
 class cg1packer(object):
     deltaheader = _CHANGEGROUPV1_DELTA_HEADER
     version = '01'
-    def __init__(self, repo, bundlecaps=None):
+    def __init__(self, repo, filematcher, bundlecaps=None):
         """Given a source repo, construct a bundler.
+
+        filematcher is a matcher that matches on files to include in the
+        changegroup. Used to facilitate sparse changegroups.
 
         bundlecaps is optional and can be used to specify the set of
         capabilities which can be used to build the bundle. While bundlecaps is
         unused in core Mercurial, extensions rely on this feature to communicate
         capabilities to customize the changegroup packer.
         """
+        assert filematcher
+        self._filematcher = filematcher
+
         # Set of capabilities we can use to build the bundle.
         if bundlecaps is None:
             bundlecaps = set()
@@ -813,8 +820,10 @@ class cg2packer(cg1packer):
     version = '02'
     deltaheader = _CHANGEGROUPV2_DELTA_HEADER
 
-    def __init__(self, repo, bundlecaps=None):
-        super(cg2packer, self).__init__(repo, bundlecaps)
+    def __init__(self, repo, filematcher, bundlecaps=None):
+        super(cg2packer, self).__init__(repo, filematcher,
+                                        bundlecaps=bundlecaps)
+
         if self._reorder is None:
             # Since generaldelta is directly supported by cg2, reordering
             # generally doesn't help, so we disable it by default (treating
@@ -927,9 +936,23 @@ def safeversion(repo):
     assert versions
     return min(versions)
 
-def getbundler(version, repo, bundlecaps=None):
+def getbundler(version, repo, bundlecaps=None, filematcher=None):
     assert version in supportedoutgoingversions(repo)
-    return _packermap[version][0](repo, bundlecaps)
+
+    if filematcher is None:
+        filematcher = matchmod.alwaysmatcher(repo.root, '')
+
+    if version == '01' and not filematcher.always():
+        raise error.ProgrammingError('version 01 changegroups do not support '
+                                     'sparse file matchers')
+
+    # Requested files could include files not in the local store. So
+    # filter those out.
+    filematcher = matchmod.intersectmatchers(repo.narrowmatch(),
+                                             filematcher)
+
+    return _packermap[version][0](repo, filematcher=filematcher,
+                                  bundlecaps=bundlecaps)
 
 def getunbundler(version, fh, alg, extras=None):
     return _packermap[version][1](fh, alg, extras=extras)
@@ -950,8 +973,9 @@ def makechangegroup(repo, outgoing, version, source, fastpath=False,
                         {'clcount': len(outgoing.missing) })
 
 def makestream(repo, outgoing, version, source, fastpath=False,
-               bundlecaps=None):
-    bundler = getbundler(version, repo, bundlecaps=bundlecaps)
+               bundlecaps=None, filematcher=None):
+    bundler = getbundler(version, repo, bundlecaps=bundlecaps,
+                         filematcher=filematcher)
 
     repo = repo.unfiltered()
     commonrevs = outgoing.common

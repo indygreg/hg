@@ -2600,7 +2600,7 @@ Test metadata encoding (issue5754)
   $ mkcommit ROOT
   $ HGENCODING=latin-1 HGUSER="`cat test1`" mkcommit A0
   $ echo 42 >> A0
-  $ hg amend -m "A1" --note "`cat test2`"
+  $ HGENCODING=latin-1 hg amend -m "A1" --note "`cat test2`"
   $ HGENCODING=latin-1 hg amend -m "A2" \
   > --config devel.user.obsmarker="`cat test2`"
   $ mkcommit B0

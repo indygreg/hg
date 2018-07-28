@@ -24,6 +24,8 @@
       normal    :  3 (100.00%)
   revisions     :  3
       empty     :  1 (33.33%)
+                     text  :  1 (100.00%)
+                     delta :  0 ( 0.00%)
       full      :  2 (66.67%)
       deltas    :  0 ( 0.00%)
   revision size : 88

@@ -2091,6 +2091,8 @@ def debugrevlog(ui, repo, file_=None, **opts):
     ### tracks ways the "delta" are build
     # nodelta
     numempty = 0
+    numemptytext = 0
+    numemptydelta = 0
     # full file content
     numfull = 0
     # delta against previous revision
@@ -2139,6 +2141,7 @@ def debugrevlog(ui, repo, file_=None, **opts):
             chainspans.append(size)
             if size == 0:
                 numempty += 1
+                numemptytext += 1
             else:
                 numfull += 1
                 addsize(size, fullsize)
@@ -2150,6 +2153,7 @@ def debugrevlog(ui, repo, file_=None, **opts):
             chainspans.append((revaddr - baseaddr) + size)
             if size == 0:
                 numempty += 1
+                numemptydelta += 1
             else:
                 addsize(size, deltasize)
                 if delta == rev - 1:
@@ -2226,6 +2230,10 @@ def debugrevlog(ui, repo, file_=None, **opts):
     ui.write(('    normal    : ') + fmt % pcfmt(numrevs - nummerges, numrevs))
     ui.write(('revisions     : ') + fmt2 % numrevs)
     ui.write(('    empty     : ') + fmt % pcfmt(numempty, numrevs))
+    ui.write(('                   text  : ')
+             + fmt % pcfmt(numemptytext, numemptytext + numemptydelta))
+    ui.write(('                   delta : ')
+             + fmt % pcfmt(numemptydelta, numemptytext + numemptydelta))
     ui.write(('    full      : ') + fmt % pcfmt(numfull, numrevs))
     ui.write(('    deltas    : ') + fmt % pcfmt(numdeltas, numrevs))
     ui.write(('revision size : ') + fmt2 % totalsize)

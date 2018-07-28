@@ -33,6 +33,7 @@ from .. import (
     hg,
     profiling,
     pycompat,
+    registrar,
     scmutil,
     templater,
     templateutil,
@@ -495,12 +496,6 @@ class hgwebdir(object):
 
     def templater(self, req, nonce):
 
-        def motd(**map):
-            if self.motd is not None:
-                yield self.motd
-            else:
-                yield config('web', 'motd')
-
         def config(section, name, default=uimod._unset, untrusted=True):
             return self.ui.config(section, name, default, untrusted)
 
@@ -520,7 +515,6 @@ class hgwebdir(object):
 
         defaults = {
             "encoding": encoding.encoding,
-            "motd": motd,
             "url": req.apppath + '/',
             "logourl": logourl,
             "logoimg": logoimg,
@@ -529,5 +523,13 @@ class hgwebdir(object):
             "style": style,
             "nonce": nonce,
         }
+        templatekeyword = registrar.templatekeyword(defaults)
+        @templatekeyword('motd', requires=())
+        def motd(context, mapping):
+            if self.motd is not None:
+                yield self.motd
+            else:
+                yield config('web', 'motd')
+
         tmpl = templater.templater.frommapfile(mapfile, defaults=defaults)
         return tmpl

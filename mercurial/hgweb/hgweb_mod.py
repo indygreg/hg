@@ -140,11 +140,6 @@ class requestcontext(object):
         if not staticurl.endswith('/'):
             staticurl += '/'
 
-        # some functions for the templater
-
-        def motd(**map):
-            yield self.config('web', 'motd')
-
         # figure out which style to use
 
         vars = {}
@@ -177,12 +172,16 @@ class requestcontext(object):
             'urlbase': req.advertisedbaseurl,
             'repo': self.reponame,
             'encoding': encoding.encoding,
-            'motd': motd,
             'sessionvars': sessionvars,
             'pathdef': makebreadcrumb(req.apppath),
             'style': style,
             'nonce': self.nonce,
         }
+        templatekeyword = registrar.templatekeyword(defaults)
+        @templatekeyword('motd', requires=())
+        def motd(context, mapping):
+            yield self.config('web', 'motd')
+
         tres = formatter.templateresources(self.repo.ui, self.repo)
         tmpl = templater.templater.frommapfile(mapfile,
                                                filters=filters,

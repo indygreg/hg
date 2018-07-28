@@ -44,6 +44,8 @@ from .utils import (
 urlerr = util.urlerr
 urlreq = util.urlreq
 
+_NARROWACL_SECTION = 'narrowhgacl'
+
 # Maps bundle version human names to changegroup versions.
 _bundlespeccgversions = {'v1': '01',
                          'v2': '02',
@@ -2069,8 +2071,13 @@ def _getbundlerevbranchcache(bundler, repo, source, bundlecaps=None,
     # Don't send unless:
     # - changeset are being exchanged,
     # - the client supports it.
-    if not (kwargs.get(r'cg', True)) or 'rev-branch-cache' not in b2caps:
+    # - narrow bundle isn't in play (not currently compatible).
+    if (not kwargs.get(r'cg', True)
+        or 'rev-branch-cache' not in b2caps
+        or kwargs.get(r'narrow', False)
+        or repo.ui.has_section(_NARROWACL_SECTION)):
         return
+
     outgoing = _computeoutgoing(repo, heads, common)
     bundle2.addpartrevbranchcache(repo, bundler, outgoing)
 

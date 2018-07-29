@@ -294,9 +294,9 @@ def showextras(context, mapping):
 def _getfilestatus(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     revcache = context.resource(mapping, 'revcache')
-    if 'files' not in revcache:
-        revcache['files'] = ctx.p1().status(ctx)[:3]
-    return revcache['files']
+    if 'filestatus' not in revcache:
+        revcache['filestatus'] = ctx.p1().status(ctx)
+    return revcache['filestatus']
 
 def _showfilesbystat(context, mapping, name, index):
     stat = _getfilestatus(context, mapping)

@@ -543,6 +543,10 @@ def maketemplater(ui, tmpl, defaults=None, resources=None, cache=None):
         t.cache[''] = tmpl
     return t
 
+# marker to denote a resource to be loaded on demand based on mapping values
+# (e.g. (ctx, path) -> fctx)
+_placeholder = object()
+
 class templateresources(templater.resourcemapper):
     """Resource mapper designed for the default templatekw and function"""
 
@@ -563,7 +567,10 @@ class templateresources(templater.resourcemapper):
     def lookup(self, mapping, key):
         if key not in self.knownkeys():
             return None
-        return self._getsome(mapping, key)
+        v = self._getsome(mapping, key)
+        if v is _placeholder:
+            v = mapping[key] = self._loadermap[key](self, mapping)
+        return v
 
     def populatemap(self, context, origmapping, newmapping):
         mapping = {}
@@ -572,6 +579,10 @@ class templateresources(templater.resourcemapper):
         if self._hasnodespec(origmapping) and self._hasnodespec(newmapping):
             orignode = templateutil.runsymbol(context, origmapping, 'node')
             mapping['originalnode'] = orignode
+        # put marker to override 'fctx' in mapping if any, and flag
+        # its existence to be reported by availablekeys()
+        if 'fctx' not in newmapping and self._hasliteral(newmapping, 'path'):
+            mapping['fctx'] = _placeholder
         return mapping
 
     def _getsome(self, mapping, key):
@@ -580,9 +591,34 @@ class templateresources(templater.resourcemapper):
             return v
         return self._resmap.get(key)
 
+    def _hasliteral(self, mapping, key):
+        """Test if a literal value is set or unset in the given mapping"""
+        return key in mapping and not callable(mapping[key])
+
+    def _getliteral(self, mapping, key):
+        """Return value of the given name if it is a literal"""
+        v = mapping.get(key)
+        if callable(v):
+            return None
+        return v
+
     def _hasnodespec(self, mapping):
         """Test if context revision is set or unset in the given mapping"""
         return 'node' in mapping or 'ctx' in mapping
+
+    def _loadfctx(self, mapping):
+        ctx = self._getsome(mapping, 'ctx')
+        path = self._getliteral(mapping, 'path')
+        if ctx is None or path is None:
+            return None
+        try:
+            return ctx[path]
+        except error.LookupError:
+            return None # maybe removed file?
+
+    _loadermap = {
+        'fctx': _loadfctx,
+    }
 
 def formatter(ui, out, topic, opts):
     template = opts.get("template", "")

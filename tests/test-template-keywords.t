@@ -787,6 +787,15 @@ Test file copies dict:
   $ hg log -r8 -C -T '{file_copies_switch % "{path} <- {source}\n"}'
   fourth <- second
 
+Test file attributes:
+
+  $ hg log -l1 -T '{files % "{pad(size, 3, left=True)} {path}\n"}'
+      a
+    0 b
+    7 fifth
+      fourth
+   13 third
+
 Test index keyword:
 
   $ hg log -l 2 -T '{index + 10}{files % " {index}:{file}"}\n'

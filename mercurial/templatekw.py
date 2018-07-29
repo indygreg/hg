@@ -582,6 +582,12 @@ def showreporoot(context, mapping):
     repo = context.resource(mapping, 'repo')
     return repo.root
 
+@templatekeyword('size', requires={'fctx'})
+def showsize(context, mapping):
+    """Integer. Size of the current file in bytes. (EXPERIMENTAL)"""
+    fctx = context.resource(mapping, 'fctx')
+    return fctx.size()
+
 @templatekeyword("successorssets", requires={'repo', 'ctx'})
 def showsuccessorssets(context, mapping):
     """Returns a string of sets of successors for a changectx. Format used

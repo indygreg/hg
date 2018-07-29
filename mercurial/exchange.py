@@ -1872,9 +1872,11 @@ def applynarrowacl(repo, kwargs):
 
     new_args = {}
     new_args.update(kwargs)
-    new_args['includepats'] = req_includes
+    new_args[r'narrow'] = True
+    new_args[r'includepats'] = req_includes
     if req_excludes:
-        new_args['excludepats'] = req_excludes
+        new_args[r'excludepats'] = req_excludes
+
     return new_args
 
 def _computeellipsis(repo, common, heads, known, match, depth=None):

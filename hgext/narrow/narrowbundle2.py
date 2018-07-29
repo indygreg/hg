@@ -309,9 +309,9 @@ def setup():
     def wrappedcgfn(*args, **kwargs):
         repo = args[1]
         if repo.ui.has_section(_NARROWACL_SECTION):
-            getbundlechangegrouppart_narrow(
-                *args, **exchange.applynarrowacl(repo, kwargs))
-        elif kwargs.get(r'narrow', False):
+            kwargs = exchange.applynarrowacl(repo, kwargs)
+
+        if kwargs.get(r'narrow', False):
             getbundlechangegrouppart_narrow(*args, **kwargs)
         else:
             origcgfn(*args, **kwargs)

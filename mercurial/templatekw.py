@@ -291,12 +291,16 @@ def showextras(context, mapping):
     return _hybrid(f, extras, makemap,
                    lambda k: '%s=%s' % (k, stringutil.escapestr(extras[k])))
 
-def _showfilesbystat(context, mapping, name, index):
+def _getfilestatus(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     revcache = context.resource(mapping, 'revcache')
     if 'files' not in revcache:
         revcache['files'] = ctx.p1().status(ctx)[:3]
-    files = revcache['files'][index]
+    return revcache['files']
+
+def _showfilesbystat(context, mapping, name, index):
+    stat = _getfilestatus(context, mapping)
+    files = stat[index]
     return templateutil.compatfileslist(context, mapping, name, files)
 
 @templatekeyword('file_adds', requires={'ctx', 'revcache'})

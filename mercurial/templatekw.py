@@ -301,6 +301,15 @@ def _getfilestatus(context, mapping, listall=False):
         revcache['filestatusall'] = listall
     return revcache['filestatus']
 
+def _getfilestatusmap(context, mapping, listall=False):
+    revcache = context.resource(mapping, 'revcache')
+    if 'filestatusmap' not in revcache or revcache['filestatusall'] < listall:
+        stat = _getfilestatus(context, mapping, listall=listall)
+        revcache['filestatusmap'] = statmap = {}
+        for char, files in zip(pycompat.iterbytestr('MAR!?IC'), stat):
+            statmap.update((f, char) for f in files)
+    return revcache['filestatusmap']  # {path: statchar}
+
 def _showfilesbystat(context, mapping, name, index):
     stat = _getfilestatus(context, mapping)
     files = stat[index]
@@ -594,6 +603,19 @@ def showsize(context, mapping):
     """Integer. Size of the current file in bytes. (EXPERIMENTAL)"""
     fctx = context.resource(mapping, 'fctx')
     return fctx.size()
+
+# requires 'fctx' to denote {status} depends on (ctx, path) pair
+@templatekeyword('status', requires={'ctx', 'fctx', 'revcache'})
+def showstatus(context, mapping):
+    """String. Status code of the current file. (EXPERIMENTAL)"""
+    path = templateutil.runsymbol(context, mapping, 'path')
+    path = templateutil.stringify(context, mapping, path)
+    if not path:
+        return
+    statmap = _getfilestatusmap(context, mapping)
+    if path not in statmap:
+        statmap = _getfilestatusmap(context, mapping, listall=True)
+    return statmap.get(path)
 
 @templatekeyword("successorssets", requires={'repo', 'ctx'})
 def showsuccessorssets(context, mapping):

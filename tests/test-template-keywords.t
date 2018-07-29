@@ -789,12 +789,19 @@ Test file copies dict:
 
 Test file attributes:
 
-  $ hg log -l1 -T '{files % "{pad(size, 3, left=True)} {path}\n"}'
-      a
-    0 b
-    7 fifth
-      fourth
-   13 third
+  $ hg log -l1 -T '{files % "{status} {pad(size, 3, left=True)} {path}\n"}'
+  R     a
+  A   0 b
+  A   7 fifth
+  R     fourth
+  M  13 third
+
+Test file status including clean ones:
+
+  $ hg log -r9 -T '{files("**") % "{status} {path}\n"}'
+  A a
+  C fourth
+  C third
 
 Test index keyword:
 

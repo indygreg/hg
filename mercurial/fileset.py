@@ -592,7 +592,9 @@ class matchctx(object):
                 try:
                     return predfn(fctx)
                 except (IOError, OSError) as e:
-                    if e.errno in (errno.ENOENT, errno.ENOTDIR, errno.EISDIR):
+                    # open()-ing a directory fails with EACCES on Windows
+                    if e.errno in (errno.ENOENT, errno.EACCES, errno.ENOTDIR,
+                                   errno.EISDIR):
                         return False
                     raise
         else:

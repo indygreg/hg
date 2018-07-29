@@ -1055,3 +1055,36 @@ def _addchangegroupfiles(repo, source, revmap, trp, expectedfiles, needfiles):
                     (f, hex(n)))
 
     return revisions, files
+
+def _packellipsischangegroup(repo, common, match, relevant_nodes,
+                             ellipsisroots, visitnodes, depth, source, version):
+    if version in ('01', '02'):
+        raise error.Abort(
+            'ellipsis nodes require at least cg3 on client and server, '
+            'but negotiated version %s' % version)
+    # We wrap cg1packer.revchunk, using a side channel to pass
+    # relevant_nodes into that area. Then if linknode isn't in the
+    # set, we know we have an ellipsis node and we should defer
+    # sending that node's data. We override close() to detect
+    # pending ellipsis nodes and flush them.
+    packer = getbundler(version, repo, filematcher=match)
+    # Give the packer the list of nodes which should not be
+    # ellipsis nodes. We store this rather than the set of nodes
+    # that should be an ellipsis because for very large histories
+    # we expect this to be significantly smaller.
+    packer.full_nodes = relevant_nodes
+    # Maps ellipsis revs to their roots at the changelog level.
+    packer.precomputed_ellipsis = ellipsisroots
+    # Maps CL revs to per-revlog revisions. Cleared in close() at
+    # the end of each group.
+    packer.clrev_to_localrev = {}
+    packer.next_clrev_to_localrev = {}
+    # Maps changelog nodes to changelog revs. Filled in once
+    # during changelog stage and then left unmodified.
+    packer.clnode_to_rev = {}
+    packer.changelog_done = False
+    # If true, informs the packer that it is serving shallow content and might
+    # need to pack file contents not introduced by the changes being packed.
+    packer.is_shallow = depth is not None
+
+    return packer.generate(common, visitnodes, False, source)

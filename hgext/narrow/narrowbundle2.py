@@ -87,6 +87,8 @@ def _packellipsischangegroup(repo, common, match, relevant_nodes,
 def getbundlechangegrouppart_narrow(bundler, repo, source,
                                     bundlecaps=None, b2caps=None, heads=None,
                                     common=None, **kwargs):
+    assert repo.ui.configbool('experimental', 'narrowservebrokenellipses')
+
     cgversions = b2caps.get('changegroup')
     if cgversions:  # 3.1 and 3.2 ship with an empty value
         cgversions = [v for v in cgversions
@@ -101,28 +103,6 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
     include = sorted(filter(bool, kwargs.get(r'includepats', [])))
     exclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
     newmatch = narrowspec.match(repo.root, include=include, exclude=exclude)
-    if not repo.ui.configbool("experimental", "narrowservebrokenellipses"):
-        outgoing = exchange._computeoutgoing(repo, heads, common)
-        if not outgoing.missing:
-            return
-
-        cg = changegroup.makestream(repo, outgoing, version, source,
-                                    filematcher=newmatch)
-        part = bundler.newpart('changegroup', data=cg)
-        part.addparam('version', version)
-        if 'treemanifest' in repo.requirements:
-            part.addparam('treemanifest', '1')
-
-        if include or exclude:
-            narrowspecpart = bundler.newpart(_SPECPART)
-            if include:
-                narrowspecpart.addparam(
-                    _SPECPART_INCLUDE, '\n'.join(include), mandatory=True)
-            if exclude:
-                narrowspecpart.addparam(
-                    _SPECPART_EXCLUDE, '\n'.join(exclude), mandatory=True)
-
-        return
 
     depth = kwargs.get(r'depth', None)
     if depth is not None:
@@ -311,7 +291,8 @@ def setup():
         if repo.ui.has_section(_NARROWACL_SECTION):
             kwargs = exchange.applynarrowacl(repo, kwargs)
 
-        if kwargs.get(r'narrow', False):
+        if (kwargs.get(r'narrow', False) and
+            repo.ui.configbool('experimental', 'narrowservebrokenellipses')):
             getbundlechangegrouppart_narrow(*args, **kwargs)
         else:
             origcgfn(*args, **kwargs)

@@ -2114,8 +2114,17 @@ def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
     if not outgoing.missing:
         return
 
+    if kwargs.get(r'narrow', False):
+        include = sorted(filter(bool, kwargs.get(r'includepats', [])))
+        exclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
+        filematcher = narrowspec.match(repo.root, include=include,
+                                       exclude=exclude)
+    else:
+        filematcher = None
+
     cgstream = changegroup.makestream(repo, outgoing, version, source,
-                                      bundlecaps=bundlecaps)
+                                      bundlecaps=bundlecaps,
+                                      filematcher=filematcher)
 
     part = bundler.newpart('changegroup', data=cgstream)
     if cgversions:
@@ -2126,6 +2135,15 @@ def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
 
     if 'treemanifest' in repo.requirements:
         part.addparam('treemanifest', '1')
+
+    if kwargs.get(r'narrow', False) and (include or exclude):
+        narrowspecpart = bundler.newpart('narrow:spec')
+        if include:
+            narrowspecpart.addparam(
+                'include', '\n'.join(include), mandatory=True)
+        if exclude:
+            narrowspecpart.addparam(
+                'exclude', '\n'.join(exclude), mandatory=True)
 
 @getbundle2partsgenerator('bookmarks')
 def _getbundlebookmarkpart(bundler, repo, source, bundlecaps=None,

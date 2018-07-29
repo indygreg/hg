@@ -12,10 +12,8 @@ from mercurial import (
     changegroup,
     error,
     extensions,
-    mdiff,
     node,
     pycompat,
-    revlog,
     util,
 )
 
@@ -53,21 +51,6 @@ def setup():
         return orig(self, changedfiles, linknodes, commonrevs, source)
     extensions.wrapfunction(
         changegroup.cg1packer, 'generatefiles', generatefiles)
-
-    def ellipsisdata(packer, rev, revlog_, p1, p2, data, linknode):
-        n = revlog_.node(rev)
-        p1n, p2n = revlog_.node(p1), revlog_.node(p2)
-        flags = revlog_.flags(rev)
-        flags |= revlog.REVIDX_ELLIPSIS
-        meta = packer.builddeltaheader(
-            n, p1n, p2n, node.nullid, linknode, flags)
-        # TODO: try and actually send deltas for ellipsis data blocks
-        diffheader = mdiff.trivialdiffheader(len(data))
-        l = len(meta) + len(diffheader) + len(data)
-        return ''.join((changegroup.chunkheader(l),
-                        meta,
-                        diffheader,
-                        data))
 
     def close(orig, self):
         getattr(self, 'clrev_to_localrev', {}).clear()
@@ -330,7 +313,7 @@ def setup():
         else:
             p1, p2 = sorted(local(p) for p in linkparents)
         n = revlog.node(rev)
-        yield ellipsisdata(
+        yield changegroup.ellipsisdata(
             self, rev, revlog, p1, p2, revlog.revision(n), linknode)
     extensions.wrapfunction(changegroup.cg1packer, 'revchunk', revchunk)
 

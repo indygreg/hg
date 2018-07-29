@@ -14,6 +14,7 @@ import weakref
 from .i18n import _
 from .node import (
     hex,
+    nullid,
     nullrev,
     short,
 )
@@ -27,6 +28,7 @@ from . import (
     phases,
     pycompat,
     repository,
+    revlog,
     util,
 )
 
@@ -491,6 +493,21 @@ class headerlessfixup(object):
                 d += readexactly(self._fh, n - len(d))
             return d
         return readexactly(self._fh, n)
+
+def ellipsisdata(packer, rev, revlog_, p1, p2, data, linknode):
+    n = revlog_.node(rev)
+    p1n, p2n = revlog_.node(p1), revlog_.node(p2)
+    flags = revlog_.flags(rev)
+    flags |= revlog.REVIDX_ELLIPSIS
+    meta = packer.builddeltaheader(
+        n, p1n, p2n, nullid, linknode, flags)
+    # TODO: try and actually send deltas for ellipsis data blocks
+    diffheader = mdiff.trivialdiffheader(len(data))
+    l = len(meta) + len(diffheader) + len(data)
+    return ''.join((chunkheader(l),
+                    meta,
+                    diffheader,
+                    data))
 
 class cg1packer(object):
     deltaheader = _CHANGEGROUPV1_DELTA_HEADER

@@ -291,11 +291,14 @@ def showextras(context, mapping):
     return _hybrid(f, extras, makemap,
                    lambda k: '%s=%s' % (k, stringutil.escapestr(extras[k])))
 
-def _getfilestatus(context, mapping):
+def _getfilestatus(context, mapping, listall=False):
     ctx = context.resource(mapping, 'ctx')
     revcache = context.resource(mapping, 'revcache')
-    if 'filestatus' not in revcache:
-        revcache['filestatus'] = ctx.p1().status(ctx)
+    if 'filestatus' not in revcache or revcache['filestatusall'] < listall:
+        stat = ctx.p1().status(ctx, listignored=listall, listclean=listall,
+                               listunknown=listall)
+        revcache['filestatus'] = stat
+        revcache['filestatusall'] = listall
     return revcache['filestatus']
 
 def _showfilesbystat(context, mapping, name, index):

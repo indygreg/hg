@@ -591,7 +591,7 @@ class changectx(basectx):
 
     def descendant(self, other):
         msg = (b'ctx.descendant(other) is deprecated, '
-               'use ctx.isancestorof(other)')
+               b'use ctx.isancestorof(other)')
         self._repo.ui.deprecwarn(msg, b'4.7')
         return self.isancestorof(other)
 

@@ -438,7 +438,6 @@ class changectx(basectx):
                         "unsupported changeid '%s' of type %s" %
                         (changeid, type(changeid)))
 
-            # lookup failed
         except (error.FilteredIndexError, error.FilteredLookupError):
             raise error.FilteredRepoLookupError(_("filtered revision '%s'")
                                                 % pycompat.bytestr(changeid))

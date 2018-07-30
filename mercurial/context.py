@@ -411,6 +411,7 @@ class changectx(basectx):
                     self._rev = repo.changelog.rev(changeid)
                     return
                 except error.FilteredLookupError:
+                    changeid = hex(changeid) # for the error message
                     raise
                 except LookupError:
                     # check if it might have come from damaged dirstate

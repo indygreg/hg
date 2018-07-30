@@ -420,7 +420,7 @@ Test with a revision
   c1
   c2
   c3
-  con.xml
+  con.xml (no-windows !)
   mixed
   unknown
   $ fileset 'eol(mac)'
@@ -442,7 +442,7 @@ Test safety of 'encoding' on removed files
   c1
   c2
   c3
-  con.xml
+  con.xml (no-windows !)
   dos
   mac
   mixed

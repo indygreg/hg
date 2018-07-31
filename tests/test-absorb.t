@@ -316,49 +316,6 @@ Test obsolete markers creation:
   8:5867d584106b commit a 2 fec2b3bd9e0834b7cb6a564348a0058171aed811
   7:8c76602baf10 commit a 1 f9a81da8dc53380ed91902e5b82c1b36255a4bd0
 
-Test config option absorb.amendflags and running as a sub command of amend:
-
-  $ cat >> $TESTTMP/dummyamend.py << EOF
-  > from mercurial import commands, registrar
-  > cmdtable = {}
-  > command = registrar.command(cmdtable)
-  > @command('amend', [], '')
-  > def amend(ui, repo, *pats, **opts):
-  >     return 3
-  > EOF
-  $ cat >> $HGRCPATH << EOF
-  > [extensions]
-  > fbamend=$TESTTMP/dummyamend.py
-  > [absorb]
-  > amendflag = correlated
-  > EOF
-
-  $ hg amend -h
-  hg amend
-  
-  (no help text available)
-  
-  options:
-  
-    --correlated incorporate corrections into stack. see 'hg help absorb' for
-                 details
-  
-  (some details hidden, use --verbose to show complete help)
-
-  $ $PYTHON -c 'print("".join(map(chr, range(0,3))))' > c
-  $ hg commit -A c -m 'c is a binary file'
-  $ echo c >> c
-  $ sedi $'2i\\\nINS\n' b
-  $ echo END >> b
-  $ hg rm a
-  $ hg amend --correlated
-  1 of 2 chunk(s) applied
-  
-  # changes not applied and left in working directory:
-  # M b : 1 modified chunks were ignored
-  # M c : unsupported file type (ex. binary or link)
-  # R a : removed files were ignored
-
 Executable files:
 
   $ cat >> $HGRCPATH << EOF

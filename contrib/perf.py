@@ -791,15 +791,21 @@ def perfphases(ui, repo, **opts):
     timer(d)
     fm.end()
 
-@command('perfmanifest', [], 'REV')
-def perfmanifest(ui, repo, rev, **opts):
+@command('perfmanifest',[
+            ('m', 'manifest-rev', False, 'Look up a manifest node revision'),
+            ('', 'clear-disk', False, 'clear on-disk caches too'),
+         ], 'REV|NODE')
+def perfmanifest(ui, repo, rev, manifest_rev=False, clear_disk=False, **opts):
     """benchmark the time to read a manifest from disk and return a usable
     dict-like object
 
     Manifest caches are cleared before retrieval."""
     timer, fm = gettimer(ui, opts)
-    ctx = scmutil.revsingle(repo, rev, rev)
-    t = ctx.manifestnode()
+    if not manifest_rev:
+        ctx = scmutil.revsingle(repo, rev, rev)
+        t = ctx.manifestnode()
+    else:
+        t = repo.manifestlog._revlog.lookup(rev)
     def d():
         repo.manifestlog.clearcaches()
         repo.manifestlog[t].read()

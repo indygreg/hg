@@ -190,6 +190,9 @@ coreconfigitem('color', 'pagermode',
 coreconfigitem('commands', 'grep.all-files',
     default=False,
 )
+coreconfigitem('commands', 'resolve.confirm',
+    default=False,
+)
 coreconfigitem('commands', 'show.aliasprefix',
     default=list,
 )

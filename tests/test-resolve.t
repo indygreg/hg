@@ -423,3 +423,92 @@ If the file is already marked as resolved, we don't warn about it
   R file2
 
   $ cd ..
+
+======================================================
+Test 'hg resolve' confirm config option functionality |
+======================================================
+  $ cat >> $HGRCPATH << EOF
+  > [extensions]
+  > rebase=
+  > EOF
+
+  $ hg init repo2
+  $ cd repo2
+
+  $ echo boss > boss
+  $ hg ci -Am "add boss"
+  adding boss
+
+  $ for emp in emp1 emp2 emp3; do echo work > $emp; done;
+  $ hg ci -Aqm "added emp1 emp2 emp3"
+
+  $ hg up 0
+  0 files updated, 0 files merged, 3 files removed, 0 files unresolved
+
+  $ for emp in emp1 emp2 emp3; do echo nowork > $emp; done;
+  $ hg ci -Aqm "added lazy emp1 emp2 emp3"
+
+  $ hg log -GT "{rev} {node|short} {firstline(desc)}\n"
+  @  2 0acfd4a49af0 added lazy emp1 emp2 emp3
+  |
+  | o  1 f30f98a8181f added emp1 emp2 emp3
+  |/
+  o  0 88660038d466 add boss
+  
+  $ hg rebase -s 1 -d 2
+  rebasing 1:f30f98a8181f "added emp1 emp2 emp3"
+  merging emp1
+  merging emp2
+  merging emp3
+  warning: conflicts while merging emp1! (edit, then use 'hg resolve --mark')
+  warning: conflicts while merging emp2! (edit, then use 'hg resolve --mark')
+  warning: conflicts while merging emp3! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+
+Test when commands.resolve.confirm config option is not set:
+===========================================================
+  $ hg resolve --all
+  merging emp1
+  merging emp2
+  merging emp3
+  warning: conflicts while merging emp1! (edit, then use 'hg resolve --mark')
+  warning: conflicts while merging emp2! (edit, then use 'hg resolve --mark')
+  warning: conflicts while merging emp3! (edit, then use 'hg resolve --mark')
+  [1]
+
+Test when config option is set:
+==============================
+  $ cat >> $HGRCPATH << EOF
+  > [ui]
+  > interactive = True
+  > [commands]
+  > resolve.confirm = True
+  > EOF
+
+  $ hg resolve
+  abort: no files or directories specified
+  (use --all to re-merge all unresolved files)
+  [255]
+  $ hg resolve --all << EOF
+  > n
+  > EOF
+  re-merge all unresolved files (yn)? n
+  abort: user quit
+  [255]
+
+  $ hg resolve --all << EOF
+  > y
+  > EOF
+  re-merge all unresolved files (yn)? y
+  merging emp1
+  merging emp2
+  merging emp3
+  warning: conflicts while merging emp1! (edit, then use 'hg resolve --mark')
+  warning: conflicts while merging emp2! (edit, then use 'hg resolve --mark')
+  warning: conflicts while merging emp3! (edit, then use 'hg resolve --mark')
+  [1]
+
+  $ hg rebase --abort
+  rebase aborted
+  $ cd ..

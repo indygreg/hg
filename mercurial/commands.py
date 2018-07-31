@@ -4529,9 +4529,15 @@ def resolve(ui, repo, *pats, **opts):
     """
 
     opts = pycompat.byteskwargs(opts)
+    confirm = ui.configbool('commands', 'resolve.confirm')
     flaglist = 'all mark unmark list no_status'.split()
     all, mark, unmark, show, nostatus = \
         [opts.get(o) for o in flaglist]
+
+    if all and confirm:
+        if ui.promptchoice(_(b're-merge all unresolved files (yn)?'
+                             b'$$ &Yes $$ &No')):
+            raise error.Abort(_('user quit'))
 
     if (show and (mark or unmark)) or (mark and unmark):
         raise error.Abort(_("too many options specified"))

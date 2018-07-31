@@ -438,6 +438,11 @@ effect and style see :hg:`help color`.
 ``commands``
 ------------
 
+``resolve.confirm``
+    Confirm before re-merging all unresolved files when running
+    :hg:`resolve --all`.
+    (default: False)
+
 ``status.relative``
     Make paths in :hg:`status` output relative to the current directory.
     (default: False)

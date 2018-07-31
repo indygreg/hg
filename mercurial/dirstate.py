@@ -893,8 +893,11 @@ class dirstate(object):
             wadd = work.append
             while work:
                 nd = work.pop()
-                if not match.visitdir(nd):
+                visitentries = match.visitchildrenset(nd)
+                if not visitentries:
                     continue
+                if visitentries == 'this' or visitentries == 'all':
+                    visitentries = None
                 skip = None
                 if nd == '.':
                     nd = ''
@@ -909,6 +912,8 @@ class dirstate(object):
                         continue
                     raise
                 for f, kind, st in entries:
+                    if visitentries and f not in visitentries:
+                        continue
                     if normalizefile:
                         # even though f might be a directory, we're only
                         # interested in comparing it to files currently in the

@@ -98,6 +98,7 @@ Show debug commands if there are no other candidates
   debugknown
   debuglabelcomplete
   debuglocks
+  debugmanifestfulltextcache
   debugmergestate
   debugnamecomplete
   debugobsolete
@@ -284,6 +285,7 @@ Show all commands + options
   debugknown: 
   debuglabelcomplete: 
   debuglocks: force-lock, force-wlock, set-lock, set-wlock
+  debugmanifestfulltextcache: clear, add
   debugmergestate: 
   debugnamecomplete: 
   debugobsolete: flags, record-parents, rev, exclusive, index, delete, date, user, template

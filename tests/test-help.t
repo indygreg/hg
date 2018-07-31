@@ -966,6 +966,9 @@ Test list of internal help commands
    debuginstall  test Mercurial installation
    debugknown    test whether node ids are known to a repo
    debuglocks    show or modify state of locks
+   debugmanifestfulltextcache
+                 show, clear or amend the contents of the manifest fulltext
+                 cache
    debugmergestate
                  print merge state
    debugnamecomplete

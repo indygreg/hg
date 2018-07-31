@@ -1612,6 +1612,10 @@ class localrepository(object):
                 rbc.branchinfo(r)
             rbc.write()
 
+            # ensure the working copy parents are in the manifestfulltextcache
+            for ctx in self['.'].parents():
+                ctx.manifest()  # accessing the manifest is enough
+
     def invalidatecaches(self):
 
         if '_tagscache' in vars(self):

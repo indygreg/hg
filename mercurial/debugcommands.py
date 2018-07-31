@@ -1446,6 +1446,53 @@ def debuglocks(ui, repo, **opts):
 
     return held
 
+@command('debugmanifestfulltextcache', [
+        ('', 'clear', False, _('clear the cache')),
+        ('a', 'add', '', _('add the given manifest node to the cache'),
+         _('NODE'))
+    ], '')
+def debugmanifestfulltextcache(ui, repo, add=None, **opts):
+    """show, clear or amend the contents of the manifest fulltext cache"""
+    with repo.lock():
+        r = repo.manifestlog._revlog
+        try:
+            cache = r._fulltextcache
+        except AttributeError:
+            ui.warn(_(
+                "Current revlog implementation doesn't appear to have a "
+                'manifest fulltext cache\n'))
+            return
+
+        if opts.get(r'clear'):
+            cache.clear()
+
+        if add:
+            try:
+                manifest = repo.manifestlog[r.lookup(add)]
+            except error.LookupError as e:
+                raise error.Abort(e, hint="Check your manifest node id")
+            manifest.read()  # stores revisision in cache too
+
+        if not len(cache):
+            ui.write(_('Cache empty'))
+        else:
+            ui.write(
+                _('Cache contains %d manifest entries, in order of most to '
+                  'least recent:\n') % (len(cache),))
+            totalsize = 0
+            for nodeid in cache:
+                # Use cache.get to not update the LRU order
+                data = cache.get(nodeid)
+                size = len(data)
+                totalsize += size + 24   # 20 bytes nodeid, 4 bytes size
+                ui.write(_('id: %s, size %s\n') % (
+                    hex(nodeid), util.bytecount(size)))
+            ondisk = cache._opener.stat('manifestfulltextcache').st_size
+            ui.write(
+                _('Total cache data size %s, on-disk %s\n') % (
+                    util.bytecount(totalsize), util.bytecount(ondisk))
+            )
+
 @command('debugmergestate', [], '')
 def debugmergestate(ui, repo, *args):
     """print merge state

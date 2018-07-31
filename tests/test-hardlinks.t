@@ -241,6 +241,7 @@ r4 has hardlinks in the working dir (not just inside .hg):
   2 r4/.hg/cache/checkisexec (execbit !)
   ? r4/.hg/cache/checklink-target (glob) (symlink !)
   2 r4/.hg/cache/checknoexec (execbit !)
+  2 r4/.hg/cache/manifestfulltextcache
   2 r4/.hg/cache/rbc-names-v1
   2 r4/.hg/cache/rbc-revs-v1
   2 r4/.hg/dirstate
@@ -291,6 +292,7 @@ Update back to revision 12 in r4 should break hardlink of file f1 and f3:
   2 r4/.hg/cache/checkisexec (execbit !)
   2 r4/.hg/cache/checklink-target (symlink !)
   2 r4/.hg/cache/checknoexec (execbit !)
+  2 r4/.hg/cache/manifestfulltextcache
   2 r4/.hg/cache/rbc-names-v1
   2 r4/.hg/cache/rbc-revs-v1
   1 r4/.hg/dirstate

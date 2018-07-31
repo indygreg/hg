@@ -47,6 +47,7 @@ Trigger branchcache creation:
   checklink (symlink !)
   checklink-target (symlink !)
   checknoexec (execbit !)
+  manifestfulltextcache
   rbc-names-v1
   rbc-revs-v1
 

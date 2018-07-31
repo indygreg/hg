@@ -10,6 +10,7 @@ from __future__ import absolute_import
 import heapq
 import itertools
 import struct
+import weakref
 
 from .i18n import _
 from .node import (
@@ -1136,6 +1137,115 @@ class treemanifest(object):
             for subtree in subm.walksubtrees(matcher=matcher):
                 yield subtree
 
+class manifestfulltextcache(util.lrucachedict):
+    """File-backed LRU cache for the manifest cache
+
+    File consists of entries, up to EOF:
+
+    - 20 bytes node, 4 bytes length, <length> manifest data
+
+    These are written in reverse cache order (oldest to newest).
+
+    """
+    def __init__(self, max):
+        super(manifestfulltextcache, self).__init__(max)
+        self._dirty = False
+        self._read = False
+        self._opener = None
+
+    def read(self):
+        if self._read or self._opener is None:
+            return
+
+        try:
+            with self._opener('manifestfulltextcache') as fp:
+                set = super(manifestfulltextcache, self).__setitem__
+                # ignore trailing data, this is a cache, corruption is skipped
+                while True:
+                    node = fp.read(20)
+                    if len(node) < 20:
+                        break
+                    try:
+                        size = struct.unpack('>L', fp.read(4))[0]
+                    except struct.error:
+                        break
+                    value = bytearray(fp.read(size))
+                    if len(value) != size:
+                        break
+                    set(node, value)
+        except IOError:
+            # the file is allowed to be missing
+            pass
+
+        self._read = True
+        self._dirty = False
+
+    def write(self):
+        if not self._dirty or self._opener is None:
+            return
+        # rotate backwards to the first used node
+        with self._opener(
+                'manifestfulltextcache', 'w', atomictemp=True, checkambig=True
+            ) as fp:
+            node = self._head.prev
+            while True:
+                if node.key in self._cache:
+                    fp.write(node.key)
+                    fp.write(struct.pack('>L', len(node.value)))
+                    fp.write(node.value)
+                if node is self._head:
+                    break
+                node = node.prev
+
+    def __len__(self):
+        if not self._read:
+            self.read()
+        return super(manifestfulltextcache, self).__len__()
+
+    def __contains__(self, k):
+        if not self._read:
+            self.read()
+        return super(manifestfulltextcache, self).__contains__(k)
+
+    def __iter__(self):
+        if not self._read:
+            self.read()
+        return super(manifestfulltextcache, self).__iter__()
+
+    def __getitem__(self, k):
+        if not self._read:
+            self.read()
+        # the cache lru order can change on read
+        setdirty = self._cache.get(k) is not self._head
+        value = super(manifestfulltextcache, self).__getitem__(k)
+        if setdirty:
+            self._dirty = True
+        return value
+
+    def __setitem__(self, k, v):
+        if not self._read:
+            self.read()
+        super(manifestfulltextcache, self).__setitem__(k, v)
+        self._dirty = True
+
+    def __delitem__(self, k):
+        if not self._read:
+            self.read()
+        super(manifestfulltextcache, self).__delitem__(k)
+        self._dirty = True
+
+    def get(self, k, default=None):
+        if not self._read:
+            self.read()
+        return super(manifestfulltextcache, self).get(k, default=default)
+
+    def clear(self, clear_persisted_data=False):
+        super(manifestfulltextcache, self).clear()
+        if clear_persisted_data:
+            self._dirty = True
+            self.write()
+        self._read = False
+
 class manifestrevlog(revlog.revlog):
     '''A revlog that stores manifest texts. This is responsible for caching the
     full-text manifest contents.
@@ -1164,7 +1274,7 @@ class manifestrevlog(revlog.revlog):
 
         self._treeondisk = optiontreemanifest or treemanifest
 
-        self._fulltextcache = util.lrucachedict(cachesize)
+        self._fulltextcache = manifestfulltextcache(cachesize)
 
         if dir:
             assert self._treeondisk, 'opts is %r' % opts
@@ -1186,13 +1296,35 @@ class manifestrevlog(revlog.revlog):
                                              checkambig=not bool(dir),
                                              mmaplargeindex=True)
 
+    def _setupmanifestcachehooks(self, repo):
+        """Persist the manifestfulltextcache on lock release"""
+        if not util.safehasattr(repo, '_lockref'):
+            return
+
+        self._fulltextcache._opener = repo.cachevfs
+        reporef = weakref.ref(repo)
+        manifestrevlogref = weakref.ref(self)
+
+        def persistmanifestcache():
+            repo = reporef()
+            self = manifestrevlogref()
+            if repo is None or self is None:
+                return
+            if repo.manifestlog._revlog is not self:
+                # there's a different manifest in play now, abort
+                return
+            self._fulltextcache.write()
+
+        if repo._currentlock(repo._lockref) is not None:
+            repo._afterlock(persistmanifestcache)
+
     @property
     def fulltextcache(self):
         return self._fulltextcache
 
-    def clearcaches(self):
+    def clearcaches(self, clear_persisted_data=False):
         super(manifestrevlog, self).clearcaches()
-        self._fulltextcache.clear()
+        self._fulltextcache.clear(clear_persisted_data=clear_persisted_data)
         self._dirlogcache = {'': self}
 
     def dirlog(self, d):
@@ -1288,6 +1420,7 @@ class manifestlog(object):
         self._treeinmem = usetreemanifest
 
         self._revlog = repo._constructmanifest()
+        self._revlog._setupmanifestcachehooks(repo)
         self._narrowmatch = repo.narrowmatch()
 
         # A cache of the manifestctx or treemanifestctx for each directory
@@ -1345,9 +1478,9 @@ class manifestlog(object):
             mancache[node] = m
         return m
 
-    def clearcaches(self):
+    def clearcaches(self, clear_persisted_data=False):
         self._dirmancache.clear()
-        self._revlog.clearcaches()
+        self._revlog.clearcaches(clear_persisted_data=clear_persisted_data)
 
     def rev(self, node):
         return self._revlog.rev(node)
@@ -1421,9 +1554,12 @@ class manifestctx(object):
                 self._data = manifestdict()
             else:
                 rl = self._revlog()
-                text = rl.revision(self._node)
-                arraytext = bytearray(text)
-                rl._fulltextcache[self._node] = arraytext
+                if self._node in rl._fulltextcache:
+                    text = pycompat.bytestr(rl._fulltextcache[self._node])
+                else:
+                    text = rl.revision(self._node)
+                    arraytext = bytearray(text)
+                    rl._fulltextcache[self._node] = arraytext
                 self._data = manifestdict(text)
         return self._data
 
@@ -1523,9 +1659,12 @@ class treemanifestctx(object):
                 m.setnode(self._node)
                 self._data = m
             else:
-                text = rl.revision(self._node)
-                arraytext = bytearray(text)
-                rl.fulltextcache[self._node] = arraytext
+                if self._node in rl.fulltextcache:
+                    text = pycompat.bytestr(rl.fulltextcache[self._node])
+                else:
+                    text = rl.revision(self._node)
+                    arraytext = bytearray(text)
+                    rl.fulltextcache[self._node] = arraytext
                 self._data = treemanifest(dir=self._dir, text=text)
 
         return self._data

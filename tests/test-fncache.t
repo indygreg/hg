@@ -88,6 +88,7 @@ Non store repo:
   .hg/00manifest.i
   .hg/cache
   .hg/cache/branch2-served
+  .hg/cache/manifestfulltextcache
   .hg/cache/rbc-names-v1
   .hg/cache/rbc-revs-v1
   .hg/data
@@ -121,6 +122,7 @@ Non fncache repo:
   .hg/00changelog.i
   .hg/cache
   .hg/cache/branch2-served
+  .hg/cache/manifestfulltextcache
   .hg/cache/rbc-names-v1
   .hg/cache/rbc-revs-v1
   .hg/dirstate

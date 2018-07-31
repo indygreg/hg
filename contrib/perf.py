@@ -807,7 +807,7 @@ def perfmanifest(ui, repo, rev, manifest_rev=False, clear_disk=False, **opts):
     else:
         t = repo.manifestlog._revlog.lookup(rev)
     def d():
-        repo.manifestlog.clearcaches()
+        repo.manifestlog.clearcaches(clear_persisted_data=clear_disk)
         repo.manifestlog[t].read()
     timer(d)
     fm.end()

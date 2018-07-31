@@ -689,6 +689,8 @@ class localrepository(object):
         self.svfs.options['sparse-read-min-gap-size'] = srmingapsize
         sparserevlog = SPARSEREVLOG_REQUIREMENT in self.requirements
         self.svfs.options['sparse-revlog'] = sparserevlog
+        if sparserevlog:
+            self.svfs.options['generaldelta'] = True
 
         for r in self.requirements:
             if r.startswith('exp-compression-'):

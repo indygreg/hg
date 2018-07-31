@@ -1774,7 +1774,7 @@ have a definite end point.
 Alias definitions for revsets. See :hg:`help revsets` for details.
 
 ``storage``
-----------
+-----------
 
 Control the strategy Mercurial uses internally to store history. Options in this
 category impact performance and repository size.

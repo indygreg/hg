@@ -109,8 +109,11 @@ combining patterns with root and patterns without a root works
 
 tweaking defaults works
   $ hg status --cwd a --config ui.tweakdefaults=yes
-  ? .
-  ? ../b/
+  ? 1/in_a_1
+  ? in_a
+  ? ../b/1/in_b_1
+  ? ../b/2/in_b_2
+  ? ../b/in_b
   ? ../in_root
   $ HGPLAIN=1 hg status --cwd a --config ui.tweakdefaults=yes
   ? a/1/in_a_1 (glob)
@@ -120,8 +123,11 @@ tweaking defaults works
   ? b/in_b (glob)
   ? in_root
   $ HGPLAINEXCEPT=tweakdefaults hg status --cwd a --config ui.tweakdefaults=yes
-  ? .
-  ? ../b/
+  ? 1/in_a_1
+  ? in_a
+  ? ../b/1/in_b_1
+  ? ../b/2/in_b_2
+  ? ../b/in_b
   ? ../in_root (glob)
 
 relative paths can be requested
@@ -151,8 +157,11 @@ if relative paths are explicitly off, tweakdefaults doesn't change it
   > status.relative = False
   > EOF
   $ hg status --cwd a --config ui.tweakdefaults=yes
-  ? a/
-  ? b/
+  ? a/1/in_a_1
+  ? a/in_a
+  ? b/1/in_b_1
+  ? b/2/in_b_2
+  ? b/in_b
   ? in_root
 
   $ cd ..

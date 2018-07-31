@@ -6,6 +6,7 @@ import unittest
 
 from mercurial import linelog
 
+vecratio = 3 # number of replacelines / number of replacelines_vec
 maxlinenum = 0xffffff
 maxb1 = 0xffffff
 maxdeltaa = 10
@@ -21,9 +22,14 @@ def _genedits(seed, endrev):
         a2 = random.randint(a1, min(n, a1 + maxdeltaa))
         b1 = random.randint(0, maxb1)
         b2 = random.randint(b1, b1 + maxdeltab)
-        blines = [(rev, idx) for idx in range(b1, b2)]
+        usevec = not bool(random.randint(0, vecratio))
+        if usevec:
+            blines = [(random.randint(0, rev), random.randint(0, maxlinenum))
+                      for _ in range(b1, b2)]
+        else:
+            blines = [(rev, bidx) for bidx in range(b1, b2)]
         lines[a1:a2] = blines
-        yield lines, rev, a1, a2, b1, b2
+        yield lines, rev, a1, a2, b1, b2, blines, usevec
 
 class linelogtests(unittest.TestCase):
     def testlinelogencodedecode(self):
@@ -159,12 +165,17 @@ class linelogtests(unittest.TestCase):
         numrevs = 2000
         ll = linelog.linelog()
         # Populate linelog
-        for lines, rev, a1, a2, b1, b2 in _genedits(seed, numrevs):
-            ll.replacelines(rev, a1, a2, b1, b2)
+        for lines, rev, a1, a2, b1, b2, blines, usevec in _genedits(
+                seed, numrevs):
+            if usevec:
+                ll.replacelines_vec(rev, a1, a2, blines)
+            else:
+                ll.replacelines(rev, a1, a2, b1, b2)
             ar = ll.annotate(rev)
             self.assertEqual(ll.annotateresult, lines)
         # Verify we can get back these states by annotating each rev
-        for lines, rev, a1, a2, b1, b2 in _genedits(seed, numrevs):
+        for lines, rev, a1, a2, b1, b2, blines, usevec in _genedits(
+                seed, numrevs):
             ar = ll.annotate(rev)
             self.assertEqual([(l.rev, l.linenum) for l in ar], lines)
 

@@ -280,7 +280,11 @@ class linelog(object):
         self._maxrev = 0
         self._lastannotate = None
 
-    def replacelines(self, rev, a1, a2, b1, b2):
+    def replacelines_vec(self, rev, a1, a2, blines):
+        return self.replacelines(rev, a1, a2, 0, len(blines),
+                                 _internal_blines=blines)
+
+    def replacelines(self, rev, a1, a2, b1, b2, _internal_blines=None):
         """Replace lines [a1, a2) with lines [b1, b2)."""
         if self._lastannotate:
             # TODO(augie): make replacelines() accept a revision at
@@ -315,7 +319,10 @@ class linelog(object):
             # Jump to skip the insert if we're at an older revision.
             appendinst(_jl(rev, tgt))
             for linenum in pycompat.xrange(b1, b2):
-                appendinst(_line(rev, linenum))
+                if _internal_blines is None:
+                    appendinst(_line(rev, linenum))
+                else:
+                    appendinst(_line(*_internal_blines[linenum]))
         # delete
         if a1 < a2:
             if a2 > len(ar.lines):

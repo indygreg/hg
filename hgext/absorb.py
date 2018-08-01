@@ -43,6 +43,7 @@ from mercurial import (
     obsolete,
     patch,
     phases,
+    pycompat,
     registrar,
     repair,
     scmutil,
@@ -390,7 +391,7 @@ class filefixupstate(object):
                 newfixups.append((fixuprev, a1, a2, b1, b2))
         elif a2 - a1 == b2 - b1 or b1 == b2:
             # 1:1 line mapping, or chunk was deleted
-            for i in xrange(a1, a2):
+            for i in pycompat.xrange(a1, a2):
                 rev, linenum = annotated[i]
                 if rev > 1:
                     if b1 == b2: # deletion, simply remove that single line
@@ -417,7 +418,7 @@ class filefixupstate(object):
         """
         llog = linelog.linelog()
         a, alines = '', []
-        for i in xrange(len(self.contents)):
+        for i in pycompat.xrange(len(self.contents)):
             b, blines = self.contents[i], self.contentlines[i]
             llrev = i * 2 + 1
             chunks = self._alldiffchunks(a, b, alines, blines)
@@ -429,7 +430,7 @@ class filefixupstate(object):
     def _checkoutlinelog(self):
         """() -> [str]. check out file contents from linelog"""
         contents = []
-        for i in xrange(len(self.contents)):
+        for i in pycompat.xrange(len(self.contents)):
             rev = (i + 1) * 2
             self.linelog.annotate(rev)
             content = ''.join(map(self._getline, self.linelog.annotateresult))
@@ -554,18 +555,18 @@ class filefixupstate(object):
         a1, a2, b1, b2 = chunk
         aidxs, bidxs = [0] * (a2 - a1), [0] * (b2 - b1)
         for idx, fa1, fa2, fb1, fb2 in fixups:
-            for i in xrange(fa1, fa2):
+            for i in pycompat.xrange(fa1, fa2):
                 aidxs[i - a1] = (max(idx, 1) - 1) // 2
-            for i in xrange(fb1, fb2):
+            for i in pycompat.xrange(fb1, fb2):
                 bidxs[i - b1] = (max(idx, 1) - 1) // 2
 
         buf = [] # [(idx, content)]
         buf.append((0, label('@@ -%d,%d +%d,%d @@'
                              % (a1, a2 - a1, b1, b2 - b1), 'diff.hunk')))
         buf += [(aidxs[i - a1], label('-' + alines[i], 'diff.deleted'))
-                for i in xrange(a1, a2)]
+                for i in pycompat.xrange(a1, a2)]
         buf += [(bidxs[i - b1], label('+' + blines[i], 'diff.inserted'))
-                for i in xrange(b1, b2)]
+                for i in pycompat.xrange(b1, b2)]
         for idx, line in buf:
             shortnode = idx and node.short(self.fctxs[idx].node()) or ''
             ui.write(ui.label(shortnode[0:7].ljust(8), 'absorb.node') +

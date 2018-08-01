@@ -77,18 +77,49 @@ show traceback for ImportError of hgext.name if devel.debug.extensions is set
   $ (hg help help --traceback --debug --config devel.debug.extensions=yes 2>&1) \
   > | grep -v '^ ' \
   > | egrep 'extension..[^p]|^Exception|Traceback|ImportError|not import'
+  debug.extensions: loading extensions
+  debug.extensions: - processing 5 entries
+  debug.extensions:   - loading extension: 'gpg'
+  debug.extensions:   > 'gpg' extension loaded in * (glob)
+  debug.extensions:     - validating extension tables: 'gpg'
+  debug.extensions:     - invoking registered callbacks: 'gpg'
+  debug.extensions:     > callbacks completed in * (glob)
+  debug.extensions:   - loading extension: 'badext'
   *** failed to import extension badext from $TESTTMP/badext.py: bit bucket overflow
   Traceback (most recent call last):
   Exception: bit bucket overflow
-  could not import hgext.badext2 (No module named *badext2): trying hgext3rd.badext2 (glob)
+  debug.extensions:   - loading extension: 'baddocext'
+  debug.extensions:   > 'baddocext' extension loaded in * (glob)
+  debug.extensions:     - validating extension tables: 'baddocext'
+  debug.extensions:     - invoking registered callbacks: 'baddocext'
+  debug.extensions:     > callbacks completed in * (glob)
+  debug.extensions:   - loading extension: 'badext2'
+  debug.extensions:     - could not import hgext.badext2 (No module named badext2): trying hgext3rd.badext2
   Traceback (most recent call last):
   ImportError: No module named *badext2 (glob)
-  could not import hgext3rd.badext2 (No module named *badext2): trying badext2 (glob)
+  debug.extensions:     - could not import hgext3rd.badext2 (No module named badext2): trying badext2
   Traceback (most recent call last):
   ImportError: No module named *badext2 (glob)
   *** failed to import extension badext2: No module named badext2
   Traceback (most recent call last):
   ImportError: No module named badext2
+  debug.extensions: > loaded 2 extensions, total time * (glob)
+  debug.extensions: - loading configtable attributes
+  debug.extensions: - executing uisetup hooks
+  debug.extensions:   - running uisetup for 'gpg'
+  debug.extensions:   > uisetup for 'gpg' took * (glob)
+  debug.extensions:   - running uisetup for 'baddocext'
+  debug.extensions:   > uisetup for 'baddocext' took * (glob)
+  debug.extensions: - executing extsetup hooks
+  debug.extensions:   - running extsetup for 'gpg'
+  debug.extensions:   > extsetup for 'gpg' took * (glob)
+  debug.extensions:   - running extsetup for 'baddocext'
+  debug.extensions:   > extsetup for 'baddocext' took * (glob)
+  debug.extensions: - executing remaining aftercallbacks
+  debug.extensions: > remaining aftercallbacks completed in * (glob)
+  debug.extensions: - loading extension registration objects
+  debug.extensions: > extension registration object loading took * (glob)
+  debug.extensions: extension loading complete
 
 confirm that there's no crash when an extension's documentation is bad
 

@@ -9,6 +9,7 @@
 from __future__ import absolute_import
 
 import errno
+import functools
 import hashlib
 import os
 import shutil
@@ -162,9 +163,16 @@ def _peerorrepo(ui, path, create=False, presetupfuncs=None,
     """return a repository object for the specified path"""
     obj = _peerlookup(path).instance(ui, path, create, intents=intents)
     ui = getattr(obj, "ui", ui)
+    if ui.configbool('devel', 'debug.extensions'):
+        log = functools.partial(
+            ui.debug, 'debug.extensions: ', label='debug.extensions')
+    else:
+        log = lambda *a, **kw: None
     for f in presetupfuncs or []:
         f(ui, obj)
+    log('- executing reposetup hooks\n')
     for name, module in extensions.extensions(ui):
+        log('  - running reposetup for %s\n' % (name,))
         hook = getattr(module, 'reposetup', None)
         if hook:
             hook(ui, obj)

@@ -1896,7 +1896,7 @@ class overlayworkingctx(committablectx):
         # Test that each new directory to be created to write this path from p2
         # is not a file in p1.
         components = path.split('/')
-        for i in xrange(len(components)):
+        for i in pycompat.xrange(len(components)):
             component = "/".join(components[0:i])
             if component in self.p1():
                 fail(path, component)

@@ -497,7 +497,7 @@ class wirepeer(repository.peer):
     def between(self, pairs):
         batch = 8 # avoid giant requests
         r = []
-        for i in xrange(0, len(pairs), batch):
+        for i in pycompat.xrange(0, len(pairs), batch):
             n = " ".join([wireprototypes.encodelist(p, '-')
                           for p in pairs[i:i + batch]])
             d = self._call("between", pairs=n)

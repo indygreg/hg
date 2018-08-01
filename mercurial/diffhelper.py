@@ -11,6 +11,7 @@ from .i18n import _
 
 from . import (
     error,
+    pycompat,
 )
 
 def addlines(fp, hunk, lena, lenb, a, b):
@@ -26,7 +27,7 @@ def addlines(fp, hunk, lena, lenb, a, b):
         num = max(todoa, todob)
         if num == 0:
             break
-        for i in xrange(num):
+        for i in pycompat.xrange(num):
             s = fp.readline()
             if not s:
                 raise error.ParseError(_('incomplete hunk'))
@@ -71,7 +72,7 @@ def testhunk(a, b, bstart):
     blen = len(b)
     if alen > blen - bstart or bstart < 0:
         return False
-    for i in xrange(alen):
+    for i in pycompat.xrange(alen):
         if a[i][1:] != b[i + bstart]:
             return False
     return True

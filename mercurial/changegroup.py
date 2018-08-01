@@ -325,7 +325,7 @@ class cg1unpacker(object):
                 cl = repo.changelog
                 ml = repo.manifestlog
                 # validate incoming csets have their manifests
-                for cset in xrange(clstart, clend):
+                for cset in pycompat.xrange(clstart, clend):
                     mfnode = cl.changelogrevision(cset).manifest
                     mfest = ml[mfnode].readdelta()
                     # store file cgnodes we must see
@@ -367,7 +367,7 @@ class cg1unpacker(object):
                 repo.hook('pretxnchangegroup',
                           throw=True, **pycompat.strkwargs(hookargs))
 
-            added = [cl.node(r) for r in xrange(clstart, clend)]
+            added = [cl.node(r) for r in pycompat.xrange(clstart, clend)]
             phaseall = None
             if srctype in ('push', 'serve'):
                 # Old servers can not push the boundary themselves.
@@ -568,7 +568,7 @@ class cg1packer(object):
         if units is not None:
             progress = self._repo.ui.makeprogress(_('bundling'), unit=units,
                                                   total=(len(revs) - 1))
-        for r in xrange(len(revs) - 1):
+        for r in pycompat.xrange(len(revs) - 1):
             if progress:
                 progress.update(r + 1)
             prev, curr = revs[r], revs[r + 1]
@@ -989,7 +989,7 @@ def _addchangegroupfiles(repo, source, revmap, trp, expectedfiles, needfiles):
         revisions += len(fl) - o
         if f in needfiles:
             needs = needfiles[f]
-            for new in xrange(o, len(fl)):
+            for new in pycompat.xrange(o, len(fl)):
                 n = fl.node(new)
                 if n in needs:
                     needs.remove(n)

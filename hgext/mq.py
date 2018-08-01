@@ -414,7 +414,7 @@ class patchheader(object):
         the field and a blank line.'''
         if self.message:
             subj = 'subject: ' + self.message[0].lower()
-            for i in xrange(len(self.comments)):
+            for i in pycompat.xrange(len(self.comments)):
                 if subj == self.comments[i].lower():
                     del self.comments[i]
                     self.message = self.message[2:]
@@ -1800,7 +1800,7 @@ class queue(object):
                 # if the patch excludes a modified file, mark that
                 # file with mtime=0 so status can see it.
                 mm = []
-                for i in xrange(len(m) - 1, -1, -1):
+                for i in pycompat.xrange(len(m) - 1, -1, -1):
                     if not match1(m[i]):
                         mm.append(m[i])
                         del m[i]
@@ -1908,7 +1908,7 @@ class queue(object):
         else:
             start = self.series.index(patch) + 1
         unapplied = []
-        for i in xrange(start, len(self.series)):
+        for i in pycompat.xrange(start, len(self.series)):
             pushable, reason = self.pushable(i)
             if pushable:
                 unapplied.append((i, self.series[i]))
@@ -1946,7 +1946,7 @@ class queue(object):
         if not missing:
             if self.ui.verbose:
                 idxwidth = len("%d" % (start + length - 1))
-            for i in xrange(start, start + length):
+            for i in pycompat.xrange(start, start + length):
                 patch = self.series[i]
                 if patch in applied:
                     char, state = 'A', 'applied'
@@ -2091,7 +2091,7 @@ class queue(object):
         def nextpatch(start):
             if all_patches or start >= len(self.series):
                 return start
-            for i in xrange(start, len(self.series)):
+            for i in pycompat.xrange(start, len(self.series)):
                 p, reason = self.pushable(i)
                 if p:
                     return i
@@ -2876,7 +2876,7 @@ def guard(ui, repo, *args, **opts):
         if args or opts.get(r'none'):
             raise error.Abort(_('cannot mix -l/--list with options or '
                                'arguments'))
-        for i in xrange(len(q.series)):
+        for i in pycompat.xrange(len(q.series)):
             status(i)
         return
     if not args or args[0][0:1] in '-+':
@@ -3179,14 +3179,16 @@ def select(ui, repo, *args, **opts):
     pushable = lambda i: q.pushable(q.applied[i].name)[0]
     if args or opts.get('none'):
         old_unapplied = q.unapplied(repo)
-        old_guarded = [i for i in xrange(len(q.applied)) if not pushable(i)]
+        old_guarded = [i for i in pycompat.xrange(len(q.applied))
+                       if not pushable(i)]
         q.setactive(args)
         q.savedirty()
         if not args:
             ui.status(_('guards deactivated\n'))
         if not opts.get('pop') and not opts.get('reapply'):
             unapplied = q.unapplied(repo)
-            guarded = [i for i in xrange(len(q.applied)) if not pushable(i)]
+            guarded = [i for i in pycompat.xrange(len(q.applied))
+                       if not pushable(i)]
             if len(unapplied) != len(old_unapplied):
                 ui.status(_('number of unguarded, unapplied patches has '
                             'changed from %d to %d\n') %
@@ -3225,7 +3227,7 @@ def select(ui, repo, *args, **opts):
     reapply = opts.get('reapply') and q.applied and q.applied[-1].name
     popped = False
     if opts.get('pop') or opts.get('reapply'):
-        for i in xrange(len(q.applied)):
+        for i in pycompat.xrange(len(q.applied)):
             if not pushable(i):
                 ui.status(_('popping guarded patches\n'))
                 popped = True

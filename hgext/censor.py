@@ -32,6 +32,7 @@ from mercurial.node import short
 
 from mercurial import (
     error,
+    pycompat,
     registrar,
     revlog,
     scmutil,
@@ -160,7 +161,7 @@ def _docensor(ui, repo, path, rev='', tombstone='', **opts):
     offset += rewrite(crev, offset, tombstone + pad, revlog.REVIDX_ISCENSORED)
 
     # Rewrite all following filelog revisions fixing up offsets and deltas.
-    for srev in xrange(crev + 1, len(flog)):
+    for srev in pycompat.xrange(crev + 1, len(flog)):
         if crev in flog.parentrevs(srev):
             # Immediate children of censored node must be re-added as fulltext.
             try:

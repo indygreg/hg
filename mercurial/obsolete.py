@@ -394,7 +394,7 @@ def _fm1purereadmarkers(data, off, stop):
         off = o3 + metasize * nummeta
         metapairsize = unpack('>' + (metafmt * nummeta), data[o3:off])
         metadata = []
-        for idx in xrange(0, len(metapairsize), 2):
+        for idx in pycompat.xrange(0, len(metapairsize), 2):
             o1 = off + metapairsize[idx]
             o2 = o1 + metapairsize[idx + 1]
             metadata.append((data[off:o1], data[o1:o2]))

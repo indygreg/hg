@@ -2607,15 +2607,15 @@ def grep(ui, repo, pattern, *pats, **opts):
         sm = difflib.SequenceMatcher(None, a, b)
         for tag, alo, ahi, blo, bhi in sm.get_opcodes():
             if tag == 'insert':
-                for i in xrange(blo, bhi):
+                for i in pycompat.xrange(blo, bhi):
                     yield ('+', b[i])
             elif tag == 'delete':
-                for i in xrange(alo, ahi):
+                for i in pycompat.xrange(alo, ahi):
                     yield ('-', a[i])
             elif tag == 'replace':
-                for i in xrange(alo, ahi):
+                for i in pycompat.xrange(alo, ahi):
                     yield ('-', a[i])
-                for i in xrange(blo, bhi):
+                for i in pycompat.xrange(blo, bhi):
                     yield ('+', b[i])
 
     def display(fm, fn, ctx, pstates, states):

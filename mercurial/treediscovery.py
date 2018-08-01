@@ -16,6 +16,7 @@ from .node import (
 )
 from . import (
     error,
+    pycompat,
 )
 
 def findcommonincoming(repo, remote, heads=None, force=False):
@@ -111,7 +112,7 @@ def findcommonincoming(repo, remote, heads=None, force=False):
             progress.increment()
             repo.ui.debug("request %d: %s\n" %
                         (reqcnt, " ".join(map(short, r))))
-            for p in xrange(0, len(r), 10):
+            for p in pycompat.xrange(0, len(r), 10):
                 with remote.commandexecutor() as e:
                     branches = e.callcommand('branches', {
                         'nodes': r[p:p + 10],

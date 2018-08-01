@@ -357,7 +357,7 @@ def _unidiff(t1, t2, opts=defaultopts):
             # walk backwards from the start of the context up to the start of
             # the previous hunk context until we find a line starting with an
             # alphanumeric char.
-            for i in xrange(astart - 1, lastpos - 1, -1):
+            for i in pycompat.xrange(astart - 1, lastpos - 1, -1):
                 if l1[i][0:1].isalnum():
                     func = b' ' + l1[i].rstrip()
                     # split long function name if ASCII. otherwise we have no
@@ -381,7 +381,7 @@ def _unidiff(t1, t2, opts=defaultopts):
         hunklines = (
             ["@@ -%d,%d +%d,%d @@%s\n" % (hunkrange + (func,))]
             + delta
-            + [' ' + l1[x] for x in xrange(a2, aend)]
+            + [' ' + l1[x] for x in pycompat.xrange(a2, aend)]
         )
         # If either file ends without a newline and the last line of
         # that file is part of a hunk, a marker is printed. If the
@@ -390,7 +390,7 @@ def _unidiff(t1, t2, opts=defaultopts):
         # which the hunk can end in a shared line without a newline.
         skip = False
         if not t1.endswith('\n') and astart + alen == len(l1) + 1:
-            for i in xrange(len(hunklines) - 1, -1, -1):
+            for i in pycompat.xrange(len(hunklines) - 1, -1, -1):
                 if hunklines[i].startswith(('-', ' ')):
                     if hunklines[i].startswith(' '):
                         skip = True
@@ -398,7 +398,7 @@ def _unidiff(t1, t2, opts=defaultopts):
                     hunklines.insert(i + 1, _missing_newline_marker)
                     break
         if not skip and not t2.endswith('\n') and bstart + blen == len(l2) + 1:
-            for i in xrange(len(hunklines) - 1, -1, -1):
+            for i in pycompat.xrange(len(hunklines) - 1, -1, -1):
                 if hunklines[i].startswith('+'):
                     hunklines[i] += '\n'
                     hunklines.insert(i + 1, _missing_newline_marker)

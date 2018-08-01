@@ -2223,11 +2223,11 @@ def handlerbc(op, inpart):
         total += header[1] + header[2]
         utf8branch = inpart.read(header[0])
         branch = encoding.tolocal(utf8branch)
-        for x in xrange(header[1]):
+        for x in pycompat.xrange(header[1]):
             node = inpart.read(20)
             rev = cl.rev(node)
             cache.setdata(branch, rev, node, False)
-        for x in xrange(header[2]):
+        for x in pycompat.xrange(header[2]):
             node = inpart.read(20)
             rev = cl.rev(node)
             cache.setdata(branch, rev, node, True)

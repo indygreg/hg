@@ -783,7 +783,7 @@ def _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev, basename, pctx,
             tr.close()
 
             nodestoremove = [repo.changelog.node(rev)
-                             for rev in xrange(oldtiprev, len(repo))]
+                             for rev in pycompat.xrange(oldtiprev, len(repo))]
             shelvedstate.save(repo, basename, pctx, tmpwctx, nodestoremove,
                               branchtorestore, opts.get('keep'), activebookmark)
             raise error.InterventionRequired(

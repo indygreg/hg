@@ -195,7 +195,7 @@ def _builddescendantsmap(repo, startrev, followfirst):
     """Build map of 'rev -> child revs', offset from startrev"""
     cl = repo.changelog
     nullrev = node.nullrev
-    descmap = [[] for _rev in xrange(startrev, len(cl))]
+    descmap = [[] for _rev in pycompat.xrange(startrev, len(cl))]
     for currev in cl.revs(startrev + 1):
         p1rev, p2rev = cl.parentrevs(currev)
         if p1rev >= startrev:
@@ -435,7 +435,7 @@ def _annotatepair(parents, childfctx, child, skipchild, diffopts):
         for idx, (parent, blocks) in enumerate(pblocks):
             for (a1, a2, b1, b2), _t in blocks:
                 if a2 - a1 >= b2 - b1:
-                    for bk in xrange(b1, b2):
+                    for bk in pycompat.xrange(b1, b2):
                         if child.fctxs[bk] == childfctx:
                             ak = min(a1 + (bk - b1), a2 - 1)
                             child.fctxs[bk] = parent.fctxs[ak]
@@ -448,7 +448,7 @@ def _annotatepair(parents, childfctx, child, skipchild, diffopts):
         # line.
         for parent, blocks in remaining:
             for a1, a2, b1, b2 in blocks:
-                for bk in xrange(b1, b2):
+                for bk in pycompat.xrange(b1, b2):
                     if child.fctxs[bk] == childfctx:
                         ak = min(a1 + (bk - b1), a2 - 1)
                         child.fctxs[bk] = parent.fctxs[ak]

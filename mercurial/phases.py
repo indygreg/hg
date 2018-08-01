@@ -374,7 +374,7 @@ class phasecache(object):
 
         changes = set() # set of revisions to be changed
         delroots = [] # set of root deleted by this path
-        for phase in xrange(targetphase + 1, len(allphases)):
+        for phase in pycompat.xrange(targetphase + 1, len(allphases)):
             # filter nodes that are not in a compatible phase already
             nodes = [n for n in nodes
                      if self.phase(repo, repo[n].rev()) >= phase]
@@ -420,7 +420,7 @@ class phasecache(object):
             affected = set(repo.revs('(%ln::) - (%ln::)', new, old))
 
             # find the phase of the affected revision
-            for phase in xrange(targetphase, -1, -1):
+            for phase in pycompat.xrange(targetphase, -1, -1):
                 if phase:
                     roots = oldroots[phase]
                     revs = set(repo.revs('%ln::%ld', roots, affected))

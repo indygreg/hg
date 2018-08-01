@@ -150,7 +150,7 @@ if not pycompat.iswindows:
         rfds = ctypes.cast(cmsg.cmsg_data, ctypes.POINTER(ctypes.c_int))
         rfdscount = ((cmsg.cmsg_len - _cmsghdr.cmsg_data.offset) /
                      ctypes.sizeof(ctypes.c_int))
-        return [rfds[i] for i in xrange(rfdscount)]
+        return [rfds[i] for i in pycompat.xrange(rfdscount)]
 
 else:
     import msvcrt

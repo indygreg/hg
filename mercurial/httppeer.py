@@ -64,7 +64,7 @@ def encodevalueinheaders(value, header, limit):
     result = []
 
     n = 0
-    for i in xrange(0, len(value), valuelen):
+    for i in pycompat.xrange(0, len(value), valuelen):
         n += 1
         result.append((fmt % str(n), pycompat.strurl(value[i:i + valuelen])))
 

@@ -1066,7 +1066,7 @@ class revlog(object):
     def __len__(self):
         return len(self.index) - 1
     def __iter__(self):
-        return iter(xrange(len(self)))
+        return iter(pycompat.xrange(len(self)))
     def revs(self, start=0, stop=None):
         """iterate over all rev in this revlog (from start to stop)"""
         step = 1
@@ -1079,7 +1079,7 @@ class revlog(object):
                 stop = length
         else:
             stop = length
-        return xrange(start, stop, step)
+        return pycompat.xrange(start, stop, step)
 
     @util.propertycache
     def nodemap(self):
@@ -1136,7 +1136,7 @@ class revlog(object):
                 p = len(i) - 2
             else:
                 assert p < len(i)
-            for r in xrange(p, -1, -1):
+            for r in pycompat.xrange(p, -1, -1):
                 v = i[r][7]
                 n[v] = r
                 if v == node:
@@ -2789,7 +2789,7 @@ class revlog(object):
         self._cache = None
         self._chaininfocache = {}
         self._chunkclear()
-        for x in xrange(rev, len(self)):
+        for x in pycompat.xrange(rev, len(self)):
             del self.nodemap[self.node(x)]
 
         del self.index[rev:-1]

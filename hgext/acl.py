@@ -220,6 +220,7 @@ from mercurial import (
     error,
     extensions,
     match,
+    pycompat,
     registrar,
     util,
 )
@@ -403,7 +404,7 @@ def _txnhook(ui, repo, hooktype, node, source, user, **kwargs):
     allow = buildmatch(ui, repo, user, 'acl.allow')
     deny = buildmatch(ui, repo, user, 'acl.deny')
 
-    for rev in xrange(repo[node].rev(), len(repo)):
+    for rev in pycompat.xrange(repo[node].rev(), len(repo)):
         ctx = repo[rev]
         branch = ctx.branch()
         if denybranches and denybranches(branch):

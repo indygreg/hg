@@ -16,6 +16,7 @@ from mercurial import (
     match as matchmod,
     mdiff,
     node,
+    pycompat,
     revlog,
     util,
 )
@@ -332,7 +333,7 @@ def setup():
                     # somewhat unsurprised to find a case in the wild
                     # where this breaks down a bit. That said, I don't
                     # know if it would hurt anything.
-                    for i in xrange(rev, 0, -1):
+                    for i in pycompat.xrange(rev, 0, -1):
                         if revlog.linkrev(i) == clrev:
                             return i
                     # We failed to resolve a parent for this node, so

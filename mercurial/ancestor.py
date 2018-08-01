@@ -11,6 +11,9 @@ import collections
 import heapq
 
 from .node import nullrev
+from . import (
+    pycompat,
+)
 
 def commonancestorsheads(pfunc, *nodes):
     """Returns a set with the heads of all common ancestors of all nodes,
@@ -174,7 +177,7 @@ class incrementalmissingancestors(object):
             # no revs to consider
             return
 
-        for curr in xrange(start, min(revs) - 1, -1):
+        for curr in pycompat.xrange(start, min(revs) - 1, -1):
             if curr not in bases:
                 continue
             revs.discard(curr)
@@ -215,7 +218,7 @@ class incrementalmissingancestors(object):
         # exit.
 
         missing = []
-        for curr in xrange(start, nullrev, -1):
+        for curr in pycompat.xrange(start, nullrev, -1):
             if not revsvisit:
                 break
 

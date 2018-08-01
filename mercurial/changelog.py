@@ -313,7 +313,7 @@ class changelog(revlog.revlog):
         self.filteredrevs = frozenset()
 
     def tiprev(self):
-        for i in xrange(len(self) -1, -2, -1):
+        for i in pycompat.xrange(len(self) -1, -2, -1):
             if i not in self.filteredrevs:
                 return i
 
@@ -332,7 +332,7 @@ class changelog(revlog.revlog):
             return revlog.revlog.__iter__(self)
 
         def filterediter():
-            for i in xrange(len(self)):
+            for i in pycompat.xrange(len(self)):
                 if i not in self.filteredrevs:
                     yield i
 
@@ -563,8 +563,8 @@ class changelog(revlog.revlog):
         if revs is not None:
             if revs:
                 assert revs[-1] + 1 == rev
-                revs = xrange(revs[0], rev + 1)
+                revs = pycompat.xrange(revs[0], rev + 1)
             else:
-                revs = xrange(rev, rev + 1)
+                revs = pycompat.xrange(rev, rev + 1)
             transaction.changes['revs'] = revs
         return node

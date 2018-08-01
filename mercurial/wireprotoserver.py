@@ -502,14 +502,14 @@ class sshv1protocolhandler(object):
     def getargs(self, args):
         data = {}
         keys = args.split()
-        for n in xrange(len(keys)):
+        for n in pycompat.xrange(len(keys)):
             argline = self._fin.readline()[:-1]
             arg, l = argline.split()
             if arg not in keys:
                 raise error.Abort(_("unexpected parameter %r") % arg)
             if arg == '*':
                 star = {}
-                for k in xrange(int(l)):
+                for k in pycompat.xrange(int(l)):
                     argline = self._fin.readline()[:-1]
                     arg, l = argline.split()
                     val = self._fin.read(int(l))

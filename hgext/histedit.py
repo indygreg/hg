@@ -386,7 +386,7 @@ class histeditstate(object):
         rules = []
         rulelen = int(lines[index])
         index += 1
-        for i in xrange(rulelen):
+        for i in pycompat.xrange(rulelen):
             ruleaction = lines[index]
             index += 1
             rule = lines[index]
@@ -397,7 +397,7 @@ class histeditstate(object):
         replacements = []
         replacementlen = int(lines[index])
         index += 1
-        for i in xrange(replacementlen):
+        for i in pycompat.xrange(replacementlen):
             replacement = lines[index]
             original = node.bin(replacement[:40])
             succ = [node.bin(replacement[i:i + 40]) for i in

@@ -464,7 +464,7 @@ def _MBTextWrapper(**kwargs):
         def _cutdown(self, ucstr, space_left):
             l = 0
             colwidth = encoding.ucolwidth
-            for i in xrange(len(ucstr)):
+            for i in pycompat.xrange(len(ucstr)):
                 l += colwidth(ucstr[i])
                 if space_left < l:
                     return (ucstr[:i], ucstr[i:])

@@ -118,7 +118,7 @@ def _buildencodefun():
     def decode(s):
         i = 0
         while i < len(s):
-            for l in xrange(1, 4):
+            for l in pycompat.xrange(1, 4):
                 try:
                     yield dmap[s[i:i + l]]
                     i += l
@@ -127,7 +127,8 @@ def _buildencodefun():
                     pass
             else:
                 raise KeyError
-    return (lambda s: ''.join([cmap[s[c:c + 1]] for c in xrange(len(s))]),
+    return (lambda s: ''.join([cmap[s[c:c + 1]]
+                               for c in pycompat.xrange(len(s))]),
             lambda s: ''.join(list(decode(s))))
 
 _encodefname, _decodefname = _buildencodefun()
@@ -159,7 +160,7 @@ def _buildlowerencodefun():
     'the~07quick~adshot'
     '''
     xchr = pycompat.bytechr
-    cmap = dict([(xchr(x), xchr(x)) for x in xrange(127)])
+    cmap = dict([(xchr(x), xchr(x)) for x in pycompat.xrange(127)])
     for x in _reserved():
         cmap[xchr(x)] = "~%02x" % x
     for x in range(ord("A"), ord("Z") + 1):

@@ -613,21 +613,21 @@ def _getcompblockgen(context, leftlines, rightlines, opcodes):
         len1 = lhi - llo
         len2 = rhi - rlo
         count = min(len1, len2)
-        for i in xrange(count):
+        for i in pycompat.xrange(count):
             yield _compline(type=type,
                             leftlineno=llo + i + 1,
                             leftline=leftlines[llo + i],
                             rightlineno=rlo + i + 1,
                             rightline=rightlines[rlo + i])
         if len1 > len2:
-            for i in xrange(llo + count, lhi):
+            for i in pycompat.xrange(llo + count, lhi):
                 yield _compline(type=type,
                                 leftlineno=i + 1,
                                 leftline=leftlines[i],
                                 rightlineno=None,
                                 rightline=None)
         elif len2 > len1:
-            for i in xrange(rlo + count, rhi):
+            for i in pycompat.xrange(rlo + count, rhi):
                 yield _compline(type=type,
                                 leftlineno=None,
                                 leftline=None,

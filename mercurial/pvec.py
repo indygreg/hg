@@ -52,6 +52,7 @@ from __future__ import absolute_import
 
 from .node import nullrev
 from . import (
+    pycompat,
     util,
 )
 
@@ -72,7 +73,7 @@ def _bin(bs):
 
 def _str(v, l):
     bs = ""
-    for p in xrange(l):
+    for p in pycompat.xrange(l):
         bs = chr(v & 255) + bs
         v >>= 8
     return bs
@@ -91,7 +92,7 @@ def _hweight(x):
             c += 1
         x >>= 1
     return c
-_htab = [_hweight(x) for x in xrange(256)]
+_htab = [_hweight(x) for x in pycompat.xrange(256)]
 
 def _hamming(a, b):
     '''find the hamming distance between two longs'''
@@ -152,7 +153,7 @@ def ctxpvec(ctx):
     pvc = r._pveccache
     if ctx.rev() not in pvc:
         cl = r.changelog
-        for n in xrange(ctx.rev() + 1):
+        for n in pycompat.xrange(ctx.rev() + 1):
             if n not in pvc:
                 node = cl.node(n)
                 p1, p2 = cl.parentrevs(n)

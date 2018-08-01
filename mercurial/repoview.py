@@ -128,7 +128,7 @@ def computeimpactable(repo, visibilityexceptions=None):
             firstmutable = min(firstmutable, min(cl.rev(r) for r in roots))
     # protect from nullrev root
     firstmutable = max(0, firstmutable)
-    return frozenset(xrange(firstmutable, len(cl)))
+    return frozenset(pycompat.xrange(firstmutable, len(cl)))
 
 # function to compute filtered set
 #

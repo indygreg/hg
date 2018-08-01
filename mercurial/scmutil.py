@@ -1542,7 +1542,7 @@ def registersummarycallback(repo, otr, txnname=''):
         @reportsummary
         def reportnewcs(repo, tr):
             """Report the range of new revisions pulled/unbundled."""
-            newrevs = tr.changes.get('revs', xrange(0, 0))
+            newrevs = tr.changes.get('revs', pycompat.xrange(0, 0))
             if not newrevs:
                 return
 
@@ -1565,7 +1565,7 @@ def registersummarycallback(repo, otr, txnname=''):
             """Report statistics of phase changes for changesets pre-existing
             pull/unbundle.
             """
-            newrevs = tr.changes.get('revs', xrange(0, 0))
+            newrevs = tr.changes.get('revs', pycompat.xrange(0, 0))
             phasetracking = tr.changes.get('phases', {})
             if not phasetracking:
                 return

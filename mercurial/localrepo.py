@@ -850,7 +850,7 @@ class localrepository(object):
         if isinstance(changeid, slice):
             # wdirrev isn't contiguous so the slice shouldn't include it
             return [context.changectx(self, i)
-                    for i in xrange(*changeid.indices(len(self)))
+                    for i in pycompat.xrange(*changeid.indices(len(self)))
                     if i not in self.changelog.filteredrevs]
         try:
             return context.changectx(self, changeid)
@@ -1385,7 +1385,7 @@ class localrepository(object):
                                      releasefn=releasefn,
                                      checkambigfiles=_cachedfiles,
                                      name=desc)
-        tr.changes['revs'] = xrange(0, 0)
+        tr.changes['revs'] = pycompat.xrange(0, 0)
         tr.changes['obsmarkers'] = set()
         tr.changes['phases'] = {}
         tr.changes['bookmarks'] = {}

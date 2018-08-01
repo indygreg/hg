@@ -1755,7 +1755,7 @@ def walkfilerevs(repo, match, follow, revs, fncache):
         """
         cl_count = len(repo)
         revs = []
-        for j in xrange(0, last + 1):
+        for j in pycompat.xrange(0, last + 1):
             linkrev = filelog.linkrev(j)
             if linkrev < minrev:
                 continue
@@ -1966,7 +1966,7 @@ def walkchangerevs(repo, match, opts, prepare):
         rev = repo[rev].rev()
         ff = _followfilter(repo)
         stop = min(revs[0], revs[-1])
-        for x in xrange(rev, stop - 1, -1):
+        for x in pycompat.xrange(rev, stop - 1, -1):
             if ff.match(x):
                 wanted = wanted - [x]
 
@@ -1985,7 +1985,7 @@ def walkchangerevs(repo, match, opts, prepare):
         stopiteration = False
         for windowsize in increasingwindows():
             nrevs = []
-            for i in xrange(windowsize):
+            for i in pycompat.xrange(windowsize):
                 rev = next(it, None)
                 if rev is None:
                     stopiteration = True

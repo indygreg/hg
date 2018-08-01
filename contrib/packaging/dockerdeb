@@ -33,7 +33,7 @@ if [ $(uname) = "Darwin" ] ; then
 fi
 $DOCKER run -u $DBUILDUSER --rm -v $ROOTDIR/..:/mnt $CONTAINER \
   sh -c "cd /mnt/$dn && DEB_BUILD_OPTIONS='${DEB_BUILD_OPTIONS:=}' contrib/packaging/builddeb --build --distid $DISTID --codename $CODENAME $@"
-contrib/packaging/builddeb --cleanup --distid $DISTID --codename $CODENAME
+(cd $ROOTDIR && contrib/packaging/builddeb --cleanup --distid $DISTID --codename $CODENAME)
 if [ $(uname) = "Darwin" ] ; then
     $DOCKER run -u $DBUILDUSER --rm -v $PWD/..:/mnt $CONTAINER \
             sh -c "cd /mnt/$dn && make clean"

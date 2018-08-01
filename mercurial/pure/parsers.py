@@ -41,8 +41,7 @@ class BaseIndexObject(object):
     def __len__(self):
         return self._lgt + len(self._extra) + 1
 
-    def insert(self, i, tup):
-        assert i == -1
+    def append(self, tup):
         self._extra.append(tup)
 
     def _fix_index(self, i):

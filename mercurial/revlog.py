@@ -2549,7 +2549,7 @@ class revlog(object):
 
         e = (offset_type(offset, flags), l, textlen,
              base, link, p1r, p2r, node)
-        self.index.insert(-1, e)
+        self.index.append(e)
         self.nodemap[node] = curr
 
         entry = self._io.packentry(e, self.node, self.version, curr)

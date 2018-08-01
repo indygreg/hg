@@ -73,7 +73,7 @@ class unionrevlog(revlog.revlog):
             # I have no idea if csize is valid in the base revlog context.
             e = (flags, None, rsize, base,
                  link, self.rev(p1node), self.rev(p2node), node)
-            self.index.insert(-1, e)
+            self.index.append(e)
             self.nodemap[node] = n
             self.bundlerevs.add(n)
             n += 1

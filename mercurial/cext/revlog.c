@@ -272,15 +272,10 @@ static int node_check(PyObject *obj, char **node)
 	return -1;
 }
 
-static PyObject *index_insert(indexObject *self, PyObject *args)
+static PyObject *index_append(indexObject *self, PyObject *obj)
 {
-	PyObject *obj;
 	char *node;
-	int index;
 	Py_ssize_t len;
-
-	if (!PyArg_ParseTuple(args, "iO", &index, &obj))
-		return NULL;
 
 	if (!PyTuple_Check(obj) || PyTuple_GET_SIZE(obj) != 8) {
 		PyErr_SetString(PyExc_TypeError, "8-tuple required");
@@ -292,15 +287,6 @@ static PyObject *index_insert(indexObject *self, PyObject *args)
 
 	len = index_length(self);
 
-	if (index < 0)
-		index += len;
-
-	if (index != len - 1) {
-		PyErr_SetString(PyExc_IndexError,
-				"insert only supported at index -1");
-		return NULL;
-	}
-
 	if (self->added == NULL) {
 		self->added = PyList_New(0);
 		if (self->added == NULL)
@@ -311,7 +297,7 @@ static PyObject *index_insert(indexObject *self, PyObject *args)
 		return NULL;
 
 	if (self->nt)
-		nt_insert(self, node, index);
+		nt_insert(self, node, len - 1);
 
 	Py_CLEAR(self->headrevs);
 	Py_RETURN_NONE;
@@ -2065,8 +2051,8 @@ static PyMethodDef index_methods[] = {
 	 "get filtered head revisions"}, /* Can always do filtering */
 	{"deltachain", (PyCFunction)index_deltachain, METH_VARARGS,
 	 "determine revisions with deltas to reconstruct fulltext"},
-	{"insert", (PyCFunction)index_insert, METH_VARARGS,
-	 "insert an index entry"},
+	{"append", (PyCFunction)index_append, METH_O,
+	 "append an index entry"},
 	{"partialmatch", (PyCFunction)index_partialmatch, METH_VARARGS,
 	 "match a potentially ambiguous node ID"},
 	{"shortest", (PyCFunction)index_shortest, METH_VARARGS,

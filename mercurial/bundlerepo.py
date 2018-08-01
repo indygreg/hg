@@ -80,7 +80,7 @@ class bundlerevlog(revlog.revlog):
             # start, size, full unc. size, base (unused), link, p1, p2, node
             e = (revlog.offset_type(start, flags), size, -1, baserev, link,
                  self.rev(p1), self.rev(p2), node)
-            self.index.insert(-1, e)
+            self.index.append(e)
             self.nodemap[node] = n
             self.bundlerevs.add(n)
             n += 1

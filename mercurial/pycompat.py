@@ -331,6 +331,7 @@ if ispy3:
 else:
     import cStringIO
 
+    xrange = xrange
     unicode = unicode
     bytechr = chr
     byterepr = repr

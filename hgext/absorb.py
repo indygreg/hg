@@ -377,7 +377,7 @@ class filefixupstate(object):
         if not involved and annotated: # a1 == a2 and a is not empty
             # pure insertion, check nearby lines. ignore lines belong
             # to the public (first) changeset (i.e. annotated[i][0] == 1)
-            nearbylinenums = set([a2, max(0, a1 - 1)])
+            nearbylinenums = {a2, max(0, a1 - 1)}
             involved = [annotated[i]
                         for i in nearbylinenums if annotated[i][0] != 1]
         involvedrevs = list(set(r for r, l in involved))

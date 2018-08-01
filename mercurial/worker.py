@@ -212,6 +212,7 @@ def _posixworker(ui, func, staticargs, args):
         signal.signal(signal.SIGINT, oldhandler)
         waitforworkers()
         signal.signal(signal.SIGCHLD, oldchldhandler)
+        selector.close()
         status = problem[0]
         if status:
             if status < 0:

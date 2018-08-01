@@ -411,6 +411,7 @@ class changectx(basectx):
                     self._rev = repo.changelog.rev(changeid)
                     return
                 except error.FilteredLookupError:
+                    changeid = hex(changeid) # for the error message
                     raise
                 except LookupError:
                     # check if it might have come from damaged dirstate
@@ -591,7 +592,7 @@ class changectx(basectx):
 
     def descendant(self, other):
         msg = (b'ctx.descendant(other) is deprecated, '
-               'use ctx.isancestorof(other)')
+               b'use ctx.isancestorof(other)')
         self._repo.ui.deprecwarn(msg, b'4.7')
         return self.isancestorof(other)
 
@@ -2326,7 +2327,12 @@ class memfilectx(committablefilectx):
         revision being committed, or None."""
         super(memfilectx, self).__init__(repo, path, None, changectx)
         self._data = data
-        self._flags = (islink and 'l' or '') + (isexec and 'x' or '')
+        if islink:
+            self._flags = 'l'
+        elif isexec:
+            self._flags = 'x'
+        else:
+            self._flags = ''
         self._copied = None
         if copied:
             self._copied = (copied, nullid)

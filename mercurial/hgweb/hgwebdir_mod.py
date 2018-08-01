@@ -514,7 +514,7 @@ class hgwebdir(object):
         logourl = config('web', 'logourl')
         logoimg = config('web', 'logoimg')
         staticurl = (config('web', 'staticurl')
-                     or req.apppath + '/static/')
+                     or req.apppath.rstrip('/') + '/static/')
         if not staticurl.endswith('/'):
             staticurl += '/'
 

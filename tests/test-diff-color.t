@@ -54,8 +54,10 @@ default context
 trailing whitespace
 
   $ cp a a.orig
-  $ sed 's/^dd$/dd \r/' a >a.new
-  $ mv a.new a
+  >>> with open('a', 'rb') as f:
+  ...     data = f.read()
+  >>> with open('a', 'wb') as f:
+  ...     f.write(data.replace('dd', 'dd \r'))
   $ hg diff --nodates
   \x1b[0;1mdiff -r cf9f4ba66af2 a\x1b[0m (esc)
   \x1b[0;31;1m--- a/a\x1b[0m (esc)

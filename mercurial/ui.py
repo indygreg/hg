@@ -67,8 +67,6 @@ status.relative = yes
 update.check = noconflict
 # Show conflicts information in `hg status`
 status.verbose = True
-# Collapse entire directories that contain only unknown files
-status.terse = u
 
 [diff]
 git = 1

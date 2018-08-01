@@ -185,11 +185,13 @@ def clientfetch(repo, paths, lastnodemap=None, peer=None):
 
     ui.debug('fastannotate: server returned\n')
     for result in results:
-        for path, content in result.result().iteritems():
+        r = result.result()
+        for path in sorted(r):
             # ignore malicious paths
             if not path.startswith('fastannotate/') or '/../' in (path + '/'):
                 ui.debug('fastannotate: ignored malicious path %s\n' % path)
                 continue
+            content = r[path]
             if ui.debugflag:
                 ui.debug('fastannotate: writing %d bytes to %s\n'
                          % (len(content), path))

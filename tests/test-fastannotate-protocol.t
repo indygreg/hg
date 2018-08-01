@@ -47,9 +47,8 @@ setup the local repo
   sending protocaps command
   fastannotate: requesting 1 files
   sending getannotate command
-  fastannotate: writing 112 bytes to fastannotate/default/a.l (?)
   fastannotate: server returned
-  fastannotate: writing 112 bytes to fastannotate/default/a.l (?)
+  fastannotate: writing 112 bytes to fastannotate/default/a.l
   fastannotate: writing 94 bytes to fastannotate/default/a.m
   fastannotate: a: using fast path (resolved fctx: True)
   0: 1

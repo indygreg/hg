@@ -182,8 +182,23 @@ def fix(ui, repo, *pats, **opts):
                         replacerev(ui, repo, ctx, filedata[rev], replacements)
                     del filedata[rev]
 
-        replacements = {prec: [succ] for prec, succ in replacements.iteritems()}
-        scmutil.cleanupnodes(repo, replacements, 'fix', fixphase=True)
+        cleanup(repo, replacements, bool(filedata[wdirrev]))
+
+def cleanup(repo, replacements, wdirwritten):
+    """Calls scmutil.cleanupnodes() with the given replacements.
+
+    "replacements" is a dict from nodeid to nodeid, with one key and one value
+    for every revision that was affected by fixing. This is slightly different
+    from cleanupnodes().
+
+    "wdirwritten" is a bool which tells whether the working copy was affected by
+    fixing, since it has no entry in "replacements".
+
+    Useful as a hook point for extending "hg fix" with output summarizing the
+    effects of the command, though we choose not to output anything here.
+    """
+    replacements = {prec: [succ] for prec, succ in replacements.iteritems()}
+    scmutil.cleanupnodes(repo, replacements, 'fix', fixphase=True)
 
 def getworkqueue(ui, repo, pats, opts, revstofix, basectxs):
     """"Constructs the list of files to be fixed at specific revisions

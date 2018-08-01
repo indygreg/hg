@@ -1926,8 +1926,13 @@ class overlayworkingctx(committablectx):
                         flags=flags)
 
     def setflags(self, path, l, x):
+        flag = ''
+        if l:
+            flag = 'l'
+        elif x:
+            flag = 'x'
         self._markdirty(path, exists=True, date=dateutil.makedate(),
-                        flags=(l and 'l' or '') + (x and 'x' or ''))
+                        flags=flag)
 
     def remove(self, path):
         self._markdirty(path, exists=False)

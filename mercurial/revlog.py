@@ -1701,8 +1701,8 @@ class revlog(object):
         return self.isancestorrev(a, b)
 
     def descendant(self, a, b):
-        msg = (b'revlog.descendant is deprecated, use revlog.isancestorrev')
-        self._repo.ui.deprecwarn(msg, b'4.7')
+        msg = 'revlog.descendant is deprecated, use revlog.isancestorrev'
+        util.nouideprecwarn(msg, '4.7')
         return self.isancestorrev(a, b)
 
     def isancestorrev(self, a, b):

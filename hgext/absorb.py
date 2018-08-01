@@ -622,8 +622,7 @@ class fixupstate(object):
         # sorting is necessary to eliminate ambiguity for the "double move"
         # case: "hg cp A B; hg cp A C; hg rm A", then only "B" can affect "A".
         for path in sorted(interestingpaths):
-            if self.ui.debugflag:
-                self.ui.write(_('calculating fixups for %s\n') % path)
+            self.ui.debug('calculating fixups for %s\n' % path)
             targetfctx = targetctx[path]
             fctxs, ctx2fctx = getfilestack(self.stack, path, seenfctxs)
             # ignore symbolic links or binary, or unchanged files

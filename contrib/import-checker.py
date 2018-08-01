@@ -36,6 +36,7 @@ allowsymbolimports = (
     'mercurial.pure.parsers',
     # third-party imports should be directly imported
     'mercurial.thirdparty',
+    'mercurial.thirdparty.attr',
     'mercurial.thirdparty.cbor',
     'mercurial.thirdparty.cbor.cbor2',
     'mercurial.thirdparty.zope',

@@ -36,6 +36,9 @@ import traceback
 import warnings
 import zlib
 
+from .thirdparty import (
+    attr,
+)
 from . import (
     encoding,
     error,
@@ -2874,7 +2877,41 @@ timecount = unitcountfn(
     (1, 0.000000001, _('%.3f ns')),
     )
 
-_timenesting = [0]
+@attr.s
+class timedcmstats(object):
+    """Stats information produced by the timedcm context manager on entering."""
+
+    # the starting value of the timer as a float (meaning and resulution is
+    # platform dependent, see util.timer)
+    start = attr.ib(default=attr.Factory(lambda: timer()))
+    # the number of seconds as a floating point value; starts at 0, updated when
+    # the context is exited.
+    elapsed = attr.ib(default=0)
+    # the number of nested timedcm context managers.
+    level = attr.ib(default=1)
+
+    def __str__(self):
+        return timecount(self.elapsed) if self.elapsed else '<unknown>'
+
+@contextlib.contextmanager
+def timedcm():
+    """A context manager that produces timing information for a given context.
+
+    On entering a timedcmstats instance is produced.
+
+    This context manager is reentrant.
+
+    """
+    # track nested context managers
+    timedcm._nested += 1
+    timing_stats = timedcmstats(level=timedcm._nested)
+    try:
+        yield timing_stats
+    finally:
+        timing_stats.elapsed = timer() - timing_stats.start
+        timedcm._nested -= 1
+
+timedcm._nested = 0
 
 def timed(func):
     '''Report the execution time of a function call to stderr.
@@ -2888,18 +2925,12 @@ def timed(func):
     '''
 
     def wrapper(*args, **kwargs):
-        start = timer()
-        indent = 2
-        _timenesting[0] += indent
-        try:
-            return func(*args, **kwargs)
-        finally:
-            elapsed = timer() - start
-            _timenesting[0] -= indent
-            stderr = procutil.stderr
-            stderr.write('%s%s: %s\n' %
-                         (' ' * _timenesting[0], func.__name__,
-                          timecount(elapsed)))
+        with timedcm() as time_stats:
+            result = func(*args, **kwargs)
+        stderr = procutil.stderr
+        stderr.write('%s%s: %s\n' % (
+            ' ' * time_stats.level * 2, func.__name__, time_stats))
+        return result
     return wrapper
 
 _sizeunits = (('m', 2**20), ('k', 2**10), ('g', 2**30),

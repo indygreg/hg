@@ -559,6 +559,26 @@ class cg1packer(object):
     # Extracted both for clarity and for overriding in extensions.
     def _sortgroup(self, revlog, nodelist, lookup):
         """Sort nodes for change group and turn them into revnums."""
+        # Ellipses serving mode.
+        #
+        # In a perfect world, we'd generate better ellipsis-ified graphs
+        # for non-changelog revlogs. In practice, we haven't started doing
+        # that yet, so the resulting DAGs for the manifestlog and filelogs
+        # are actually full of bogus parentage on all the ellipsis
+        # nodes. This has the side effect that, while the contents are
+        # correct, the individual DAGs might be completely out of whack in
+        # a case like 882681bc3166 and its ancestors (back about 10
+        # revisions or so) in the main hg repo.
+        #
+        # The one invariant we *know* holds is that the new (potentially
+        # bogus) DAG shape will be valid if we order the nodes in the
+        # order that they're introduced in dramatis personae by the
+        # changelog, so what we do is we sort the non-changelog histories
+        # by the order in which they are used by the changelog.
+        if util.safehasattr(self, 'full_nodes') and self.clnode_to_rev:
+            key = lambda n: self.clnode_to_rev[lookup(n)]
+            return [revlog.rev(n) for n in sorted(nodelist, key=key)]
+
         # for generaldelta revlogs, we linearize the revs; this will both be
         # much quicker and generate a much smaller bundle
         if (revlog._generaldelta and self._reorder is None) or self._reorder:

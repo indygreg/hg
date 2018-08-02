@@ -51,28 +51,6 @@ def setup():
     extensions.wrapfunction(
         changegroup.cg1packer, 'generatefiles', generatefiles)
 
-    # In a perfect world, we'd generate better ellipsis-ified graphs
-    # for non-changelog revlogs. In practice, we haven't started doing
-    # that yet, so the resulting DAGs for the manifestlog and filelogs
-    # are actually full of bogus parentage on all the ellipsis
-    # nodes. This has the side effect that, while the contents are
-    # correct, the individual DAGs might be completely out of whack in
-    # a case like 882681bc3166 and its ancestors (back about 10
-    # revisions or so) in the main hg repo.
-    #
-    # The one invariant we *know* holds is that the new (potentially
-    # bogus) DAG shape will be valid if we order the nodes in the
-    # order that they're introduced in dramatis personae by the
-    # changelog, so what we do is we sort the non-changelog histories
-    # by the order in which they are used by the changelog.
-    def _sortgroup(orig, self, revlog, nodelist, lookup):
-        if not util.safehasattr(self, 'full_nodes') or not self.clnode_to_rev:
-            return orig(self, revlog, nodelist, lookup)
-        key = lambda n: self.clnode_to_rev[lookup(n)]
-        return [revlog.rev(n) for n in sorted(nodelist, key=key)]
-
-    extensions.wrapfunction(changegroup.cg1packer, '_sortgroup', _sortgroup)
-
     def generate(orig, self, commonrevs, clnodes, fastpathlinkrev, source):
         '''yield a sequence of changegroup chunks (strings)'''
         # Note: other than delegating to orig, the only deviation in

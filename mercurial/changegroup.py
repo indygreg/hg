@@ -494,20 +494,6 @@ class headerlessfixup(object):
             return d
         return readexactly(self._fh, n)
 
-def ellipsisdata(packer, rev, revlog_, p1, p2, data, linknode):
-    n = revlog_.node(rev)
-    p1n, p2n = revlog_.node(p1), revlog_.node(p2)
-    flags = revlog_.flags(rev)
-    flags |= revlog.REVIDX_ELLIPSIS
-    meta = packer.builddeltaheader(
-        n, p1n, p2n, nullid, linknode, flags)
-    # TODO: try and actually send deltas for ellipsis data blocks
-    diffheader = mdiff.trivialdiffheader(len(data))
-    l = len(meta) + len(diffheader) + len(data)
-    return ''.join((chunkheader(l),
-                    meta,
-                    diffheader,
-                    data))
 
 class cg1packer(object):
     deltaheader = _CHANGEGROUPV1_DELTA_HEADER
@@ -1052,10 +1038,21 @@ class cg1packer(object):
             p2 = nullrev
         else:
             p1, p2 = sorted(local(p) for p in linkparents)
-        n = store.node(rev)
 
-        yield ellipsisdata(
-            self, rev, store, p1, p2, store.revision(n), linknode)
+        n = store.node(rev)
+        p1n, p2n = store.node(p1), store.node(p2)
+        flags = store.flags(rev)
+        flags |= revlog.REVIDX_ELLIPSIS
+        meta = self.builddeltaheader(
+            n, p1n, p2n, nullid, linknode, flags)
+        # TODO: try and actually send deltas for ellipsis data blocks
+        data = store.revision(n)
+        diffheader = mdiff.trivialdiffheader(len(data))
+        l = len(meta) + len(diffheader) + len(data)
+        yield ''.join((chunkheader(l),
+                       meta,
+                       diffheader,
+                       data))
 
     def builddeltaheader(self, node, p1n, p2n, basenode, linknode, flags):
         # do nothing with basenode, it is implicitly the previous one in HG10

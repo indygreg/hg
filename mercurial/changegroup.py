@@ -851,6 +851,21 @@ class cg2packer(cg1packer):
             self._reorder = False
 
     def deltaparent(self, revlog, rev, p1, p2, prev):
+        # Narrow ellipses mode.
+        if util.safehasattr(self, 'full_nodes'):
+            # TODO: send better deltas when in narrow mode.
+            #
+            # changegroup.group() loops over revisions to send,
+            # including revisions we'll skip. What this means is that
+            # `prev` will be a potentially useless delta base for all
+            # ellipsis nodes, as the client likely won't have it. In
+            # the future we should do bookkeeping about which nodes
+            # have been sent to the client, and try to be
+            # significantly smarter about delta bases. This is
+            # slightly tricky because this same code has to work for
+            # all revlogs, and we don't have the linkrev/linknode here.
+            return p1
+
         dp = revlog.deltaparent(rev)
         if dp == nullrev and revlog.storedeltachains:
             # Avoid sending full revisions when delta parent is null. Pick prev

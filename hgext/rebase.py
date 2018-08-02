@@ -177,6 +177,7 @@ class rebaseruntime(object):
         if e:
             self.extrafns = [e]
 
+        self.backupf = ui.configbool('ui', 'history-editing-backup')
         self.keepf = opts.get('keep', False)
         self.keepbranchesf = opts.get('keepbranches', False)
         self.obsoletenotrebased = {}
@@ -343,7 +344,9 @@ class rebaseruntime(object):
                 msg = _('cannot continue inconsistent rebase')
                 hint = _('use "hg rebase --abort" to clear broken state')
                 raise error.Abort(msg, hint=hint)
+
         if isabort:
+            backup = backup and self.backupf
             return abort(self.repo, self.originalwd, self.destmap, self.state,
                          activebookmark=self.activebookmark, backup=backup,
                          suppwarns=suppwarns)
@@ -585,11 +588,7 @@ class rebaseruntime(object):
             # case and realize that the commit was in progress.
             self.storestatus()
 
-    def _finishrebase(self, backup=True):
-        """
-        backup:   if False, no backup will be stored when stripping rebased
-                  revisions
-        """
+    def _finishrebase(self):
         repo, ui, opts = self.repo, self.ui, self.opts
         fm = ui.formatter('rebase', opts)
         fm.startitem()
@@ -636,7 +635,7 @@ class rebaseruntime(object):
         if self.collapsef and not self.keepf:
             collapsedas = newnode
         clearrebased(ui, repo, self.destmap, self.state, self.skipped,
-                     collapsedas, self.keepf, fm=fm, backup=backup)
+                     collapsedas, self.keepf, fm=fm, backup=self.backupf)
 
         clearstatus(repo)
         clearcollapsemsg(repo)
@@ -833,8 +832,6 @@ def rebase(ui, repo, **opts):
         userrevs = list(repo.revs(opts.get('auto_orphans')))
         opts['rev'] = [revsetlang.formatspec('%ld and orphan()', userrevs)]
         opts['dest'] = '_destautoorphanrebase(SRC)'
-    backup = ui.configbool('ui', 'history-editing-backup')
-    opts['backup'] = backup
 
     if dryrun:
         return _dryrunrebase(ui, repo, opts)
@@ -856,7 +853,6 @@ def rebase(ui, repo, **opts):
 def _dryrunrebase(ui, repo, opts):
     rbsrt = rebaseruntime(repo, ui, inmemory=True, opts=opts)
     confirm = opts.get('confirm')
-    backup = opts.get('backup')
     if confirm:
         ui.status(_('starting in-memory rebase\n'))
     else:
@@ -878,7 +874,7 @@ def _dryrunrebase(ui, repo, opts):
                 if not ui.promptchoice(_(b'apply changes (yn)?'
                                          b'$$ &Yes $$ &No')):
                     # finish unfinished rebase
-                    rbsrt._finishrebase(backup=backup)
+                    rbsrt._finishrebase()
                 else:
                     rbsrt._prepareabortorcontinue(isabort=True, backup=False,
                                                   suppwarns=True)
@@ -909,7 +905,6 @@ def _origrebase(ui, repo, opts, rbsrt, inmemory=False, leaveunfinished=False):
         destspace = opts.get('_destspace')
         contf = opts.get('continue')
         abortf = opts.get('abort')
-        backup = opts.get('backup')
         if opts.get('interactive'):
             try:
                 if extensions.find('histedit'):
@@ -940,7 +935,7 @@ def _origrebase(ui, repo, opts, rbsrt, inmemory=False, leaveunfinished=False):
                 ms = mergemod.mergestate.read(repo)
                 mergeutil.checkunresolved(ms)
 
-            retcode = rbsrt._prepareabortorcontinue(abortf, backup=backup)
+            retcode = rbsrt._prepareabortorcontinue(abortf)
             if retcode is not None:
                 return retcode
         else:
@@ -969,7 +964,7 @@ def _origrebase(ui, repo, opts, rbsrt, inmemory=False, leaveunfinished=False):
             with util.acceptintervention(dsguard):
                 rbsrt._performrebase(tr)
                 if not leaveunfinished:
-                    rbsrt._finishrebase(backup=backup)
+                    rbsrt._finishrebase()
 
 def _definedestmap(ui, repo, inmemory, destf=None, srcf=None, basef=None,
                    revf=None, destspace=None):

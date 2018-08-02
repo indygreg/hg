@@ -24,7 +24,6 @@ from mercurial import (
 
 from . import (
     narrowbundle2,
-    narrowchangegroup,
     narrowcommands,
     narrowcopies,
     narrowpatch,
@@ -62,7 +61,6 @@ def uisetup(ui):
     narrowrevlog.setup()
     narrowbundle2.setup()
     narrowcommands.setup()
-    narrowchangegroup.setup()
     narrowwirepeer.uisetup()
 
 def reposetup(ui, repo):

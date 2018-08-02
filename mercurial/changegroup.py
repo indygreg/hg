@@ -657,20 +657,52 @@ class cg1packer(object):
         clrevorder = {}
         mfs = {} # needed manifests
         fnodes = {} # needed file nodes
+        mfl = repo.manifestlog
+        # TODO violates storage abstraction.
+        mfrevlog = mfl._revlog
         changedfiles = set()
 
-        # Callback for the changelog, used to collect changed files and manifest
-        # nodes.
+        ellipsesmode = util.safehasattr(self, 'full_nodes')
+
+        # Callback for the changelog, used to collect changed files and
+        # manifest nodes.
         # Returns the linkrev node (identity in the changelog case).
         def lookupcl(x):
             c = cl.read(x)
             clrevorder[x] = len(clrevorder)
-            n = c[0]
-            # record the first changeset introducing this manifest version
-            mfs.setdefault(n, x)
-            # Record a complete list of potentially-changed files in
-            # this manifest.
-            changedfiles.update(c[3])
+
+            if ellipsesmode:
+                # Only update mfs if x is going to be sent. Otherwise we
+                # end up with bogus linkrevs specified for manifests and
+                # we skip some manifest nodes that we should otherwise
+                # have sent.
+                if (x in self.full_nodes
+                    or cl.rev(x) in self.precomputed_ellipsis):
+                    n = c[0]
+                    # Record the first changeset introducing this manifest
+                    # version.
+                    mfs.setdefault(n, x)
+                    # Set this narrow-specific dict so we have the lowest
+                    # manifest revnum to look up for this cl revnum. (Part of
+                    # mapping changelog ellipsis parents to manifest ellipsis
+                    # parents)
+                    self.next_clrev_to_localrev.setdefault(cl.rev(x),
+                                                           mfrevlog.rev(n))
+                # We can't trust the changed files list in the changeset if the
+                # client requested a shallow clone.
+                if self.is_shallow:
+                    changedfiles.update(mfl[c[0]].read().keys())
+                else:
+                    changedfiles.update(c[3])
+            else:
+
+                n = c[0]
+                # record the first changeset introducing this manifest version
+                mfs.setdefault(n, x)
+                # Record a complete list of potentially-changed files in
+                # this manifest.
+                changedfiles.update(c[3])
+
             return x
 
         self._verbosenote(_('uncompressed size of bundle content:\n'))
@@ -705,6 +737,13 @@ class cg1packer(object):
         for chunk in self.generatemanifests(commonrevs, clrevorder,
                 fastpathlinkrev, mfs, fnodes, source):
             yield chunk
+
+        if ellipsesmode:
+            mfdicts = None
+            if self.is_shallow:
+                mfdicts = [(self._repo.manifestlog[n].read(), lr)
+                           for (n, lr) in mfs.iteritems()]
+
         mfs.clear()
         clrevs = set(cl.rev(x) for x in clnodes)
 
@@ -718,6 +757,14 @@ class cg1packer(object):
                 fln = filerevlog.node
                 revs = ((r, llr(r)) for r in filerevlog)
                 return dict((fln(r), cln(lr)) for r, lr in revs if lr in clrevs)
+
+        if ellipsesmode:
+            # We need to pass the mfdicts variable down into
+            # generatefiles(), but more than one command might have
+            # wrapped generatefiles so we can't modify the function
+            # signature. Instead, we pass the data to ourselves using an
+            # instance attribute. I'm sorry.
+            self._mfdicts = mfdicts
 
         for chunk in self.generatefiles(changedfiles, linknodes, commonrevs,
                                         source):

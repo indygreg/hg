@@ -113,9 +113,6 @@ def load(repo):
         # Treat "narrowspec does not exist" the same as "narrowspec file exists
         # and is empty".
         if e.errno == errno.ENOENT:
-            # Without this the next call to load will use the cached
-            # non-existence of the file, which can cause some odd issues.
-            repo.invalidate(clearfilecache=True)
             return set(), set()
         raise
     # maybe we should care about the profiles returned too

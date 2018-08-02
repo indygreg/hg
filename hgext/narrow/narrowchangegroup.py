@@ -10,47 +10,12 @@ from __future__ import absolute_import
 from mercurial.i18n import _
 from mercurial import (
     changegroup,
-    error,
     extensions,
     node,
     util,
 )
 
 def setup():
-    def generatefiles(orig, self, changedfiles, linknodes, commonrevs,
-                      source):
-        changedfiles = list(filter(self._filematcher, changedfiles))
-
-        if getattr(self, 'is_shallow', False):
-            # See comment in generate() for why this sadness is a thing.
-            mfdicts = self._mfdicts
-            del self._mfdicts
-            # In a shallow clone, the linknodes callback needs to also include
-            # those file nodes that are in the manifests we sent but weren't
-            # introduced by those manifests.
-            commonctxs = [self._repo[c] for c in commonrevs]
-            oldlinknodes = linknodes
-            clrev = self._repo.changelog.rev
-            def linknodes(flog, fname):
-                for c in commonctxs:
-                    try:
-                        fnode = c.filenode(fname)
-                        self.clrev_to_localrev[c.rev()] = flog.rev(fnode)
-                    except error.ManifestLookupError:
-                        pass
-                links = oldlinknodes(flog, fname)
-                if len(links) != len(mfdicts):
-                    for mf, lr in mfdicts:
-                        fnode = mf.get(fname, None)
-                        if fnode in links:
-                            links[fnode] = min(links[fnode], lr, key=clrev)
-                        elif fnode:
-                            links[fnode] = lr
-                return links
-        return orig(self, changedfiles, linknodes, commonrevs, source)
-    extensions.wrapfunction(
-        changegroup.cg1packer, 'generatefiles', generatefiles)
-
     def generate(orig, self, commonrevs, clnodes, fastpathlinkrev, source):
         '''yield a sequence of changegroup chunks (strings)'''
         # Note: other than delegating to orig, the only deviation in

@@ -796,6 +796,42 @@ class cg1packer(object):
 
     # The 'source' parameter is useful for extensions
     def generatefiles(self, changedfiles, linknodes, commonrevs, source):
+        changedfiles = list(filter(self._filematcher, changedfiles))
+
+        if getattr(self, 'is_shallow', False):
+            # See comment in generate() for why this sadness is a thing.
+            mfdicts = self._mfdicts
+            del self._mfdicts
+            # In a shallow clone, the linknodes callback needs to also include
+            # those file nodes that are in the manifests we sent but weren't
+            # introduced by those manifests.
+            commonctxs = [self._repo[c] for c in commonrevs]
+            oldlinknodes = linknodes
+            clrev = self._repo.changelog.rev
+
+            # Defining this function has a side-effect of overriding the
+            # function of the same name that was passed in as an argument.
+            # TODO have caller pass in appropriate function.
+            def linknodes(flog, fname):
+                for c in commonctxs:
+                    try:
+                        fnode = c.filenode(fname)
+                        self.clrev_to_localrev[c.rev()] = flog.rev(fnode)
+                    except error.ManifestLookupError:
+                        pass
+                links = oldlinknodes(flog, fname)
+                if len(links) != len(mfdicts):
+                    for mf, lr in mfdicts:
+                        fnode = mf.get(fname, None)
+                        if fnode in links:
+                            links[fnode] = min(links[fnode], lr, key=clrev)
+                        elif fnode:
+                            links[fnode] = lr
+                return links
+
+        return self._generatefiles(changedfiles, linknodes, commonrevs, source)
+
+    def _generatefiles(self, changedfiles, linknodes, commonrevs, source):
         repo = self._repo
         progress = repo.ui.makeprogress(_('bundling'), unit=_('files'),
                                         total=len(changedfiles))

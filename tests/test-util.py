@@ -70,8 +70,10 @@ class timedtests(unittest.TestCase):
     def testtimedcmstatsstr(self):
         stats = util.timedcmstats()
         self.assertEqual(str(stats), '<unknown>')
+        self.assertEqual(bytes(stats), b'<unknown>')
         stats.elapsed = 12.34
-        self.assertEqual(str(stats), util.timecount(12.34))
+        self.assertEqual(str(stats), pycompat.sysstr(util.timecount(12.34)))
+        self.assertEqual(bytes(stats), util.timecount(12.34))
 
     def testtimedcmcleanexit(self):
         # timestamps 1, 4, elapsed time of 4 - 1 = 3

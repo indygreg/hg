@@ -2890,8 +2890,10 @@ class timedcmstats(object):
     # the number of nested timedcm context managers.
     level = attr.ib(default=1)
 
-    def __str__(self):
+    def __bytes__(self):
         return timecount(self.elapsed) if self.elapsed else '<unknown>'
+
+    __str__ = encoding.strmethod(__bytes__)
 
 @contextlib.contextmanager
 def timedcm():
@@ -2929,7 +2931,8 @@ def timed(func):
             result = func(*args, **kwargs)
         stderr = procutil.stderr
         stderr.write('%s%s: %s\n' % (
-            ' ' * time_stats.level * 2, func.__name__, time_stats))
+            ' ' * time_stats.level * 2, pycompat.bytestr(func.__name__),
+            time_stats))
         return result
     return wrapper
 

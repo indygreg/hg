@@ -850,7 +850,7 @@ When "#testcases" is used in .t files
   > EOF
   
   --- $TESTTMP/test-cases.t
-  +++ $TESTTMP/test-cases.t.a.err
+  +++ $TESTTMP/test-cases.t#a.err
   @@ -1,6 +1,7 @@
    #testcases a b
    #if a
@@ -861,7 +861,7 @@ When "#testcases" is used in .t files
      $ echo 2
   Accept this change? [n] .
   --- $TESTTMP/test-cases.t
-  +++ $TESTTMP/test-cases.t.b.err
+  +++ $TESTTMP/test-cases.t#b.err
   @@ -5,4 +5,5 @@
    #endif
    #if b
@@ -1540,7 +1540,7 @@ Test cases in .t files
   $ rt
   .
   --- $TESTTMP/anothertests/cases/test-cases-abc.t
-  +++ $TESTTMP/anothertests/cases/test-cases-abc.t.B.err
+  +++ $TESTTMP/anothertests/cases/test-cases-abc.t#B.err
   @@ -7,7 +7,7 @@
      $ V=C
    #endif
@@ -1563,7 +1563,7 @@ Test cases in .t files
   $ rt --restart
   
   --- $TESTTMP/anothertests/cases/test-cases-abc.t
-  +++ $TESTTMP/anothertests/cases/test-cases-abc.t.B.err
+  +++ $TESTTMP/anothertests/cases/test-cases-abc.t#B.err
   @@ -7,7 +7,7 @@
      $ V=C
    #endif
@@ -1584,11 +1584,11 @@ Test cases in .t files
 --restart works with outputdir
 
   $ mkdir output
-  $ mv test-cases-abc.t.B.err output
+  $ mv test-cases-abc.t#B.err output
   $ rt --restart --outputdir output
   
   --- $TESTTMP/anothertests/cases/test-cases-abc.t
-  +++ $TESTTMP/anothertests/cases/output/test-cases-abc.t.B.err
+  +++ $TESTTMP/anothertests/cases/output/test-cases-abc.t#B.err
   @@ -7,7 +7,7 @@
      $ V=C
    #endif
@@ -1631,7 +1631,7 @@ Support running a specific test case
   $ rt "test-cases-abc.t#B"
   
   --- $TESTTMP/anothertests/cases/test-cases-abc.t
-  +++ $TESTTMP/anothertests/cases/test-cases-abc.t.B.err
+  +++ $TESTTMP/anothertests/cases/test-cases-abc.t#B.err
   @@ -7,7 +7,7 @@
      $ V=C
    #endif
@@ -1654,7 +1654,7 @@ Support running multiple test cases in the same file
   $ rt test-cases-abc.t#B test-cases-abc.t#C
   
   --- $TESTTMP/anothertests/cases/test-cases-abc.t
-  +++ $TESTTMP/anothertests/cases/test-cases-abc.t.B.err
+  +++ $TESTTMP/anothertests/cases/test-cases-abc.t#B.err
   @@ -7,7 +7,7 @@
      $ V=C
    #endif
@@ -1677,7 +1677,7 @@ Support ignoring invalid test cases
   $ rt test-cases-abc.t#B test-cases-abc.t#D
   
   --- $TESTTMP/anothertests/cases/test-cases-abc.t
-  +++ $TESTTMP/anothertests/cases/test-cases-abc.t.B.err
+  +++ $TESTTMP/anothertests/cases/test-cases-abc.t#B.err
   @@ -7,7 +7,7 @@
      $ V=C
    #endif
@@ -1711,7 +1711,7 @@ Support running complex test cases names
   $ rt test-cases-advanced-cases.t
   
   --- $TESTTMP/anothertests/cases/test-cases-advanced-cases.t
-  +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t.case-with-dashes.err
+  +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t#case-with-dashes.err
   @@ -1,3 +1,3 @@
    #testcases simple case-with-dashes casewith_-.chars
      $ echo $TESTCASE
@@ -1721,7 +1721,7 @@ Support running complex test cases names
   ERROR: test-cases-advanced-cases.t#case-with-dashes output changed
   !
   --- $TESTTMP/anothertests/cases/test-cases-advanced-cases.t
-  +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t.casewith_-.chars.err
+  +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t#casewith_-.chars.err
   @@ -1,3 +1,3 @@
    #testcases simple case-with-dashes casewith_-.chars
      $ echo $TESTCASE
@@ -1739,7 +1739,7 @@ Support running complex test cases names
   $ rt "test-cases-advanced-cases.t#case-with-dashes"
   
   --- $TESTTMP/anothertests/cases/test-cases-advanced-cases.t
-  +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t.case-with-dashes.err
+  +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t#case-with-dashes.err
   @@ -1,3 +1,3 @@
    #testcases simple case-with-dashes casewith_-.chars
      $ echo $TESTCASE
@@ -1756,7 +1756,7 @@ Support running complex test cases names
   $ rt "test-cases-advanced-cases.t#casewith_-.chars"
   
   --- $TESTTMP/anothertests/cases/test-cases-advanced-cases.t
-  +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t.casewith_-.chars.err
+  +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t#casewith_-.chars.err
   @@ -1,3 +1,3 @@
    #testcases simple case-with-dashes casewith_-.chars
      $ echo $TESTCASE

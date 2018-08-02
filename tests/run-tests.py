@@ -1248,7 +1248,7 @@ class TTest(Test):
         super(TTest, self).__init__(path, *args, **kwds)
         if case:
             self.name = '%s#%s' % (self.name, _strpath(case))
-            self.errpath = b'%s.%s.err' % (self.errpath[:-4], case)
+            self.errpath = b'%s#%s.err' % (self.errpath[:-4], case)
             self._tmpname += b'-%s' % case
         self._have = {}
 
@@ -2713,7 +2713,7 @@ class TestRunner(object):
                     desc = testdescs[0]
                     # desc['path'] is a relative path
                     if 'case' in desc:
-                        errpath = b'%s.%s.err' % (desc['path'], desc['case'])
+                        errpath = b'%s#%s.err' % (desc['path'], desc['case'])
                     else:
                         errpath = b'%s.err' % desc['path']
                     errpath = os.path.join(self._outputdir, errpath)

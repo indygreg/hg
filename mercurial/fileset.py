@@ -67,7 +67,7 @@ def negatematch(mctx, x):
 
 def listmatch(mctx, *xs):
     raise error.ParseError(_("can't use a list in this context"),
-                           hint=_('see hg help "filesets.x or y"'))
+                           hint=_('see \'hg help "filesets.x or y"\''))
 
 def func(mctx, a, b):
     funcname = getsymbol(a)

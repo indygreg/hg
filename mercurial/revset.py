@@ -242,7 +242,7 @@ def subscriptset(repo, subset, x, y, order):
 
 def listset(repo, subset, *xs, **opts):
     raise error.ParseError(_("can't use a list in this context"),
-                           hint=_('see hg help "revsets.x or y"'))
+                           hint=_('see \'hg help "revsets.x or y"\''))
 
 def keyvaluepair(repo, subset, k, v, order):
     raise error.ParseError(_("can't use a key-value pair in this context"))

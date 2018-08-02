@@ -71,7 +71,7 @@ def _compile(tree):
         raise error.ParseError(_("can't use negate operator in this context"))
     elif op == 'list':
         raise error.ParseError(_("can't use a list in this context"),
-                               hint=_('see hg help "filesets.x or y"'))
+                               hint=_('see \'hg help "filesets.x or y"\''))
     raise error.ProgrammingError('illegal tree: %r' % (tree,))
 
 def compile(text):

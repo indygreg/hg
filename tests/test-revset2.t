@@ -346,7 +346,7 @@ test '0000' != '0' in `_list`
 test ',' in `_list`
   $ log '0,1'
   hg: parse error: can't use a list in this context
-  (see hg help "revsets.x or y")
+  (see 'hg help "revsets.x or y"')
   [255]
   $ try '0,1,2'
   (list
@@ -354,7 +354,7 @@ test ',' in `_list`
     (symbol '1')
     (symbol '2'))
   hg: parse error: can't use a list in this context
-  (see hg help "revsets.x or y")
+  (see 'hg help "revsets.x or y"')
   [255]
 
 test that chained `or` operations make balanced addsets

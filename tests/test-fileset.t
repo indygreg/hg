@@ -118,7 +118,7 @@ Test invalid syntax
     (symbol 'b')
     (symbol 'c'))
   hg: parse error: can't use a list in this context
-  (see hg help "filesets.x or y")
+  (see 'hg help "filesets.x or y"')
   [255]
 
   $ fileset '"path":.'
@@ -298,7 +298,7 @@ Test files properties
   [255]
   $ fileset '(1k, 2k)'
   hg: parse error: can't use a list in this context
-  (see hg help "filesets.x or y")
+  (see 'hg help "filesets.x or y"')
   [255]
   $ fileset 'size(1k)'
   1k

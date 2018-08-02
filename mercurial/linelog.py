@@ -23,11 +23,11 @@ from __future__ import absolute_import, print_function
 import abc
 import struct
 
-from mercurial import (
-    pycompat,
-)
 from .thirdparty import (
     attr,
+)
+from . import (
+    pycompat,
 )
 
 _llentry = struct.Struct('>II')

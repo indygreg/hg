@@ -108,7 +108,7 @@ def needsexpansion(includes):
 
 def load(repo):
     try:
-        spec = repo.vfs.read(FILENAME)
+        spec = repo.svfs.read(FILENAME)
     except IOError as e:
         # Treat "narrowspec does not exist" the same as "narrowspec file exists
         # and is empty".
@@ -125,19 +125,19 @@ def load(repo):
 
 def save(repo, includepats, excludepats):
     spec = format(includepats, excludepats)
-    repo.vfs.write(FILENAME, spec)
+    repo.svfs.write(FILENAME, spec)
 
 def savebackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return
     vfs = repo.vfs
     vfs.tryunlink(backupname)
-    util.copyfile(vfs.join(FILENAME), vfs.join(backupname), hardlink=True)
+    util.copyfile(repo.svfs.join(FILENAME), vfs.join(backupname), hardlink=True)
 
 def restorebackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return
-    repo.vfs.rename(backupname, FILENAME)
+    util.rename(repo.vfs.join(backupname), repo.svfs.join(FILENAME))
 
 def clearbackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:

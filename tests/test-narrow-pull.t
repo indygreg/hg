@@ -166,7 +166,6 @@ Can use 'hg share':
 
 We should also be able to unshare without breaking everything:
   $ hg unshare
-  devel-warn: write with no wlock: "narrowspec" at: */hgext/narrow/narrowrepo.py:* (unsharenarrowspec) (glob)
   $ hg verify
   checking changesets
   checking manifests

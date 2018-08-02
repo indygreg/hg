@@ -1,7 +1,7 @@
   $ . "$TESTDIR/narrow-library.sh"
   $ hg init repo
   $ cd repo
-  $ cat << EOF > .hg/narrowspec
+  $ cat << EOF > .hg/store/narrowspec
   > [include]
   > path:foo
   > [exclude]

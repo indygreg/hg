@@ -811,7 +811,7 @@ class localrepository(object):
                                " working parent %s!\n") % short(node))
             return nullid
 
-    @repofilecache(narrowspec.FILENAME)
+    @storecache(narrowspec.FILENAME)
     def narrowpats(self):
         """matcher patterns for this repository's narrowspec
 
@@ -823,7 +823,7 @@ class localrepository(object):
             source = hg.sharedreposource(self)
         return narrowspec.load(source)
 
-    @repofilecache(narrowspec.FILENAME)
+    @storecache(narrowspec.FILENAME)
     def _narrowmatch(self):
         if repository.NARROW_REQUIREMENT not in self.requirements:
             return matchmod.always(self.root, '')

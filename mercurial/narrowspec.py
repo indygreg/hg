@@ -19,29 +19,6 @@ from . import (
 
 FILENAME = 'narrowspec'
 
-def _parsestoredpatterns(text):
-    """Parses the narrowspec format that's stored on disk."""
-    patlist = None
-    includepats = []
-    excludepats = []
-    for l in text.splitlines():
-        if l == '[includes]':
-            if patlist is None:
-                patlist = includepats
-            else:
-                raise error.Abort(_('narrowspec includes section must appear '
-                                    'at most once, before excludes'))
-        elif l == '[excludes]':
-            if patlist is not excludepats:
-                patlist = excludepats
-            else:
-                raise error.Abort(_('narrowspec excludes section must appear '
-                                    'at most once'))
-        else:
-            patlist.append(l)
-
-    return set(includepats), set(excludepats)
-
 def parseserverpatterns(text):
     """Parses the narrowspec format that's returned by the server."""
     includepats = set()

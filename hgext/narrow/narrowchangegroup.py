@@ -51,15 +51,6 @@ def setup():
     extensions.wrapfunction(
         changegroup.cg1packer, 'generatefiles', generatefiles)
 
-    def close(orig, self):
-        getattr(self, 'clrev_to_localrev', {}).clear()
-        if getattr(self, 'next_clrev_to_localrev', {}):
-            self.clrev_to_localrev = self.next_clrev_to_localrev
-            del self.next_clrev_to_localrev
-        self.changelog_done = True
-        return orig(self)
-    extensions.wrapfunction(changegroup.cg1packer, 'close', close)
-
     # In a perfect world, we'd generate better ellipsis-ified graphs
     # for non-changelog revlogs. In practice, we haven't started doing
     # that yet, so the resulting DAGs for the manifestlog and filelogs

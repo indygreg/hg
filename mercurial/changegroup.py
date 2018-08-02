@@ -544,6 +544,13 @@ class cg1packer(object):
             self._verbosenote = lambda s: None
 
     def close(self):
+        # Ellipses serving mode.
+        getattr(self, 'clrev_to_localrev', {}).clear()
+        if getattr(self, 'next_clrev_to_localrev', {}):
+            self.clrev_to_localrev = self.next_clrev_to_localrev
+            del self.next_clrev_to_localrev
+        self.changelog_done = True
+
         return closechunk()
 
     def fileheader(self, fname):

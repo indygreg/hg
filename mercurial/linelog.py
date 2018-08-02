@@ -98,7 +98,7 @@ class _jge(_llinstruction):
         self._target = op2
 
     def __str__(self):
-        return 'JGE %d %d' % (self._cmprev, self._target)
+        return r'JGE %d %d' % (self._cmprev, self._target)
 
     def __eq__(self, other):
         return (type(self) == type(other)
@@ -122,7 +122,7 @@ class _jump(_llinstruction):
         self._target = op2
 
     def __str__(self):
-        return 'JUMP %d' % (self._target)
+        return r'JUMP %d' % (self._target)
 
     def __eq__(self, other):
         return (type(self) == type(other)
@@ -144,7 +144,7 @@ class _eof(_llinstruction):
             raise LineLogError("malformed EOF, op2 must be 0, got %d" % op2)
 
     def __str__(self):
-        return 'EOF'
+        return r'EOF'
 
     def __eq__(self, other):
         return type(self) == type(other)
@@ -163,7 +163,7 @@ class _jl(_llinstruction):
         self._target = op2
 
     def __str__(self):
-        return 'JL %d %d' % (self._cmprev, self._target)
+        return r'JL %d %d' % (self._cmprev, self._target)
 
     def __eq__(self, other):
         return (type(self) == type(other)
@@ -188,7 +188,7 @@ class _line(_llinstruction):
         self._origlineno = op2
 
     def __str__(self):
-        return 'LINE %d %d' % (self._rev, self._origlineno)
+        return r'LINE %d %d' % (self._rev, self._origlineno)
 
     def __eq__(self, other):
         return (type(self) == type(other)
@@ -245,8 +245,8 @@ class linelog(object):
             hex(id(self)), self._maxrev, len(self._program))
 
     def debugstr(self):
-        fmt = '%%%dd %%s' % len(str(len(self._program)))
-        return '\n'.join(
+        fmt = r'%%%dd %%s' % len(str(len(self._program)))
+        return pycompat.sysstr('\n').join(
             fmt % (idx, i) for idx, i in enumerate(self._program[1:], 1))
 
     @classmethod

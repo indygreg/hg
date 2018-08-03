@@ -11,7 +11,6 @@ from mercurial import (
     changegroup,
     hg,
     narrowspec,
-    scmutil,
 )
 
 from . import (
@@ -45,23 +44,6 @@ def wraprepo(repo):
             fl = super(narrowrepository, self).file(f)
             narrowrevlog.makenarrowfilelog(fl, self.narrowmatch())
             return fl
-
-        # I'm not sure this is the right place to do this filter.
-        # context._manifestmatches() would probably be better, or perhaps
-        # move it to a later place, in case some of the callers do want to know
-        # which directories changed. This seems to work for now, though.
-        def status(self, *args, **kwargs):
-            s = super(narrowrepository, self).status(*args, **kwargs)
-            narrowmatch = self.narrowmatch()
-            modified = list(filter(narrowmatch, s.modified))
-            added = list(filter(narrowmatch, s.added))
-            removed = list(filter(narrowmatch, s.removed))
-            deleted = list(filter(narrowmatch, s.deleted))
-            unknown = list(filter(narrowmatch, s.unknown))
-            ignored = list(filter(narrowmatch, s.ignored))
-            clean = list(filter(narrowmatch, s.clean))
-            return scmutil.status(modified, added, removed, deleted, unknown,
-                                  ignored, clean)
 
         def _makedirstate(self):
             dirstate = super(narrowrepository, self)._makedirstate()

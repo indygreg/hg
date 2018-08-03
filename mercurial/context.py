@@ -372,6 +372,10 @@ class basectx(object):
                 for rfiles, sfiles in zip(r, s):
                     rfiles.extend("%s/%s" % (subpath, f) for f in sfiles)
 
+        narrowmatch = self._repo.narrowmatch()
+        if not narrowmatch.always():
+            for l in r:
+                l[:] = list(filter(narrowmatch, l))
         for l in r:
             l.sort()
 

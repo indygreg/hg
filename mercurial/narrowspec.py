@@ -137,7 +137,7 @@ def savebackup(repo, backupname):
 def restorebackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return
-    repo.vfs.rename(backupname, FILENAME, checkambig=True)
+    repo.vfs.rename(backupname, FILENAME)
 
 def clearbackup(repo, backupname):
     if repository.NARROW_REQUIREMENT not in repo.requirements:

@@ -19,6 +19,10 @@ from .node import (
     short,
 )
 
+from .thirdparty import (
+    attr,
+)
+
 from . import (
     dagutil,
     error,
@@ -494,6 +498,26 @@ class headerlessfixup(object):
             return d
         return readexactly(self._fh, n)
 
+@attr.s(slots=True, frozen=True)
+class revisiondelta(object):
+    """Describes a delta entry in a changegroup.
+
+    Captured data is sufficient to serialize the delta into multiple
+    formats.
+    """
+    # 20 byte node of this revision.
+    node = attr.ib()
+    # 20 byte nodes of parent revisions.
+    p1node = attr.ib()
+    p2node = attr.ib()
+    # 20 byte node of node this delta is against.
+    basenode = attr.ib()
+    # 20 byte node of changeset revision this delta is associated with.
+    linknode = attr.ib()
+    # 2 bytes of flags to apply to revision data.
+    flags = attr.ib()
+    # Iterable of chunks holding raw delta data.
+    deltachunks = attr.ib()
 
 class cg1packer(object):
     deltaheader = _CHANGEGROUPV1_DELTA_HEADER
@@ -899,13 +923,25 @@ class cg1packer(object):
 
     def revchunk(self, store, rev, prev, linknode):
         if util.safehasattr(self, 'full_nodes'):
-            fn = self._revchunknarrow
+            fn = self._revisiondeltanarrow
         else:
-            fn = self._revchunknormal
+            fn = self._revisiondeltanormal
 
-        return fn(store, rev, prev, linknode)
+        delta = fn(store, rev, prev, linknode)
+        if not delta:
+            return
 
-    def _revchunknormal(self, store, rev, prev, linknode):
+        meta = self.builddeltaheader(delta.node, delta.p1node, delta.p2node,
+                                     delta.basenode, delta.linknode,
+                                     delta.flags)
+        l = len(meta) + sum(len(x) for x in delta.deltachunks)
+
+        yield chunkheader(l)
+        yield meta
+        for x in delta.deltachunks:
+            yield x
+
+    def _revisiondeltanormal(self, store, rev, prev, linknode):
         node = store.node(rev)
         p1, p2 = store.parentrevs(rev)
         base = self.deltaparent(store, rev, p1, p2, prev)
@@ -927,16 +963,18 @@ class cg1packer(object):
         else:
             delta = store.revdiff(base, rev)
         p1n, p2n = store.parents(node)
-        basenode = store.node(base)
-        flags = store.flags(rev)
-        meta = self.builddeltaheader(node, p1n, p2n, basenode, linknode, flags)
-        meta += prefix
-        l = len(meta) + len(delta)
-        yield chunkheader(l)
-        yield meta
-        yield delta
 
-    def _revchunknarrow(self, store, rev, prev, linknode):
+        return revisiondelta(
+            node=node,
+            p1node=p1n,
+            p2node=p2n,
+            basenode=store.node(base),
+            linknode=linknode,
+            flags=store.flags(rev),
+            deltachunks=(prefix, delta),
+        )
+
+    def _revisiondeltanarrow(self, store, rev, prev, linknode):
         # build up some mapping information that's useful later. See
         # the local() nested function below.
         if not self.changelog_done:
@@ -950,9 +988,7 @@ class cg1packer(object):
         # This is a node to send in full, because the changeset it
         # corresponds to was a full changeset.
         if linknode in self.full_nodes:
-            for x in self._revchunknormal(store, rev, prev, linknode):
-                yield x
-            return
+            return self._revisiondeltanormal(store, rev, prev, linknode)
 
         # At this point, a node can either be one we should skip or an
         # ellipsis. If it's not an ellipsis, bail immediately.
@@ -1043,16 +1079,20 @@ class cg1packer(object):
         p1n, p2n = store.node(p1), store.node(p2)
         flags = store.flags(rev)
         flags |= revlog.REVIDX_ELLIPSIS
-        meta = self.builddeltaheader(
-            n, p1n, p2n, nullid, linknode, flags)
+
         # TODO: try and actually send deltas for ellipsis data blocks
         data = store.revision(n)
         diffheader = mdiff.trivialdiffheader(len(data))
-        l = len(meta) + len(diffheader) + len(data)
-        yield ''.join((chunkheader(l),
-                       meta,
-                       diffheader,
-                       data))
+
+        return revisiondelta(
+            node=n,
+            p1node=p1n,
+            p2node=p2n,
+            basenode=nullid,
+            linknode=linknode,
+            flags=flags,
+            deltachunks=(diffheader, data),
+        )
 
     def builddeltaheader(self, node, p1n, p2n, basenode, linknode, flags):
         # do nothing with basenode, it is implicitly the previous one in HG10

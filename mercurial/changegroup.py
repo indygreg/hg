@@ -523,7 +523,7 @@ class cgpacker(object):
     def __init__(self, repo, filematcher, version, allowreorder,
                  useprevdelta, builddeltaheader, manifestsend,
                  sendtreemanifests, bundlecaps=None, ellipses=False,
-                 shallow=False, ellipsisroots=None):
+                 shallow=False, ellipsisroots=None, fullnodes=None):
         """Given a source repo, construct a bundler.
 
         filematcher is a matcher that matches on files to include in the
@@ -552,6 +552,10 @@ class cgpacker(object):
 
         shallow indicates whether shallow data might be sent. The packer may
         need to pack file contents not introduced by the changes being packed.
+
+        fullnodes is the list of nodes which should not be ellipsis nodes. We
+        store this rather than the set of nodes that should be ellipsis because
+        for very large histories we expect this to be significantly smaller.
         """
         assert filematcher
         self._filematcher = filematcher
@@ -568,6 +572,7 @@ class cgpacker(object):
             bundlecaps = set()
         self._bundlecaps = bundlecaps
         self._isshallow = shallow
+        self._fullnodes = fullnodes
 
         # Maps ellipsis revs to their roots at the changelog level.
         self._precomputedellipsis = ellipsisroots
@@ -744,7 +749,7 @@ class cgpacker(object):
                 # end up with bogus linkrevs specified for manifests and
                 # we skip some manifest nodes that we should otherwise
                 # have sent.
-                if (x in self._full_nodes
+                if (x in self._fullnodes
                     or cl.rev(x) in self._precomputedellipsis):
                     n = c[0]
                     # Record the first changeset introducing this manifest
@@ -1086,7 +1091,7 @@ class cgpacker(object):
 
         # This is a node to send in full, because the changeset it
         # corresponds to was a full changeset.
-        if linknode in self._full_nodes:
+        if linknode in self._fullnodes:
             return self._revisiondeltanormal(store, rev, prev, linknode)
 
         # At this point, a node can either be one we should skip or an
@@ -1135,7 +1140,7 @@ class cgpacker(object):
                 walk = walk[1:]
                 if p in self._clrevtolocalrev:
                     return self._clrevtolocalrev[p]
-                elif p in self._full_nodes:
+                elif p in self._fullnodes:
                     walk.extend([pp for pp in self._repo.changelog.parentrevs(p)
                                     if pp != nullrev])
                 elif p in self._precomputedellipsis:
@@ -1194,7 +1199,7 @@ class cgpacker(object):
         )
 
 def _makecg1packer(repo, filematcher, bundlecaps, ellipses=False,
-                   shallow=False, ellipsisroots=None):
+                   shallow=False, ellipsisroots=None, fullnodes=None):
     builddeltaheader = lambda d: _CHANGEGROUPV1_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.linknode)
 
@@ -1207,10 +1212,11 @@ def _makecg1packer(repo, filematcher, bundlecaps, ellipses=False,
                     bundlecaps=bundlecaps,
                     ellipses=ellipses,
                     shallow=shallow,
-                    ellipsisroots=ellipsisroots)
+                    ellipsisroots=ellipsisroots,
+                    fullnodes=fullnodes)
 
 def _makecg2packer(repo, filematcher, bundlecaps, ellipses=False,
-                   shallow=False, ellipsisroots=None):
+                   shallow=False, ellipsisroots=None, fullnodes=None):
     builddeltaheader = lambda d: _CHANGEGROUPV2_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode)
 
@@ -1226,10 +1232,11 @@ def _makecg2packer(repo, filematcher, bundlecaps, ellipses=False,
                     bundlecaps=bundlecaps,
                     ellipses=ellipses,
                     shallow=shallow,
-                    ellipsisroots=ellipsisroots)
+                    ellipsisroots=ellipsisroots,
+                    fullnodes=fullnodes)
 
 def _makecg3packer(repo, filematcher, bundlecaps, ellipses=False,
-                   shallow=False, ellipsisroots=None):
+                   shallow=False, ellipsisroots=None, fullnodes=None):
     builddeltaheader = lambda d: _CHANGEGROUPV3_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags)
 
@@ -1242,7 +1249,8 @@ def _makecg3packer(repo, filematcher, bundlecaps, ellipses=False,
                     bundlecaps=bundlecaps,
                     ellipses=ellipses,
                     shallow=shallow,
-                    ellipsisroots=ellipsisroots)
+                    ellipsisroots=ellipsisroots,
+                    fullnodes=fullnodes)
 
 _packermap = {'01': (_makecg1packer, cg1unpacker),
              # cg2 adds support for exchanging generaldelta
@@ -1303,7 +1311,8 @@ def safeversion(repo):
     return min(versions)
 
 def getbundler(version, repo, bundlecaps=None, filematcher=None,
-               ellipses=False, shallow=False, ellipsisroots=None):
+               ellipses=False, shallow=False, ellipsisroots=None,
+               fullnodes=None):
     assert version in supportedoutgoingversions(repo)
 
     if filematcher is None:
@@ -1325,7 +1334,8 @@ def getbundler(version, repo, bundlecaps=None, filematcher=None,
 
     fn = _packermap[version][0]
     return fn(repo, filematcher, bundlecaps, ellipses=ellipses,
-              shallow=shallow, ellipsisroots=ellipsisroots)
+              shallow=shallow, ellipsisroots=ellipsisroots,
+              fullnodes=fullnodes)
 
 def getunbundler(version, fh, alg, extras=None):
     return _packermap[version][1](fh, alg, extras=extras)
@@ -1419,11 +1429,7 @@ def _packellipsischangegroup(repo, common, match, relevant_nodes,
     packer = getbundler(version, repo, filematcher=match,
                         ellipses=True,
                         shallow=depth is not None,
-                        ellipsisroots=ellipsisroots)
-    # Give the packer the list of nodes which should not be
-    # ellipsis nodes. We store this rather than the set of nodes
-    # that should be an ellipsis because for very large histories
-    # we expect this to be significantly smaller.
-    packer._full_nodes = relevant_nodes
+                        ellipsisroots=ellipsisroots,
+                        fullnodes=relevant_nodes)
 
     return packer.generate(common, visitnodes, False, source)

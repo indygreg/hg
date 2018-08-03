@@ -34,6 +34,7 @@ from . import (
     phases,
     pushkey,
     pycompat,
+    repository,
     scmutil,
     sslutil,
     streamclone,
@@ -1432,7 +1433,7 @@ def _fullpullbundle2(repo, pullop):
         old_heads = unficl.heads()
         clstart = len(unficl)
         _pullbundle2(pullop)
-        if changegroup.NARROW_REQUIREMENT in repo.requirements:
+        if repository.NARROW_REQUIREMENT in repo.requirements:
             # XXX narrow clones filter the heads on the server side during
             # XXX getbundle and result in partial replies as well.
             # XXX Disable pull bundles in this case as band aid to avoid

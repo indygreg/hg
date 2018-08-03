@@ -10,7 +10,6 @@ import itertools
 
 from mercurial.i18n import _
 from mercurial import (
-    changegroup,
     cmdutil,
     commands,
     discovery,
@@ -24,6 +23,7 @@ from mercurial import (
     pycompat,
     registrar,
     repair,
+    repository,
     repoview,
     util,
 )
@@ -101,7 +101,7 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
 
     def pullnarrow(orig, repo, *args, **kwargs):
         if opts_narrow:
-            repo.requirements.add(changegroup.NARROW_REQUIREMENT)
+            repo.requirements.add(repository.NARROW_REQUIREMENT)
             repo._writerequirements()
 
         return orig(repo, *args, **kwargs)
@@ -114,7 +114,7 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
 def pullnarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps pull command to allow modifying narrow spec."""
     wrappedextraprepare = util.nullcontextmanager()
-    if changegroup.NARROW_REQUIREMENT in repo.requirements:
+    if repository.NARROW_REQUIREMENT in repo.requirements:
 
         def pullbundle2extraprepare_widen(orig, pullop, kwargs):
             orig(pullop, kwargs)
@@ -128,7 +128,7 @@ def pullnarrowcmd(orig, ui, repo, *args, **opts):
 
 def archivenarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps archive command to narrow the default includes."""
-    if changegroup.NARROW_REQUIREMENT in repo.requirements:
+    if repository.NARROW_REQUIREMENT in repo.requirements:
         repo_includes, repo_excludes = repo.narrowpats
         includes = set(opts.get(r'include', []))
         excludes = set(opts.get(r'exclude', []))
@@ -142,7 +142,7 @@ def archivenarrowcmd(orig, ui, repo, *args, **opts):
 
 def pullbundle2extraprepare(orig, pullop, kwargs):
     repo = pullop.repo
-    if changegroup.NARROW_REQUIREMENT not in repo.requirements:
+    if repository.NARROW_REQUIREMENT not in repo.requirements:
         return orig(pullop, kwargs)
 
     if narrowbundle2.NARROWCAP not in pullop.remotebundle2caps:
@@ -331,7 +331,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     empty and will not match any files.
     """
     opts = pycompat.byteskwargs(opts)
-    if changegroup.NARROW_REQUIREMENT not in repo.requirements:
+    if repository.NARROW_REQUIREMENT not in repo.requirements:
         ui.warn(_('The narrow command is only supported on respositories cloned'
                   ' with --narrow.\n'))
         return 1

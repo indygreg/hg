@@ -15,11 +15,11 @@ from __future__ import absolute_import
 testedwith = 'ships-with-hg-core'
 
 from mercurial import (
-    changegroup,
     extensions,
     hg,
     localrepo,
     registrar,
+    repository,
     verify as verifymod,
 )
 
@@ -55,7 +55,7 @@ configitem('experimental', 'narrowservebrokenellipses',
 cmdtable = narrowcommands.table
 
 def featuresetup(ui, features):
-    features.add(changegroup.NARROW_REQUIREMENT)
+    features.add(repository.NARROW_REQUIREMENT)
 
 def uisetup(ui):
     """Wraps user-facing mercurial commands with narrow-aware versions."""
@@ -71,7 +71,7 @@ def reposetup(ui, repo):
     if not repo.local():
         return
 
-    if changegroup.NARROW_REQUIREMENT in repo.requirements:
+    if repository.NARROW_REQUIREMENT in repo.requirements:
         narrowrepo.wraprepo(repo)
         narrowcopies.setup(repo)
         narrowpatch.setup(repo)

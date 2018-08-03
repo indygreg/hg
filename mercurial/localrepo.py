@@ -825,7 +825,7 @@ class localrepository(object):
 
     @repofilecache(narrowspec.FILENAME)
     def _narrowmatch(self):
-        if changegroup.NARROW_REQUIREMENT not in self.requirements:
+        if repository.NARROW_REQUIREMENT not in self.requirements:
             return matchmod.always(self.root, '')
         include, exclude = self.narrowpats
         return narrowspec.match(self.root, include=include, exclude=exclude)

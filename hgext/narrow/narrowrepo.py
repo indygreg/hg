@@ -8,9 +8,9 @@
 from __future__ import absolute_import
 
 from mercurial import (
-    changegroup,
     hg,
     narrowspec,
+    repository,
 )
 
 from . import (
@@ -20,13 +20,13 @@ from . import (
 
 def wrappostshare(orig, sourcerepo, destrepo, **kwargs):
     orig(sourcerepo, destrepo, **kwargs)
-    if changegroup.NARROW_REQUIREMENT in sourcerepo.requirements:
+    if repository.NARROW_REQUIREMENT in sourcerepo.requirements:
         with destrepo.wlock():
             with destrepo.vfs('shared', 'a') as fp:
                 fp.write(narrowspec.FILENAME + '\n')
 
 def unsharenarrowspec(orig, ui, repo, repopath):
-    if (changegroup.NARROW_REQUIREMENT in repo.requirements
+    if (repository.NARROW_REQUIREMENT in repo.requirements
         and repo.path == repopath and repo.shared()):
         srcrepo = hg.sharedreposource(repo)
         with srcrepo.vfs(narrowspec.FILENAME) as f:

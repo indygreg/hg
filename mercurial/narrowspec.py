@@ -13,6 +13,7 @@ from .i18n import _
 from . import (
     error,
     match as matchmod,
+    repository,
     sparse,
     util,
 )
@@ -129,15 +130,22 @@ def save(repo, includepats, excludepats):
     spec = format(includepats, excludepats)
     repo.vfs.write(FILENAME, spec)
 
-def savebackup(vfs, backupname):
+def savebackup(repo, backupname):
+    if repository.NARROW_REQUIREMENT not in repo.requirements:
+        return
+    vfs = repo.vfs
     vfs.tryunlink(backupname)
     util.copyfile(vfs.join(FILENAME), vfs.join(backupname), hardlink=True)
 
-def restorebackup(vfs, backupname):
-    vfs.rename(backupname, FILENAME, checkambig=True)
+def restorebackup(repo, backupname):
+    if repository.NARROW_REQUIREMENT not in repo.requirements:
+        return
+    repo.vfs.rename(backupname, FILENAME, checkambig=True)
 
-def clearbackup(vfs, backupname):
-    vfs.unlink(backupname)
+def clearbackup(repo, backupname):
+    if repository.NARROW_REQUIREMENT not in repo.requirements:
+        return
+    repo.vfs.unlink(backupname)
 
 def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes):
     r""" Restricts the patterns according to repo settings,

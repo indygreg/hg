@@ -11,6 +11,7 @@ from .i18n import _
 
 from . import (
     error,
+    narrowspec,
     util,
 )
 
@@ -33,7 +34,10 @@ class dirstateguard(util.transactional):
         self._active = False
         self._closed = False
         self._backupname = 'dirstate.backup.%s.%d' % (name, id(self))
+        self._narrowspecbackupname = ('narrowspec.backup.%s.%d' %
+                                      (name, id(self)))
         repo.dirstate.savebackup(repo.currenttransaction(), self._backupname)
+        narrowspec.savebackup(repo, self._narrowspecbackupname)
         self._active = True
 
     def __del__(self):
@@ -52,10 +56,12 @@ class dirstateguard(util.transactional):
 
         self._repo.dirstate.clearbackup(self._repo.currenttransaction(),
                                          self._backupname)
+        narrowspec.clearbackup(self._repo, self._narrowspecbackupname)
         self._active = False
         self._closed = True
 
     def _abort(self):
+        narrowspec.restorebackup(self._repo, self._narrowspecbackupname)
         self._repo.dirstate.restorebackup(self._repo.currenttransaction(),
                                            self._backupname)
         self._active = False

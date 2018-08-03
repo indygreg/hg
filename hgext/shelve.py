@@ -41,6 +41,7 @@ from mercurial import (
     lock as lockmod,
     mdiff,
     merge,
+    narrowspec,
     node as nodemod,
     patch,
     phases,
@@ -314,10 +315,13 @@ def _aborttransaction(repo):
     '''Abort current transaction for shelve/unshelve, but keep dirstate
     '''
     tr = repo.currenttransaction()
-    backupname = 'dirstate.shelve'
-    repo.dirstate.savebackup(tr, backupname)
+    dirstatebackupname = 'dirstate.shelve'
+    narrowspecbackupname = 'narrowspec.shelve'
+    repo.dirstate.savebackup(tr, dirstatebackupname)
+    narrowspec.savebackup(repo, narrowspecbackupname)
     tr.abort()
-    repo.dirstate.restorebackup(None, backupname)
+    narrowspec.restorebackup(repo, narrowspecbackupname)
+    repo.dirstate.restorebackup(None, dirstatebackupname)
 
 def createcmd(ui, repo, pats, opts):
     """subcommand that creates a new shelve"""

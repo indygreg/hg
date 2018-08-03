@@ -11,7 +11,6 @@ from mercurial.i18n import _
 from mercurial import (
     error,
     match as matchmod,
-    narrowspec,
 )
 
 def wrapdirstate(repo, dirstate):
@@ -27,10 +26,6 @@ def wrapdirstate(repo, dirstate):
                         "the narrow clone") % f)
             return fn(self, *args)
         return _wrapper
-
-    def _narrowbackupname(backupname):
-        assert 'dirstate' in backupname
-        return backupname.replace('dirstate', narrowspec.FILENAME)
 
     class narrowdirstate(dirstate.__class__):
         def walk(self, match, subrepos, unknown, ignored, full=True,
@@ -76,19 +71,6 @@ def wrapdirstate(repo, dirstate):
                 # narrowspec.
                 allfiles = [f for f in allfiles if repo.narrowmatch()(f)]
             super(narrowdirstate, self).rebuild(parent, allfiles, changedfiles)
-
-        def restorebackup(self, tr, backupname):
-            narrowspec.restorebackup(self._opener,
-                                     _narrowbackupname(backupname))
-            super(narrowdirstate, self).restorebackup(tr, backupname)
-
-        def savebackup(self, tr, backupname):
-            super(narrowdirstate, self).savebackup(tr, backupname)
-            narrowspec.savebackup(self._opener, _narrowbackupname(backupname))
-
-        def clearbackup(self, tr, backupname):
-            super(narrowdirstate, self).clearbackup(tr, backupname)
-            narrowspec.clearbackup(self._opener, _narrowbackupname(backupname))
 
     dirstate.__class__ = narrowdirstate
     return dirstate

@@ -286,6 +286,7 @@ Python <2.7.9 will filter SNI URLs
   finished applying clone bundle
   searching for changes
   no changes found
+  2 local changesets published
 #endif
 
 Stream clone bundles are supported

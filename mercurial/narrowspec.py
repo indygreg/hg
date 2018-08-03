@@ -13,6 +13,7 @@ from .i18n import _
 from . import (
     error,
     match as matchmod,
+    sparse,
     util,
 )
 
@@ -107,10 +108,10 @@ def parsepatterns(pats):
     return set(normalizepattern(p) for p in pats)
 
 def format(includes, excludes):
-    output = '[includes]\n'
+    output = '[include]\n'
     for i in sorted(includes - excludes):
         output += i + '\n'
-    output += '[excludes]\n'
+    output += '[exclude]\n'
     for e in sorted(excludes):
         output += e + '\n'
     return output
@@ -139,7 +140,13 @@ def load(repo):
             repo.invalidate(clearfilecache=True)
             return set(), set()
         raise
-    return _parsestoredpatterns(spec)
+    # maybe we should care about the profiles returned too
+    includepats, excludepats, profiles = sparse.parseconfig(repo.ui, spec,
+                                                            'narrow')
+    if profiles:
+        raise error.Abort(_("including other spec files using '%include' is not"
+                            " suported in narrowspec"))
+    return includepats, excludepats
 
 def save(repo, includepats, excludepats):
     spec = format(includepats, excludepats)

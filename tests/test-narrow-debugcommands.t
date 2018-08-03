@@ -2,9 +2,9 @@
   $ hg init repo
   $ cd repo
   $ cat << EOF > .hg/narrowspec
-  > [includes]
+  > [include]
   > path:foo
-  > [excludes]
+  > [exclude]
   > EOF
   $ echo treemanifest >> .hg/requires
   $ echo narrowhg-experimental >> .hg/requires

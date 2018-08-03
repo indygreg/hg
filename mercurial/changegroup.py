@@ -522,7 +522,8 @@ class revisiondelta(object):
 class cgpacker(object):
     def __init__(self, repo, filematcher, version, allowreorder,
                  useprevdelta, builddeltaheader, manifestsend,
-                 sendtreemanifests, bundlecaps=None, shallow=False):
+                 sendtreemanifests, bundlecaps=None, shallow=False,
+                 ellipsisroots=None):
         """Given a source repo, construct a bundler.
 
         filematcher is a matcher that matches on files to include in the
@@ -564,6 +565,9 @@ class cgpacker(object):
             bundlecaps = set()
         self._bundlecaps = bundlecaps
         self._isshallow = shallow
+
+        # Maps ellipsis revs to their roots at the changelog level.
+        self._precomputedellipsis = ellipsisroots
 
         # experimental config: bundle.reorder
         reorder = repo.ui.config('bundle', 'reorder')
@@ -740,7 +744,7 @@ class cgpacker(object):
                 # we skip some manifest nodes that we should otherwise
                 # have sent.
                 if (x in self._full_nodes
-                    or cl.rev(x) in self._precomputed_ellipsis):
+                    or cl.rev(x) in self._precomputedellipsis):
                     n = c[0]
                     # Record the first changeset introducing this manifest
                     # version.
@@ -1086,10 +1090,10 @@ class cgpacker(object):
 
         # At this point, a node can either be one we should skip or an
         # ellipsis. If it's not an ellipsis, bail immediately.
-        if linkrev not in self._precomputed_ellipsis:
+        if linkrev not in self._precomputedellipsis:
             return
 
-        linkparents = self._precomputed_ellipsis[linkrev]
+        linkparents = self._precomputedellipsis[linkrev]
         def local(clrev):
             """Turn a changelog revnum into a local revnum.
 
@@ -1133,8 +1137,8 @@ class cgpacker(object):
                 elif p in self._full_nodes:
                     walk.extend([pp for pp in self._repo.changelog.parentrevs(p)
                                     if pp != nullrev])
-                elif p in self._precomputed_ellipsis:
-                    walk.extend([pp for pp in self._precomputed_ellipsis[p]
+                elif p in self._precomputedellipsis:
+                    walk.extend([pp for pp in self._precomputedellipsis[p]
                                     if pp != nullrev])
                 else:
                     # In this case, we've got an ellipsis with parents
@@ -1188,7 +1192,8 @@ class cgpacker(object):
             deltachunks=(diffheader, data),
         )
 
-def _makecg1packer(repo, filematcher, bundlecaps, shallow=False):
+def _makecg1packer(repo, filematcher, bundlecaps, shallow=False,
+                   ellipsisroots=None):
     builddeltaheader = lambda d: _CHANGEGROUPV1_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.linknode)
 
@@ -1199,9 +1204,11 @@ def _makecg1packer(repo, filematcher, bundlecaps, shallow=False):
                     manifestsend=b'',
                     sendtreemanifests=False,
                     bundlecaps=bundlecaps,
-                    shallow=shallow)
+                    shallow=shallow,
+                    ellipsisroots=ellipsisroots)
 
-def _makecg2packer(repo, filematcher, bundlecaps, shallow=False):
+def _makecg2packer(repo, filematcher, bundlecaps, shallow=False,
+                   ellipsisroots=None):
     builddeltaheader = lambda d: _CHANGEGROUPV2_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode)
 
@@ -1215,9 +1222,11 @@ def _makecg2packer(repo, filematcher, bundlecaps, shallow=False):
                     manifestsend=b'',
                     sendtreemanifests=False,
                     bundlecaps=bundlecaps,
-                    shallow=shallow)
+                    shallow=shallow,
+                    ellipsisroots=ellipsisroots)
 
-def _makecg3packer(repo, filematcher, bundlecaps, shallow=False):
+def _makecg3packer(repo, filematcher, bundlecaps, shallow=False,
+                   ellipsisroots=None):
     builddeltaheader = lambda d: _CHANGEGROUPV3_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags)
 
@@ -1228,7 +1237,8 @@ def _makecg3packer(repo, filematcher, bundlecaps, shallow=False):
                     manifestsend=closechunk(),
                     sendtreemanifests=True,
                     bundlecaps=bundlecaps,
-                    shallow=shallow)
+                    shallow=shallow,
+                    ellipsisroots=ellipsisroots)
 
 _packermap = {'01': (_makecg1packer, cg1unpacker),
              # cg2 adds support for exchanging generaldelta
@@ -1289,7 +1299,7 @@ def safeversion(repo):
     return min(versions)
 
 def getbundler(version, repo, bundlecaps=None, filematcher=None,
-               shallow=False):
+               shallow=False, ellipsisroots=None):
     assert version in supportedoutgoingversions(repo)
 
     if filematcher is None:
@@ -1305,7 +1315,8 @@ def getbundler(version, repo, bundlecaps=None, filematcher=None,
                                              filematcher)
 
     fn = _packermap[version][0]
-    return fn(repo, filematcher, bundlecaps, shallow=shallow)
+    return fn(repo, filematcher, bundlecaps, shallow=shallow,
+              ellipsisroots=ellipsisroots)
 
 def getunbundler(version, fh, alg, extras=None):
     return _packermap[version][1](fh, alg, extras=extras)
@@ -1401,13 +1412,12 @@ def _packellipsischangegroup(repo, common, match, relevant_nodes,
     # sending that node's data. We override close() to detect
     # pending ellipsis nodes and flush them.
     packer = getbundler(version, repo, filematcher=match,
-                        shallow=depth is not None)
+                        shallow=depth is not None,
+                        ellipsisroots=ellipsisroots)
     # Give the packer the list of nodes which should not be
     # ellipsis nodes. We store this rather than the set of nodes
     # that should be an ellipsis because for very large histories
     # we expect this to be significantly smaller.
     packer._full_nodes = relevant_nodes
-    # Maps ellipsis revs to their roots at the changelog level.
-    packer._precomputed_ellipsis = ellipsisroots
 
     return packer.generate(common, visitnodes, False, source)

@@ -40,9 +40,9 @@ from .utils import (
     stringutil,
 )
 
-_CHANGEGROUPV1_DELTA_HEADER = "20s20s20s20s"
-_CHANGEGROUPV2_DELTA_HEADER = "20s20s20s20s20s"
-_CHANGEGROUPV3_DELTA_HEADER = ">20s20s20s20s20sH"
+_CHANGEGROUPV1_DELTA_HEADER = struct.Struct("20s20s20s20s")
+_CHANGEGROUPV2_DELTA_HEADER = struct.Struct("20s20s20s20s20s")
+_CHANGEGROUPV3_DELTA_HEADER = struct.Struct(">20s20s20s20s20sH")
 
 LFS_REQUIREMENT = 'lfs'
 
@@ -119,7 +119,7 @@ class cg1unpacker(object):
     bundlerepo and some debug commands - their use is discouraged.
     """
     deltaheader = _CHANGEGROUPV1_DELTA_HEADER
-    deltaheadersize = struct.calcsize(deltaheader)
+    deltaheadersize = deltaheader.size
     version = '01'
     _grouplistcount = 1 # One list of files after the manifests
 
@@ -192,7 +192,7 @@ class cg1unpacker(object):
         if not l:
             return {}
         headerdata = readexactly(self._stream, self.deltaheadersize)
-        header = struct.unpack(self.deltaheader, headerdata)
+        header = self.deltaheader.unpack(headerdata)
         delta = readexactly(self._stream, l - self.deltaheadersize)
         node, p1, p2, deltabase, cs, flags = self._deltaheader(header, prevnode)
         return (node, p1, p2, cs, deltabase, delta, flags)
@@ -451,7 +451,7 @@ class cg2unpacker(cg1unpacker):
     remain the same.
     """
     deltaheader = _CHANGEGROUPV2_DELTA_HEADER
-    deltaheadersize = struct.calcsize(deltaheader)
+    deltaheadersize = deltaheader.size
     version = '02'
 
     def _deltaheader(self, headertuple, prevnode):
@@ -467,7 +467,7 @@ class cg3unpacker(cg2unpacker):
     separating manifests and files.
     """
     deltaheader = _CHANGEGROUPV3_DELTA_HEADER
-    deltaheadersize = struct.calcsize(deltaheader)
+    deltaheadersize = deltaheader.size
     version = '03'
     _grouplistcount = 2 # One list of manifests and one list of files
 
@@ -1099,7 +1099,7 @@ class cg1packer(object):
     def builddeltaheader(self, node, p1n, p2n, basenode, linknode, flags):
         # do nothing with basenode, it is implicitly the previous one in HG10
         # do nothing with flags, it is implicitly 0 for cg1 and cg2
-        return struct.pack(self.deltaheader, node, p1n, p2n, linknode)
+        return self.deltaheader.pack(node, p1n, p2n, linknode)
 
 class cg2packer(cg1packer):
     deltaheader = _CHANGEGROUPV2_DELTA_HEADER
@@ -1155,7 +1155,7 @@ class cg2packer(cg1packer):
 
     def builddeltaheader(self, node, p1n, p2n, basenode, linknode, flags):
         # Do nothing with flags, it is implicitly 0 in cg1 and cg2
-        return struct.pack(self.deltaheader, node, p1n, p2n, basenode, linknode)
+        return self.deltaheader.pack(node, p1n, p2n, basenode, linknode)
 
 class cg3packer(cg2packer):
     deltaheader = _CHANGEGROUPV3_DELTA_HEADER
@@ -1173,8 +1173,7 @@ class cg3packer(cg2packer):
         return self.close()
 
     def builddeltaheader(self, node, p1n, p2n, basenode, linknode, flags):
-        return struct.pack(
-            self.deltaheader, node, p1n, p2n, basenode, linknode, flags)
+        return self.deltaheader.pack(node, p1n, p2n, basenode, linknode, flags)
 
 def _makecg1packer(repo, filematcher, bundlecaps):
     return cg1packer(repo, filematcher, b'01', bundlecaps=bundlecaps)

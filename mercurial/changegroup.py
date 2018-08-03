@@ -521,8 +521,8 @@ class revisiondelta(object):
 
 class cg1packer(object):
     deltaheader = _CHANGEGROUPV1_DELTA_HEADER
-    version = '01'
-    def __init__(self, repo, filematcher, bundlecaps=None):
+
+    def __init__(self, repo, filematcher, version, bundlecaps=None):
         """Given a source repo, construct a bundler.
 
         filematcher is a matcher that matches on files to include in the
@@ -535,6 +535,8 @@ class cg1packer(object):
         """
         assert filematcher
         self._filematcher = filematcher
+
+        self.version = version
 
         # Set of capabilities we can use to build the bundle.
         if bundlecaps is None:
@@ -1100,11 +1102,10 @@ class cg1packer(object):
         return struct.pack(self.deltaheader, node, p1n, p2n, linknode)
 
 class cg2packer(cg1packer):
-    version = '02'
     deltaheader = _CHANGEGROUPV2_DELTA_HEADER
 
-    def __init__(self, repo, filematcher, bundlecaps=None):
-        super(cg2packer, self).__init__(repo, filematcher,
+    def __init__(self, repo, filematcher, version, bundlecaps=None):
+        super(cg2packer, self).__init__(repo, filematcher, version,
                                         bundlecaps=bundlecaps)
 
         if self._reorder is None:
@@ -1157,7 +1158,6 @@ class cg2packer(cg1packer):
         return struct.pack(self.deltaheader, node, p1n, p2n, basenode, linknode)
 
 class cg3packer(cg2packer):
-    version = '03'
     deltaheader = _CHANGEGROUPV3_DELTA_HEADER
 
     def _packmanifests(self, dir, mfnodes, lookuplinknode):
@@ -1177,13 +1177,13 @@ class cg3packer(cg2packer):
             self.deltaheader, node, p1n, p2n, basenode, linknode, flags)
 
 def _makecg1packer(repo, filematcher, bundlecaps):
-    return cg1packer(repo, filematcher, bundlecaps=bundlecaps)
+    return cg1packer(repo, filematcher, b'01', bundlecaps=bundlecaps)
 
 def _makecg2packer(repo, filematcher, bundlecaps):
-    return cg2packer(repo, filematcher, bundlecaps=bundlecaps)
+    return cg2packer(repo, filematcher, b'02', bundlecaps=bundlecaps)
 
 def _makecg3packer(repo, filematcher, bundlecaps):
-    return cg3packer(repo, filematcher, bundlecaps=bundlecaps)
+    return cg3packer(repo, filematcher, b'03', bundlecaps=bundlecaps)
 
 _packermap = {'01': (_makecg1packer, cg1unpacker),
              # cg2 adds support for exchanging generaldelta

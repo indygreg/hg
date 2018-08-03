@@ -443,6 +443,16 @@ effect and style see :hg:`help color`.
     :hg:`resolve --all`.
     (default: False)
 
+``resolve.mark-check``
+    Determines what level of checking :hg:`resolve --mark` will perform before
+    marking files as resolved. Valid values are ``none`, ``warn``, and
+    ``abort``. ``warn`` will output a warning listing the file(s) that still
+    have conflict markers in them, but will still mark everything resolved.
+    ``abort`` will output the same warning but will not mark things as resolved.
+    If --all is passed and this is set to ``abort``, only a warning will be
+    shown (an error will not be raised).
+    (default: ``none``)
+
 ``status.relative``
     Make paths in :hg:`status` output relative to the current directory.
     (default: False)

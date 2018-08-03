@@ -383,7 +383,7 @@ resolve -m can be configured to look for remaining conflict markers
   U file1
   U file2
   $ echo 'remove markers' > file1
-  $ hg --config experimental.resolve.mark-check=abort resolve -m
+  $ hg --config commands.resolve.mark-check=abort resolve -m
   warning: the following files still have conflict markers:
     file2
   abort: conflict markers detected
@@ -393,7 +393,7 @@ resolve -m can be configured to look for remaining conflict markers
   U file1
   U file2
 Try with --all from the hint
-  $ hg --config experimental.resolve.mark-check=abort resolve -m --all
+  $ hg --config commands.resolve.mark-check=abort resolve -m --all
   warning: the following files still have conflict markers:
     file2
   (no more unresolved files)
@@ -404,7 +404,7 @@ Try with --all from the hint
   $ hg resolve -l
   U file1
   U file2
-  $ hg --config experimental.resolve.mark-check=warn resolve -m
+  $ hg --config commands.resolve.mark-check=warn resolve -m
   warning: the following files still have conflict markers:
     file2
   (no more unresolved files)
@@ -416,7 +416,7 @@ If the file is already marked as resolved, we don't warn about it
   $ hg resolve -l
   U file1
   R file2
-  $ hg --config experimental.resolve.mark-check=warn resolve -m
+  $ hg --config commands.resolve.mark-check=warn resolve -m
   (no more unresolved files)
   $ hg resolve -l
   R file1

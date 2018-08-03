@@ -193,6 +193,9 @@ coreconfigitem('commands', 'grep.all-files',
 coreconfigitem('commands', 'resolve.confirm',
     default=False,
 )
+coreconfigitem('commands', 'resolve.mark-check',
+    default=None,
+)
 coreconfigitem('commands', 'show.aliasprefix',
     default=list,
 )
@@ -939,9 +942,6 @@ coreconfigitem('push', 'pushvars.server',
 coreconfigitem('storage', 'revlog.optimize-delta-parent-choice',
     default=True,
     alias=[('format', 'aggressivemergedeltas')],
-)
-coreconfigitem('experimental', 'resolve.mark-check',
-    default=None,
 )
 coreconfigitem('server', 'bookmarks-pushkey-compat',
     default=True,

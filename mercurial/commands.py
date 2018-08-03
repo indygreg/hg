@@ -4603,7 +4603,7 @@ def resolve(ui, repo, *pats, **opts):
         tocomplete = []
         hasconflictmarkers = []
         if mark:
-            markcheck = ui.config('experimental', 'resolve.mark-check')
+            markcheck = ui.config('commands', 'resolve.mark-check')
         for f in ms:
             if not m(f):
                 continue

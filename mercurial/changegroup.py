@@ -520,13 +520,15 @@ class revisiondelta(object):
     deltachunks = attr.ib()
 
 class cg1packer(object):
-    deltaheader = _CHANGEGROUPV1_DELTA_HEADER
-
-    def __init__(self, repo, filematcher, version, bundlecaps=None):
+    def __init__(self, repo, filematcher, version, builddeltaheader,
+                 bundlecaps=None):
         """Given a source repo, construct a bundler.
 
         filematcher is a matcher that matches on files to include in the
         changegroup. Used to facilitate sparse changegroups.
+
+        builddeltaheader is a callable that constructs the header for a group
+        delta.
 
         bundlecaps is optional and can be used to specify the set of
         capabilities which can be used to build the bundle. While bundlecaps is
@@ -537,6 +539,7 @@ class cg1packer(object):
         self._filematcher = filematcher
 
         self.version = version
+        self._builddeltaheader = builddeltaheader
 
         # Set of capabilities we can use to build the bundle.
         if bundlecaps is None:
@@ -933,9 +936,7 @@ class cg1packer(object):
         if not delta:
             return
 
-        meta = self.builddeltaheader(delta.node, delta.p1node, delta.p2node,
-                                     delta.basenode, delta.linknode,
-                                     delta.flags)
+        meta = self._builddeltaheader(delta)
         l = len(meta) + sum(len(x) for x in delta.deltachunks)
 
         yield chunkheader(l)
@@ -1096,16 +1097,11 @@ class cg1packer(object):
             deltachunks=(diffheader, data),
         )
 
-    def builddeltaheader(self, node, p1n, p2n, basenode, linknode, flags):
-        # do nothing with basenode, it is implicitly the previous one in HG10
-        # do nothing with flags, it is implicitly 0 for cg1 and cg2
-        return self.deltaheader.pack(node, p1n, p2n, linknode)
-
 class cg2packer(cg1packer):
-    deltaheader = _CHANGEGROUPV2_DELTA_HEADER
-
-    def __init__(self, repo, filematcher, version, bundlecaps=None):
+    def __init__(self, repo, filematcher, version, builddeltaheader,
+                 bundlecaps=None):
         super(cg2packer, self).__init__(repo, filematcher, version,
+                                        builddeltaheader,
                                         bundlecaps=bundlecaps)
 
         if self._reorder is None:
@@ -1153,13 +1149,7 @@ class cg2packer(cg1packer):
             base = nullrev
         return base
 
-    def builddeltaheader(self, node, p1n, p2n, basenode, linknode, flags):
-        # Do nothing with flags, it is implicitly 0 in cg1 and cg2
-        return self.deltaheader.pack(node, p1n, p2n, basenode, linknode)
-
 class cg3packer(cg2packer):
-    deltaheader = _CHANGEGROUPV3_DELTA_HEADER
-
     def _packmanifests(self, dir, mfnodes, lookuplinknode):
         if dir:
             yield self.fileheader(dir)
@@ -1172,17 +1162,26 @@ class cg3packer(cg2packer):
     def _manifestsdone(self):
         return self.close()
 
-    def builddeltaheader(self, node, p1n, p2n, basenode, linknode, flags):
-        return self.deltaheader.pack(node, p1n, p2n, basenode, linknode, flags)
-
 def _makecg1packer(repo, filematcher, bundlecaps):
-    return cg1packer(repo, filematcher, b'01', bundlecaps=bundlecaps)
+    builddeltaheader = lambda d: _CHANGEGROUPV1_DELTA_HEADER.pack(
+        d.node, d.p1node, d.p2node, d.linknode)
+
+    return cg1packer(repo, filematcher, b'01', builddeltaheader,
+                     bundlecaps=bundlecaps)
 
 def _makecg2packer(repo, filematcher, bundlecaps):
-    return cg2packer(repo, filematcher, b'02', bundlecaps=bundlecaps)
+    builddeltaheader = lambda d: _CHANGEGROUPV2_DELTA_HEADER.pack(
+        d.node, d.p1node, d.p2node, d.basenode, d.linknode)
+
+    return cg2packer(repo, filematcher, b'02', builddeltaheader,
+                     bundlecaps=bundlecaps)
 
 def _makecg3packer(repo, filematcher, bundlecaps):
-    return cg3packer(repo, filematcher, b'03', bundlecaps=bundlecaps)
+    builddeltaheader = lambda d: _CHANGEGROUPV3_DELTA_HEADER.pack(
+        d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags)
+
+    return cg3packer(repo, filematcher, b'03', builddeltaheader,
+                     bundlecaps=bundlecaps)
 
 _packermap = {'01': (_makecg1packer, cg1unpacker),
              # cg2 adds support for exchanging generaldelta

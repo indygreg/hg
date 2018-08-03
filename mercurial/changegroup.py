@@ -521,7 +521,7 @@ class revisiondelta(object):
 
 class cgpacker(object):
     def __init__(self, repo, filematcher, version, allowreorder,
-                 useprevdelta, builddeltaheader, manifestsend,
+                 deltaparentfn, builddeltaheader, manifestsend,
                  bundlecaps=None, ellipses=False,
                  shallow=False, ellipsisroots=None, fullnodes=None):
         """Given a source repo, construct a bundler.
@@ -533,8 +533,8 @@ class cgpacker(object):
         This value is used when ``bundle.reorder`` is ``auto`` or isn't
         set.
 
-        useprevdelta controls whether revisions should always delta against
-        the previous revision in the changegroup.
+        deltaparentfn is a callable that resolves the delta parent for
+        a specific revision.
 
         builddeltaheader is a callable that constructs the header for a group
         delta.
@@ -559,7 +559,7 @@ class cgpacker(object):
         self._filematcher = filematcher
 
         self.version = version
-        self._useprevdelta = useprevdelta
+        self._deltaparentfn = deltaparentfn
         self._builddeltaheader = builddeltaheader
         self._manifestsend = manifestsend
         self._ellipses = ellipses
@@ -969,53 +969,6 @@ class cgpacker(object):
                 self._verbosenote(_('%8.i  %s\n') % (size, fname))
         progress.complete()
 
-    def _deltaparent(self, store, rev, p1, p2, prev):
-        if self._useprevdelta:
-            if not store.candelta(prev, rev):
-                raise error.ProgrammingError(
-                    'cg1 should not be used in this case')
-            return prev
-
-        # Narrow ellipses mode.
-        if self._ellipses:
-            # TODO: send better deltas when in narrow mode.
-            #
-            # changegroup.group() loops over revisions to send,
-            # including revisions we'll skip. What this means is that
-            # `prev` will be a potentially useless delta base for all
-            # ellipsis nodes, as the client likely won't have it. In
-            # the future we should do bookkeeping about which nodes
-            # have been sent to the client, and try to be
-            # significantly smarter about delta bases. This is
-            # slightly tricky because this same code has to work for
-            # all revlogs, and we don't have the linkrev/linknode here.
-            return p1
-
-        dp = store.deltaparent(rev)
-        if dp == nullrev and store.storedeltachains:
-            # Avoid sending full revisions when delta parent is null. Pick prev
-            # in that case. It's tempting to pick p1 in this case, as p1 will
-            # be smaller in the common case. However, computing a delta against
-            # p1 may require resolving the raw text of p1, which could be
-            # expensive. The revlog caches should have prev cached, meaning
-            # less CPU for changegroup generation. There is likely room to add
-            # a flag and/or config option to control this behavior.
-            base = prev
-        elif dp == nullrev:
-            # revlog is configured to use full snapshot for a reason,
-            # stick to full snapshot.
-            base = nullrev
-        elif dp not in (p1, p2, prev):
-            # Pick prev when we can't be sure remote has the base revision.
-            return prev
-        else:
-            base = dp
-
-        if base != nullrev and not store.candelta(base, rev):
-            base = nullrev
-
-        return base
-
     def _revchunk(self, store, rev, prev, linknode):
         if self._ellipses:
             fn = self._revisiondeltanarrow
@@ -1037,7 +990,7 @@ class cgpacker(object):
     def _revisiondeltanormal(self, store, rev, prev, linknode):
         node = store.node(rev)
         p1, p2 = store.parentrevs(rev)
-        base = self._deltaparent(store, rev, p1, p2, prev)
+        base = self._deltaparentfn(store, rev, p1, p2, prev)
 
         prefix = ''
         if store.iscensored(base) or store.iscensored(rev):
@@ -1187,13 +1140,62 @@ class cgpacker(object):
             deltachunks=(diffheader, data),
         )
 
+def _deltaparentprev(store, rev, p1, p2, prev):
+    """Resolve a delta parent to the previous revision.
+
+    Used for version 1 changegroups, which don't support generaldelta.
+    """
+    return prev
+
+def _deltaparentgeneraldelta(store, rev, p1, p2, prev):
+    """Resolve a delta parent when general deltas are supported."""
+    dp = store.deltaparent(rev)
+    if dp == nullrev and store.storedeltachains:
+        # Avoid sending full revisions when delta parent is null. Pick prev
+        # in that case. It's tempting to pick p1 in this case, as p1 will
+        # be smaller in the common case. However, computing a delta against
+        # p1 may require resolving the raw text of p1, which could be
+        # expensive. The revlog caches should have prev cached, meaning
+        # less CPU for changegroup generation. There is likely room to add
+        # a flag and/or config option to control this behavior.
+        base = prev
+    elif dp == nullrev:
+        # revlog is configured to use full snapshot for a reason,
+        # stick to full snapshot.
+        base = nullrev
+    elif dp not in (p1, p2, prev):
+        # Pick prev when we can't be sure remote has the base revision.
+        return prev
+    else:
+        base = dp
+
+    if base != nullrev and not store.candelta(base, rev):
+        base = nullrev
+
+    return base
+
+def _deltaparentellipses(store, rev, p1, p2, prev):
+    """Resolve a delta parent when in ellipses mode."""
+    # TODO: send better deltas when in narrow mode.
+    #
+    # changegroup.group() loops over revisions to send,
+    # including revisions we'll skip. What this means is that
+    # `prev` will be a potentially useless delta base for all
+    # ellipsis nodes, as the client likely won't have it. In
+    # the future we should do bookkeeping about which nodes
+    # have been sent to the client, and try to be
+    # significantly smarter about delta bases. This is
+    # slightly tricky because this same code has to work for
+    # all revlogs, and we don't have the linkrev/linknode here.
+    return p1
+
 def _makecg1packer(repo, filematcher, bundlecaps, ellipses=False,
                    shallow=False, ellipsisroots=None, fullnodes=None):
     builddeltaheader = lambda d: _CHANGEGROUPV1_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.linknode)
 
     return cgpacker(repo, filematcher, b'01',
-                    useprevdelta=True,
+                    deltaparentfn=_deltaparentprev,
                     allowreorder=None,
                     builddeltaheader=builddeltaheader,
                     manifestsend=b'',
@@ -1212,7 +1214,7 @@ def _makecg2packer(repo, filematcher, bundlecaps, ellipses=False,
     # generally doesn't help, so we disable it by default (treating
     # bundle.reorder=auto just like bundle.reorder=False).
     return cgpacker(repo, filematcher, b'02',
-                    useprevdelta=False,
+                    deltaparentfn=_deltaparentgeneraldelta,
                     allowreorder=False,
                     builddeltaheader=builddeltaheader,
                     manifestsend=b'',
@@ -1227,8 +1229,11 @@ def _makecg3packer(repo, filematcher, bundlecaps, ellipses=False,
     builddeltaheader = lambda d: _CHANGEGROUPV3_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags)
 
+    deltaparentfn = (_deltaparentellipses if ellipses
+                     else _deltaparentgeneraldelta)
+
     return cgpacker(repo, filematcher, b'03',
-                    useprevdelta=False,
+                    deltaparentfn=deltaparentfn,
                     allowreorder=False,
                     builddeltaheader=builddeltaheader,
                     manifestsend=closechunk(),

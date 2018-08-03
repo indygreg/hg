@@ -520,13 +520,17 @@ class revisiondelta(object):
     deltachunks = attr.ib()
 
 class cg1packer(object):
-    def __init__(self, repo, filematcher, version, builddeltaheader,
-                 manifestsend, sendtreemanifests,
+    def __init__(self, repo, filematcher, version, allowreorder,
+                 builddeltaheader, manifestsend, sendtreemanifests,
                  bundlecaps=None):
         """Given a source repo, construct a bundler.
 
         filematcher is a matcher that matches on files to include in the
         changegroup. Used to facilitate sparse changegroups.
+
+        allowreorder controls whether reordering of revisions is allowed.
+        This value is used when ``bundle.reorder`` is ``auto`` or isn't
+        set.
 
         builddeltaheader is a callable that constructs the header for a group
         delta.
@@ -552,14 +556,16 @@ class cg1packer(object):
         if bundlecaps is None:
             bundlecaps = set()
         self._bundlecaps = bundlecaps
+
         # experimental config: bundle.reorder
         reorder = repo.ui.config('bundle', 'reorder')
         if reorder == 'auto':
-            reorder = None
+            self._reorder = allowreorder
         else:
-            reorder = stringutil.parsebool(reorder)
+            self._reorder = stringutil.parsebool(reorder)
+
         self._repo = repo
-        self._reorder = reorder
+
         if self._repo.ui.verbose and not self._repo.ui.debugflag:
             self._verbosenote = self._repo.ui.note
         else:
@@ -1120,19 +1126,6 @@ class cg1packer(object):
         )
 
 class cg2packer(cg1packer):
-    def __init__(self, repo, filematcher, version, builddeltaheader,
-                 manifestsend, sendtreemanifests, bundlecaps=None):
-        super(cg2packer, self).__init__(repo, filematcher, version,
-                                        builddeltaheader, manifestsend,
-                                        sendtreemanifests,
-                                        bundlecaps=bundlecaps)
-
-        if self._reorder is None:
-            # Since generaldelta is directly supported by cg2, reordering
-            # generally doesn't help, so we disable it by default (treating
-            # bundle.reorder=auto just like bundle.reorder=False).
-            self._reorder = False
-
     def deltaparent(self, store, rev, p1, p2, prev):
         # Narrow ellipses mode.
         if util.safehasattr(self, 'full_nodes'):
@@ -1176,7 +1169,8 @@ def _makecg1packer(repo, filematcher, bundlecaps):
     builddeltaheader = lambda d: _CHANGEGROUPV1_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.linknode)
 
-    return cg1packer(repo, filematcher, b'01', builddeltaheader,
+    return cg1packer(repo, filematcher, b'01', allowreorder=None,
+                     builddeltaheader=builddeltaheader,
                      manifestsend=b'', sendtreemanifests=False,
                      bundlecaps=bundlecaps)
 
@@ -1184,7 +1178,11 @@ def _makecg2packer(repo, filematcher, bundlecaps):
     builddeltaheader = lambda d: _CHANGEGROUPV2_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode)
 
-    return cg2packer(repo, filematcher, b'02', builddeltaheader,
+    # Since generaldelta is directly supported by cg2, reordering
+    # generally doesn't help, so we disable it by default (treating
+    # bundle.reorder=auto just like bundle.reorder=False).
+    return cg2packer(repo, filematcher, b'02', allowreorder=False,
+                     builddeltaheader=builddeltaheader,
                      manifestsend=b'', sendtreemanifests=False,
                      bundlecaps=bundlecaps)
 
@@ -1192,7 +1190,8 @@ def _makecg3packer(repo, filematcher, bundlecaps):
     builddeltaheader = lambda d: _CHANGEGROUPV3_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags)
 
-    return cg2packer(repo, filematcher, b'03', builddeltaheader,
+    return cg2packer(repo, filematcher, b'03', allowreorder=False,
+                     builddeltaheader=builddeltaheader,
                      manifestsend=closechunk(), sendtreemanifests=True,
                      bundlecaps=bundlecaps)
 

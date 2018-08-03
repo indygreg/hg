@@ -522,8 +522,8 @@ class revisiondelta(object):
 class cgpacker(object):
     def __init__(self, repo, filematcher, version, allowreorder,
                  useprevdelta, builddeltaheader, manifestsend,
-                 sendtreemanifests, bundlecaps=None, shallow=False,
-                 ellipsisroots=None):
+                 sendtreemanifests, bundlecaps=None, ellipses=False,
+                 shallow=False, ellipsisroots=None):
         """Given a source repo, construct a bundler.
 
         filematcher is a matcher that matches on files to include in the
@@ -543,6 +543,8 @@ class cgpacker(object):
 
         sendtreemanifests indicates whether tree manifests should be emitted.
 
+        ellipses indicates whether ellipsis serving mode is enabled.
+
         bundlecaps is optional and can be used to specify the set of
         capabilities which can be used to build the bundle. While bundlecaps is
         unused in core Mercurial, extensions rely on this feature to communicate
@@ -559,6 +561,7 @@ class cgpacker(object):
         self._builddeltaheader = builddeltaheader
         self._manifestsend = manifestsend
         self._sendtreemanifests = sendtreemanifests
+        self._ellipses = ellipses
 
         # Set of capabilities we can use to build the bundle.
         if bundlecaps is None:
@@ -628,7 +631,7 @@ class cgpacker(object):
         # order that they're introduced in dramatis personae by the
         # changelog, so what we do is we sort the non-changelog histories
         # by the order in which they are used by the changelog.
-        if util.safehasattr(self, '_full_nodes') and self._clnodetorev:
+        if self._ellipses and self._clnodetorev:
             key = lambda n: self._clnodetorev[lookup(n)]
             return [store.rev(n) for n in sorted(nodelist, key=key)]
 
@@ -729,8 +732,6 @@ class cgpacker(object):
         mfrevlog = mfl._revlog
         changedfiles = set()
 
-        ellipsesmode = util.safehasattr(self, '_full_nodes')
-
         # Callback for the changelog, used to collect changed files and
         # manifest nodes.
         # Returns the linkrev node (identity in the changelog case).
@@ -738,7 +739,7 @@ class cgpacker(object):
             c = cl.read(x)
             clrevorder[x] = len(clrevorder)
 
-            if ellipsesmode:
+            if self._ellipses:
                 # Only update mfs if x is going to be sent. Otherwise we
                 # end up with bogus linkrevs specified for manifests and
                 # we skip some manifest nodes that we should otherwise
@@ -805,7 +806,7 @@ class cgpacker(object):
                 fastpathlinkrev, mfs, fnodes, source):
             yield chunk
 
-        if ellipsesmode:
+        if self._ellipses:
             mfdicts = None
             if self._isshallow:
                 mfdicts = [(self._repo.manifestlog[n].read(), lr)
@@ -825,7 +826,7 @@ class cgpacker(object):
                 revs = ((r, llr(r)) for r in filerevlog)
                 return dict((fln(r), cln(lr)) for r, lr in revs if lr in clrevs)
 
-        if ellipsesmode:
+        if self._ellipses:
             # We need to pass the mfdicts variable down into
             # generatefiles(), but more than one command might have
             # wrapped generatefiles so we can't modify the function
@@ -982,7 +983,7 @@ class cgpacker(object):
             return prev
 
         # Narrow ellipses mode.
-        if util.safehasattr(self, '_full_nodes'):
+        if self._ellipses:
             # TODO: send better deltas when in narrow mode.
             #
             # changegroup.group() loops over revisions to send,
@@ -1022,7 +1023,7 @@ class cgpacker(object):
         return base
 
     def _revchunk(self, store, rev, prev, linknode):
-        if util.safehasattr(self, '_full_nodes'):
+        if self._ellipses:
             fn = self._revisiondeltanarrow
         else:
             fn = self._revisiondeltanormal
@@ -1192,8 +1193,8 @@ class cgpacker(object):
             deltachunks=(diffheader, data),
         )
 
-def _makecg1packer(repo, filematcher, bundlecaps, shallow=False,
-                   ellipsisroots=None):
+def _makecg1packer(repo, filematcher, bundlecaps, ellipses=False,
+                   shallow=False, ellipsisroots=None):
     builddeltaheader = lambda d: _CHANGEGROUPV1_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.linknode)
 
@@ -1204,11 +1205,12 @@ def _makecg1packer(repo, filematcher, bundlecaps, shallow=False,
                     manifestsend=b'',
                     sendtreemanifests=False,
                     bundlecaps=bundlecaps,
+                    ellipses=ellipses,
                     shallow=shallow,
                     ellipsisroots=ellipsisroots)
 
-def _makecg2packer(repo, filematcher, bundlecaps, shallow=False,
-                   ellipsisroots=None):
+def _makecg2packer(repo, filematcher, bundlecaps, ellipses=False,
+                   shallow=False, ellipsisroots=None):
     builddeltaheader = lambda d: _CHANGEGROUPV2_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode)
 
@@ -1222,11 +1224,12 @@ def _makecg2packer(repo, filematcher, bundlecaps, shallow=False,
                     manifestsend=b'',
                     sendtreemanifests=False,
                     bundlecaps=bundlecaps,
+                    ellipses=ellipses,
                     shallow=shallow,
                     ellipsisroots=ellipsisroots)
 
-def _makecg3packer(repo, filematcher, bundlecaps, shallow=False,
-                   ellipsisroots=None):
+def _makecg3packer(repo, filematcher, bundlecaps, ellipses=False,
+                   shallow=False, ellipsisroots=None):
     builddeltaheader = lambda d: _CHANGEGROUPV3_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags)
 
@@ -1237,6 +1240,7 @@ def _makecg3packer(repo, filematcher, bundlecaps, shallow=False,
                     manifestsend=closechunk(),
                     sendtreemanifests=True,
                     bundlecaps=bundlecaps,
+                    ellipses=ellipses,
                     shallow=shallow,
                     ellipsisroots=ellipsisroots)
 
@@ -1299,7 +1303,7 @@ def safeversion(repo):
     return min(versions)
 
 def getbundler(version, repo, bundlecaps=None, filematcher=None,
-               shallow=False, ellipsisroots=None):
+               ellipses=False, shallow=False, ellipsisroots=None):
     assert version in supportedoutgoingversions(repo)
 
     if filematcher is None:
@@ -1309,14 +1313,19 @@ def getbundler(version, repo, bundlecaps=None, filematcher=None,
         raise error.ProgrammingError('version 01 changegroups do not support '
                                      'sparse file matchers')
 
+    if ellipses and version in (b'01', b'02'):
+        raise error.Abort(
+            _('ellipsis nodes require at least cg3 on client and server, '
+              'but negotiated version %s') % version)
+
     # Requested files could include files not in the local store. So
     # filter those out.
     filematcher = matchmod.intersectmatchers(repo.narrowmatch(),
                                              filematcher)
 
     fn = _packermap[version][0]
-    return fn(repo, filematcher, bundlecaps, shallow=shallow,
-              ellipsisroots=ellipsisroots)
+    return fn(repo, filematcher, bundlecaps, ellipses=ellipses,
+              shallow=shallow, ellipsisroots=ellipsisroots)
 
 def getunbundler(version, fh, alg, extras=None):
     return _packermap[version][1](fh, alg, extras=extras)
@@ -1402,16 +1411,13 @@ def _addchangegroupfiles(repo, source, revmap, trp, expectedfiles, needfiles):
 
 def _packellipsischangegroup(repo, common, match, relevant_nodes,
                              ellipsisroots, visitnodes, depth, source, version):
-    if version in ('01', '02'):
-        raise error.Abort(
-            'ellipsis nodes require at least cg3 on client and server, '
-            'but negotiated version %s' % version)
     # We wrap cg1packer.revchunk, using a side channel to pass
     # relevant_nodes into that area. Then if linknode isn't in the
     # set, we know we have an ellipsis node and we should defer
     # sending that node's data. We override close() to detect
     # pending ellipsis nodes and flush them.
     packer = getbundler(version, repo, filematcher=match,
+                        ellipses=True,
                         shallow=depth is not None,
                         ellipsisroots=ellipsisroots)
     # Give the packer the list of nodes which should not be

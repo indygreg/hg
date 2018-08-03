@@ -116,10 +116,15 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
         newvisit, newfull, newellipsis = exchange._computeellipsis(
             repo, set(), common, known, newmatch)
         if newvisit:
-            cg = changegroup._packellipsischangegroup(
-                repo, common, newmatch, newfull, newellipsis,
-                newvisit, depth, source, version)
-            part = bundler.newpart('changegroup', data=cg)
+            packer = changegroup.getbundler(version, repo,
+                                            filematcher=newmatch,
+                                            ellipses=True,
+                                            shallow=depth is not None,
+                                            ellipsisroots=newellipsis,
+                                            fullnodes=newfull)
+            cgdata = packer.generate(common, newvisit, False, source)
+
+            part = bundler.newpart('changegroup', data=cgdata)
             part.addparam('version', version)
             if 'treemanifest' in repo.requirements:
                 part.addparam('treemanifest', '1')
@@ -129,10 +134,15 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
 
     repo.ui.debug('Found %d relevant revs\n' % len(relevant_nodes))
     if visitnodes:
-        cg = changegroup._packellipsischangegroup(
-            repo, common, newmatch, relevant_nodes, ellipsisroots,
-            visitnodes, depth, source, version)
-        part = bundler.newpart('changegroup', data=cg)
+        packer = changegroup.getbundler(version, repo,
+                                        filematcher=newmatch,
+                                        ellipses=True,
+                                        shallow=depth is not None,
+                                        ellipsisroots=ellipsisroots,
+                                        fullnodes=relevant_nodes)
+        cgdata = packer.generate(common, visitnodes, False, source)
+
+        part = bundler.newpart('changegroup', data=cgdata)
         part.addparam('version', version)
         if 'treemanifest' in repo.requirements:
             part.addparam('treemanifest', '1')

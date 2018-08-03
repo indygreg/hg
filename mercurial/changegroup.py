@@ -1418,18 +1418,3 @@ def _addchangegroupfiles(repo, source, revmap, trp, expectedfiles, needfiles):
                     (f, hex(n)))
 
     return revisions, files
-
-def _packellipsischangegroup(repo, common, match, relevant_nodes,
-                             ellipsisroots, visitnodes, depth, source, version):
-    # We wrap cg1packer.revchunk, using a side channel to pass
-    # relevant_nodes into that area. Then if linknode isn't in the
-    # set, we know we have an ellipsis node and we should defer
-    # sending that node's data. We override close() to detect
-    # pending ellipsis nodes and flush them.
-    packer = getbundler(version, repo, filematcher=match,
-                        ellipses=True,
-                        shallow=depth is not None,
-                        ellipsisroots=ellipsisroots,
-                        fullnodes=relevant_nodes)
-
-    return packer.generate(common, visitnodes, False, source)

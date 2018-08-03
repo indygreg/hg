@@ -521,7 +521,7 @@ class revisiondelta(object):
 
 class cg1packer(object):
     def __init__(self, repo, filematcher, version, builddeltaheader,
-                 manifestsend,
+                 manifestsend, sendtreemanifests,
                  bundlecaps=None):
         """Given a source repo, construct a bundler.
 
@@ -532,6 +532,8 @@ class cg1packer(object):
         delta.
 
         manifestsend is a chunk to send after manifests have been fully emitted.
+
+        sendtreemanifests indicates whether tree manifests should be emitted.
 
         bundlecaps is optional and can be used to specify the set of
         capabilities which can be used to build the bundle. While bundlecaps is
@@ -544,6 +546,7 @@ class cg1packer(object):
         self.version = version
         self._builddeltaheader = builddeltaheader
         self._manifestsend = manifestsend
+        self._sendtreemanifests = sendtreemanifests
 
         # Set of capabilities we can use to build the bundle.
         if bundlecaps is None:
@@ -663,6 +666,23 @@ class cg1packer(object):
         assert not dir
         for chunk in self.group(mfnodes, self._repo.manifestlog._revlog,
                                 lookuplinknode, units=_('manifests')):
+            yield chunk
+
+    def _packtreemanifests(self, dir, mfnodes, lookuplinknode):
+        """Version of _packmanifests that operates on directory manifests.
+
+        Encodes the directory name in the output so multiple manifests
+        can be sent.
+        """
+        assert self.version == b'03'
+
+        if dir:
+            yield self.fileheader(dir)
+
+        # TODO violates storage abstractions by assuming revlogs.
+        dirlog = self._repo.manifestlog._revlog.dirlog(dir)
+        for chunk in self.group(mfnodes, dirlog, lookuplinknode,
+                                units=_('manifests')):
             yield chunk
 
     def generate(self, commonrevs, clnodes, fastpathlinkrev, source):
@@ -845,13 +865,14 @@ class cg1packer(object):
                 return clnode
             return lookupmflinknode
 
+        fn = (self._packtreemanifests if self._sendtreemanifests
+              else self._packmanifests)
         size = 0
         while tmfnodes:
             dir, nodes = tmfnodes.popitem()
             prunednodes = self.prune(dirlog(dir), nodes, commonrevs)
             if not dir or prunednodes:
-                for x in self._packmanifests(dir, prunednodes,
-                                             makelookupmflinknode(dir, nodes)):
+                for x in fn(dir, prunednodes, makelookupmflinknode(dir, nodes)):
                     size += len(x)
                     yield x
         self._verbosenote(_('%8.i (manifests)\n') % size)
@@ -1100,9 +1121,10 @@ class cg1packer(object):
 
 class cg2packer(cg1packer):
     def __init__(self, repo, filematcher, version, builddeltaheader,
-                 manifestsend, bundlecaps=None):
+                 manifestsend, sendtreemanifests, bundlecaps=None):
         super(cg2packer, self).__init__(repo, filematcher, version,
                                         builddeltaheader, manifestsend,
+                                        sendtreemanifests,
                                         bundlecaps=bundlecaps)
 
         if self._reorder is None:
@@ -1150,22 +1172,12 @@ class cg2packer(cg1packer):
             base = nullrev
         return base
 
-class cg3packer(cg2packer):
-    def _packmanifests(self, dir, mfnodes, lookuplinknode):
-        if dir:
-            yield self.fileheader(dir)
-
-        dirlog = self._repo.manifestlog._revlog.dirlog(dir)
-        for chunk in self.group(mfnodes, dirlog, lookuplinknode,
-                                units=_('manifests')):
-            yield chunk
-
 def _makecg1packer(repo, filematcher, bundlecaps):
     builddeltaheader = lambda d: _CHANGEGROUPV1_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.linknode)
 
     return cg1packer(repo, filematcher, b'01', builddeltaheader,
-                     manifestsend=b'',
+                     manifestsend=b'', sendtreemanifests=False,
                      bundlecaps=bundlecaps)
 
 def _makecg2packer(repo, filematcher, bundlecaps):
@@ -1173,15 +1185,15 @@ def _makecg2packer(repo, filematcher, bundlecaps):
         d.node, d.p1node, d.p2node, d.basenode, d.linknode)
 
     return cg2packer(repo, filematcher, b'02', builddeltaheader,
-                     manifestsend=b'',
+                     manifestsend=b'', sendtreemanifests=False,
                      bundlecaps=bundlecaps)
 
 def _makecg3packer(repo, filematcher, bundlecaps):
     builddeltaheader = lambda d: _CHANGEGROUPV3_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags)
 
-    return cg3packer(repo, filematcher, b'03', builddeltaheader,
-                     manifestsend=closechunk(),
+    return cg2packer(repo, filematcher, b'03', builddeltaheader,
+                     manifestsend=closechunk(), sendtreemanifests=True,
                      bundlecaps=bundlecaps)
 
 _packermap = {'01': (_makecg1packer, cg1unpacker),

@@ -519,7 +519,7 @@ class revisiondelta(object):
     # Iterable of chunks holding raw delta data.
     deltachunks = attr.ib()
 
-class cg1packer(object):
+class cgpacker(object):
     def __init__(self, repo, filematcher, version, allowreorder,
                  useprevdelta, builddeltaheader, manifestsend,
                  sendtreemanifests, bundlecaps=None):
@@ -1175,12 +1175,13 @@ def _makecg1packer(repo, filematcher, bundlecaps):
     builddeltaheader = lambda d: _CHANGEGROUPV1_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.linknode)
 
-    return cg1packer(repo, filematcher, b'01',
-                     useprevdelta=True,
-                     allowreorder=None,
-                     builddeltaheader=builddeltaheader,
-                     manifestsend=b'', sendtreemanifests=False,
-                     bundlecaps=bundlecaps)
+    return cgpacker(repo, filematcher, b'01',
+                    useprevdelta=True,
+                    allowreorder=None,
+                    builddeltaheader=builddeltaheader,
+                    manifestsend=b'',
+                    sendtreemanifests=False,
+                    bundlecaps=bundlecaps)
 
 def _makecg2packer(repo, filematcher, bundlecaps):
     builddeltaheader = lambda d: _CHANGEGROUPV2_DELTA_HEADER.pack(
@@ -1189,23 +1190,25 @@ def _makecg2packer(repo, filematcher, bundlecaps):
     # Since generaldelta is directly supported by cg2, reordering
     # generally doesn't help, so we disable it by default (treating
     # bundle.reorder=auto just like bundle.reorder=False).
-    return cg1packer(repo, filematcher, b'02',
-                     useprevdelta=False,
-                     allowreorder=False,
-                     builddeltaheader=builddeltaheader,
-                     manifestsend=b'', sendtreemanifests=False,
-                     bundlecaps=bundlecaps)
+    return cgpacker(repo, filematcher, b'02',
+                    useprevdelta=False,
+                    allowreorder=False,
+                    builddeltaheader=builddeltaheader,
+                    manifestsend=b'',
+                    sendtreemanifests=False,
+                    bundlecaps=bundlecaps)
 
 def _makecg3packer(repo, filematcher, bundlecaps):
     builddeltaheader = lambda d: _CHANGEGROUPV3_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags)
 
-    return cg1packer(repo, filematcher, b'03',
-                     useprevdelta=False,
-                     allowreorder=False,
-                     builddeltaheader=builddeltaheader,
-                     manifestsend=closechunk(), sendtreemanifests=True,
-                     bundlecaps=bundlecaps)
+    return cgpacker(repo, filematcher, b'03',
+                    useprevdelta=False,
+                    allowreorder=False,
+                    builddeltaheader=builddeltaheader,
+                    manifestsend=closechunk(),
+                    sendtreemanifests=True,
+                    bundlecaps=bundlecaps)
 
 _packermap = {'01': (_makecg1packer, cg1unpacker),
              # cg2 adds support for exchanging generaldelta

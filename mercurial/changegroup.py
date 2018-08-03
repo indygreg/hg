@@ -579,13 +579,17 @@ class cgpacker(object):
         else:
             self._verbosenote = lambda s: None
 
+        # TODO the functionality keyed off of this should probably be
+        # controlled via arguments to group() that influence behavior.
+        self._changelogdone = False
+
     def _close(self):
         # Ellipses serving mode.
         getattr(self, '_clrev_to_localrev', {}).clear()
         if getattr(self, '_next_clrev_to_localrev', {}):
             self._clrev_to_localrev = self._next_clrev_to_localrev
             del self._next_clrev_to_localrev
-        self._changelog_done = True
+        self._changelogdone = True
 
         return closechunk()
 
@@ -1058,7 +1062,7 @@ class cgpacker(object):
     def _revisiondeltanarrow(self, store, rev, prev, linknode):
         # build up some mapping information that's useful later. See
         # the local() nested function below.
-        if not self._changelog_done:
+        if not self._changelogdone:
             self._clnode_to_rev[linknode] = rev
             linkrev = rev
             self._clrev_to_localrev[linkrev] = rev
@@ -1090,7 +1094,7 @@ class cgpacker(object):
             if clrev == nullrev:
                 return nullrev
 
-            if not self._changelog_done:
+            if not self._changelogdone:
                 # If we're doing the changelog, it's possible that we
                 # have a parent that is already on the client, and we
                 # need to store some extra mapping information so that
@@ -1403,6 +1407,5 @@ def _packellipsischangegroup(repo, common, match, relevant_nodes,
     # Maps changelog nodes to changelog revs. Filled in once
     # during changelog stage and then left unmodified.
     packer._clnode_to_rev = {}
-    packer._changelog_done = False
 
     return packer.generate(common, visitnodes, False, source)

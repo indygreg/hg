@@ -145,6 +145,16 @@ def save(repo, includepats, excludepats):
     spec = format(includepats, excludepats)
     repo.vfs.write(FILENAME, spec)
 
+def savebackup(vfs, backupname):
+    vfs.tryunlink(backupname)
+    util.copyfile(vfs.join(FILENAME), vfs.join(backupname), hardlink=True)
+
+def restorebackup(vfs, backupname):
+    vfs.rename(backupname, FILENAME, checkambig=True)
+
+def clearbackup(vfs, backupname):
+    vfs.unlink(backupname)
+
 def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes):
     r""" Restricts the patterns according to repo settings,
     results in a logical AND operation

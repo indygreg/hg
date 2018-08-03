@@ -12,7 +12,6 @@ from mercurial import (
     error,
     match as matchmod,
     narrowspec,
-    util as hgutil,
 )
 
 def wrapdirstate(repo, dirstate):
@@ -79,21 +78,17 @@ def wrapdirstate(repo, dirstate):
             super(narrowdirstate, self).rebuild(parent, allfiles, changedfiles)
 
         def restorebackup(self, tr, backupname):
-            self._opener.rename(_narrowbackupname(backupname),
-                                narrowspec.FILENAME, checkambig=True)
+            narrowspec.restorebackup(self._opener,
+                                     _narrowbackupname(backupname))
             super(narrowdirstate, self).restorebackup(tr, backupname)
 
         def savebackup(self, tr, backupname):
             super(narrowdirstate, self).savebackup(tr, backupname)
-
-            narrowbackupname = _narrowbackupname(backupname)
-            self._opener.tryunlink(narrowbackupname)
-            hgutil.copyfile(self._opener.join(narrowspec.FILENAME),
-                            self._opener.join(narrowbackupname), hardlink=True)
+            narrowspec.savebackup(self._opener, _narrowbackupname(backupname))
 
         def clearbackup(self, tr, backupname):
             super(narrowdirstate, self).clearbackup(tr, backupname)
-            self._opener.unlink(_narrowbackupname(backupname))
+            narrowspec.clearbackup(self._opener, _narrowbackupname(backupname))
 
     dirstate.__class__ = narrowdirstate
     return dirstate

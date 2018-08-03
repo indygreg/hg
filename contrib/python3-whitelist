@@ -319,6 +319,7 @@ test-mq-safety.t
 test-mq-subrepo.t
 test-mq-symlinks.t
 test-mv-cp-st-diff.t
+test-narrow-acl.t
 test-narrow-archive.t
 test-narrow-clone-no-ellipsis.t
 test-narrow-clone-non-narrow-server.t
@@ -406,6 +407,7 @@ test-push.t
 test-pushvars.t
 test-qrecord.t
 test-rebase-abort.t
+test-rebase-backup.t
 test-rebase-base-flag.t
 test-rebase-bookmarks.t
 test-rebase-brute-force.t
@@ -530,6 +532,7 @@ test-url-download.t
 test-url-rev.t
 test-url.py
 test-username-newline.t
+test-util.py
 test-verify.t
 test-walk.t
 test-walkrepo.py

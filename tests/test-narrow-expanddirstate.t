@@ -27,16 +27,16 @@
 
   $ mkdir outside
   $ echo other_contents > outside/f2
-  $ grep outside .hg/narrowspec
+  $ hg tracked | grep outside
   [1]
-  $ grep outside .hg/dirstate
+  $ hg files | grep outside
   [1]
   $ hg status
 
 `hg status` did not add outside.
-  $ grep outside .hg/narrowspec
+  $ hg tracked | grep outside
   [1]
-  $ grep outside .hg/dirstate
+  $ hg files | grep outside
   [1]
 
 Unfortunately this is not really a candidate for adding to narrowhg proper,
@@ -115,12 +115,12 @@ Do that for patchdir as well.
 `hg status` will now add outside, but not patchdir.
   $ DIRSTATEINCLUDES=path:outside hg status
   M outside/f2
-  $ grep outside .hg/narrowspec
-  path:outside
-  $ grep outside .hg/dirstate > /dev/null
-  $ grep patchdir .hg/narrowspec
+  $ hg tracked | grep outside
+  I path:outside
+  $ hg files | grep outside > /dev/null
+  $ hg tracked | grep patchdir
   [1]
-  $ grep patchdir .hg/dirstate
+  $ hg files | grep patchdir
   [1]
 
 Get rid of the modification to outside/f2.
@@ -142,9 +142,9 @@ This patch will not apply cleanly at the moment, so `hg import` will break
   1 out of 1 hunks FAILED -- saving rejects to file patchdir/f3.rej
   abort: patch failed to apply
   [255]
-  $ grep patchdir .hg/narrowspec
+  $ hg tracked | grep patchdir
   [1]
-  $ grep patchdir .hg/dirstate > /dev/null
+  $ hg files | grep patchdir > /dev/null
   [1]
 
 Let's make it apply cleanly and see that it *did* expand properly
@@ -159,6 +159,6 @@ Let's make it apply cleanly and see that it *did* expand properly
   applying $TESTTMP/foo.patch
   $ cat patchdir/f3
   patched_this
-  $ grep patchdir .hg/narrowspec
-  path:patchdir
-  $ grep patchdir .hg/dirstate > /dev/null
+  $ hg tracked | grep patchdir
+  I path:patchdir
+  $ hg files | grep patchdir > /dev/null

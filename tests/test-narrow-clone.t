@@ -34,10 +34,8 @@ narrow clone a file, f10
   store
   testonly-simplestore (reposimplestore !)
 
-  $ cat .hg/narrowspec
-  [includes]
-  path:dir/src/f10
-  [excludes]
+  $ hg tracked
+  I path:dir/src/f10
   $ hg tracked
   I path:dir/src/f10
   $ hg update
@@ -69,11 +67,9 @@ narrow clone a directory, tests/, except tests/t19
   added 21 changesets with 19 changes to 19 files
   new changesets *:* (glob)
   $ cd narrowdir
-  $ cat .hg/narrowspec
-  [includes]
-  path:dir/tests
-  [excludes]
-  path:dir/tests/t19
+  $ hg tracked
+  I path:dir/tests
+  X path:dir/tests/t19
   $ hg tracked
   I path:dir/tests
   X path:dir/tests/t19
@@ -114,11 +110,9 @@ narrow clone everything but a directory (tests/)
   added 21 changesets with 20 changes to 20 files
   new changesets *:* (glob)
   $ cd narrowroot
-  $ cat .hg/narrowspec
-  [includes]
-  path:.
-  [excludes]
-  path:dir/tests
+  $ hg tracked
+  I path:.
+  X path:dir/tests
   $ hg tracked
   I path:.
   X path:dir/tests

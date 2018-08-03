@@ -557,7 +557,7 @@ class cg1packer(object):
         return chunkheader(len(fname)) + fname
 
     # Extracted both for clarity and for overriding in extensions.
-    def _sortgroup(self, revlog, nodelist, lookup):
+    def _sortgroup(self, store, nodelist, lookup):
         """Sort nodes for change group and turn them into revnums."""
         # Ellipses serving mode.
         #
@@ -577,17 +577,17 @@ class cg1packer(object):
         # by the order in which they are used by the changelog.
         if util.safehasattr(self, 'full_nodes') and self.clnode_to_rev:
             key = lambda n: self.clnode_to_rev[lookup(n)]
-            return [revlog.rev(n) for n in sorted(nodelist, key=key)]
+            return [store.rev(n) for n in sorted(nodelist, key=key)]
 
         # for generaldelta revlogs, we linearize the revs; this will both be
         # much quicker and generate a much smaller bundle
-        if (revlog._generaldelta and self._reorder is None) or self._reorder:
-            dag = dagutil.revlogdag(revlog)
-            return dag.linearize(set(revlog.rev(n) for n in nodelist))
+        if (store._generaldelta and self._reorder is None) or self._reorder:
+            dag = dagutil.revlogdag(store)
+            return dag.linearize(set(store.rev(n) for n in nodelist))
         else:
-            return sorted([revlog.rev(n) for n in nodelist])
+            return sorted([store.rev(n) for n in nodelist])
 
-    def group(self, nodelist, revlog, lookup, units=None):
+    def group(self, nodelist, store, lookup, units=None):
         """Calculate a delta group, yielding a sequence of changegroup chunks
         (strings).
 
@@ -606,10 +606,10 @@ class cg1packer(object):
             yield self.close()
             return
 
-        revs = self._sortgroup(revlog, nodelist, lookup)
+        revs = self._sortgroup(store, nodelist, lookup)
 
         # add the parent of the first rev
-        p = revlog.parentrevs(revs[0])[0]
+        p = store.parentrevs(revs[0])[0]
         revs.insert(0, p)
 
         # build deltas
@@ -621,8 +621,8 @@ class cg1packer(object):
             if progress:
                 progress.update(r + 1)
             prev, curr = revs[r], revs[r + 1]
-            linknode = lookup(revlog.node(curr))
-            for c in self.revchunk(revlog, curr, prev, linknode):
+            linknode = lookup(store.node(curr))
+            for c in self.revchunk(store, curr, prev, linknode):
                 yield c
 
         if progress:
@@ -630,13 +630,13 @@ class cg1packer(object):
         yield self.close()
 
     # filter any nodes that claim to be part of the known set
-    def prune(self, revlog, missing, commonrevs):
+    def prune(self, store, missing, commonrevs):
         # TODO this violates storage abstraction for manifests.
-        if isinstance(revlog, manifest.manifestrevlog):
-            if not self._filematcher.visitdir(revlog._dir[:-1] or '.'):
+        if isinstance(store, manifest.manifestrevlog):
+            if not self._filematcher.visitdir(store._dir[:-1] or '.'):
                 return []
 
-        rr, rl = revlog.rev, revlog.linkrev
+        rr, rl = store.rev, store.linkrev
         return [n for n in missing if rl(rr(n)) not in commonrevs]
 
     def _packmanifests(self, dir, mfnodes, lookuplinknode):
@@ -906,43 +906,43 @@ class cg1packer(object):
                 self._verbosenote(_('%8.i  %s\n') % (size, fname))
         progress.complete()
 
-    def deltaparent(self, revlog, rev, p1, p2, prev):
-        if not revlog.candelta(prev, rev):
+    def deltaparent(self, store, rev, p1, p2, prev):
+        if not store.candelta(prev, rev):
             raise error.ProgrammingError('cg1 should not be used in this case')
         return prev
 
-    def revchunk(self, revlog, rev, prev, linknode):
+    def revchunk(self, store, rev, prev, linknode):
         if util.safehasattr(self, 'full_nodes'):
             fn = self._revchunknarrow
         else:
             fn = self._revchunknormal
 
-        return fn(revlog, rev, prev, linknode)
+        return fn(store, rev, prev, linknode)
 
-    def _revchunknormal(self, revlog, rev, prev, linknode):
-        node = revlog.node(rev)
-        p1, p2 = revlog.parentrevs(rev)
-        base = self.deltaparent(revlog, rev, p1, p2, prev)
+    def _revchunknormal(self, store, rev, prev, linknode):
+        node = store.node(rev)
+        p1, p2 = store.parentrevs(rev)
+        base = self.deltaparent(store, rev, p1, p2, prev)
 
         prefix = ''
-        if revlog.iscensored(base) or revlog.iscensored(rev):
+        if store.iscensored(base) or store.iscensored(rev):
             try:
-                delta = revlog.revision(node, raw=True)
+                delta = store.revision(node, raw=True)
             except error.CensoredNodeError as e:
                 delta = e.tombstone
             if base == nullrev:
                 prefix = mdiff.trivialdiffheader(len(delta))
             else:
-                baselen = revlog.rawsize(base)
+                baselen = store.rawsize(base)
                 prefix = mdiff.replacediffheader(baselen, len(delta))
         elif base == nullrev:
-            delta = revlog.revision(node, raw=True)
+            delta = store.revision(node, raw=True)
             prefix = mdiff.trivialdiffheader(len(delta))
         else:
-            delta = revlog.revdiff(base, rev)
-        p1n, p2n = revlog.parents(node)
-        basenode = revlog.node(base)
-        flags = revlog.flags(rev)
+            delta = store.revdiff(base, rev)
+        p1n, p2n = store.parents(node)
+        basenode = store.node(base)
+        flags = store.flags(rev)
         meta = self.builddeltaheader(node, p1n, p2n, basenode, linknode, flags)
         meta += prefix
         l = len(meta) + len(delta)
@@ -950,7 +950,7 @@ class cg1packer(object):
         yield meta
         yield delta
 
-    def _revchunknarrow(self, revlog, rev, prev, linknode):
+    def _revchunknarrow(self, store, rev, prev, linknode):
         # build up some mapping information that's useful later. See
         # the local() nested function below.
         if not self.changelog_done:
@@ -964,7 +964,7 @@ class cg1packer(object):
         # This is a node to send in full, because the changeset it
         # corresponds to was a full changeset.
         if linknode in self.full_nodes:
-            for x in self._revchunknormal(revlog, rev, prev, linknode):
+            for x in self._revchunknormal(store, rev, prev, linknode):
                 yield x
             return
 
@@ -994,7 +994,7 @@ class cg1packer(object):
                 # our contained ellipsis nodes will be able to resolve
                 # their parents.
                 if clrev not in self.clrev_to_localrev:
-                    clnode = revlog.node(clrev)
+                    clnode = store.node(clrev)
                     self.clnode_to_rev[clnode] = clrev
                 return clrev
 
@@ -1034,28 +1034,28 @@ class cg1packer(object):
                     # where this breaks down a bit. That said, I don't
                     # know if it would hurt anything.
                     for i in pycompat.xrange(rev, 0, -1):
-                        if revlog.linkrev(i) == clrev:
+                        if store.linkrev(i) == clrev:
                             return i
                     # We failed to resolve a parent for this node, so
                     # we crash the changegroup construction.
                     raise error.Abort(
                         'unable to resolve parent while packing %r %r'
-                        ' for changeset %r' % (revlog.indexfile, rev, clrev))
+                        ' for changeset %r' % (store.indexfile, rev, clrev))
 
             return nullrev
 
         if not linkparents or (
-            revlog.parentrevs(rev) == (nullrev, nullrev)):
+            store.parentrevs(rev) == (nullrev, nullrev)):
             p1, p2 = nullrev, nullrev
         elif len(linkparents) == 1:
             p1, = sorted(local(p) for p in linkparents)
             p2 = nullrev
         else:
             p1, p2 = sorted(local(p) for p in linkparents)
-        n = revlog.node(rev)
+        n = store.node(rev)
 
         yield ellipsisdata(
-            self, rev, revlog, p1, p2, revlog.revision(n), linknode)
+            self, rev, store, p1, p2, store.revision(n), linknode)
 
     def builddeltaheader(self, node, p1n, p2n, basenode, linknode, flags):
         # do nothing with basenode, it is implicitly the previous one in HG10
@@ -1076,7 +1076,7 @@ class cg2packer(cg1packer):
             # bundle.reorder=auto just like bundle.reorder=False).
             self._reorder = False
 
-    def deltaparent(self, revlog, rev, p1, p2, prev):
+    def deltaparent(self, store, rev, p1, p2, prev):
         # Narrow ellipses mode.
         if util.safehasattr(self, 'full_nodes'):
             # TODO: send better deltas when in narrow mode.
@@ -1092,8 +1092,8 @@ class cg2packer(cg1packer):
             # all revlogs, and we don't have the linkrev/linknode here.
             return p1
 
-        dp = revlog.deltaparent(rev)
-        if dp == nullrev and revlog.storedeltachains:
+        dp = store.deltaparent(rev)
+        if dp == nullrev and store.storedeltachains:
             # Avoid sending full revisions when delta parent is null. Pick prev
             # in that case. It's tempting to pick p1 in this case, as p1 will
             # be smaller in the common case. However, computing a delta against
@@ -1111,7 +1111,7 @@ class cg2packer(cg1packer):
             return prev
         else:
             base = dp
-        if base != nullrev and not revlog.candelta(base, rev):
+        if base != nullrev and not store.candelta(base, rev):
             base = nullrev
         return base
 

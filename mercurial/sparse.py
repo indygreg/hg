@@ -31,8 +31,10 @@ from . import (
 # a per-repo option, possibly a repo requirement.
 enabled = False
 
-def parseconfig(ui, raw):
+def parseconfig(ui, raw, action):
     """Parse sparse config file content.
+
+    action is the command which is trigerring this read, can be narrow, sparse
 
     Returns a tuple of includes, excludes, and profiles.
     """
@@ -54,8 +56,8 @@ def parseconfig(ui, raw):
         elif line == '[include]':
             if havesection and current != includes:
                 # TODO pass filename into this API so we can report it.
-                raise error.Abort(_('sparse config cannot have includes ' +
-                                    'after excludes'))
+                raise error.Abort(_('%s config cannot have includes ' +
+                                    'after excludes') % action)
             havesection = True
             current = includes
             continue
@@ -64,14 +66,15 @@ def parseconfig(ui, raw):
             current = excludes
         elif line:
             if current is None:
-                raise error.Abort(_('sparse config entry outside of '
-                                    'section: %s') % line,
+                raise error.Abort(_('%s config entry outside of '
+                                    'section: %s') % (action, line),
                                   hint=_('add an [include] or [exclude] line '
                                          'to declare the entry type'))
 
             if line.strip().startswith('/'):
-                ui.warn(_('warning: sparse profile cannot use' +
-                          ' paths starting with /, ignoring %s\n') % line)
+                ui.warn(_('warning: %s profile cannot use' +
+                          ' paths starting with /, ignoring %s\n')
+                        % (action, line))
                 continue
             current.add(line)
 
@@ -102,7 +105,7 @@ def patternsforrev(repo, rev):
         raise error.Abort(_('cannot parse sparse patterns from working '
                             'directory'))
 
-    includes, excludes, profiles = parseconfig(repo.ui, raw)
+    includes, excludes, profiles = parseconfig(repo.ui, raw, 'sparse')
     ctx = repo[rev]
 
     if profiles:
@@ -128,7 +131,7 @@ def patternsforrev(repo, rev):
                     repo.ui.debug(msg)
                 continue
 
-            pincludes, pexcludes, subprofs = parseconfig(repo.ui, raw)
+            pincludes, pexcludes, subprofs = parseconfig(repo.ui, raw, 'sparse')
             includes.update(pincludes)
             excludes.update(pexcludes)
             profiles.update(subprofs)
@@ -516,7 +519,7 @@ def _updateconfigandrefreshwdir(repo, includes, excludes, profiles,
                                 force=False, removing=False):
     """Update the sparse config and working directory state."""
     raw = repo.vfs.tryread('sparse')
-    oldincludes, oldexcludes, oldprofiles = parseconfig(repo.ui, raw)
+    oldincludes, oldexcludes, oldprofiles = parseconfig(repo.ui, raw, 'sparse')
 
     oldstatus = repo.status()
     oldmatch = matcher(repo)
@@ -556,7 +559,7 @@ def clearrules(repo, force=False):
     """
     with repo.wlock():
         raw = repo.vfs.tryread('sparse')
-        includes, excludes, profiles = parseconfig(repo.ui, raw)
+        includes, excludes, profiles = parseconfig(repo.ui, raw, 'sparse')
 
         if not includes and not excludes:
             return
@@ -572,7 +575,7 @@ def importfromfiles(repo, opts, paths, force=False):
     with repo.wlock():
         # read current configuration
         raw = repo.vfs.tryread('sparse')
-        includes, excludes, profiles = parseconfig(repo.ui, raw)
+        includes, excludes, profiles = parseconfig(repo.ui, raw, 'sparse')
         aincludes, aexcludes, aprofiles = activeconfig(repo)
 
         # Import rules on top; only take in rules that are not yet
@@ -582,7 +585,8 @@ def importfromfiles(repo, opts, paths, force=False):
             with util.posixfile(util.expandpath(p), mode='rb') as fh:
                 raw = fh.read()
 
-            iincludes, iexcludes, iprofiles = parseconfig(repo.ui, raw)
+            iincludes, iexcludes, iprofiles = parseconfig(repo.ui, raw,
+                                                          'sparse')
             oldsize = len(includes) + len(excludes) + len(profiles)
             includes.update(iincludes - aincludes)
             excludes.update(iexcludes - aexcludes)
@@ -615,7 +619,8 @@ def updateconfig(repo, pats, opts, include=False, exclude=False, reset=False,
     """
     with repo.wlock():
         raw = repo.vfs.tryread('sparse')
-        oldinclude, oldexclude, oldprofiles = parseconfig(repo.ui, raw)
+        oldinclude, oldexclude, oldprofiles = parseconfig(repo.ui, raw,
+                                                          'sparse')
 
         if reset:
             newinclude = set()

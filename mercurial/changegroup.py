@@ -521,6 +521,7 @@ class revisiondelta(object):
 
 class cg1packer(object):
     def __init__(self, repo, filematcher, version, builddeltaheader,
+                 manifestsend,
                  bundlecaps=None):
         """Given a source repo, construct a bundler.
 
@@ -529,6 +530,8 @@ class cg1packer(object):
 
         builddeltaheader is a callable that constructs the header for a group
         delta.
+
+        manifestsend is a chunk to send after manifests have been fully emitted.
 
         bundlecaps is optional and can be used to specify the set of
         capabilities which can be used to build the bundle. While bundlecaps is
@@ -540,6 +543,7 @@ class cg1packer(object):
 
         self.version = version
         self._builddeltaheader = builddeltaheader
+        self._manifestsend = manifestsend
 
         # Set of capabilities we can use to build the bundle.
         if bundlecaps is None:
@@ -660,9 +664,6 @@ class cg1packer(object):
         for chunk in self.group(mfnodes, self._repo.manifestlog._revlog,
                                 lookuplinknode, units=_('manifests')):
             yield chunk
-
-    def _manifestsdone(self):
-        return ''
 
     def generate(self, commonrevs, clnodes, fastpathlinkrev, source):
         '''yield a sequence of changegroup chunks (strings)'''
@@ -854,7 +855,7 @@ class cg1packer(object):
                     size += len(x)
                     yield x
         self._verbosenote(_('%8.i (manifests)\n') % size)
-        yield self._manifestsdone()
+        yield self._manifestsend
 
     # The 'source' parameter is useful for extensions
     def generatefiles(self, changedfiles, linknodes, commonrevs, source):
@@ -1099,9 +1100,9 @@ class cg1packer(object):
 
 class cg2packer(cg1packer):
     def __init__(self, repo, filematcher, version, builddeltaheader,
-                 bundlecaps=None):
+                 manifestsend, bundlecaps=None):
         super(cg2packer, self).__init__(repo, filematcher, version,
-                                        builddeltaheader,
+                                        builddeltaheader, manifestsend,
                                         bundlecaps=bundlecaps)
 
         if self._reorder is None:
@@ -1159,14 +1160,12 @@ class cg3packer(cg2packer):
                                 units=_('manifests')):
             yield chunk
 
-    def _manifestsdone(self):
-        return self.close()
-
 def _makecg1packer(repo, filematcher, bundlecaps):
     builddeltaheader = lambda d: _CHANGEGROUPV1_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.linknode)
 
     return cg1packer(repo, filematcher, b'01', builddeltaheader,
+                     manifestsend=b'',
                      bundlecaps=bundlecaps)
 
 def _makecg2packer(repo, filematcher, bundlecaps):
@@ -1174,6 +1173,7 @@ def _makecg2packer(repo, filematcher, bundlecaps):
         d.node, d.p1node, d.p2node, d.basenode, d.linknode)
 
     return cg2packer(repo, filematcher, b'02', builddeltaheader,
+                     manifestsend=b'',
                      bundlecaps=bundlecaps)
 
 def _makecg3packer(repo, filematcher, bundlecaps):
@@ -1181,6 +1181,7 @@ def _makecg3packer(repo, filematcher, bundlecaps):
         d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags)
 
     return cg3packer(repo, filematcher, b'03', builddeltaheader,
+                     manifestsend=closechunk(),
                      bundlecaps=bundlecaps)
 
 _packermap = {'01': (_makecg1packer, cg1unpacker),

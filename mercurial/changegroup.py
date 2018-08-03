@@ -522,7 +522,7 @@ class revisiondelta(object):
 class cgpacker(object):
     def __init__(self, repo, filematcher, version, allowreorder,
                  useprevdelta, builddeltaheader, manifestsend,
-                 sendtreemanifests, bundlecaps=None):
+                 sendtreemanifests, bundlecaps=None, shallow=False):
         """Given a source repo, construct a bundler.
 
         filematcher is a matcher that matches on files to include in the
@@ -546,6 +546,9 @@ class cgpacker(object):
         capabilities which can be used to build the bundle. While bundlecaps is
         unused in core Mercurial, extensions rely on this feature to communicate
         capabilities to customize the changegroup packer.
+
+        shallow indicates whether shallow data might be sent. The packer may
+        need to pack file contents not introduced by the changes being packed.
         """
         assert filematcher
         self._filematcher = filematcher
@@ -560,6 +563,7 @@ class cgpacker(object):
         if bundlecaps is None:
             bundlecaps = set()
         self._bundlecaps = bundlecaps
+        self._isshallow = shallow
 
         # experimental config: bundle.reorder
         reorder = repo.ui.config('bundle', 'reorder')
@@ -736,7 +740,7 @@ class cgpacker(object):
                                                             mfrevlog.rev(n))
                 # We can't trust the changed files list in the changeset if the
                 # client requested a shallow clone.
-                if self._is_shallow:
+                if self._isshallow:
                     changedfiles.update(mfl[c[0]].read().keys())
                 else:
                     changedfiles.update(c[3])
@@ -786,7 +790,7 @@ class cgpacker(object):
 
         if ellipsesmode:
             mfdicts = None
-            if self._is_shallow:
+            if self._isshallow:
                 mfdicts = [(self._repo.manifestlog[n].read(), lr)
                            for (n, lr) in mfs.iteritems()]
 
@@ -892,7 +896,7 @@ class cgpacker(object):
     def generatefiles(self, changedfiles, linknodes, commonrevs, source):
         changedfiles = list(filter(self._filematcher, changedfiles))
 
-        if getattr(self, '_is_shallow', False):
+        if self._isshallow:
             # See comment in generate() for why this sadness is a thing.
             mfdicts = self._mfdicts
             del self._mfdicts
@@ -1171,7 +1175,7 @@ class cgpacker(object):
             deltachunks=(diffheader, data),
         )
 
-def _makecg1packer(repo, filematcher, bundlecaps):
+def _makecg1packer(repo, filematcher, bundlecaps, shallow=False):
     builddeltaheader = lambda d: _CHANGEGROUPV1_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.linknode)
 
@@ -1181,9 +1185,10 @@ def _makecg1packer(repo, filematcher, bundlecaps):
                     builddeltaheader=builddeltaheader,
                     manifestsend=b'',
                     sendtreemanifests=False,
-                    bundlecaps=bundlecaps)
+                    bundlecaps=bundlecaps,
+                    shallow=shallow)
 
-def _makecg2packer(repo, filematcher, bundlecaps):
+def _makecg2packer(repo, filematcher, bundlecaps, shallow=False):
     builddeltaheader = lambda d: _CHANGEGROUPV2_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode)
 
@@ -1196,9 +1201,10 @@ def _makecg2packer(repo, filematcher, bundlecaps):
                     builddeltaheader=builddeltaheader,
                     manifestsend=b'',
                     sendtreemanifests=False,
-                    bundlecaps=bundlecaps)
+                    bundlecaps=bundlecaps,
+                    shallow=shallow)
 
-def _makecg3packer(repo, filematcher, bundlecaps):
+def _makecg3packer(repo, filematcher, bundlecaps, shallow=False):
     builddeltaheader = lambda d: _CHANGEGROUPV3_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags)
 
@@ -1208,7 +1214,8 @@ def _makecg3packer(repo, filematcher, bundlecaps):
                     builddeltaheader=builddeltaheader,
                     manifestsend=closechunk(),
                     sendtreemanifests=True,
-                    bundlecaps=bundlecaps)
+                    bundlecaps=bundlecaps,
+                    shallow=shallow)
 
 _packermap = {'01': (_makecg1packer, cg1unpacker),
              # cg2 adds support for exchanging generaldelta
@@ -1268,7 +1275,8 @@ def safeversion(repo):
     assert versions
     return min(versions)
 
-def getbundler(version, repo, bundlecaps=None, filematcher=None):
+def getbundler(version, repo, bundlecaps=None, filematcher=None,
+               shallow=False):
     assert version in supportedoutgoingversions(repo)
 
     if filematcher is None:
@@ -1284,7 +1292,7 @@ def getbundler(version, repo, bundlecaps=None, filematcher=None):
                                              filematcher)
 
     fn = _packermap[version][0]
-    return fn(repo, filematcher, bundlecaps)
+    return fn(repo, filematcher, bundlecaps, shallow=shallow)
 
 def getunbundler(version, fh, alg, extras=None):
     return _packermap[version][1](fh, alg, extras=extras)
@@ -1379,7 +1387,8 @@ def _packellipsischangegroup(repo, common, match, relevant_nodes,
     # set, we know we have an ellipsis node and we should defer
     # sending that node's data. We override close() to detect
     # pending ellipsis nodes and flush them.
-    packer = getbundler(version, repo, filematcher=match)
+    packer = getbundler(version, repo, filematcher=match,
+                        shallow=depth is not None)
     # Give the packer the list of nodes which should not be
     # ellipsis nodes. We store this rather than the set of nodes
     # that should be an ellipsis because for very large histories
@@ -1395,8 +1404,5 @@ def _packellipsischangegroup(repo, common, match, relevant_nodes,
     # during changelog stage and then left unmodified.
     packer._clnode_to_rev = {}
     packer._changelog_done = False
-    # If true, informs the packer that it is serving shallow content and might
-    # need to pack file contents not introduced by the changes being packed.
-    packer._is_shallow = depth is not None
 
     return packer.generate(common, visitnodes, False, source)

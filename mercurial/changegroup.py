@@ -1176,11 +1176,20 @@ class cg3packer(cg2packer):
         return struct.pack(
             self.deltaheader, node, p1n, p2n, basenode, linknode, flags)
 
-_packermap = {'01': (cg1packer, cg1unpacker),
+def _makecg1packer(repo, filematcher, bundlecaps):
+    return cg1packer(repo, filematcher, bundlecaps=bundlecaps)
+
+def _makecg2packer(repo, filematcher, bundlecaps):
+    return cg2packer(repo, filematcher, bundlecaps=bundlecaps)
+
+def _makecg3packer(repo, filematcher, bundlecaps):
+    return cg3packer(repo, filematcher, bundlecaps=bundlecaps)
+
+_packermap = {'01': (_makecg1packer, cg1unpacker),
              # cg2 adds support for exchanging generaldelta
-             '02': (cg2packer, cg2unpacker),
+             '02': (_makecg2packer, cg2unpacker),
              # cg3 adds support for exchanging revlog flags and treemanifests
-             '03': (cg3packer, cg3unpacker),
+             '03': (_makecg3packer, cg3unpacker),
 }
 
 def allsupportedversions(repo):
@@ -1249,8 +1258,8 @@ def getbundler(version, repo, bundlecaps=None, filematcher=None):
     filematcher = matchmod.intersectmatchers(repo.narrowmatch(),
                                              filematcher)
 
-    return _packermap[version][0](repo, filematcher=filematcher,
-                                  bundlecaps=bundlecaps)
+    fn = _packermap[version][0]
+    return fn(repo, filematcher, bundlecaps)
 
 def getunbundler(version, fh, alg, extras=None):
     return _packermap[version][1](fh, alg, extras=extras)

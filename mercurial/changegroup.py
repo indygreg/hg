@@ -583,12 +583,21 @@ class cgpacker(object):
         # controlled via arguments to group() that influence behavior.
         self._changelogdone = False
 
+        # Maps CL revs to per-revlog revisions. Cleared in close() at
+        # the end of each group.
+        self._clrevtolocalrev = {}
+        self._nextclrevtolocalrev = {}
+
+        # Maps changelog nodes to changelog revs. Filled in once
+        # during changelog stage and then left unmodified.
+        self._clnodetorev = {}
+
     def _close(self):
         # Ellipses serving mode.
-        getattr(self, '_clrev_to_localrev', {}).clear()
-        if getattr(self, '_next_clrev_to_localrev', {}):
-            self._clrev_to_localrev = self._next_clrev_to_localrev
-            del self._next_clrev_to_localrev
+        self._clrevtolocalrev.clear()
+        if self._nextclrevtolocalrev:
+            self.clrevtolocalrev = self._nextclrevtolocalrev
+            self._nextclrevtolocalrev.clear()
         self._changelogdone = True
 
         return closechunk()
@@ -615,8 +624,8 @@ class cgpacker(object):
         # order that they're introduced in dramatis personae by the
         # changelog, so what we do is we sort the non-changelog histories
         # by the order in which they are used by the changelog.
-        if util.safehasattr(self, '_full_nodes') and self._clnode_to_rev:
-            key = lambda n: self._clnode_to_rev[lookup(n)]
+        if util.safehasattr(self, '_full_nodes') and self._clnodetorev:
+            key = lambda n: self._clnodetorev[lookup(n)]
             return [store.rev(n) for n in sorted(nodelist, key=key)]
 
         # for generaldelta revlogs, we linearize the revs; this will both be
@@ -740,8 +749,8 @@ class cgpacker(object):
                     # manifest revnum to look up for this cl revnum. (Part of
                     # mapping changelog ellipsis parents to manifest ellipsis
                     # parents)
-                    self._next_clrev_to_localrev.setdefault(cl.rev(x),
-                                                            mfrevlog.rev(n))
+                    self._nextclrevtolocalrev.setdefault(cl.rev(x),
+                                                         mfrevlog.rev(n))
                 # We can't trust the changed files list in the changeset if the
                 # client requested a shallow clone.
                 if self._isshallow:
@@ -918,7 +927,7 @@ class cgpacker(object):
                 for c in commonctxs:
                     try:
                         fnode = c.filenode(fname)
-                        self._clrev_to_localrev[c.rev()] = flog.rev(fnode)
+                        self._clrevtolocalrev[c.rev()] = flog.rev(fnode)
                     except error.ManifestLookupError:
                         pass
                 links = oldlinknodes(flog, fname)
@@ -1063,12 +1072,12 @@ class cgpacker(object):
         # build up some mapping information that's useful later. See
         # the local() nested function below.
         if not self._changelogdone:
-            self._clnode_to_rev[linknode] = rev
+            self._clnodetorev[linknode] = rev
             linkrev = rev
-            self._clrev_to_localrev[linkrev] = rev
+            self._clrevtolocalrev[linkrev] = rev
         else:
-            linkrev = self._clnode_to_rev[linknode]
-            self._clrev_to_localrev[linkrev] = rev
+            linkrev = self._clnodetorev[linknode]
+            self._clrevtolocalrev[linkrev] = rev
 
         # This is a node to send in full, because the changeset it
         # corresponds to was a full changeset.
@@ -1100,9 +1109,9 @@ class cgpacker(object):
                 # need to store some extra mapping information so that
                 # our contained ellipsis nodes will be able to resolve
                 # their parents.
-                if clrev not in self._clrev_to_localrev:
+                if clrev not in self._clrevtolocalrev:
                     clnode = store.node(clrev)
-                    self._clnode_to_rev[clnode] = clrev
+                    self._clnodetorev[clnode] = clrev
                 return clrev
 
             # Walk the ellipsis-ized changelog breadth-first looking for a
@@ -1119,8 +1128,8 @@ class cgpacker(object):
             while walk:
                 p = walk[0]
                 walk = walk[1:]
-                if p in self._clrev_to_localrev:
-                    return self._clrev_to_localrev[p]
+                if p in self._clrevtolocalrev:
+                    return self._clrevtolocalrev[p]
                 elif p in self._full_nodes:
                     walk.extend([pp for pp in self._repo.changelog.parentrevs(p)
                                     if pp != nullrev])
@@ -1400,12 +1409,5 @@ def _packellipsischangegroup(repo, common, match, relevant_nodes,
     packer._full_nodes = relevant_nodes
     # Maps ellipsis revs to their roots at the changelog level.
     packer._precomputed_ellipsis = ellipsisroots
-    # Maps CL revs to per-revlog revisions. Cleared in close() at
-    # the end of each group.
-    packer._clrev_to_localrev = {}
-    packer._next_clrev_to_localrev = {}
-    # Maps changelog nodes to changelog revs. Filled in once
-    # during changelog stage and then left unmodified.
-    packer._clnode_to_rev = {}
 
     return packer.generate(common, visitnodes, False, source)

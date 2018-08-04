@@ -509,6 +509,33 @@ Test when config option is set:
   warning: conflicts while merging emp3! (edit, then use 'hg resolve --mark')
   [1]
 
+Test that commands.resolve.confirm respect --mark option (only when no patterns args are given):
+===============================================================================================
+
+  $ hg resolve -m emp1
+  $ hg resolve -l
+  R emp1
+  U emp2
+  U emp3
+
+  $ hg resolve -m << EOF
+  > n
+  > EOF
+  mark all unresolved files as resolved (yn)? n
+  abort: user quit
+  [255]
+
+  $ hg resolve -m << EOF
+  > y
+  > EOF
+  mark all unresolved files as resolved (yn)? y
+  (no more unresolved files)
+  continue: hg rebase --continue
+  $ hg resolve -l
+  R emp1
+  R emp2
+  R emp3
+
   $ hg rebase --abort
   rebase aborted
   $ cd ..

@@ -4546,8 +4546,13 @@ def resolve(ui, repo, *pats, **opts):
     if not (all or pats or show or mark or unmark):
         raise error.Abort(_('no files or directories specified'),
                          hint=('use --all to re-merge all unresolved files'))
+
     if mark and confirm and not pats:
         if ui.promptchoice(_(b'mark all unresolved files as resolved (yn)?'
+                             b'$$ &Yes $$ &No')):
+            raise error.Abort(_('user quit'))
+    if unmark and confirm and not pats:
+        if ui.promptchoice(_(b'mark all resolved files as unresolved (yn)?'
                              b'$$ &Yes $$ &No')):
             raise error.Abort(_('user quit'))
 

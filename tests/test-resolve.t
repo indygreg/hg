@@ -557,6 +557,35 @@ Test that commands.resolve.confirm respect --mark option (only when no patterns 
   R emp2
   R emp3
 
+Test that commands.resolve.confirm respect --unmark option (only when no patterns args are given):
+===============================================================================================
+
+  $ hg resolve -u emp1
+
+  $ hg resolve -l
+  U emp1
+  R emp2
+  R emp3
+
+  $ hg resolve -u << EOF
+  > n
+  > EOF
+  mark all resolved files as unresolved (yn)? n
+  abort: user quit
+  [255]
+
+  $ hg resolve -m << EOF
+  > y
+  > EOF
+  mark all unresolved files as resolved (yn)? y
+  (no more unresolved files)
+  continue: hg rebase --continue
+
+  $ hg resolve -l
+  R emp1
+  R emp2
+  R emp3
+
   $ hg rebase --abort
   rebase aborted
   $ cd ..

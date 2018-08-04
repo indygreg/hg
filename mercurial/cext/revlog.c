@@ -103,6 +103,36 @@ static const char *const tuple_format = PY23("kiiiiiis#", "kiiiiiiy#");
 /* A RevlogNG v1 index entry is 64 bytes long. */
 static const long v1_hdrsize = 64;
 
+static void raise_revlog_error(void)
+{
+	PyObject *mod = NULL, *dict = NULL, *errclass = NULL;
+
+	mod = PyImport_ImportModule("mercurial.error");
+	if (mod == NULL) {
+		goto cleanup;
+	}
+
+	dict = PyModule_GetDict(mod);
+	if (dict == NULL) {
+		goto cleanup;
+	}
+	Py_INCREF(dict);
+
+	errclass = PyDict_GetItemString(dict, "RevlogError");
+	if (errclass == NULL) {
+		PyErr_SetString(PyExc_SystemError,
+				"could not find RevlogError");
+		goto cleanup;
+	}
+
+	/* value of exception is ignored by callers */
+	PyErr_SetString(errclass, "RevlogError");
+
+cleanup:
+	Py_XDECREF(dict);
+	Py_XDECREF(mod);
+}
+
 /*
  * Return a pointer to the beginning of a RevlogNG record.
  */
@@ -1282,36 +1312,6 @@ static int index_find_node(indexObject *self,
 	if (rev >= 0)
 		return rev;
 	return -2;
-}
-
-static void raise_revlog_error(void)
-{
-	PyObject *mod = NULL, *dict = NULL, *errclass = NULL;
-
-	mod = PyImport_ImportModule("mercurial.error");
-	if (mod == NULL) {
-		goto cleanup;
-	}
-
-	dict = PyModule_GetDict(mod);
-	if (dict == NULL) {
-		goto cleanup;
-	}
-	Py_INCREF(dict);
-
-	errclass = PyDict_GetItemString(dict, "RevlogError");
-	if (errclass == NULL) {
-		PyErr_SetString(PyExc_SystemError,
-				"could not find RevlogError");
-		goto cleanup;
-	}
-
-	/* value of exception is ignored by callers */
-	PyErr_SetString(errclass, "RevlogError");
-
-cleanup:
-	Py_XDECREF(dict);
-	Py_XDECREF(mod);
 }
 
 static PyObject *index_getitem(indexObject *self, PyObject *value)

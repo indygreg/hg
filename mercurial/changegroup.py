@@ -66,6 +66,10 @@ def closechunk():
     """return a changegroup chunk header (string) for a zero-length chunk"""
     return struct.pack(">l", 0)
 
+def _fileheader(path):
+    """Obtain a changegroup chunk header for a named path."""
+    return chunkheader(len(path)) + path
+
 def writechunks(ui, chunks, filename, vfs=None):
     """Write chunks to a file and return its filename.
 
@@ -606,9 +610,6 @@ class cgpacker(object):
 
         return closechunk()
 
-    def _fileheader(self, fname):
-        return chunkheader(len(fname)) + fname
-
     # Extracted both for clarity and for overriding in extensions.
     def _sortgroup(self, store, ischangelog, nodelist, lookup):
         """Sort nodes for change group and turn them into revnums."""
@@ -701,7 +702,7 @@ class cgpacker(object):
 
         if dir:
             assert self.version == b'03'
-            yield self._fileheader(dir)
+            yield _fileheader(dir)
 
         # TODO violates storage abstractions by assuming revlogs.
         dirlog = self._repo.manifestlog._revlog.dirlog(dir)
@@ -981,7 +982,7 @@ class cgpacker(object):
             filenodes = self._prune(filerevlog, linkrevnodes, commonrevs)
             if filenodes:
                 progress.update(i + 1, item=fname)
-                h = self._fileheader(fname)
+                h = _fileheader(fname)
                 size = len(h)
                 yield h
                 for chunk in self.group(filenodes, filerevlog, False,

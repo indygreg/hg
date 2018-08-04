@@ -715,14 +715,100 @@ class cgpacker(object):
             yield chunk
 
     def generate(self, commonrevs, clnodes, fastpathlinkrev, source):
-        '''yield a sequence of changegroup chunks (strings)'''
+        """Yield a sequence of changegroup byte chunks."""
+
         repo = self._repo
         cl = repo.changelog
 
+        self._verbosenote(_('uncompressed size of bundle content:\n'))
+        size = 0
+
+        clstate, chunks = self._generatechangelog(cl, clnodes)
+        for chunk in chunks:
+            size += len(chunk)
+            yield chunk
+
+        self._verbosenote(_('%8.i (changelog)\n') % size)
+
+        clrevorder = clstate['clrevorder']
+        mfs = clstate['mfs']
+        changedfiles = clstate['changedfiles']
+
+        # We need to make sure that the linkrev in the changegroup refers to
+        # the first changeset that introduced the manifest or file revision.
+        # The fastpath is usually safer than the slowpath, because the filelogs
+        # are walked in revlog order.
+        #
+        # When taking the slowpath with reorder=None and the manifest revlog
+        # uses generaldelta, the manifest may be walked in the "wrong" order.
+        # Without 'clrevorder', we would get an incorrect linkrev (see fix in
+        # cc0ff93d0c0c).
+        #
+        # When taking the fastpath, we are only vulnerable to reordering
+        # of the changelog itself. The changelog never uses generaldelta, so
+        # it is only reordered when reorder=True. To handle this case, we
+        # simply take the slowpath, which already has the 'clrevorder' logic.
+        # This was also fixed in cc0ff93d0c0c.
+        fastpathlinkrev = fastpathlinkrev and not self._reorder
+        # Treemanifests don't work correctly with fastpathlinkrev
+        # either, because we don't discover which directory nodes to
+        # send along with files. This could probably be fixed.
+        fastpathlinkrev = fastpathlinkrev and (
+            'treemanifest' not in repo.requirements)
+
+        fnodes = {}  # needed file nodes
+
+        for chunk in self.generatemanifests(commonrevs, clrevorder,
+                fastpathlinkrev, mfs, fnodes, source):
+            yield chunk
+
+        if self._ellipses:
+            mfdicts = None
+            if self._isshallow:
+                mfdicts = [(self._repo.manifestlog[n].read(), lr)
+                           for (n, lr) in mfs.iteritems()]
+
+        mfs.clear()
+        clrevs = set(cl.rev(x) for x in clnodes)
+
+        if not fastpathlinkrev:
+            def linknodes(unused, fname):
+                return fnodes.get(fname, {})
+        else:
+            cln = cl.node
+            def linknodes(filerevlog, fname):
+                llr = filerevlog.linkrev
+                fln = filerevlog.node
+                revs = ((r, llr(r)) for r in filerevlog)
+                return dict((fln(r), cln(lr)) for r, lr in revs if lr in clrevs)
+
+        if self._ellipses:
+            # We need to pass the mfdicts variable down into
+            # generatefiles(), but more than one command might have
+            # wrapped generatefiles so we can't modify the function
+            # signature. Instead, we pass the data to ourselves using an
+            # instance attribute. I'm sorry.
+            self._mfdicts = mfdicts
+
+        for chunk in self.generatefiles(changedfiles, linknodes, commonrevs,
+                                        source):
+            yield chunk
+
+        yield self._close()
+
+        if clnodes:
+            repo.hook('outgoing', node=hex(clnodes[0]), source=source)
+
+    def _generatechangelog(self, cl, nodes):
+        """Generate data for changelog chunks.
+
+        Returns a 2-tuple of a dict containing state and an iterable of
+        byte chunks. The state will not be fully populated until the
+        chunk stream has been fully consumed.
+        """
         clrevorder = {}
         mfs = {} # needed manifests
-        fnodes = {} # needed file nodes
-        mfl = repo.manifestlog
+        mfl = self._repo.manifestlog
         # TODO violates storage abstraction.
         mfrevlog = mfl._revlog
         changedfiles = set()
@@ -768,75 +854,15 @@ class cgpacker(object):
 
             return x
 
-        self._verbosenote(_('uncompressed size of bundle content:\n'))
-        size = 0
-        for chunk in self.group(clnodes, cl, lookupcl, units=_('changesets')):
-            size += len(chunk)
-            yield chunk
-        self._verbosenote(_('%8.i (changelog)\n') % size)
+        state = {
+            'clrevorder': clrevorder,
+            'mfs': mfs,
+            'changedfiles': changedfiles,
+        }
 
-        # We need to make sure that the linkrev in the changegroup refers to
-        # the first changeset that introduced the manifest or file revision.
-        # The fastpath is usually safer than the slowpath, because the filelogs
-        # are walked in revlog order.
-        #
-        # When taking the slowpath with reorder=None and the manifest revlog
-        # uses generaldelta, the manifest may be walked in the "wrong" order.
-        # Without 'clrevorder', we would get an incorrect linkrev (see fix in
-        # cc0ff93d0c0c).
-        #
-        # When taking the fastpath, we are only vulnerable to reordering
-        # of the changelog itself. The changelog never uses generaldelta, so
-        # it is only reordered when reorder=True. To handle this case, we
-        # simply take the slowpath, which already has the 'clrevorder' logic.
-        # This was also fixed in cc0ff93d0c0c.
-        fastpathlinkrev = fastpathlinkrev and not self._reorder
-        # Treemanifests don't work correctly with fastpathlinkrev
-        # either, because we don't discover which directory nodes to
-        # send along with files. This could probably be fixed.
-        fastpathlinkrev = fastpathlinkrev and (
-            'treemanifest' not in repo.requirements)
+        gen = self.group(nodes, cl, lookupcl, units=_('changesets'))
 
-        for chunk in self.generatemanifests(commonrevs, clrevorder,
-                fastpathlinkrev, mfs, fnodes, source):
-            yield chunk
-
-        if self._ellipses:
-            mfdicts = None
-            if self._isshallow:
-                mfdicts = [(self._repo.manifestlog[n].read(), lr)
-                           for (n, lr) in mfs.iteritems()]
-
-        mfs.clear()
-        clrevs = set(cl.rev(x) for x in clnodes)
-
-        if not fastpathlinkrev:
-            def linknodes(unused, fname):
-                return fnodes.get(fname, {})
-        else:
-            cln = cl.node
-            def linknodes(filerevlog, fname):
-                llr = filerevlog.linkrev
-                fln = filerevlog.node
-                revs = ((r, llr(r)) for r in filerevlog)
-                return dict((fln(r), cln(lr)) for r, lr in revs if lr in clrevs)
-
-        if self._ellipses:
-            # We need to pass the mfdicts variable down into
-            # generatefiles(), but more than one command might have
-            # wrapped generatefiles so we can't modify the function
-            # signature. Instead, we pass the data to ourselves using an
-            # instance attribute. I'm sorry.
-            self._mfdicts = mfdicts
-
-        for chunk in self.generatefiles(changedfiles, linknodes, commonrevs,
-                                        source):
-            yield chunk
-
-        yield self._close()
-
-        if clnodes:
-            repo.hook('outgoing', node=hex(clnodes[0]), source=source)
+        return state, gen
 
     def generatemanifests(self, commonrevs, clrevorder, fastpathlinkrev, mfs,
                           fnodes, source):

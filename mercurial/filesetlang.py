@@ -14,6 +14,13 @@ from . import (
     pycompat,
 )
 
+# common weight constants for static optimization
+# (see registrar.filesetpredicate for details)
+WEIGHT_CHECK_FILENAME = 0.5
+WEIGHT_READ_CONTENTS = 30
+WEIGHT_STATUS = 10
+WEIGHT_STATUS_THOROUGH = 50
+
 elements = {
     # token-type: binding-strength, primary, prefix, infix, suffix
     "(": (20, None, ("group", 1, ")"), ("func", 1, ")"), None),
@@ -184,7 +191,7 @@ def _optimize(x):
 
     op = x[0]
     if op in {'string', 'symbol'}:
-        return 0.5, x
+        return WEIGHT_CHECK_FILENAME, x
     if op == 'kindpat':
         w, t = _optimize(x[2])
         return w, (op, x[1], t)

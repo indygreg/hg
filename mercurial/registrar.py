@@ -249,6 +249,7 @@ class filesetpredicate(_funcregistrarbase):
 
     Optional argument 'weight' indicates the estimated run-time cost, useful
     for static optimization, default is 1. Higher weight means more expensive.
+    There are predefined weights in the 'filesetlang' module.
 
     ====== =============================================================
     Weight Description and examples

@@ -25,6 +25,12 @@ from .utils import (
     stringutil,
 )
 
+# common weight constants
+_WEIGHT_CHECK_FILENAME = filesetlang.WEIGHT_CHECK_FILENAME
+_WEIGHT_READ_CONTENTS = filesetlang.WEIGHT_READ_CONTENTS
+_WEIGHT_STATUS = filesetlang.WEIGHT_STATUS
+_WEIGHT_STATUS_THOROUGH = filesetlang.WEIGHT_STATUS_THOROUGH
+
 # helpers for processing parsed tree
 getsymbol = filesetlang.getsymbol
 getstring = filesetlang.getstring
@@ -88,7 +94,7 @@ _statuscallers = set()
 
 predicate = registrar.filesetpredicate()
 
-@predicate('modified()', callstatus=True, weight=10)
+@predicate('modified()', callstatus=True, weight=_WEIGHT_STATUS)
 def modified(mctx, x):
     """File that is modified according to :hg:`status`.
     """
@@ -97,7 +103,7 @@ def modified(mctx, x):
     s = set(mctx.status().modified)
     return mctx.predicate(s.__contains__, predrepr='modified')
 
-@predicate('added()', callstatus=True, weight=10)
+@predicate('added()', callstatus=True, weight=_WEIGHT_STATUS)
 def added(mctx, x):
     """File that is added according to :hg:`status`.
     """
@@ -106,7 +112,7 @@ def added(mctx, x):
     s = set(mctx.status().added)
     return mctx.predicate(s.__contains__, predrepr='added')
 
-@predicate('removed()', callstatus=True, weight=10)
+@predicate('removed()', callstatus=True, weight=_WEIGHT_STATUS)
 def removed(mctx, x):
     """File that is removed according to :hg:`status`.
     """
@@ -115,7 +121,7 @@ def removed(mctx, x):
     s = set(mctx.status().removed)
     return mctx.predicate(s.__contains__, predrepr='removed')
 
-@predicate('deleted()', callstatus=True, weight=10)
+@predicate('deleted()', callstatus=True, weight=_WEIGHT_STATUS)
 def deleted(mctx, x):
     """Alias for ``missing()``.
     """
@@ -124,7 +130,7 @@ def deleted(mctx, x):
     s = set(mctx.status().deleted)
     return mctx.predicate(s.__contains__, predrepr='deleted')
 
-@predicate('missing()', callstatus=True, weight=10)
+@predicate('missing()', callstatus=True, weight=_WEIGHT_STATUS)
 def missing(mctx, x):
     """File that is missing according to :hg:`status`.
     """
@@ -133,7 +139,7 @@ def missing(mctx, x):
     s = set(mctx.status().deleted)
     return mctx.predicate(s.__contains__, predrepr='deleted')
 
-@predicate('unknown()', callstatus=True, weight=50)
+@predicate('unknown()', callstatus=True, weight=_WEIGHT_STATUS_THOROUGH)
 def unknown(mctx, x):
     """File that is unknown according to :hg:`status`."""
     # i18n: "unknown" is a keyword
@@ -141,7 +147,7 @@ def unknown(mctx, x):
     s = set(mctx.status().unknown)
     return mctx.predicate(s.__contains__, predrepr='unknown')
 
-@predicate('ignored()', callstatus=True, weight=50)
+@predicate('ignored()', callstatus=True, weight=_WEIGHT_STATUS_THOROUGH)
 def ignored(mctx, x):
     """File that is ignored according to :hg:`status`."""
     # i18n: "ignored" is a keyword
@@ -149,7 +155,7 @@ def ignored(mctx, x):
     s = set(mctx.status().ignored)
     return mctx.predicate(s.__contains__, predrepr='ignored')
 
-@predicate('clean()', callstatus=True, weight=10)
+@predicate('clean()', callstatus=True, weight=_WEIGHT_STATUS)
 def clean(mctx, x):
     """File that is clean according to :hg:`status`.
     """
@@ -165,7 +171,7 @@ def tracked(mctx, x):
     getargs(x, 0, 0, _("tracked takes no arguments"))
     return mctx.predicate(mctx.ctx.__contains__, predrepr='tracked')
 
-@predicate('binary()', weight=30)
+@predicate('binary()', weight=_WEIGHT_READ_CONTENTS)
 def binary(mctx, x):
     """File that appears to be binary (contains NUL bytes).
     """
@@ -192,7 +198,7 @@ def symlink(mctx, x):
     ctx = mctx.ctx
     return mctx.predicate(lambda f: ctx.flags(f) == 'l', predrepr='symlink')
 
-@predicate('resolved()', weight=10)
+@predicate('resolved()', weight=_WEIGHT_STATUS)
 def resolved(mctx, x):
     """File that is marked resolved according to :hg:`resolve -l`.
     """
@@ -204,7 +210,7 @@ def resolved(mctx, x):
     return mctx.predicate(lambda f: f in ms and ms[f] == 'r',
                           predrepr='resolved')
 
-@predicate('unresolved()', weight=10)
+@predicate('unresolved()', weight=_WEIGHT_STATUS)
 def unresolved(mctx, x):
     """File that is marked unresolved according to :hg:`resolve -l`.
     """
@@ -216,7 +222,7 @@ def unresolved(mctx, x):
     return mctx.predicate(lambda f: f in ms and ms[f] == 'u',
                           predrepr='unresolved')
 
-@predicate('hgignore()', weight=10)
+@predicate('hgignore()', weight=_WEIGHT_STATUS)
 def hgignore(mctx, x):
     """File that matches the active .hgignore pattern.
     """
@@ -224,7 +230,7 @@ def hgignore(mctx, x):
     getargs(x, 0, 0, _("hgignore takes no arguments"))
     return mctx.ctx.repo().dirstate._ignore
 
-@predicate('portable()', weight=0.5)
+@predicate('portable()', weight=_WEIGHT_CHECK_FILENAME)
 def portable(mctx, x):
     """File that has a portable name. (This doesn't include filenames with case
     collisions.)
@@ -234,7 +240,7 @@ def portable(mctx, x):
     return mctx.predicate(lambda f: util.checkwinfilename(f) is None,
                           predrepr='portable')
 
-@predicate('grep(regex)', weight=30)
+@predicate('grep(regex)', weight=_WEIGHT_READ_CONTENTS)
 def grep(mctx, x):
     """File contains the given regular expression.
     """
@@ -288,7 +294,7 @@ def sizematcher(expr):
         b = _sizetomax(expr)
         return lambda x: x >= a and x <= b
 
-@predicate('size(expression)', weight=10)
+@predicate('size(expression)', weight=_WEIGHT_STATUS)
 def size(mctx, x):
     """File size matches the given expression. Examples:
 
@@ -303,7 +309,7 @@ def size(mctx, x):
     return mctx.fpredicate(lambda fctx: m(fctx.size()),
                            predrepr=('size(%r)', expr), cache=True)
 
-@predicate('encoding(name)', weight=30)
+@predicate('encoding(name)', weight=_WEIGHT_READ_CONTENTS)
 def encoding(mctx, x):
     """File can be successfully decoded with the given character
     encoding. May not be useful for encodings other than ASCII and
@@ -325,7 +331,7 @@ def encoding(mctx, x):
 
     return mctx.fpredicate(encp, predrepr=('encoding(%r)', enc), cache=True)
 
-@predicate('eol(style)', weight=30)
+@predicate('eol(style)', weight=_WEIGHT_READ_CONTENTS)
 def eol(mctx, x):
     """File contains newlines of the given style (dos, unix, mac). Binary
     files are excluded, files with mixed line endings match multiple
@@ -359,7 +365,7 @@ def copied(mctx, x):
         return p and p[0].path() != fctx.path()
     return mctx.fpredicate(copiedp, predrepr='copied', cache=True)
 
-@predicate('revs(revs, pattern)', weight=10)
+@predicate('revs(revs, pattern)', weight=_WEIGHT_STATUS)
 def revs(mctx, x):
     """Evaluate set in the specified revisions. If the revset match multiple
     revs, this will return file matching pattern in any of the revision.
@@ -381,7 +387,7 @@ def revs(mctx, x):
         return matchers[0]
     return matchmod.unionmatcher(matchers)
 
-@predicate('status(base, rev, pattern)', weight=10)
+@predicate('status(base, rev, pattern)', weight=_WEIGHT_STATUS)
 def status(mctx, x):
     """Evaluate predicate using status change between ``base`` and
     ``rev``. Examples:

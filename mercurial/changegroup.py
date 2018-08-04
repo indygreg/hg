@@ -607,7 +607,6 @@ class cgpacker(object):
         if self._nextclrevtolocalrev is not None:
             self._clrevtolocalrev = self._nextclrevtolocalrev
             self._nextclrevtolocalrev = None
-        self._changelogdone = True
 
         return closechunk()
 
@@ -729,6 +728,8 @@ class cgpacker(object):
             yield chunk
 
         self._verbosenote(_('%8.i (changelog)\n') % size)
+
+        self._changelogdone = True
 
         clrevorder = clstate['clrevorder']
         mfs = clstate['mfs']

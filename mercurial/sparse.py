@@ -56,8 +56,8 @@ def parseconfig(ui, raw, action):
         elif line == '[include]':
             if havesection and current != includes:
                 # TODO pass filename into this API so we can report it.
-                raise error.Abort(_('%s config cannot have includes '
-                                    'after excludes') % action)
+                raise error.Abort(_('%(action)s config cannot have includes '
+                                    'after excludes') % {'action': action})
             havesection = True
             current = includes
             continue
@@ -66,15 +66,16 @@ def parseconfig(ui, raw, action):
             current = excludes
         elif line:
             if current is None:
-                raise error.Abort(_('%s config entry outside of '
-                                    'section: %s') % (action, line),
+                raise error.Abort(_('%(action)s config entry outside of '
+                                    'section: %(line)s')
+                                  % {'action': action, 'line': line},
                                   hint=_('add an [include] or [exclude] line '
                                          'to declare the entry type'))
 
             if line.strip().startswith('/'):
-                ui.warn(_('warning: %s profile cannot use'
-                          ' paths starting with /, ignoring %s\n')
-                        % (action, line))
+                ui.warn(_('warning: %(action)s profile cannot use'
+                          ' paths starting with /, ignoring %(line)s\n')
+                        % {'action': action, 'line': line})
                 continue
             current.add(line)
 

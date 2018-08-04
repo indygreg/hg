@@ -439,8 +439,7 @@ effect and style see :hg:`help color`.
 ------------
 
 ``resolve.confirm``
-    Confirm before re-merging all unresolved files when running
-    :hg:`resolve --all`.
+    Confirm before performing action if no filename is passed.
     (default: False)
 
 ``resolve.mark-check``

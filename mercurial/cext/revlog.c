@@ -1087,6 +1087,23 @@ static int nt_insert(nodetree *self, const char *node, int rev)
 	return -1;
 }
 
+static PyObject *nt_insert_py(nodetree *self, PyObject *args)
+{
+	Py_ssize_t rev;
+	const char *node;
+	if (!PyArg_ParseTuple(args, "n", &rev))
+		return NULL;
+	const Py_ssize_t length = index_length(self->index);
+	if (rev < 0 || rev >= length) {
+		PyErr_SetString(PyExc_ValueError, "revlog index out of range");
+		return NULL;
+	}
+	node = index_node_existing(self->index, rev);
+	if (nt_insert(self, node, rev) == -1)
+		return NULL;
+	Py_RETURN_NONE;
+}
+
 static int nt_delete_node(nodetree *self, const char *node)
 {
 	/* rev==-2 happens to get encoded as 0, which is interpreted as not set */
@@ -1181,6 +1198,27 @@ static int nt_shortest(nodetree *self, const char *node)
 	return -3;
 }
 
+static PyObject *nt_shortest_py(nodetree *self, PyObject *args)
+{
+	PyObject *val;
+	char *node;
+	int length;
+
+	if (!PyArg_ParseTuple(args, "O", &val))
+		return NULL;
+	if (node_check(val, &node) == -1)
+		return NULL;
+
+	length = nt_shortest(self, node);
+	if (length == -3)
+		return NULL;
+	if (length == -2) {
+		raise_revlog_error();
+		return NULL;
+	}
+	return PyInt_FromLong(length);
+}
+
 static void nt_dealloc(nodetree *self)
 {
 	Py_XDECREF(self->index);
@@ -1188,6 +1226,14 @@ static void nt_dealloc(nodetree *self)
 	self->nodes = NULL;
 	PyObject_Del(self);
 }
+
+static PyMethodDef nt_methods[] = {
+	{"insert", (PyCFunction)nt_insert_py, METH_VARARGS,
+	 "insert an index entry"},
+	{"shortest", (PyCFunction)nt_shortest_py, METH_VARARGS,
+	 "find length of shortest hex nodeid of a binary ID"},
+	{NULL} /* Sentinel */
+};
 
 static PyTypeObject nodetreeType = {
 	PyVarObject_HEAD_INIT(NULL, 0) /* header */
@@ -1217,7 +1263,7 @@ static PyTypeObject nodetreeType = {
 	0,                         /* tp_weaklistoffset */
 	0,                         /* tp_iter */
 	0,                         /* tp_iternext */
-	0,                         /* tp_methods */
+	nt_methods,                /* tp_methods */
 	0,                         /* tp_members */
 	0,                         /* tp_getset */
 	0,                         /* tp_base */

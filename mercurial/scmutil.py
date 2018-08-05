@@ -34,6 +34,7 @@ from . import (
     obsutil,
     pathutil,
     phases,
+    policy,
     pycompat,
     revsetlang,
     similar,
@@ -51,6 +52,8 @@ if pycompat.iswindows:
     from . import scmwindows as scmplatform
 else:
     from . import scmposix as scmplatform
+
+parsers = policy.importmod(r'parsers')
 
 termsize = scmplatform.termsize
 
@@ -514,6 +517,24 @@ def shortesthexnodeidprefix(repo, node, minlength=1, cache=None):
                 cache['disambiguationrevset'] = revs
         if cl.rev(node) in revs:
             hexnode = hex(node)
+            nodetree = None
+            if cache is not None:
+                nodetree = cache.get('disambiguationnodetree')
+            if not nodetree:
+                try:
+                    nodetree = parsers.nodetree(cl.index, len(revs))
+                except AttributeError:
+                    # no native nodetree
+                    pass
+                else:
+                    for r in revs:
+                        nodetree.insert(r)
+                    if cache is not None:
+                        cache['disambiguationnodetree'] = nodetree
+            if nodetree is not None:
+                length = max(nodetree.shortest(node), minlength)
+                prefix = hexnode[:length]
+                return disambiguate(prefix)
             for length in range(minlength, len(hexnode) + 1):
                 matches = []
                 prefix = hexnode[:length]

@@ -5191,7 +5191,7 @@ def status(ui, repo, *pats, **opts):
                 fm.condwrite(showchar, 'status', '%s ', char, label=label)
                 fm.plain(fmt % repo.pathto(f, cwd), label=label)
                 if f in copy:
-                    fm.data(copy=copy[f])
+                    fm.data(source=copy[f])
                     fm.plain(('  %s' + end) % repo.pathto(copy[f], cwd),
                              label='status.copied')
 

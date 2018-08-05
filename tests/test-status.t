@@ -239,8 +239,8 @@ hg status -A:
     "status": "A"
    },
    {
-    "copy": "modified",
     "path": "copied",
+    "source": "modified",
     "status": "A"
    },
    {
@@ -282,7 +282,7 @@ hg status -A:
 
 Test templater support:
 
-  $ hg status -AT "[{status}]\t{if(copy, '{copy} -> ')}{path}\n"
+  $ hg status -AT "[{status}]\t{if(source, '{source} -> ')}{path}\n"
   [M]	.hgignore
   [A]	added
   [A]	modified -> copied

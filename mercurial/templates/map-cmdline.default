@@ -74,7 +74,7 @@ description = '{if(desc|strip, "{label('ui.note log.description',
                                 {label('ui.note log.description',
                                        '{desc|strip}')}\n\n")}'
 
-status = '{status} {path|relpath}\n{if(copy, "  {copy|relpath}\n")}'
+status = '{status} {path|relpath}\n{if(source, "  {source|relpath}\n")}'
 
 # Obsfate templates, it would be removed once we introduce the obsfate
 # template fragment

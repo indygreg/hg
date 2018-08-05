@@ -1393,7 +1393,7 @@ static int index_contains(indexObject *self, PyObject *value)
 
 	if (PyInt_Check(value)) {
 		long rev = PyInt_AS_LONG(value);
-		return rev >= -1 && rev < index_length(self) + 1;
+		return rev >= -1 && rev < index_length(self);
 	}
 
 	if (node_check(value, &node) == -1)

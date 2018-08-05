@@ -228,10 +228,10 @@ static const char *index_node(indexObject *self, Py_ssize_t pos)
 	Py_ssize_t length = index_length(self) + 1;
 	const char *data;
 
-	if (pos == length - 1 || pos == -1)
+	if (pos == -1)
 		return nullid;
 
-	if (pos >= length)
+	if (pos >= length - 1)
 		return NULL;
 
 	if (pos >= self->length - 1) {

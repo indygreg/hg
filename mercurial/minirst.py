@@ -680,7 +680,7 @@ def format(text, width=80, indent=0, keep=None, style='plain', section=None):
 def filtersections(blocks, section):
     """Select parsed blocks under the specified section"""
     parents = []
-    sections = getsections(blocks)
+    sections = _getsections(blocks)
     blocks = []
     i = 0
     lastparents = []
@@ -728,7 +728,7 @@ def filtersections(blocks, section):
 
     return blocks
 
-def getsections(blocks):
+def _getsections(blocks):
     '''return a list of (section name, nesting level, blocks) tuples'''
     nest = ""
     level = 0

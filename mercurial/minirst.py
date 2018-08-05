@@ -798,15 +798,6 @@ def getsections(blocks):
             secs[-1][2].append(b)
     return secs
 
-def decorateblocks(blocks, width):
-    '''generate a list of (section name, line text) pairs for search'''
-    lines = []
-    for s in getsections(blocks):
-        section = s[0]
-        text = formatblocks(s[2], width)
-        lines.append([(section, l) for l in text.splitlines(True)])
-    return lines
-
 def maketable(data, indent=0, header=False):
     '''Generate an RST table for the given table data as a list of lines'''
 

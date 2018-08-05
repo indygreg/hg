@@ -678,7 +678,11 @@ def format(text, width=80, indent=0, keep=None, style='plain', section=None):
         return formatplain(blocks, width=width)
 
 def filtersections(blocks, section):
-    """Select parsed blocks under the specified section"""
+    """Select parsed blocks under the specified section
+
+    The section name is separated by a dot, and matches the suffix of the
+    full section path.
+    """
     parents = []
     sections = _getsections(blocks)
     blocks = []
@@ -687,10 +691,10 @@ def filtersections(blocks, section):
     synthetic = []
     collapse = True
     while i < len(sections):
-        name, nest, b = sections[i]
+        path, nest, b = sections[i]
         del parents[nest:]
         parents.append(i)
-        if name == section:
+        if path == section or path.endswith('.' + section):
             if lastparents != parents:
                 llen = len(lastparents)
                 plen = len(parents)
@@ -729,8 +733,9 @@ def filtersections(blocks, section):
     return blocks
 
 def _getsections(blocks):
-    '''return a list of (section name, nesting level, blocks) tuples'''
+    '''return a list of (section path, nesting level, blocks) tuples'''
     nest = ""
+    names = ()
     level = 0
     secs = []
 
@@ -751,7 +756,8 @@ def _getsections(blocks):
                 nest += i
             level = nest.index(i) + 1
             nest = nest[:level]
-            secs.append((getname(b), level, [b]))
+            names = names[:level] + (getname(b),)
+            secs.append(('.'.join(names), level, [b]))
         elif b['type'] in ('definition', 'field'):
             i = ' '
             if i not in nest:
@@ -772,7 +778,8 @@ def _getsections(blocks):
                     elif siblingindent == indent:
                         level = sec[1]
                         break
-            secs.append((getname(b), level, [b]))
+            names = names[:level] + (getname(b),)
+            secs.append(('.'.join(names), level, [b]))
         else:
             if not secs:
                 # add an initial empty section

@@ -1344,8 +1344,16 @@ Test repeated config section name
 Test section name with dot
 
   $ hg help config.ui.username
-  abort: help section not found: config.ui.username
-  [255]
+      "ui.username"
+          The committer of a changeset created when running "commit". Typically
+          a person's name and email address, e.g. "Fred Widget
+          <fred@example.com>". Environment variables in the username are
+          expanded.
+  
+          (default: "$EMAIL" or "username@hostname". If the username in hgrc is
+          empty, e.g. if the system admin set "username =" in the system hgrc,
+          it has to be specified manually or in a different hgrc file)
+  
 
   $ hg help config.annotate.git
   abort: help section not found: config.annotate.git
@@ -1365,7 +1373,20 @@ Test section name with dot
   
 
   $ hg help config.commands.update.check
-  abort: help section not found: config.commands.update.check
+      "commands.update.check"
+          Determines what level of checking 'hg update' will perform before
+          moving to a destination revision. Valid values are "abort", "none",
+          "linear", and "noconflict". "abort" always fails if the working
+          directory has uncommitted changes. "none" performs no checking, and
+          may result in a merge with uncommitted changes. "linear" allows any
+          update as long as it follows a straight line in the revision history,
+          and may trigger a merge with uncommitted changes. "noconflict" will
+          allow any update which would not trigger a merge with uncommitted
+          changes, if any are present. (default: "linear")
+  
+
+  $ hg help config.ommands.update.check
+  abort: help section not found: config.ommands.update.check
   [255]
 
 Unrelated trailing paragraphs shouldn't be included
@@ -1387,6 +1408,14 @@ Show nested definitions
 
   $ hg help config.type | egrep '^$'|wc -l
   \s*3 (re)
+
+  $ hg help config.profiling.type.ls
+          "profiling.type.ls"
+            Use Python's built-in instrumenting profiler. This profiler works on
+            all platforms, but each line number it reports is the first line of
+            a function. This restriction makes it difficult to identify the
+            expensive parts of a non-trivial function.
+  
 
 Separate sections from subsections
 

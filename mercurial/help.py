@@ -672,8 +672,10 @@ def formattedhelp(ui, commands, name, keep=None, unknowncmd=False, full=True,
     text = help_(ui, commands, name,
                  subtopic=subtopic, unknowncmd=unknowncmd, full=full, **opts)
 
-    formatted, pruned = minirst.format(text, textwidth, keep=keep,
-                                       section=section)
+    blocks, pruned = minirst.parse(text, keep=keep)
+    if section:
+        blocks = minirst.filtersections(blocks, section)
+    formatted = minirst.formatplain(blocks, textwidth)
 
     # We could have been given a weird ".foo" section without a name
     # to look for, or we could have simply failed to found "foo.bar"
@@ -685,6 +687,7 @@ def formattedhelp(ui, commands, name, keep=None, unknowncmd=False, full=True,
         keep.append('omitted')
     else:
         keep.append('notomitted')
-    formatted, pruned = minirst.format(text, textwidth, keep=keep,
-                                       section=section)
-    return formatted
+    blocks, pruned = minirst.parse(text, keep=keep)
+    if section:
+        blocks = minirst.filtersections(blocks, section)
+    return minirst.formatplain(blocks, textwidth)

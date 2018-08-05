@@ -663,6 +663,10 @@ def formatblocks(blocks, width):
     text = ''.join(formatblock(b, width) for b in blocks)
     return text
 
+def formatplain(blocks, width):
+    """Format parsed blocks as plain text"""
+    return ''.join(formatblock(b, width) for b in blocks)
+
 def format(text, width=80, indent=0, keep=None, style='plain', section=None):
     """Parse and format the text according to width."""
     blocks, pruned = parse(text, indent, keep or [])
@@ -671,7 +675,7 @@ def format(text, width=80, indent=0, keep=None, style='plain', section=None):
     if style == 'html':
         text = formathtml(blocks)
     else:
-        text = ''.join(formatblock(b, width) for b in blocks)
+        text = formatplain(blocks, width=width)
     if keep is None:
         return text
     else:

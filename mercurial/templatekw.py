@@ -323,11 +323,8 @@ def showfilecopies(context, mapping):
             rename = getrenamed(fn, ctx.rev())
             if rename:
                 copies.append((fn, rename))
-
-    copies = util.sortdict(copies)
-    return compatdict(context, mapping, 'file_copy', copies,
-                      key='name', value='source', fmt='%s (%s)',
-                      plural='file_copies')
+    return templateutil.compatfilecopiesdict(context, mapping, 'file_copy',
+                                             copies)
 
 # showfilecopiesswitch() displays file copies only if copy records are
 # provided before calling the templater, usually with a --copies
@@ -338,10 +335,8 @@ def showfilecopiesswitch(context, mapping):
     only if the --copied switch is set.
     """
     copies = context.resource(mapping, 'revcache').get('copies') or []
-    copies = util.sortdict(copies)
-    return compatdict(context, mapping, 'file_copy', copies,
-                      key='name', value='source', fmt='%s (%s)',
-                      plural='file_copies')
+    return templateutil.compatfilecopiesdict(context, mapping, 'file_copy',
+                                             copies)
 
 @templatekeyword('file_dels', requires={'ctx', 'revcache'})
 def showfiledels(context, mapping):

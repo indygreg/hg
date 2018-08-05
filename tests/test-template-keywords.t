@@ -769,6 +769,24 @@ Test files list:
   fourth
   third
 
+Test file copies dict:
+
+  $ hg log -r8 -T '{join(file_copies, " ")}\n'
+  fourth (second)
+  $ hg log -r8 -T '{file_copies % "{name} <- {source}\n"}'
+  fourth <- second
+  $ hg log -r8 -T '{file_copies % "{path} <- {source}\n"}'
+  fourth <- second
+
+  $ hg log -r8 -T '{join(file_copies_switch, " ")}\n'
+  
+  $ hg log -r8 -C -T '{join(file_copies_switch, " ")}\n'
+  fourth (second)
+  $ hg log -r8 -C -T '{file_copies_switch % "{name} <- {source}\n"}'
+  fourth <- second
+  $ hg log -r8 -C -T '{file_copies_switch % "{path} <- {source}\n"}'
+  fourth <- second
+
 Test index keyword:
 
   $ hg log -l 2 -T '{index + 10}{files % " {index}:{file}"}\n'

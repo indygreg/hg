@@ -570,6 +570,21 @@ def compatlist(context, mapping, name, data, element=None, fmt=None,
     f = _showcompatlist(context, mapping, name, data, plural, separator)
     return hybridlist(data, name=element or name, fmt=fmt, gen=f)
 
+def compatfilecopiesdict(context, mapping, name, copies):
+    """Wrap list of (dest, source) file names to support old-style list
+    template and field names
+
+    This exists for backward compatibility. Use hybriddict for new template
+    keywords.
+    """
+    # no need to provide {path} to old-style list template
+    c = [{'name': k, 'source': v} for k, v in copies]
+    f = _showcompatlist(context, mapping, name, c, plural='file_copies')
+    copies = util.sortdict(copies)
+    return hybrid(f, copies,
+                  lambda k: {'name': k, 'path': k, 'source': copies[k]},
+                  lambda k: '%s (%s)' % (k, copies[k]))
+
 def compatfileslist(context, mapping, name, files):
     """Wrap list of file names to support old-style list template and field
     names

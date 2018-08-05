@@ -194,7 +194,7 @@ coreconfigitem('commands', 'resolve.confirm',
     default=False,
 )
 coreconfigitem('commands', 'resolve.mark-check',
-    default=None,
+    default='none',
 )
 coreconfigitem('commands', 'show.aliasprefix',
     default=list,

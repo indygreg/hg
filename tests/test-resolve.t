@@ -400,6 +400,7 @@ Try with --all from the hint
   $ hg resolve -l
   R file1
   R file2
+Test option value 'warn'
   $ hg resolve --unmark
   $ hg resolve -l
   U file1
@@ -417,6 +418,26 @@ If the file is already marked as resolved, we don't warn about it
   U file1
   R file2
   $ hg --config commands.resolve.mark-check=warn resolve -m
+  (no more unresolved files)
+  $ hg resolve -l
+  R file1
+  R file2
+If the user passes an invalid value, we treat it as 'none'.
+  $ hg resolve --unmark
+  $ hg resolve -l
+  U file1
+  U file2
+  $ hg --config commands.resolve.mark-check=nope resolve -m
+  (no more unresolved files)
+  $ hg resolve -l
+  R file1
+  R file2
+Test explicitly setting the otion to 'none'
+  $ hg resolve --unmark
+  $ hg resolve -l
+  U file1
+  U file2
+  $ hg --config commands.resolve.mark-check=none resolve -m
   (no more unresolved files)
   $ hg resolve -l
   R file1

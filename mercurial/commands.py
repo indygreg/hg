@@ -4608,6 +4608,9 @@ def resolve(ui, repo, *pats, **opts):
         hasconflictmarkers = []
         if mark:
             markcheck = ui.config('commands', 'resolve.mark-check')
+            if markcheck not in ['warn', 'abort']:
+                # Treat all invalid / unrecognized values as 'none'.
+                markcheck = False
         for f in ms:
             if not m(f):
                 continue

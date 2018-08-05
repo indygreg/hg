@@ -575,7 +575,7 @@ def rstdoc(context, mapping, args):
     text = evalstring(context, mapping, args[0])
     style = evalstring(context, mapping, args[1])
 
-    return minirst.format(text, style=style, keep=['verbose'])[0]
+    return minirst.format(text, style=style, keep=['verbose'])
 
 @templatefunc('separate(sep, args...)', argspec='sep *args')
 def separate(context, mapping, args):

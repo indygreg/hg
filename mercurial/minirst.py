@@ -673,13 +673,9 @@ def format(text, width=80, indent=0, keep=None, style='plain', section=None):
     if section:
         blocks = filtersections(blocks, section)
     if style == 'html':
-        text = formathtml(blocks)
+        return formathtml(blocks)
     else:
-        text = formatplain(blocks, width=width)
-    if keep is None:
-        return text
-    else:
-        return text, pruned
+        return formatplain(blocks, width=width)
 
 def filtersections(blocks, section):
     """Select parsed blocks under the specified section"""

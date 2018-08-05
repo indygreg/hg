@@ -642,7 +642,7 @@ Inaccessible source
   $ mkdir a
   $ chmod 000 a
   $ hg clone a b
-  abort: repository a not found!
+  abort: Permission denied: '$TESTTMP/fail/a/.hg'
   [255]
 
 Inaccessible destination
@@ -665,7 +665,7 @@ Source of wrong type
 
   $ mkfifo a
   $ hg clone a b
-  abort: repository a not found!
+  abort: $ENOTDIR$: '$TESTTMP/fail/a/.hg'
   [255]
   $ rm a
 

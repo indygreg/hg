@@ -495,6 +495,11 @@ class localrepository(object):
                         ' dummy changelog to prevent using the old repo layout'
                     )
             else:
+                try:
+                    self.vfs.stat()
+                except OSError as inst:
+                    if inst.errno != errno.ENOENT:
+                        raise
                 raise error.RepoError(_("repository %s not found") % path)
         elif create:
             raise error.RepoError(_("repository %s already exists") % path)

@@ -140,7 +140,7 @@ def files(context, mapping, args):
     ctx = context.resource(mapping, 'ctx')
     m = ctx.match([raw])
     files = list(ctx.matches(m))
-    return templateutil.compatlist(context, mapping, "file", files)
+    return templateutil.compatfileslist(context, mapping, "file", files)
 
 @templatefunc('fill(text[, width[, initialident[, hangindent]]])')
 def fill(context, mapping, args):

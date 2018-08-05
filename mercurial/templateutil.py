@@ -570,6 +570,17 @@ def compatlist(context, mapping, name, data, element=None, fmt=None,
     f = _showcompatlist(context, mapping, name, data, plural, separator)
     return hybridlist(data, name=element or name, fmt=fmt, gen=f)
 
+def compatfileslist(context, mapping, name, files):
+    """Wrap list of file names to support old-style list template and field
+    names
+
+    This exists for backward compatibility. Use hybridlist for new template
+    keywords.
+    """
+    f = _showcompatlist(context, mapping, name, files)
+    return hybrid(f, files, lambda x: {'file': x, 'path': x},
+                  pycompat.identity)
+
 def _showcompatlist(context, mapping, name, values, plural=None, separator=' '):
     """Return a generator that renders old-style list template
 

@@ -745,6 +745,30 @@ Add a commit that does all possible modifications at once
   $ hg rm a
   $ hg ci -m "Modify, add, remove, rename"
 
+Test files list:
+
+  $ hg log -l1 -T '{join(file_mods, " ")}\n'
+  third
+  $ hg log -l1 -T '{file_mods % "{file}\n"}'
+  third
+  $ hg log -l1 -T '{file_mods % "{path}\n"}'
+  third
+
+  $ hg log -l1 -T '{join(files, " ")}\n'
+  a b fifth fourth third
+  $ hg log -l1 -T '{files % "{file}\n"}'
+  a
+  b
+  fifth
+  fourth
+  third
+  $ hg log -l1 -T '{files % "{path}\n"}'
+  a
+  b
+  fifth
+  fourth
+  third
+
 Test index keyword:
 
   $ hg log -l 2 -T '{index + 10}{files % " {index}:{file}"}\n'

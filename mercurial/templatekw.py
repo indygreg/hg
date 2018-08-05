@@ -297,7 +297,7 @@ def _showfilesbystat(context, mapping, name, index):
     if 'files' not in revcache:
         revcache['files'] = ctx.p1().status(ctx)[:3]
     files = revcache['files'][index]
-    return compatlist(context, mapping, name, files, element='file')
+    return templateutil.compatfileslist(context, mapping, name, files)
 
 @templatekeyword('file_adds', requires={'ctx', 'revcache'})
 def showfileadds(context, mapping):
@@ -359,7 +359,7 @@ def showfiles(context, mapping):
     changeset.
     """
     ctx = context.resource(mapping, 'ctx')
-    return compatlist(context, mapping, 'file', ctx.files())
+    return templateutil.compatfileslist(context, mapping, 'file', ctx.files())
 
 @templatekeyword('graphnode', requires={'repo', 'ctx'})
 def showgraphnode(context, mapping):

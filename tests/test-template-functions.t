@@ -1198,6 +1198,12 @@ Test files function
   
   0
   
+
+  $ hg log -l1 -T "{files('aa') % '{file}\n'}"
+  aa
+  $ hg log -l1 -T "{files('aa') % '{path}\n'}"
+  aa
+
   $ hg rm a
   $ hg log -r "wdir()" -T "{rev}\n{join(files('*'), '\n')}\n"
   2147483647

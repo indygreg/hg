@@ -155,7 +155,7 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	int comp_len, uncomp_len, base_rev, link_rev, parent_1, parent_2;
 	const char *c_node_id;
 	const char *data;
-	Py_ssize_t length = index_length(self) + 1;
+	Py_ssize_t length = index_length(self);
 	PyObject *entry;
 
 	if (pos == -1) {
@@ -163,7 +163,7 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 		return nullentry;
 	}
 
-	if (pos < 0 || pos >= length - 1) {
+	if (pos < 0 || pos >= length) {
 		PyErr_SetString(PyExc_IndexError, "revlog index out of range");
 		return NULL;
 	}
@@ -225,13 +225,13 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
  */
 static const char *index_node(indexObject *self, Py_ssize_t pos)
 {
-	Py_ssize_t length = index_length(self) + 1;
+	Py_ssize_t length = index_length(self);
 	const char *data;
 
 	if (pos == -1)
 		return nullid;
 
-	if (pos >= length - 1)
+	if (pos >= length)
 		return NULL;
 
 	if (pos >= self->length - 1) {
@@ -285,7 +285,7 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	if (node_check(PyTuple_GET_ITEM(obj, 7), &node) == -1)
 		return NULL;
 
-	len = index_length(self) + 1;
+	len = index_length(self);
 
 	if (self->added == NULL) {
 		self->added = PyList_New(0);
@@ -297,7 +297,7 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 		return NULL;
 
 	if (self->nt)
-		nt_insert(self, node, len - 1);
+		nt_insert(self, node, len);
 
 	Py_CLEAR(self->headrevs);
 	Py_RETURN_NONE;
@@ -844,7 +844,7 @@ static PyObject *index_deltachain(indexObject *self, PyObject *args)
 	int stoprev, iterrev, baserev = -1;
 	int stopped;
 	PyObject *chain = NULL, *result = NULL;
-	const Py_ssize_t length = index_length(self) + 1;
+	const Py_ssize_t length = index_length(self);
 
 	if (!PyArg_ParseTuple(args, "iOi", &rev, &stoparg, &generaldelta)) {
 		return NULL;
@@ -865,7 +865,7 @@ static PyObject *index_deltachain(indexObject *self, PyObject *args)
 		return NULL;
 	}
 
-	if (rev < 0 || rev >= length - 1) {
+	if (rev < 0 || rev >= length) {
 		PyErr_SetString(PyExc_ValueError, "revlog index out of range");
 		return NULL;
 	}
@@ -908,7 +908,7 @@ static PyObject *index_deltachain(indexObject *self, PyObject *args)
 			break;
 		}
 
-		if (iterrev >= length - 1) {
+		if (iterrev >= length) {
 			PyErr_SetString(PyExc_IndexError, "revision outside index");
 			return NULL;
 		}

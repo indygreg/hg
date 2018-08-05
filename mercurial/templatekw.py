@@ -543,6 +543,12 @@ def showobsolete(context, mapping):
         return 'obsolete'
     return ''
 
+@templatekeyword('path', requires={'fctx'})
+def showpath(context, mapping):
+    """String. Repository-absolute path of the current file. (EXPERIMENTAL)"""
+    fctx = context.resource(mapping, 'fctx')
+    return fctx.path()
+
 @templatekeyword('peerurls', requires={'repo'})
 def showpeerurls(context, mapping):
     """A dictionary of repository locations defined in the [paths] section

@@ -2176,8 +2176,8 @@ def files(ui, ctx, m, fm, fmt, subrepos):
         if needsfctx:
             fc = ctx[f]
             fm.write('size flags', '% 10d % 1s ', fc.size(), fc.flags())
-        fm.data(abspath=f)
-        fm.write('path', fmt, m.rel(f))
+        fm.data(path=f)
+        fm.plain(fmt % m.rel(f))
         ret = 0
 
     for subpath in sorted(ctx.substate):
@@ -2323,7 +2323,7 @@ def _updatecatformatter(fm, ctx, matcher, path, decode):
     fm.startitem()
     fm.context(ctx=ctx)
     fm.write('data', '%s', data)
-    fm.data(abspath=path, path=matcher.rel(path))
+    fm.data(path=path)
 
 def cat(ui, repo, ctx, matcher, basefm, fntemplate, prefix, **opts):
     err = 1

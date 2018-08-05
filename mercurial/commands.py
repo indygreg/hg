@@ -337,10 +337,10 @@ def annotate(ui, repo, *pats, **opts):
              ('rev', ' ', lambda x: x.fctx.rev(), formatrev),
              ('node', ' ', lambda x: hexfn(x.fctx.node()), formathex),
              ('date', ' ', lambda x: x.fctx.date(), util.cachefunc(datefunc)),
-             ('file', ' ', lambda x: x.fctx.path(), pycompat.bytestr),
+             ('path', ' ', lambda x: x.fctx.path(), pycompat.bytestr),
              ('line_number', ':', lambda x: x.lineno, pycompat.bytestr),
             ]
-    opnamemap = {'rev': 'number', 'node': 'changeset'}
+    opnamemap = {'rev': 'number', 'node': 'changeset', 'path': 'file'}
 
     if (not opts.get('user') and not opts.get('changeset')
         and not opts.get('date') and not opts.get('file')):
@@ -380,7 +380,7 @@ def annotate(ui, repo, *pats, **opts):
     for abs in ctx.walk(m):
         fctx = ctx[abs]
         rootfm.startitem()
-        rootfm.data(abspath=abs, path=m.rel(abs))
+        rootfm.data(path=abs)
         if not opts.get('text') and fctx.isbinary():
             rootfm.plain(_("%s: binary file\n")
                          % ((pats and m.rel(abs)) or abs))
@@ -2660,7 +2660,7 @@ def grep(ui, repo, pattern, *pats, **opts):
             except error.WdirUnsupported:
                 return ctx[fn].isbinary()
 
-        fieldnamemap = {'filename': 'file', 'linenumber': 'line_number'}
+        fieldnamemap = {'filename': 'path', 'linenumber': 'line_number'}
         if diff:
             iter = difflinestates(pstates, states)
         else:
@@ -5187,10 +5187,12 @@ def status(ui, repo, *pats, **opts):
             for f in files:
                 fm.startitem()
                 fm.context(ctx=ctx2)
+                fm.data(path=f)
                 fm.condwrite(showchar, 'status', '%s ', char, label=label)
-                fm.write('path', fmt, repo.pathto(f, cwd), label=label)
+                fm.plain(fmt % repo.pathto(f, cwd), label=label)
                 if f in copy:
-                    fm.write("copy", '  %s' + end, repo.pathto(copy[f], cwd),
+                    fm.data(copy=copy[f])
+                    fm.plain(('  %s' + end) % repo.pathto(copy[f], cwd),
                              label='status.copied')
 
     if ((ui.verbose or ui.configbool('commands', 'status.verbose'))

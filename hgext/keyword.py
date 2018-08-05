@@ -576,8 +576,8 @@ def files(ui, repo, *pats, **opts):
         label = 'kwfiles.' + kwstate
         for f in filenames:
             fm.startitem()
-            fm.write('kwstatus path', fmt, char,
-                     repo.pathto(f, cwd), label=label)
+            fm.data(kwstatus=char, path=f)
+            fm.plain(fmt % (char, repo.pathto(f, cwd)), label=label)
     fm.end()
 
 @command('kwshrink',

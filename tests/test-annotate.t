@@ -56,7 +56,6 @@ annotate (JSON)
   $ hg annotate -Tjson a
   [
    {
-    "abspath": "a",
     "lines": [{"line": "a\n", "rev": 0}],
     "path": "a"
    }
@@ -65,8 +64,7 @@ annotate (JSON)
   $ hg annotate -Tjson -cdfnul a
   [
    {
-    "abspath": "a",
-    "lines": [{"date": [1.0, 0], "file": "a", "line": "a\n", "line_number": 1, "node": "8435f90966e442695d2ded29fdade2bac5ad8065", "rev": 0, "user": "nobody"}],
+    "lines": [{"date": [1.0, 0], "line": "a\n", "line_number": 1, "node": "8435f90966e442695d2ded29fdade2bac5ad8065", "path": "a", "rev": 0, "user": "nobody"}],
     "path": "a"
    }
   ]
@@ -127,12 +125,10 @@ annotate multiple files (JSON)
   $ hg annotate -Tjson a b
   [
    {
-    "abspath": "a",
     "lines": [{"line": "a\n", "rev": 0}, {"line": "a\n", "rev": 1}, {"line": "a\n", "rev": 1}],
     "path": "a"
    },
    {
-    "abspath": "b",
     "lines": [{"line": "a\n", "rev": 0}, {"line": "a\n", "rev": 1}, {"line": "a\n", "rev": 1}, {"line": "b4\n", "rev": 3}, {"line": "b5\n", "rev": 3}, {"line": "b6\n", "rev": 3}],
     "path": "b"
    }
@@ -140,7 +136,7 @@ annotate multiple files (JSON)
 
 annotate multiple files (template)
 
-  $ hg annotate -T'== {abspath} ==\n{lines % "{rev}: {line}"}' a b
+  $ hg annotate -T'== {path} ==\n{lines % "{rev}: {line}"}' a b
   == a ==
   0: a
   1: a
@@ -568,7 +564,6 @@ annotate modified file
   $ hg annotate -ncr "wdir()" -Tjson foo
   [
    {
-    "abspath": "foo",
     "lines": [{"line": "foo\n", "node": "472b18db256d1e8282064eab4bfdaf48cbfe83cd", "rev": 11}, {"line": "foofoo\n", "node": null, "rev": null}],
     "path": "foo"
    }
@@ -870,11 +865,9 @@ Test empty annotate output
   $ hg annotate -Tjson binary empty
   [
    {
-    "abspath": "binary",
     "path": "binary"
    },
    {
-    "abspath": "empty",
     "lines": [],
     "path": "empty"
    }

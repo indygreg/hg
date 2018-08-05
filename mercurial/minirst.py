@@ -666,8 +666,21 @@ def formatblocks(blocks, width):
 def format(text, width=80, indent=0, keep=None, style='plain', section=None):
     """Parse and format the text according to width."""
     blocks, pruned = parse(text, indent, keep or [])
-    parents = []
     if section:
+        blocks = filtersections(blocks, section)
+    if style == 'html':
+        text = formathtml(blocks)
+    else:
+        text = ''.join(formatblock(b, width) for b in blocks)
+    if keep is None:
+        return text
+    else:
+        return text, pruned
+
+def filtersections(blocks, section):
+    """Select parsed blocks under the specified section"""
+    parents = []
+    if True:
         sections = getsections(blocks)
         blocks = []
         i = 0
@@ -714,14 +727,7 @@ def format(text, width=80, indent=0, keep=None, style='plain', section=None):
                                '.'.join(path + [realline[0]]).replace('"', ''))
                 del blocks[s[0]:real]
 
-    if style == 'html':
-        text = formathtml(blocks)
-    else:
-        text = ''.join(formatblock(b, width) for b in blocks)
-    if keep is None:
-        return text
-    else:
-        return text, pruned
+    return blocks
 
 def getsections(blocks):
     '''return a list of (section name, nesting level, blocks) tuples'''

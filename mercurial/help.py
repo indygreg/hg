@@ -673,16 +673,6 @@ def formattedhelp(ui, commands, name, keep=None, unknowncmd=False, full=True,
                  subtopic=subtopic, unknowncmd=unknowncmd, full=full, **opts)
 
     blocks, pruned = minirst.parse(text, keep=keep)
-    if section:
-        blocks = minirst.filtersections(blocks, section)
-    formatted = minirst.formatplain(blocks, textwidth)
-
-    # We could have been given a weird ".foo" section without a name
-    # to look for, or we could have simply failed to found "foo.bar"
-    # because bar isn't a section of foo
-    if section and not (formatted and name):
-        raise error.Abort(_("help section not found: %s") % fullname)
-
     if 'verbose' in pruned:
         keep.append('omitted')
     else:
@@ -690,4 +680,11 @@ def formattedhelp(ui, commands, name, keep=None, unknowncmd=False, full=True,
     blocks, pruned = minirst.parse(text, keep=keep)
     if section:
         blocks = minirst.filtersections(blocks, section)
+
+    # We could have been given a weird ".foo" section without a name
+    # to look for, or we could have simply failed to found "foo.bar"
+    # because bar isn't a section of foo
+    if section and not (blocks and name):
+        raise error.Abort(_("help section not found: %s") % fullname)
+
     return minirst.formatplain(blocks, textwidth)

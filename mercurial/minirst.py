@@ -680,52 +680,51 @@ def format(text, width=80, indent=0, keep=None, style='plain', section=None):
 def filtersections(blocks, section):
     """Select parsed blocks under the specified section"""
     parents = []
-    if True:
-        sections = getsections(blocks)
-        blocks = []
-        i = 0
-        lastparents = []
-        synthetic = []
-        collapse = True
-        while i < len(sections):
-            name, nest, b = sections[i]
-            del parents[nest:]
-            parents.append(i)
-            if name == section:
-                if lastparents != parents:
-                    llen = len(lastparents)
-                    plen = len(parents)
-                    if llen and llen != plen:
-                        collapse = False
-                    s = []
-                    for j in pycompat.xrange(3, plen - 1):
-                        parent = parents[j]
-                        if (j >= llen or
-                            lastparents[j] != parent):
-                            s.append(len(blocks))
-                            sec = sections[parent][2]
-                            blocks.append(sec[0])
-                            blocks.append(sec[-1])
-                    if s:
-                        synthetic.append(s)
+    sections = getsections(blocks)
+    blocks = []
+    i = 0
+    lastparents = []
+    synthetic = []
+    collapse = True
+    while i < len(sections):
+        name, nest, b = sections[i]
+        del parents[nest:]
+        parents.append(i)
+        if name == section:
+            if lastparents != parents:
+                llen = len(lastparents)
+                plen = len(parents)
+                if llen and llen != plen:
+                    collapse = False
+                s = []
+                for j in pycompat.xrange(3, plen - 1):
+                    parent = parents[j]
+                    if (j >= llen or
+                        lastparents[j] != parent):
+                        s.append(len(blocks))
+                        sec = sections[parent][2]
+                        blocks.append(sec[0])
+                        blocks.append(sec[-1])
+                if s:
+                    synthetic.append(s)
 
-                lastparents = parents[:]
-                blocks.extend(b)
+            lastparents = parents[:]
+            blocks.extend(b)
 
-                ## Also show all subnested sections
-                while i + 1 < len(sections) and sections[i + 1][1] > nest:
-                    i += 1
-                    blocks.extend(sections[i][2])
-            i += 1
-        if collapse:
-            synthetic.reverse()
-            for s in synthetic:
-                path = [blocks[syn]['lines'][0] for syn in s]
-                real = s[-1] + 2
-                realline = blocks[real]['lines']
-                realline[0] = ('"%s"' %
-                               '.'.join(path + [realline[0]]).replace('"', ''))
-                del blocks[s[0]:real]
+            ## Also show all subnested sections
+            while i + 1 < len(sections) and sections[i + 1][1] > nest:
+                i += 1
+                blocks.extend(sections[i][2])
+        i += 1
+    if collapse:
+        synthetic.reverse()
+        for s in synthetic:
+            path = [blocks[syn]['lines'][0] for syn in s]
+            real = s[-1] + 2
+            realline = blocks[real]['lines']
+            realline[0] = ('"%s"' %
+                           '.'.join(path + [realline[0]]).replace('"', ''))
+            del blocks[s[0]:real]
 
     return blocks
 

@@ -642,8 +642,8 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
 
     return ''.join(rst)
 
-def formattedhelp(ui, commands, name, keep=None, unknowncmd=False, full=True,
-                  **opts):
+def formattedhelp(ui, commands, fullname, keep=None, unknowncmd=False,
+                  full=True, **opts):
     """get help for a given topic (as a dotted name) as rendered rst
 
     Either returns the rendered help text or raises an exception.
@@ -652,19 +652,17 @@ def formattedhelp(ui, commands, name, keep=None, unknowncmd=False, full=True,
         keep = []
     else:
         keep = list(keep) # make a copy so we can mutate this later
-    fullname = name
-    section = None
-    subtopic = None
-    if name and '.' in name:
-        name, remaining = name.split('.', 1)
-        remaining = encoding.lower(remaining)
-        if '.' in remaining:
-            subtopic, section = remaining.split('.', 1)
-        else:
-            if name in subtopics:
-                subtopic = remaining
-            else:
-                section = remaining
+
+    # <fullname> := <name>[.<subtopic][.<section>]
+    name = subtopic = section = None
+    if fullname is not None:
+        nameparts = fullname.split('.')
+        name = nameparts.pop(0)
+        if nameparts and name in subtopics:
+            subtopic = nameparts.pop(0)
+        if nameparts:
+            section = encoding.lower('.'.join(nameparts))
+
     textwidth = ui.configint('ui', 'textwidth')
     termwidth = ui.termwidth() - 2
     if textwidth <= 0 or termwidth < textwidth:

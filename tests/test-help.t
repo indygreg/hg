@@ -1344,52 +1344,14 @@ Test repeated config section name
 Test section name with dot
 
   $ hg help config.ui.username
-      "auth.username"
-          Optional. Username to authenticate with. If not given, and the remote
-          site requires basic or digest authentication, the user will be
-          prompted for it. Environment variables are expanded in the username
-          letting you do "foo.username = $USER". If the URI includes a username,
-          only "[auth]" entries with a matching username or without a username
-          will be considered.
-  
-      "smtp.username"
-          Optional. User name for authenticating with the SMTP server. (default:
-          None)
-  
-      "ui.username"
-          The committer of a changeset created when running "commit". Typically
-          a person's name and email address, e.g. "Fred Widget
-          <fred@example.com>". Environment variables in the username are
-          expanded.
-  
-          (default: "$EMAIL" or "username@hostname". If the username in hgrc is
-          empty, e.g. if the system admin set "username =" in the system hgrc,
-          it has to be specified manually or in a different hgrc file)
-  
+  abort: help section not found: config.ui.username
+  [255]
 
   $ hg help config.annotate.git
-      "diff.git"
-          Use git extended diff format.
-  
+  abort: help section not found: config.annotate.git
+  [255]
 
   $ hg help config.update.check
-      "merge-tools.check"
-        A list of merge success-checking options:
-  
-        "changed"
-          Ask whether merge was successful when the merged file shows no
-          changes.
-  
-        "conflicts"
-          Check whether there are conflicts even though the tool reported
-          success.
-  
-        "prompt"
-          Always prompt for merge success, regardless of success reported by
-          tool.
-  
-
-  $ hg help config.commands.update.check
       "commands.update.check"
           Determines what level of checking 'hg update' will perform before
           moving to a destination revision. Valid values are "abort", "none",
@@ -1401,6 +1363,10 @@ Test section name with dot
           allow any update which would not trigger a merge with uncommitted
           changes, if any are present. (default: "linear")
   
+
+  $ hg help config.commands.update.check
+  abort: help section not found: config.commands.update.check
+  [255]
 
 Unrelated trailing paragraphs shouldn't be included
 

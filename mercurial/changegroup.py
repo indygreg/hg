@@ -633,7 +633,7 @@ class cgpacker(object):
         # order that they're introduced in dramatis personae by the
         # changelog, so what we do is we sort the non-changelog histories
         # by the order in which they are used by the changelog.
-        if self._ellipses and self._clnodetorev:
+        if self._ellipses and self._changelogdone:
             key = lambda n: self._clnodetorev[lookup(n)]
             return [store.rev(n) for n in sorted(nodelist, key=key)]
 

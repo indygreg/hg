@@ -8,6 +8,7 @@
 from __future__ import absolute_import, print_function
 
 import copy
+import itertools
 import os
 import re
 
@@ -331,6 +332,38 @@ class basematcher(object):
         '''
         return True
 
+    def visitchildrenset(self, dir):
+        '''Decides whether a directory should be visited based on whether it
+        has potential matches in it or one of its subdirectories, and
+        potentially lists which subdirectories of that directory should be
+        visited. This is based on the match's primary, included, and excluded
+        patterns.
+
+        This function is very similar to 'visitdir', and the following mapping
+        can be applied:
+
+             visitdir | visitchildrenlist
+            ----------+-------------------
+             False    | set()
+             'all'    | 'all'
+             True     | 'this' OR non-empty set of subdirs to visit
+
+        Example:
+          Assume matchers ['path:foo/bar', 'rootfilesin:qux'], we would return
+          the following values (assuming the implementation of visitchildrenset
+          is capable of recognizing this; some implementations are not).
+
+          '.' -> {'foo', 'qux'}
+          'baz' -> set()
+          'foo' -> {'bar'}
+          # Ideally this would be 'all', but since the prefix nature of matchers
+          # is applied to the entire matcher, we have to downgrade to this
+          # 'this' due to the non-prefix 'rootfilesin'-kind matcher.
+          'foo/bar' -> 'this'
+          'qux' -> 'this'
+        '''
+        return 'this'
+
     def always(self):
         '''Matcher will match everything and .files() will be empty --
         optimization might be possible.'''
@@ -367,6 +400,9 @@ class alwaysmatcher(basematcher):
     def visitdir(self, dir):
         return 'all'
 
+    def visitchildrenset(self, dir):
+        return 'all'
+
     def __repr__(self):
         return r'<alwaysmatcher>'
 
@@ -389,6 +425,9 @@ class nevermatcher(basematcher):
 
     def visitdir(self, dir):
         return False
+
+    def visitchildrenset(self, dir):
+        return set()
 
     def __repr__(self):
         return r'<nevermatcher>'
@@ -430,6 +469,15 @@ class patternmatcher(basematcher):
                 any(parentdir in self._fileset
                     for parentdir in util.finddirs(dir)))
 
+    def visitchildrenset(self, dir):
+        ret = self.visitdir(dir)
+        if ret is True:
+            return 'this'
+        elif not ret:
+            return set()
+        assert ret == 'all'
+        return 'all'
+
     def prefix(self):
         return self._prefix
 
@@ -464,6 +512,43 @@ class includematcher(basematcher):
                 any(parentdir in self._roots
                     for parentdir in util.finddirs(dir)))
 
+    def visitchildrenset(self, dir):
+        if self._prefix and dir in self._roots:
+            return 'all'
+        # Note: this does *not* include the 'dir in self._parents' case from
+        # visitdir, that's handled below.
+        if ('.' in self._roots or
+            dir in self._roots or
+            dir in self._dirs or
+            any(parentdir in self._roots
+                for parentdir in util.finddirs(dir))):
+            return 'this'
+
+        ret = set()
+        if dir in self._parents:
+            # We add a '/' on to `dir` so that we don't return items that are
+            # prefixed by `dir` but are actually siblings of `dir`.
+            suffixeddir = dir + '/' if dir != '.' else ''
+            # Look in all _roots, _dirs, and _parents for things that start with
+            # 'suffixeddir'.
+            for d in [q for q in
+                      itertools.chain(self._roots, self._dirs, self._parents) if
+                      q.startswith(suffixeddir)]:
+                # Don't emit '.' in the response for the root directory
+                if not suffixeddir and d == '.':
+                    continue
+
+                # We return the item name without the `suffixeddir` prefix or a
+                # slash suffix
+                d = d[len(suffixeddir):]
+                if '/' in d:
+                    # This is a subdirectory-of-a-subdirectory, i.e.
+                    # suffixeddir='foo/', d was 'foo/bar/baz' before removing
+                    # 'foo/'.
+                    d = d[:d.index('/')]
+                ret.add(d)
+        return ret
+
     @encoding.strmethod
     def __repr__(self):
         return ('<includematcher includes=%r>' % pycompat.bytestr(self._pats))
@@ -489,6 +574,25 @@ class exactmatcher(basematcher):
 
     def visitdir(self, dir):
         return dir in self._dirs
+
+    def visitchildrenset(self, dir):
+        if dir in self._dirs:
+            candidates = self._dirs - {'.'}
+            if dir != '.':
+                d = dir + '/'
+                candidates = set(c[len(d):] for c in candidates if
+                                 c.startswith(d))
+            # self._dirs includes all of the directories, recursively, so if
+            # we're attempting to match foo/bar/baz.txt, it'll have '.', 'foo',
+            # 'foo/bar' in it. Thus we can safely ignore a candidate that has a
+            # '/' in it, indicating a it's for a subdir-of-a-subdir; the
+            # immediate subdir will be in there without a slash.
+            ret = set(c for c in candidates if '/' not in c)
+            # We need to emit 'this' for foo/bar, not set(), not {'baz.txt'}.
+            if not ret:
+                return 'this'
+            return ret
+        return set()
 
     def isexact(self):
         return True
@@ -530,6 +634,31 @@ class differencematcher(basematcher):
         if self._m2.visitdir(dir) == 'all':
             return False
         return bool(self._m1.visitdir(dir))
+
+    def visitchildrenset(self, dir):
+        m2_set = self._m2.visitchildrenset(dir)
+        if m2_set == 'all':
+            return set()
+        m1_set = self._m1.visitchildrenset(dir)
+        # Possible values for m1: 'all', 'this', set(...), set()
+        # Possible values for m2:        'this', set(...), set()
+        # If m2 has nothing under here that we care about, return m1, even if
+        # it's 'all'. This is a change in behavior from visitdir, which would
+        # return True, not 'all', for some reason.
+        if not m2_set:
+            return m1_set
+        if m1_set in ['all', 'this']:
+            # Never return 'all' here if m2_set is any kind of non-empty (either
+            # 'this' or set(foo)), since m2 might return set() for a
+            # subdirectory.
+            return 'this'
+        # Possible values for m1:         set(...), set()
+        # Possible values for m2: 'this', set(...)
+        # We ignore m2's set results. They're possibly incorrect:
+        #  m1 = path:dir/subdir, m2=rootfilesin:dir, visitchildrenset('.'):
+        #    m1 returns {'dir'}, m2 returns {'dir'}, if we subtracted we'd
+        #    return set(), which is *not* correct, we still need to visit 'dir'!
+        return m1_set
 
     def isexact(self):
         return self._m1.isexact()
@@ -594,6 +723,25 @@ class intersectionmatcher(basematcher):
             return self._m2.visitdir(dir)
         # bool() because visit1=True + visit2='all' should not be 'all'
         return bool(visit1 and self._m2.visitdir(dir))
+
+    def visitchildrenset(self, dir):
+        m1_set = self._m1.visitchildrenset(dir)
+        if not m1_set:
+            return set()
+        m2_set = self._m2.visitchildrenset(dir)
+        if not m2_set:
+            return set()
+
+        if m1_set == 'all':
+            return m2_set
+        elif m2_set == 'all':
+            return m1_set
+
+        if m1_set == 'this' or m2_set == 'this':
+            return 'this'
+
+        assert isinstance(m1_set, set) and isinstance(m2_set, set)
+        return m1_set.intersection(m2_set)
 
     def always(self):
         return self._m1.always() and self._m2.always()
@@ -676,6 +824,13 @@ class subdirmatcher(basematcher):
             dir = self._path + "/" + dir
         return self._matcher.visitdir(dir)
 
+    def visitchildrenset(self, dir):
+        if dir == '.':
+            dir = self._path
+        else:
+            dir = self._path + "/" + dir
+        return self._matcher.visitchildrenset(dir)
+
     def always(self):
         return self._always
 
@@ -748,6 +903,14 @@ class prefixdirmatcher(basematcher):
             return self._matcher.visitdir(dir[len(self._pathprefix):])
         return dir in self._pathdirs
 
+    def visitchildrenset(self, dir):
+        if dir == self._path:
+            return self._matcher.visitchildrenset('.')
+        if dir.startswith(self._pathprefix):
+            return self._matcher.visitchildrenset(dir[len(self._pathprefix):])
+        if dir in self._pathdirs:
+            return 'this'
+
     def isexact(self):
         return self._matcher.isexact()
 
@@ -786,6 +949,25 @@ class unionmatcher(basematcher):
             if v == 'all':
                 return v
             r |= v
+        return r
+
+    def visitchildrenset(self, dir):
+        r = set()
+        this = False
+        for m in self._matchers:
+            v = m.visitchildrenset(dir)
+            if not v:
+                continue
+            if v == 'all':
+                return v
+            if this or v == 'this':
+                this = True
+                # don't break, we might have an 'all' in here.
+                continue
+            assert isinstance(v, set)
+            r = r.union(v)
+        if this:
+            return 'this'
         return r
 
     @encoding.strmethod

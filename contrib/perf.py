@@ -663,21 +663,20 @@ def perfchangegroupchangelog(ui, repo, version='02', rev=None, **opts):
     By default, all revisions are added to the changegroup.
     """
     cl = repo.changelog
-    revs = [cl.lookup(r) for r in repo.revs(rev or 'all()')]
+    nodes = [cl.lookup(r) for r in repo.revs(rev or 'all()')]
     bundler = changegroup.getbundler(version, repo)
 
-    def lookup(node):
-        # The real bundler reads the revision in order to access the
-        # manifest node and files list. Do that here.
-        cl.read(node)
-        return node
-
     def d():
-        for chunk in bundler.group(revs, cl, lookup):
+        state, chunks = bundler._generatechangelog(cl, nodes)
+        for chunk in chunks:
             pass
 
     timer, fm = gettimer(ui, opts)
-    timer(d)
+
+    # Terminal printing can interfere with timing. So disable it.
+    with ui.configoverride({('progress', 'disable'): True}):
+        timer(d)
+
     fm.end()
 
 @command('perfdirs', formatteropts)

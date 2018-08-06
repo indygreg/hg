@@ -523,6 +523,37 @@ class revisiondelta(object):
     # Iterable of chunks holding raw delta data.
     deltachunks = attr.ib()
 
+def _sortnodesnormal(store, nodes, reorder):
+    """Sort nodes for changegroup generation and turn into revnums."""
+    # for generaldelta revlogs, we linearize the revs; this will both be
+    # much quicker and generate a much smaller bundle
+    if (store._generaldelta and reorder is None) or reorder:
+        dag = dagutil.revlogdag(store)
+        return dag.linearize(set(store.rev(n) for n in nodes))
+    else:
+        return sorted([store.rev(n) for n in nodes])
+
+def _sortnodesellipsis(store, nodes, clnodetorev, lookup):
+    """Sort nodes for changegroup generation and turn into revnums."""
+    # Ellipses serving mode.
+    #
+    # In a perfect world, we'd generate better ellipsis-ified graphs
+    # for non-changelog revlogs. In practice, we haven't started doing
+    # that yet, so the resulting DAGs for the manifestlog and filelogs
+    # are actually full of bogus parentage on all the ellipsis
+    # nodes. This has the side effect that, while the contents are
+    # correct, the individual DAGs might be completely out of whack in
+    # a case like 882681bc3166 and its ancestors (back about 10
+    # revisions or so) in the main hg repo.
+    #
+    # The one invariant we *know* holds is that the new (potentially
+    # bogus) DAG shape will be valid if we order the nodes in the
+    # order that they're introduced in dramatis personae by the
+    # changelog, so what we do is we sort the non-changelog histories
+    # by the order in which they are used by the changelog.
+    key = lambda n: clnodetorev[lookup(n)]
+    return [store.rev(n) for n in sorted(nodes, key=key)]
+
 class cgpacker(object):
     def __init__(self, repo, filematcher, version, allowreorder,
                  deltaparentfn, builddeltaheader, manifestsend,
@@ -610,38 +641,7 @@ class cgpacker(object):
 
         return closechunk()
 
-    # Extracted both for clarity and for overriding in extensions.
-    def _sortgroup(self, store, ischangelog, nodelist, lookup):
-        """Sort nodes for change group and turn them into revnums."""
-        # Ellipses serving mode.
-        #
-        # In a perfect world, we'd generate better ellipsis-ified graphs
-        # for non-changelog revlogs. In practice, we haven't started doing
-        # that yet, so the resulting DAGs for the manifestlog and filelogs
-        # are actually full of bogus parentage on all the ellipsis
-        # nodes. This has the side effect that, while the contents are
-        # correct, the individual DAGs might be completely out of whack in
-        # a case like 882681bc3166 and its ancestors (back about 10
-        # revisions or so) in the main hg repo.
-        #
-        # The one invariant we *know* holds is that the new (potentially
-        # bogus) DAG shape will be valid if we order the nodes in the
-        # order that they're introduced in dramatis personae by the
-        # changelog, so what we do is we sort the non-changelog histories
-        # by the order in which they are used by the changelog.
-        if self._ellipses and not ischangelog:
-            key = lambda n: self._clnodetorev[lookup(n)]
-            return [store.rev(n) for n in sorted(nodelist, key=key)]
-
-        # for generaldelta revlogs, we linearize the revs; this will both be
-        # much quicker and generate a much smaller bundle
-        if (store._generaldelta and self._reorder is None) or self._reorder:
-            dag = dagutil.revlogdag(store)
-            return dag.linearize(set(store.rev(n) for n in nodelist))
-        else:
-            return sorted([store.rev(n) for n in nodelist])
-
-    def group(self, nodelist, store, ischangelog, lookup, units=None):
+    def group(self, revs, store, ischangelog, lookup, units=None):
         """Calculate a delta group, yielding a sequence of changegroup chunks
         (strings).
 
@@ -656,11 +656,9 @@ class cgpacker(object):
         the type of revlog that is touched (changelog, manifest, etc.).
         """
         # if we don't have any revisions touched by these changesets, bail
-        if len(nodelist) == 0:
+        if len(revs) == 0:
             yield self._close()
             return
-
-        revs = self._sortgroup(store, ischangelog, nodelist, lookup)
 
         # add the parent of the first rev
         p = store.parentrevs(revs[0])[0]
@@ -693,20 +691,17 @@ class cgpacker(object):
         rr, rl = store.rev, store.linkrev
         return [n for n in missing if rl(rr(n)) not in commonrevs]
 
-    def _packmanifests(self, dir, mfnodes, lookuplinknode):
+    def _packmanifests(self, dir, dirlog, revs, lookuplinknode):
         """Pack manifests into a changegroup stream.
 
         Encodes the directory name in the output so multiple manifests
         can be sent. Multiple manifests is not supported by cg1 and cg2.
         """
-
         if dir:
             assert self.version == b'03'
             yield _fileheader(dir)
 
-        # TODO violates storage abstractions by assuming revlogs.
-        dirlog = self._repo.manifestlog._revlog.dirlog(dir)
-        for chunk in self.group(mfnodes, dirlog, False, lookuplinknode,
+        for chunk in self.group(revs, dirlog, False, lookuplinknode,
                                 units=_('manifests')):
             yield chunk
 
@@ -850,13 +845,17 @@ class cgpacker(object):
 
             return x
 
+        # Changelog doesn't benefit from reordering revisions. So send out
+        # revisions in store order.
+        revs = sorted(cl.rev(n) for n in nodes)
+
         state = {
             'clrevorder': clrevorder,
             'mfs': mfs,
             'changedfiles': changedfiles,
         }
 
-        gen = self.group(nodes, cl, True, lookupcl, units=_('changesets'))
+        gen = self.group(revs, cl, True, lookupcl, units=_('changesets'))
 
         return state, gen
 
@@ -917,10 +916,19 @@ class cgpacker(object):
         size = 0
         while tmfnodes:
             dir, nodes = tmfnodes.popitem()
-            prunednodes = self._prune(dirlog(dir), nodes, commonrevs)
+            store = dirlog(dir)
+            prunednodes = self._prune(store, nodes, commonrevs)
             if not dir or prunednodes:
-                for x in self._packmanifests(dir, prunednodes,
-                                             makelookupmflinknode(dir, nodes)):
+                lookupfn = makelookupmflinknode(dir, nodes)
+
+                if self._ellipses:
+                    revs = _sortnodesellipsis(store, prunednodes,
+                                              self._clnodetorev, lookupfn)
+                else:
+                    revs = _sortnodesnormal(store, prunednodes,
+                                            self._reorder)
+
+                for x in self._packmanifests(dir, store, revs, lookupfn):
                     size += len(x)
                     yield x
         self._verbosenote(_('%8.i (manifests)\n') % size)
@@ -981,12 +989,18 @@ class cgpacker(object):
 
             filenodes = self._prune(filerevlog, linkrevnodes, commonrevs)
             if filenodes:
+                if self._ellipses:
+                    revs = _sortnodesellipsis(filerevlog, filenodes,
+                                              self._clnodetorev, lookupfilelog)
+                else:
+                    revs = _sortnodesnormal(filerevlog, filenodes,
+                                            self._reorder)
+
                 progress.update(i + 1, item=fname)
                 h = _fileheader(fname)
                 size = len(h)
                 yield h
-                for chunk in self.group(filenodes, filerevlog, False,
-                                        lookupfilelog):
+                for chunk in self.group(revs, filerevlog, False, lookupfilelog):
                     size += len(chunk)
                     yield chunk
                 self._verbosenote(_('%8.i  %s\n') % (size, fname))

@@ -1247,8 +1247,8 @@ class TTest(Test):
         self._allcases = {x for y in parsettestcases(path) for x in y}
         super(TTest, self).__init__(path, *args, **kwds)
         if case:
-            casepath = _strpath('#'.join(case))
-            self.name = '%s#%s' % (self.name, casepath)
+            casepath = b'#'.join(case)
+            self.name = '%s#%s' % (self.name, _strpath(casepath))
             self.errpath = b'%s#%s.err' % (self.errpath[:-4], casepath)
             self._tmpname += b'-%s' % casepath
         self._have = {}
@@ -1371,7 +1371,7 @@ class TTest(Test):
         if os.getenv('MSYSTEM'):
             script.append(b'alias pwd="pwd -W"\n')
         if self._case:
-            casestr = '#'.join(self._case)
+            casestr = b'#'.join(self._case)
             if isinstance(self._case, str):
                 quoted = shellquote(casestr)
             else:
@@ -2680,7 +2680,7 @@ class TestRunner(object):
                 if m is not None:
                     t, _, casestr = m.groups()
                     if casestr:
-                        case = casestr.split('#')
+                        case = casestr.split(b'#')
                 else:
                     continue
 
@@ -2726,7 +2726,7 @@ class TestRunner(object):
                     desc = testdescs[0]
                     # desc['path'] is a relative path
                     if 'case' in desc:
-                        casestr = '#'.join(desc['case'])
+                        casestr = b'#'.join(desc['case'])
                         errpath = b'%s#%s.err' % (desc['path'], casestr)
                     else:
                         errpath = b'%s.err' % desc['path']

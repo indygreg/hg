@@ -1018,18 +1018,21 @@ static int nt_find(indexObject *self, const char *node, Py_ssize_t nodelen,
 static int nt_new(nodetree *self)
 {
 	if (self->length == self->capacity) {
+		unsigned newcapacity;
+		nodetreenode *newnodes;
 		if (self->capacity >= INT_MAX / (sizeof(nodetreenode) * 2)) {
 			PyErr_SetString(PyExc_MemoryError,
 					"overflow in nt_new");
 			return -1;
 		}
-		self->capacity *= 2;
-		self->nodes = realloc(self->nodes,
-		                      self->capacity * sizeof(nodetreenode));
-		if (self->nodes == NULL) {
+		newcapacity = self->capacity * 2;
+		newnodes = realloc(self->nodes, newcapacity * sizeof(nodetreenode));
+		if (newnodes == NULL) {
 			PyErr_SetString(PyExc_MemoryError, "out of memory");
 			return -1;
 		}
+		self->capacity = newcapacity;
+		self->nodes = newnodes;
 		memset(&self->nodes[self->length], 0,
 		       sizeof(nodetreenode) * (self->capacity - self->length));
 	}

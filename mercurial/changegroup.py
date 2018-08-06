@@ -522,7 +522,7 @@ class revisiondelta(object):
 class cgpacker(object):
     def __init__(self, repo, filematcher, version, allowreorder,
                  useprevdelta, builddeltaheader, manifestsend,
-                 sendtreemanifests, bundlecaps=None, ellipses=False,
+                 bundlecaps=None, ellipses=False,
                  shallow=False, ellipsisroots=None, fullnodes=None):
         """Given a source repo, construct a bundler.
 
@@ -540,8 +540,6 @@ class cgpacker(object):
         delta.
 
         manifestsend is a chunk to send after manifests have been fully emitted.
-
-        sendtreemanifests indicates whether tree manifests should be emitted.
 
         ellipses indicates whether ellipsis serving mode is enabled.
 
@@ -564,7 +562,6 @@ class cgpacker(object):
         self._useprevdelta = useprevdelta
         self._builddeltaheader = builddeltaheader
         self._manifestsend = manifestsend
-        self._sendtreemanifests = sendtreemanifests
         self._ellipses = ellipses
 
         # Set of capabilities we can use to build the bundle.
@@ -701,21 +698,14 @@ class cgpacker(object):
         return [n for n in missing if rl(rr(n)) not in commonrevs]
 
     def _packmanifests(self, dir, mfnodes, lookuplinknode):
-        """Pack flat manifests into a changegroup stream."""
-        assert not dir
-        for chunk in self.group(mfnodes, self._repo.manifestlog._revlog,
-                                lookuplinknode, units=_('manifests')):
-            yield chunk
-
-    def _packtreemanifests(self, dir, mfnodes, lookuplinknode):
-        """Version of _packmanifests that operates on directory manifests.
+        """Pack manifests into a changegroup stream.
 
         Encodes the directory name in the output so multiple manifests
-        can be sent.
+        can be sent. Multiple manifests is not supported by cg1 and cg2.
         """
-        assert self.version == b'03'
 
         if dir:
+            assert self.version == b'03'
             yield self._fileheader(dir)
 
         # TODO violates storage abstractions by assuming revlogs.
@@ -902,14 +892,13 @@ class cgpacker(object):
                 return clnode
             return lookupmflinknode
 
-        fn = (self._packtreemanifests if self._sendtreemanifests
-              else self._packmanifests)
         size = 0
         while tmfnodes:
             dir, nodes = tmfnodes.popitem()
             prunednodes = self._prune(dirlog(dir), nodes, commonrevs)
             if not dir or prunednodes:
-                for x in fn(dir, prunednodes, makelookupmflinknode(dir, nodes)):
+                for x in self._packmanifests(dir, prunednodes,
+                                             makelookupmflinknode(dir, nodes)):
                     size += len(x)
                     yield x
         self._verbosenote(_('%8.i (manifests)\n') % size)
@@ -1208,7 +1197,6 @@ def _makecg1packer(repo, filematcher, bundlecaps, ellipses=False,
                     allowreorder=None,
                     builddeltaheader=builddeltaheader,
                     manifestsend=b'',
-                    sendtreemanifests=False,
                     bundlecaps=bundlecaps,
                     ellipses=ellipses,
                     shallow=shallow,
@@ -1228,7 +1216,6 @@ def _makecg2packer(repo, filematcher, bundlecaps, ellipses=False,
                     allowreorder=False,
                     builddeltaheader=builddeltaheader,
                     manifestsend=b'',
-                    sendtreemanifests=False,
                     bundlecaps=bundlecaps,
                     ellipses=ellipses,
                     shallow=shallow,
@@ -1245,7 +1232,6 @@ def _makecg3packer(repo, filematcher, bundlecaps, ellipses=False,
                     allowreorder=False,
                     builddeltaheader=builddeltaheader,
                     manifestsend=closechunk(),
-                    sendtreemanifests=True,
                     bundlecaps=bundlecaps,
                     ellipses=ellipses,
                     shallow=shallow,

@@ -710,8 +710,19 @@ class cgpacker(object):
             linknode = lookup(store.node(curr))
 
             if self._ellipses:
-                delta = self._revisiondeltanarrow(store, ischangelog,
-                                                  curr, prev, linknode)
+                linkrev = self._clnodetorev[linknode]
+                self._clrevtolocalrev[linkrev] = curr
+
+                # This is a node to send in full, because the changeset it
+                # corresponds to was a full changeset.
+                if linknode in self._fullnodes:
+                    delta = _revisiondeltanormal(store, curr, prev, linknode,
+                                                 self._deltaparentfn)
+                elif linkrev not in self._precomputedellipsis:
+                    delta = None
+                else:
+                    delta = self._revisiondeltanarrow(store, ischangelog,
+                                                      curr, linkrev, linknode)
             else:
                 delta = _revisiondeltanormal(store, curr, prev, linknode,
                                              self._deltaparentfn)
@@ -1046,21 +1057,7 @@ class cgpacker(object):
                 self._verbosenote(_('%8.i  %s\n') % (size, fname))
         progress.complete()
 
-    def _revisiondeltanarrow(self, store, ischangelog, rev, prev, linknode):
-        linkrev = self._clnodetorev[linknode]
-        self._clrevtolocalrev[linkrev] = rev
-
-        # This is a node to send in full, because the changeset it
-        # corresponds to was a full changeset.
-        if linknode in self._fullnodes:
-            return _revisiondeltanormal(store, rev, prev, linknode,
-                                        self._deltaparentfn)
-
-        # At this point, a node can either be one we should skip or an
-        # ellipsis. If it's not an ellipsis, bail immediately.
-        if linkrev not in self._precomputedellipsis:
-            return
-
+    def _revisiondeltanarrow(self, store, ischangelog, rev, linkrev, linknode):
         linkparents = self._precomputedellipsis[linkrev]
         def local(clrev):
             """Turn a changelog revnum into a local revnum.

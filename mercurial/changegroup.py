@@ -674,8 +674,23 @@ class cgpacker(object):
                 progress.update(r + 1)
             prev, curr = revs[r], revs[r + 1]
             linknode = lookup(store.node(curr))
-            for c in self._revchunk(store, ischangelog, curr, prev, linknode):
-                yield c
+
+            if self._ellipses:
+                delta = self._revisiondeltanarrow(store, ischangelog,
+                                                  curr, prev, linknode)
+            else:
+                delta = self._revisiondeltanormal(store, ischangelog,
+                                                  curr, prev, linknode)
+
+            if not delta:
+                continue
+
+            meta = self._builddeltaheader(delta)
+            l = len(meta) + sum(len(x) for x in delta.deltachunks)
+            yield chunkheader(l)
+            yield meta
+            for x in delta.deltachunks:
+                yield x
 
         if progress:
             progress.complete()
@@ -994,24 +1009,6 @@ class cgpacker(object):
                     yield chunk
                 self._verbosenote(_('%8.i  %s\n') % (size, fname))
         progress.complete()
-
-    def _revchunk(self, store, ischangelog, rev, prev, linknode):
-        if self._ellipses:
-            fn = self._revisiondeltanarrow
-        else:
-            fn = self._revisiondeltanormal
-
-        delta = fn(store, ischangelog, rev, prev, linknode)
-        if not delta:
-            return
-
-        meta = self._builddeltaheader(delta)
-        l = len(meta) + sum(len(x) for x in delta.deltachunks)
-
-        yield chunkheader(l)
-        yield meta
-        for x in delta.deltachunks:
-            yield x
 
     def _revisiondeltanormal(self, store, ischangelog, rev, prev, linknode):
         node = store.node(rev)

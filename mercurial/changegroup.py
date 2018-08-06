@@ -852,6 +852,8 @@ class cgpacker(object):
             clrevorder[x] = len(clrevorder)
 
             if self._ellipses:
+                self._clnodetorev[x] = cl.rev(x)
+
                 # Only update mfs if x is going to be sent. Otherwise we
                 # end up with bogus linkrevs specified for manifests and
                 # we skip some manifest nodes that we should otherwise
@@ -1045,15 +1047,8 @@ class cgpacker(object):
         progress.complete()
 
     def _revisiondeltanarrow(self, store, ischangelog, rev, prev, linknode):
-        # build up some mapping information that's useful later. See
-        # the local() nested function below.
-        if ischangelog:
-            self._clnodetorev[linknode] = rev
-            linkrev = rev
-            self._clrevtolocalrev[linkrev] = rev
-        else:
-            linkrev = self._clnodetorev[linknode]
-            self._clrevtolocalrev[linkrev] = rev
+        linkrev = self._clnodetorev[linknode]
+        self._clrevtolocalrev[linkrev] = rev
 
         # This is a node to send in full, because the changeset it
         # corresponds to was a full changeset.

@@ -445,11 +445,14 @@ class includematcher(basematcher):
         self._pats, self.matchfn = _buildmatch(kindpats, '(?:/|$)',
                                                listsubrepos, root)
         self._prefix = _prefix(kindpats)
-        roots, dirs = _rootsanddirs(kindpats)
+        roots, dirs, parents = _rootsdirsandparents(kindpats)
         # roots are directories which are recursively included.
         self._roots = set(roots)
         # dirs are directories which are non-recursively included.
         self._dirs = set(dirs)
+        # parents are directories which are non-recursively included because
+        # they are needed to get to items in _dirs or _roots.
+        self._parents = set(parents)
 
     def visitdir(self, dir):
         if self._prefix and dir in self._roots:
@@ -457,6 +460,7 @@ class includematcher(basematcher):
         return ('.' in self._roots or
                 dir in self._roots or
                 dir in self._dirs or
+                dir in self._parents or
                 any(parentdir in self._roots
                     for parentdir in util.finddirs(dir)))
 
@@ -1004,7 +1008,7 @@ def _roots(kindpats):
     roots, dirs = _patternrootsanddirs(kindpats)
     return roots
 
-def _rootsanddirs(kindpats):
+def _rootsdirsandparents(kindpats):
     '''Returns roots and exact directories from patterns.
 
     roots are directories to match recursively, whereas exact directories should
@@ -1012,32 +1016,33 @@ def _rootsanddirs(kindpats):
     include directories that need to be implicitly considered as either, such as
     parent directories.
 
-    >>> _rootsanddirs(
+    >>> _rootsdirsandparents(
     ...     [(b'glob', b'g/h/*', b''), (b'glob', b'g/h', b''),
     ...      (b'glob', b'g*', b'')])
-    (['g/h', 'g/h', '.'], ['g', '.'])
-    >>> _rootsanddirs(
+    (['g/h', 'g/h', '.'], [], ['g', '.'])
+    >>> _rootsdirsandparents(
     ...     [(b'rootfilesin', b'g/h', b''), (b'rootfilesin', b'', b'')])
-    ([], ['g/h', '.', 'g', '.'])
-    >>> _rootsanddirs(
+    ([], ['g/h', '.'], ['g', '.'])
+    >>> _rootsdirsandparents(
     ...     [(b'relpath', b'r', b''), (b'path', b'p/p', b''),
     ...      (b'path', b'', b'')])
-    (['r', 'p/p', '.'], ['p', '.'])
-    >>> _rootsanddirs(
+    (['r', 'p/p', '.'], [], ['p', '.'])
+    >>> _rootsdirsandparents(
     ...     [(b'relglob', b'rg*', b''), (b're', b're/', b''),
     ...      (b'relre', b'rr', b'')])
-    (['.', '.', '.'], ['.'])
+    (['.', '.', '.'], [], ['.'])
     '''
     r, d = _patternrootsanddirs(kindpats)
 
+    p = []
     # Append the parents as non-recursive/exact directories, since they must be
     # scanned to get to either the roots or the other exact directories.
-    d.extend(util.dirs(d))
-    d.extend(util.dirs(r))
+    p.extend(util.dirs(d))
+    p.extend(util.dirs(r))
     # util.dirs() does not include the root directory, so add it manually
-    d.append('.')
+    p.append('.')
 
-    return r, d
+    return r, d, p
 
 def _explicitfiles(kindpats):
     '''Returns the potential explicit filenames from the patterns.

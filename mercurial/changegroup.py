@@ -620,9 +620,10 @@ class cgpacker(object):
         shallow indicates whether shallow data might be sent. The packer may
         need to pack file contents not introduced by the changes being packed.
 
-        fullnodes is the list of nodes which should not be ellipsis nodes. We
-        store this rather than the set of nodes that should be ellipsis because
-        for very large histories we expect this to be significantly smaller.
+        fullnodes is the set of changelog nodes which should not be ellipsis
+        nodes. We store this rather than the set of nodes that should be
+        ellipsis because for very large histories we expect this to be
+        significantly smaller.
         """
         assert filematcher
         self._filematcher = filematcher
@@ -638,7 +639,7 @@ class cgpacker(object):
             bundlecaps = set()
         self._bundlecaps = bundlecaps
         self._isshallow = shallow
-        self._fullnodes = fullnodes
+        self._fullclnodes = fullnodes
 
         # Maps ellipsis revs to their roots at the changelog level.
         self._precomputedellipsis = ellipsisroots
@@ -715,7 +716,7 @@ class cgpacker(object):
 
                 # This is a node to send in full, because the changeset it
                 # corresponds to was a full changeset.
-                if linknode in self._fullnodes:
+                if linknode in self._fullclnodes:
                     delta = _revisiondeltanormal(store, curr, prev, linknode,
                                                  self._deltaparentfn)
                 elif linkrev not in self._precomputedellipsis:
@@ -869,7 +870,7 @@ class cgpacker(object):
                 # end up with bogus linkrevs specified for manifests and
                 # we skip some manifest nodes that we should otherwise
                 # have sent.
-                if (x in self._fullnodes
+                if (x in self._fullclnodes
                     or cl.rev(x) in self._precomputedellipsis):
                     n = c[0]
                     # Record the first changeset introducing this manifest
@@ -1099,7 +1100,7 @@ class cgpacker(object):
                 walk = walk[1:]
                 if p in self._clrevtolocalrev:
                     return self._clrevtolocalrev[p]
-                elif p in self._fullnodes:
+                elif p in self._fullclnodes:
                     walk.extend([pp for pp in self._repo.changelog.parentrevs(p)
                                     if pp != nullrev])
                 elif p in self._precomputedellipsis:

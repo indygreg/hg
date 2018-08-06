@@ -588,10 +588,6 @@ class cgpacker(object):
         else:
             self._verbosenote = lambda s: None
 
-        # TODO the functionality keyed off of this should probably be
-        # controlled via arguments to group() that influence behavior.
-        self._changelogdone = False
-
         # Maps CL revs to per-revlog revisions. Cleared in close() at
         # the end of each group.
         self._clrevtolocalrev = {}
@@ -614,7 +610,7 @@ class cgpacker(object):
         return chunkheader(len(fname)) + fname
 
     # Extracted both for clarity and for overriding in extensions.
-    def _sortgroup(self, store, nodelist, lookup):
+    def _sortgroup(self, store, ischangelog, nodelist, lookup):
         """Sort nodes for change group and turn them into revnums."""
         # Ellipses serving mode.
         #
@@ -632,7 +628,7 @@ class cgpacker(object):
         # order that they're introduced in dramatis personae by the
         # changelog, so what we do is we sort the non-changelog histories
         # by the order in which they are used by the changelog.
-        if self._ellipses and self._changelogdone:
+        if self._ellipses and not ischangelog:
             key = lambda n: self._clnodetorev[lookup(n)]
             return [store.rev(n) for n in sorted(nodelist, key=key)]
 
@@ -644,7 +640,7 @@ class cgpacker(object):
         else:
             return sorted([store.rev(n) for n in nodelist])
 
-    def group(self, nodelist, store, lookup, units=None):
+    def group(self, nodelist, store, ischangelog, lookup, units=None):
         """Calculate a delta group, yielding a sequence of changegroup chunks
         (strings).
 
@@ -663,7 +659,7 @@ class cgpacker(object):
             yield self._close()
             return
 
-        revs = self._sortgroup(store, nodelist, lookup)
+        revs = self._sortgroup(store, ischangelog, nodelist, lookup)
 
         # add the parent of the first rev
         p = store.parentrevs(revs[0])[0]
@@ -679,7 +675,7 @@ class cgpacker(object):
                 progress.update(r + 1)
             prev, curr = revs[r], revs[r + 1]
             linknode = lookup(store.node(curr))
-            for c in self._revchunk(store, curr, prev, linknode):
+            for c in self._revchunk(store, ischangelog, curr, prev, linknode):
                 yield c
 
         if progress:
@@ -709,7 +705,7 @@ class cgpacker(object):
 
         # TODO violates storage abstractions by assuming revlogs.
         dirlog = self._repo.manifestlog._revlog.dirlog(dir)
-        for chunk in self.group(mfnodes, dirlog, lookuplinknode,
+        for chunk in self.group(mfnodes, dirlog, False, lookuplinknode,
                                 units=_('manifests')):
             yield chunk
 
@@ -728,8 +724,6 @@ class cgpacker(object):
             yield chunk
 
         self._verbosenote(_('%8.i (changelog)\n') % size)
-
-        self._changelogdone = True
 
         clrevorder = clstate['clrevorder']
         mfs = clstate['mfs']
@@ -861,7 +855,7 @@ class cgpacker(object):
             'changedfiles': changedfiles,
         }
 
-        gen = self.group(nodes, cl, lookupcl, units=_('changesets'))
+        gen = self.group(nodes, cl, True, lookupcl, units=_('changesets'))
 
         return state, gen
 
@@ -990,19 +984,20 @@ class cgpacker(object):
                 h = self._fileheader(fname)
                 size = len(h)
                 yield h
-                for chunk in self.group(filenodes, filerevlog, lookupfilelog):
+                for chunk in self.group(filenodes, filerevlog, False,
+                                        lookupfilelog):
                     size += len(chunk)
                     yield chunk
                 self._verbosenote(_('%8.i  %s\n') % (size, fname))
         progress.complete()
 
-    def _revchunk(self, store, rev, prev, linknode):
+    def _revchunk(self, store, ischangelog, rev, prev, linknode):
         if self._ellipses:
             fn = self._revisiondeltanarrow
         else:
             fn = self._revisiondeltanormal
 
-        delta = fn(store, rev, prev, linknode)
+        delta = fn(store, ischangelog, rev, prev, linknode)
         if not delta:
             return
 
@@ -1014,7 +1009,7 @@ class cgpacker(object):
         for x in delta.deltachunks:
             yield x
 
-    def _revisiondeltanormal(self, store, rev, prev, linknode):
+    def _revisiondeltanormal(self, store, ischangelog, rev, prev, linknode):
         node = store.node(rev)
         p1, p2 = store.parentrevs(rev)
         base = self._deltaparentfn(store, rev, p1, p2, prev)
@@ -1047,10 +1042,10 @@ class cgpacker(object):
             deltachunks=(prefix, delta),
         )
 
-    def _revisiondeltanarrow(self, store, rev, prev, linknode):
+    def _revisiondeltanarrow(self, store, ischangelog, rev, prev, linknode):
         # build up some mapping information that's useful later. See
         # the local() nested function below.
-        if not self._changelogdone:
+        if ischangelog:
             self._clnodetorev[linknode] = rev
             linkrev = rev
             self._clrevtolocalrev[linkrev] = rev
@@ -1061,7 +1056,8 @@ class cgpacker(object):
         # This is a node to send in full, because the changeset it
         # corresponds to was a full changeset.
         if linknode in self._fullnodes:
-            return self._revisiondeltanormal(store, rev, prev, linknode)
+            return self._revisiondeltanormal(store, ischangelog, rev, prev,
+                                             linknode)
 
         # At this point, a node can either be one we should skip or an
         # ellipsis. If it's not an ellipsis, bail immediately.
@@ -1082,7 +1078,7 @@ class cgpacker(object):
             if clrev == nullrev:
                 return nullrev
 
-            if not self._changelogdone:
+            if ischangelog:
                 # If we're doing the changelog, it's possible that we
                 # have a parent that is already on the client, and we
                 # need to store some extra mapping information so that

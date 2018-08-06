@@ -14,6 +14,7 @@ from mercurial import (
     cmdutil,
     commands,
     discovery,
+    encoding,
     error,
     exchange,
     extensions,
@@ -326,6 +327,7 @@ def _widen(ui, repo, remote, commoninc, newincludes, newexcludes):
     [('', 'addinclude', [], _('new paths to include')),
      ('', 'removeinclude', [], _('old paths to no longer include')),
      ('', 'addexclude', [], _('new paths to exclude')),
+     ('', 'import-rules', '', _('import narrowspecs from a file')),
      ('', 'removeexclude', [], _('old paths to no longer exclude')),
      ('', 'clear', False, _('whether to replace the existing narrowspec')),
      ('', 'force-delete-local-changes', False,
@@ -368,6 +370,23 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     if opts['clear']:
         ui.warn(_('The --clear option is not yet supported.\n'))
         return 1
+
+    # import rules from a file
+    newrules = opts.get('import_rules')
+    if newrules:
+        try:
+            filepath = os.path.join(pycompat.getcwd(), newrules)
+            fdata = util.readfile(filepath)
+        except IOError as inst:
+            raise error.Abort(_("cannot read narrowspecs from '%s': %s") %
+                              (filepath, encoding.strtolocal(inst.strerror)))
+        includepats, excludepats, profiles = sparse.parseconfig(ui, fdata,
+                                                                'narrow')
+        if profiles:
+            raise error.Abort(_("including other spec files using '%include' "
+                                "is not supported in narrowspec"))
+        opts['addinclude'].extend(includepats)
+        opts['addexclude'].extend(excludepats)
 
     if narrowspec.needsexpansion(opts['addinclude'] + opts['addexclude']):
         raise error.Abort('Expansion not yet supported on widen/narrow')

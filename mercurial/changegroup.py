@@ -554,6 +554,40 @@ def _sortnodesellipsis(store, nodes, clnodetorev, lookup):
     key = lambda n: clnodetorev[lookup(n)]
     return [store.rev(n) for n in sorted(nodes, key=key)]
 
+def _revisiondeltanormal(store, rev, prev, linknode, deltaparentfn):
+    """Construct a revision delta for non-ellipses changegroup generation."""
+    node = store.node(rev)
+    p1, p2 = store.parentrevs(rev)
+    base = deltaparentfn(store, rev, p1, p2, prev)
+
+    prefix = ''
+    if store.iscensored(base) or store.iscensored(rev):
+        try:
+            delta = store.revision(node, raw=True)
+        except error.CensoredNodeError as e:
+            delta = e.tombstone
+        if base == nullrev:
+            prefix = mdiff.trivialdiffheader(len(delta))
+        else:
+            baselen = store.rawsize(base)
+            prefix = mdiff.replacediffheader(baselen, len(delta))
+    elif base == nullrev:
+        delta = store.revision(node, raw=True)
+        prefix = mdiff.trivialdiffheader(len(delta))
+    else:
+        delta = store.revdiff(base, rev)
+    p1n, p2n = store.parents(node)
+
+    return revisiondelta(
+        node=node,
+        p1node=p1n,
+        p2node=p2n,
+        basenode=store.node(base),
+        linknode=linknode,
+        flags=store.flags(rev),
+        deltachunks=(prefix, delta),
+    )
+
 class cgpacker(object):
     def __init__(self, repo, filematcher, version, allowreorder,
                  deltaparentfn, builddeltaheader, manifestsend,
@@ -679,8 +713,8 @@ class cgpacker(object):
                 delta = self._revisiondeltanarrow(store, ischangelog,
                                                   curr, prev, linknode)
             else:
-                delta = self._revisiondeltanormal(store, ischangelog,
-                                                  curr, prev, linknode)
+                delta = _revisiondeltanormal(store, curr, prev, linknode,
+                                             self._deltaparentfn)
 
             if not delta:
                 continue
@@ -1010,39 +1044,6 @@ class cgpacker(object):
                 self._verbosenote(_('%8.i  %s\n') % (size, fname))
         progress.complete()
 
-    def _revisiondeltanormal(self, store, ischangelog, rev, prev, linknode):
-        node = store.node(rev)
-        p1, p2 = store.parentrevs(rev)
-        base = self._deltaparentfn(store, rev, p1, p2, prev)
-
-        prefix = ''
-        if store.iscensored(base) or store.iscensored(rev):
-            try:
-                delta = store.revision(node, raw=True)
-            except error.CensoredNodeError as e:
-                delta = e.tombstone
-            if base == nullrev:
-                prefix = mdiff.trivialdiffheader(len(delta))
-            else:
-                baselen = store.rawsize(base)
-                prefix = mdiff.replacediffheader(baselen, len(delta))
-        elif base == nullrev:
-            delta = store.revision(node, raw=True)
-            prefix = mdiff.trivialdiffheader(len(delta))
-        else:
-            delta = store.revdiff(base, rev)
-        p1n, p2n = store.parents(node)
-
-        return revisiondelta(
-            node=node,
-            p1node=p1n,
-            p2node=p2n,
-            basenode=store.node(base),
-            linknode=linknode,
-            flags=store.flags(rev),
-            deltachunks=(prefix, delta),
-        )
-
     def _revisiondeltanarrow(self, store, ischangelog, rev, prev, linknode):
         # build up some mapping information that's useful later. See
         # the local() nested function below.
@@ -1057,8 +1058,8 @@ class cgpacker(object):
         # This is a node to send in full, because the changeset it
         # corresponds to was a full changeset.
         if linknode in self._fullnodes:
-            return self._revisiondeltanormal(store, ischangelog, rev, prev,
-                                             linknode)
+            return _revisiondeltanormal(store, rev, prev, linknode,
+                                        self._deltaparentfn)
 
         # At this point, a node can either be one we should skip or an
         # ellipsis. If it's not an ellipsis, bail immediately.

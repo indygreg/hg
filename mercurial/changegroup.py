@@ -753,11 +753,10 @@ class cgpacker(object):
                 fastpathlinkrev, mfs, fnodes, source):
             yield chunk
 
-        if self._ellipses:
-            mfdicts = None
-            if self._isshallow:
-                mfdicts = [(self._repo.manifestlog[n].read(), lr)
-                           for (n, lr) in mfs.iteritems()]
+        mfdicts = None
+        if self._ellipses and self._isshallow:
+            mfdicts = [(self._repo.manifestlog[n].read(), lr)
+                       for (n, lr) in mfs.iteritems()]
 
         mfs.clear()
         clrevs = set(cl.rev(x) for x in clnodes)
@@ -773,16 +772,8 @@ class cgpacker(object):
                 revs = ((r, llr(r)) for r in filerevlog)
                 return dict((fln(r), cln(lr)) for r, lr in revs if lr in clrevs)
 
-        if self._ellipses:
-            # We need to pass the mfdicts variable down into
-            # generatefiles(), but more than one command might have
-            # wrapped generatefiles so we can't modify the function
-            # signature. Instead, we pass the data to ourselves using an
-            # instance attribute. I'm sorry.
-            self._mfdicts = mfdicts
-
         for chunk in self.generatefiles(changedfiles, linknodes, commonrevs,
-                                        source):
+                                        source, mfdicts):
             yield chunk
 
         yield self._close()
@@ -935,13 +926,11 @@ class cgpacker(object):
         yield self._manifestsend
 
     # The 'source' parameter is useful for extensions
-    def generatefiles(self, changedfiles, linknodes, commonrevs, source):
+    def generatefiles(self, changedfiles, linknodes, commonrevs, source,
+                      mfdicts):
         changedfiles = list(filter(self._filematcher, changedfiles))
 
         if self._isshallow:
-            # See comment in generate() for why this sadness is a thing.
-            mfdicts = self._mfdicts
-            del self._mfdicts
             # In a shallow clone, the linknodes callback needs to also include
             # those file nodes that are in the manifests we sent but weren't
             # introduced by those manifests.

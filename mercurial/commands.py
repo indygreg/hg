@@ -4534,11 +4534,6 @@ def resolve(ui, repo, *pats, **opts):
     all, mark, unmark, show, nostatus = \
         [opts.get(o) for o in flaglist]
 
-    if all and confirm:
-        if ui.promptchoice(_(b're-merge all unresolved files (yn)?'
-                             b'$$ &Yes $$ &No')):
-            raise error.Abort(_('user quit'))
-
     if (show and (mark or unmark)) or (mark and unmark):
         raise error.Abort(_("too many options specified"))
     if pats and all:
@@ -4547,14 +4542,19 @@ def resolve(ui, repo, *pats, **opts):
         raise error.Abort(_('no files or directories specified'),
                          hint=('use --all to re-merge all unresolved files'))
 
-    if mark and confirm and not pats:
-        if ui.promptchoice(_(b'mark all unresolved files as resolved (yn)?'
-                             b'$$ &Yes $$ &No')):
-            raise error.Abort(_('user quit'))
-    if unmark and confirm and not pats:
-        if ui.promptchoice(_(b'mark all resolved files as unresolved (yn)?'
-                             b'$$ &Yes $$ &No')):
-            raise error.Abort(_('user quit'))
+    if confirm:
+        if all:
+            if ui.promptchoice(_(b're-merge all unresolved files (yn)?'
+                                 b'$$ &Yes $$ &No')):
+                raise error.Abort(_('user quit'))
+        if mark and not pats:
+            if ui.promptchoice(_(b'mark all unresolved files as resolved (yn)?'
+                                 b'$$ &Yes $$ &No')):
+                raise error.Abort(_('user quit'))
+        if unmark and not pats:
+            if ui.promptchoice(_(b'mark all resolved files as unresolved (yn)?'
+                                 b'$$ &Yes $$ &No')):
+                raise error.Abort(_('user quit'))
 
     if show:
         ui.pager('resolve')

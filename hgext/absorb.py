@@ -940,7 +940,7 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
             ui.write(_('nothing applied\n'))
     return state
 
-@command('^absorb|sf',
+@command('^absorb',
          [('p', 'print-changes', None,
            _('print which changesets are modified by which changes')),
           ('i', 'interactive', None,

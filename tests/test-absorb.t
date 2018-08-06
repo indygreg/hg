@@ -300,7 +300,7 @@ Test obsolete markers creation:
   > addnoise=1
   > EOF
 
-  $ hg --config absorb.maxstacksize=3 sf
+  $ hg --config absorb.maxstacksize=3 absorb
   absorb: only the recent 3 changesets will be analysed
   2 of 2 chunk(s) applied
   $ hg log -T '{rev}:{node|short} {desc} {get(extras, "absorb_source")}\n'

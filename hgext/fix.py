@@ -96,15 +96,16 @@ for key in FIXER_ATTRS:
 # user.
 configitem('fix', 'maxfilesize', default='2MB')
 
-@command('fix',
-    [('', 'all', False, _('fix all non-public non-obsolete revisions')),
-     ('', 'base', [], _('revisions to diff against (overrides automatic '
-                        'selection, and applies to every revision being '
-                        'fixed)'), _('REV')),
-     ('r', 'rev', [], _('revisions to fix'), _('REV')),
-     ('w', 'working-dir', False, _('fix the working directory')),
-     ('', 'whole', False, _('always fix every line of a file'))],
-    _('[OPTION]... [FILE]...'))
+allopt = ('', 'all', False, _('fix all non-public non-obsolete revisions'))
+baseopt = ('', 'base', [], _('revisions to diff against (overrides automatic '
+                             'selection, and applies to every revision being '
+                             'fixed)'), _('REV'))
+revopt = ('r', 'rev', [], _('revisions to fix'), _('REV'))
+wdiropt = ('w', 'working-dir', False, _('fix the working directory'))
+wholeopt = ('', 'whole', False, _('always fix every line of a file'))
+usage = _('[OPTION]... [FILE]...')
+
+@command('fix', [allopt, baseopt, revopt, wdiropt, wholeopt], usage)
 def fix(ui, repo, *pats, **opts):
     """rewrite file content in changesets or working directory
 

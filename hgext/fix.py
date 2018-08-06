@@ -162,6 +162,7 @@ def fix(ui, repo, *pats, **opts):
         # it makes the results more easily reproducible.
         filedata = collections.defaultdict(dict)
         replacements = {}
+        wdirwritten = False
         commitorder = sorted(revstofix, reverse=True)
         with ui.makeprogress(topic=_('fixing'), unit=_('files'),
                              total=sum(numitems.values())) as progress:
@@ -179,11 +180,12 @@ def fix(ui, repo, *pats, **opts):
                     ctx = repo[rev]
                     if rev == wdirrev:
                         writeworkingdir(repo, ctx, filedata[rev], replacements)
+                        wdirwritten = bool(filedata[rev])
                     else:
                         replacerev(ui, repo, ctx, filedata[rev], replacements)
                     del filedata[rev]
 
-        cleanup(repo, replacements, bool(filedata[wdirrev]))
+        cleanup(repo, replacements, wdirwritten)
 
 def cleanup(repo, replacements, wdirwritten):
     """Calls scmutil.cleanupnodes() with the given replacements.

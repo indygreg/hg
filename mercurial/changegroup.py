@@ -1048,20 +1048,24 @@ class cgpacker(object):
             dir, nodes = tmfnodes.popitem()
             store = dirlog(dir)
             prunednodes = self._prune(store, nodes, commonrevs)
-            if not dir or prunednodes:
-                lookupfn = makelookupmflinknode(dir, nodes)
 
-                if self._ellipses:
-                    revs = _sortnodesellipsis(store, prunednodes, cl,
-                                              lookupfn)
-                else:
-                    revs = _sortnodesnormal(store, prunednodes,
-                                            self._reorder)
+            if dir and not prunednodes:
+                continue
 
-                for x in self._packmanifests(dir, store, revs, lookupfn,
-                                             clrevtolocalrev):
-                    size += len(x)
-                    yield x
+            lookupfn = makelookupmflinknode(dir, nodes)
+
+            if self._ellipses:
+                revs = _sortnodesellipsis(store, prunednodes, cl,
+                                          lookupfn)
+            else:
+                revs = _sortnodesnormal(store, prunednodes,
+                                        self._reorder)
+
+            for x in self._packmanifests(dir, store, revs, lookupfn,
+                                         clrevtolocalrev):
+                size += len(x)
+                yield x
+
         self._verbosenote(_('%8.i (manifests)\n') % size)
         yield self._manifestsend
 

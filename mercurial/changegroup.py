@@ -588,6 +588,100 @@ def _revisiondeltanormal(store, rev, prev, linknode, deltaparentfn):
         deltachunks=(prefix, delta),
     )
 
+def _revisiondeltanarrow(cl, store, ischangelog, rev, linkrev,
+                         linknode, clrevtolocalrev, fullclnodes,
+                         precomputedellipsis):
+    linkparents = precomputedellipsis[linkrev]
+    def local(clrev):
+        """Turn a changelog revnum into a local revnum.
+
+        The ellipsis dag is stored as revnums on the changelog,
+        but when we're producing ellipsis entries for
+        non-changelog revlogs, we need to turn those numbers into
+        something local. This does that for us, and during the
+        changelog sending phase will also expand the stored
+        mappings as needed.
+        """
+        if clrev == nullrev:
+            return nullrev
+
+        if ischangelog:
+            return clrev
+
+        # Walk the ellipsis-ized changelog breadth-first looking for a
+        # change that has been linked from the current revlog.
+        #
+        # For a flat manifest revlog only a single step should be necessary
+        # as all relevant changelog entries are relevant to the flat
+        # manifest.
+        #
+        # For a filelog or tree manifest dirlog however not every changelog
+        # entry will have been relevant, so we need to skip some changelog
+        # nodes even after ellipsis-izing.
+        walk = [clrev]
+        while walk:
+            p = walk[0]
+            walk = walk[1:]
+            if p in clrevtolocalrev:
+                return clrevtolocalrev[p]
+            elif p in fullclnodes:
+                walk.extend([pp for pp in cl.parentrevs(p)
+                                if pp != nullrev])
+            elif p in precomputedellipsis:
+                walk.extend([pp for pp in precomputedellipsis[p]
+                                if pp != nullrev])
+            else:
+                # In this case, we've got an ellipsis with parents
+                # outside the current bundle (likely an
+                # incremental pull). We "know" that we can use the
+                # value of this same revlog at whatever revision
+                # is pointed to by linknode. "Know" is in scare
+                # quotes because I haven't done enough examination
+                # of edge cases to convince myself this is really
+                # a fact - it works for all the (admittedly
+                # thorough) cases in our testsuite, but I would be
+                # somewhat unsurprised to find a case in the wild
+                # where this breaks down a bit. That said, I don't
+                # know if it would hurt anything.
+                for i in pycompat.xrange(rev, 0, -1):
+                    if store.linkrev(i) == clrev:
+                        return i
+                # We failed to resolve a parent for this node, so
+                # we crash the changegroup construction.
+                raise error.Abort(
+                    'unable to resolve parent while packing %r %r'
+                    ' for changeset %r' % (store.indexfile, rev, clrev))
+
+        return nullrev
+
+    if not linkparents or (
+        store.parentrevs(rev) == (nullrev, nullrev)):
+        p1, p2 = nullrev, nullrev
+    elif len(linkparents) == 1:
+        p1, = sorted(local(p) for p in linkparents)
+        p2 = nullrev
+    else:
+        p1, p2 = sorted(local(p) for p in linkparents)
+
+    n = store.node(rev)
+    p1n, p2n = store.node(p1), store.node(p2)
+    flags = store.flags(rev)
+    flags |= revlog.REVIDX_ELLIPSIS
+
+    # TODO: try and actually send deltas for ellipsis data blocks
+    data = store.revision(n)
+    diffheader = mdiff.trivialdiffheader(len(data))
+
+    return revisiondelta(
+        node=n,
+        p1node=p1n,
+        p2node=p2n,
+        basenode=nullid,
+        linknode=linknode,
+        flags=flags,
+        deltachunks=(diffheader, data),
+    )
+
 class cgpacker(object):
     def __init__(self, repo, filematcher, version, allowreorder,
                  deltaparentfn, builddeltaheader, manifestsend,
@@ -707,7 +801,7 @@ class cgpacker(object):
                 elif linkrev not in self._precomputedellipsis:
                     delta = None
                 else:
-                    delta = self._revisiondeltanarrow(
+                    delta = _revisiondeltanarrow(
                         cl, store, ischangelog, curr, linkrev, linknode,
                         clrevtolocalrev, self._fullclnodes,
                         self._precomputedellipsis)
@@ -1057,100 +1151,6 @@ class cgpacker(object):
                     yield chunk
                 self._verbosenote(_('%8.i  %s\n') % (size, fname))
         progress.complete()
-
-    def _revisiondeltanarrow(self, cl, store, ischangelog, rev, linkrev,
-                             linknode, clrevtolocalrev, fullclnodes,
-                             precomputedellipsis):
-        linkparents = precomputedellipsis[linkrev]
-        def local(clrev):
-            """Turn a changelog revnum into a local revnum.
-
-            The ellipsis dag is stored as revnums on the changelog,
-            but when we're producing ellipsis entries for
-            non-changelog revlogs, we need to turn those numbers into
-            something local. This does that for us, and during the
-            changelog sending phase will also expand the stored
-            mappings as needed.
-            """
-            if clrev == nullrev:
-                return nullrev
-
-            if ischangelog:
-                return clrev
-
-            # Walk the ellipsis-ized changelog breadth-first looking for a
-            # change that has been linked from the current revlog.
-            #
-            # For a flat manifest revlog only a single step should be necessary
-            # as all relevant changelog entries are relevant to the flat
-            # manifest.
-            #
-            # For a filelog or tree manifest dirlog however not every changelog
-            # entry will have been relevant, so we need to skip some changelog
-            # nodes even after ellipsis-izing.
-            walk = [clrev]
-            while walk:
-                p = walk[0]
-                walk = walk[1:]
-                if p in clrevtolocalrev:
-                    return clrevtolocalrev[p]
-                elif p in fullclnodes:
-                    walk.extend([pp for pp in cl.parentrevs(p)
-                                    if pp != nullrev])
-                elif p in precomputedellipsis:
-                    walk.extend([pp for pp in precomputedellipsis[p]
-                                    if pp != nullrev])
-                else:
-                    # In this case, we've got an ellipsis with parents
-                    # outside the current bundle (likely an
-                    # incremental pull). We "know" that we can use the
-                    # value of this same revlog at whatever revision
-                    # is pointed to by linknode. "Know" is in scare
-                    # quotes because I haven't done enough examination
-                    # of edge cases to convince myself this is really
-                    # a fact - it works for all the (admittedly
-                    # thorough) cases in our testsuite, but I would be
-                    # somewhat unsurprised to find a case in the wild
-                    # where this breaks down a bit. That said, I don't
-                    # know if it would hurt anything.
-                    for i in pycompat.xrange(rev, 0, -1):
-                        if store.linkrev(i) == clrev:
-                            return i
-                    # We failed to resolve a parent for this node, so
-                    # we crash the changegroup construction.
-                    raise error.Abort(
-                        'unable to resolve parent while packing %r %r'
-                        ' for changeset %r' % (store.indexfile, rev, clrev))
-
-            return nullrev
-
-        if not linkparents or (
-            store.parentrevs(rev) == (nullrev, nullrev)):
-            p1, p2 = nullrev, nullrev
-        elif len(linkparents) == 1:
-            p1, = sorted(local(p) for p in linkparents)
-            p2 = nullrev
-        else:
-            p1, p2 = sorted(local(p) for p in linkparents)
-
-        n = store.node(rev)
-        p1n, p2n = store.node(p1), store.node(p2)
-        flags = store.flags(rev)
-        flags |= revlog.REVIDX_ELLIPSIS
-
-        # TODO: try and actually send deltas for ellipsis data blocks
-        data = store.revision(n)
-        diffheader = mdiff.trivialdiffheader(len(data))
-
-        return revisiondelta(
-            node=n,
-            p1node=p1n,
-            p2node=p2n,
-            basenode=nullid,
-            linknode=linknode,
-            flags=flags,
-            deltachunks=(diffheader, data),
-        )
 
 def _deltaparentprev(store, rev, p1, p2, prev):
     """Resolve a delta parent to the previous revision.

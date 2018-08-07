@@ -889,6 +889,38 @@ def perflookup(ui, repo, rev, **opts):
     timer(lambda: len(repo.lookup(rev)))
     fm.end()
 
+@command('perflinelogedits',
+         [('n', 'edits', 10000, 'number of edits'),
+          ('', 'max-hunk-lines', 10, 'max lines in a hunk'),
+         ], norepo=True)
+def perflinelogedits(ui, **opts):
+    from mercurial import linelog
+
+    edits = opts['edits']
+    maxhunklines = opts['max_hunk_lines']
+
+    maxb1 = 100000
+    random.seed(0)
+    randint = random.randint
+    currentlines = 0
+    arglist = []
+    for rev in xrange(edits):
+        a1 = randint(0, currentlines)
+        a2 = randint(a1, min(currentlines, a1 + maxhunklines))
+        b1 = randint(0, maxb1)
+        b2 = randint(b1, b1 + maxhunklines)
+        currentlines += (b2 - b1) - (a2 - a1)
+        arglist.append((rev, a1, a2, b1, b2))
+
+    def d():
+        ll = linelog.linelog()
+        for args in arglist:
+            ll.replacelines(*args)
+
+    timer, fm = gettimer(ui, opts)
+    timer(d)
+    fm.end()
+
 @command('perfrevrange', formatteropts)
 def perfrevrange(ui, repo, *specs, **opts):
     timer, fm = gettimer(ui, opts)

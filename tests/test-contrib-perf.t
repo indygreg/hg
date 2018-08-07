@@ -82,6 +82,8 @@ perfstatus
                  (no help text available)
    perfheads     (no help text available)
    perfindex     (no help text available)
+   perflinelogedits
+                 (no help text available)
    perfloadmarkers
                  benchmark the time to parse the on-disk markers for a repo
    perflog       (no help text available)
@@ -154,6 +156,7 @@ perfstatus
 #endif
   $ hg perfheads
   $ hg perfindex
+  $ hg perflinelogedits -n 1
   $ hg perfloadmarkers
   $ hg perflog
   $ hg perflookup 2

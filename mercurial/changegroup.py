@@ -707,9 +707,10 @@ class cgpacker(object):
                 elif linkrev not in self._precomputedellipsis:
                     delta = None
                 else:
-                    delta = self._revisiondeltanarrow(store, ischangelog,
-                                                      curr, linkrev, linknode,
-                                                      clrevtolocalrev)
+                    delta = self._revisiondeltanarrow(
+                        cl, store, ischangelog, curr, linkrev, linknode,
+                        clrevtolocalrev, self._fullclnodes,
+                        self._precomputedellipsis)
             else:
                 delta = _revisiondeltanormal(store, curr, prev, linknode,
                                              self._deltaparentfn)
@@ -1057,9 +1058,10 @@ class cgpacker(object):
                 self._verbosenote(_('%8.i  %s\n') % (size, fname))
         progress.complete()
 
-    def _revisiondeltanarrow(self, store, ischangelog, rev, linkrev, linknode,
-                             clrevtolocalrev):
-        linkparents = self._precomputedellipsis[linkrev]
+    def _revisiondeltanarrow(self, cl, store, ischangelog, rev, linkrev,
+                             linknode, clrevtolocalrev, fullclnodes,
+                             precomputedellipsis):
+        linkparents = precomputedellipsis[linkrev]
         def local(clrev):
             """Turn a changelog revnum into a local revnum.
 
@@ -1092,11 +1094,11 @@ class cgpacker(object):
                 walk = walk[1:]
                 if p in clrevtolocalrev:
                     return clrevtolocalrev[p]
-                elif p in self._fullclnodes:
-                    walk.extend([pp for pp in self._repo.changelog.parentrevs(p)
+                elif p in fullclnodes:
+                    walk.extend([pp for pp in cl.parentrevs(p)
                                     if pp != nullrev])
-                elif p in self._precomputedellipsis:
-                    walk.extend([pp for pp in self._precomputedellipsis[p]
+                elif p in precomputedellipsis:
+                    walk.extend([pp for pp in precomputedellipsis[p]
                                     if pp != nullrev])
                 else:
                     # In this case, we've got an ellipsis with parents

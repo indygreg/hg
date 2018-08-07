@@ -661,14 +661,10 @@ class cgpacker(object):
         # Maps CL revs to per-revlog revisions. Cleared in close() at
         # the end of each group.
         self._clrevtolocalrev = {}
-        self._nextclrevtolocalrev = {}
 
     def _close(self):
         # Ellipses serving mode.
         self._clrevtolocalrev.clear()
-        if self._nextclrevtolocalrev is not None:
-            self._clrevtolocalrev = self._nextclrevtolocalrev
-            self._nextclrevtolocalrev = None
 
         return closechunk()
 
@@ -784,6 +780,9 @@ class cgpacker(object):
         mfs = clstate['mfs']
         changedfiles = clstate['changedfiles']
 
+        if self._ellipses:
+            self._clrevtolocalrev = clstate['clrevtomanifestrev']
+
         # We need to make sure that the linkrev in the changegroup refers to
         # the first changeset that introduced the manifest or file revision.
         # The fastpath is usually safer than the slowpath, because the filelogs
@@ -853,6 +852,7 @@ class cgpacker(object):
         # TODO violates storage abstraction.
         mfrevlog = mfl._revlog
         changedfiles = set()
+        clrevtomanifestrev = {}
 
         # Callback for the changelog, used to collect changed files and
         # manifest nodes.
@@ -876,8 +876,7 @@ class cgpacker(object):
                     # manifest revnum to look up for this cl revnum. (Part of
                     # mapping changelog ellipsis parents to manifest ellipsis
                     # parents)
-                    self._nextclrevtolocalrev.setdefault(cl.rev(x),
-                                                         mfrevlog.rev(n))
+                    clrevtomanifestrev.setdefault(cl.rev(x), mfrevlog.rev(n))
                 # We can't trust the changed files list in the changeset if the
                 # client requested a shallow clone.
                 if self._isshallow:
@@ -903,6 +902,7 @@ class cgpacker(object):
             'clrevorder': clrevorder,
             'mfs': mfs,
             'changedfiles': changedfiles,
+            'clrevtomanifestrev': clrevtomanifestrev,
         }
 
         gen = self.group(revs, cl, True, lookupcl, units=_('changesets'))

@@ -604,9 +604,9 @@ class cgpacker(object):
     def _close(self):
         # Ellipses serving mode.
         self._clrevtolocalrev.clear()
-        if self._nextclrevtolocalrev:
+        if self._nextclrevtolocalrev is not None:
             self._clrevtolocalrev = self._nextclrevtolocalrev
-            self._nextclrevtolocalrev.clear()
+            self._nextclrevtolocalrev = None
         self._changelogdone = True
 
         return closechunk()

@@ -658,9 +658,6 @@ class cgpacker(object):
         else:
             self._verbosenote = lambda s: None
 
-    def _close(self):
-        return closechunk()
-
     def group(self, revs, store, ischangelog, lookup, units=None,
               clrevtolocalrev=None):
         """Calculate a delta group, yielding a sequence of changegroup chunks
@@ -678,7 +675,7 @@ class cgpacker(object):
         """
         # if we don't have any revisions touched by these changesets, bail
         if len(revs) == 0:
-            yield self._close()
+            yield closechunk()
             return
 
         cl = self._repo.changelog
@@ -729,7 +726,8 @@ class cgpacker(object):
 
         if progress:
             progress.complete()
-        yield self._close()
+
+        yield closechunk()
 
     # filter any nodes that claim to be part of the known set
     def _prune(self, store, missing, commonrevs):
@@ -819,7 +817,7 @@ class cgpacker(object):
                                         fnodes, clrevs):
             yield chunk
 
-        yield self._close()
+        yield closechunk()
 
         if clnodes:
             repo.hook('outgoing', node=hex(clnodes[0]), source=source)

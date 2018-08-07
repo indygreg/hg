@@ -533,7 +533,7 @@ def _sortnodesnormal(store, nodes, reorder):
     else:
         return sorted([store.rev(n) for n in nodes])
 
-def _sortnodesellipsis(store, nodes, clnodetorev, lookup):
+def _sortnodesellipsis(store, nodes, cl, lookup):
     """Sort nodes for changegroup generation and turn into revnums."""
     # Ellipses serving mode.
     #
@@ -551,7 +551,7 @@ def _sortnodesellipsis(store, nodes, clnodetorev, lookup):
     # order that they're introduced in dramatis personae by the
     # changelog, so what we do is we sort the non-changelog histories
     # by the order in which they are used by the changelog.
-    key = lambda n: clnodetorev[lookup(n)]
+    key = lambda n: cl.rev(lookup(n))
     return [store.rev(n) for n in sorted(nodes, key=key)]
 
 def _revisiondeltanormal(store, rev, prev, linknode, deltaparentfn):
@@ -663,10 +663,6 @@ class cgpacker(object):
         self._clrevtolocalrev = {}
         self._nextclrevtolocalrev = {}
 
-        # Maps changelog nodes to changelog revs. Filled in once
-        # during changelog stage and then left unmodified.
-        self._clnodetorev = {}
-
     def _close(self):
         # Ellipses serving mode.
         self._clrevtolocalrev.clear()
@@ -695,6 +691,8 @@ class cgpacker(object):
             yield self._close()
             return
 
+        cl = self._repo.changelog
+
         # add the parent of the first rev
         p = store.parentrevs(revs[0])[0]
         revs.insert(0, p)
@@ -711,7 +709,7 @@ class cgpacker(object):
             linknode = lookup(store.node(curr))
 
             if self._ellipses:
-                linkrev = self._clnodetorev[linknode]
+                linkrev = cl.rev(linknode)
                 self._clrevtolocalrev[linkrev] = curr
 
                 # This is a node to send in full, because the changeset it
@@ -864,8 +862,6 @@ class cgpacker(object):
             clrevorder[x] = len(clrevorder)
 
             if self._ellipses:
-                self._clnodetorev[x] = cl.rev(x)
-
                 # Only update mfs if x is going to be sent. Otherwise we
                 # end up with bogus linkrevs specified for manifests and
                 # we skip some manifest nodes that we should otherwise
@@ -921,6 +917,7 @@ class cgpacker(object):
         change what is sent based in pulls vs pushes, etc.
         """
         repo = self._repo
+        cl = repo.changelog
         mfl = repo.manifestlog
         dirlog = mfl._revlog.dirlog
         tmfnodes = {'': mfs}
@@ -976,8 +973,8 @@ class cgpacker(object):
                 lookupfn = makelookupmflinknode(dir, nodes)
 
                 if self._ellipses:
-                    revs = _sortnodesellipsis(store, prunednodes,
-                                              self._clnodetorev, lookupfn)
+                    revs = _sortnodesellipsis(store, prunednodes, cl,
+                                              lookupfn)
                 else:
                     revs = _sortnodesnormal(store, prunednodes,
                                             self._reorder)
@@ -1025,6 +1022,7 @@ class cgpacker(object):
 
     def _generatefiles(self, changedfiles, linknodes, commonrevs, source):
         repo = self._repo
+        cl = repo.changelog
         progress = repo.ui.makeprogress(_('bundling'), unit=_('files'),
                                         total=len(changedfiles))
         for i, fname in enumerate(sorted(changedfiles)):
@@ -1043,7 +1041,7 @@ class cgpacker(object):
             if filenodes:
                 if self._ellipses:
                     revs = _sortnodesellipsis(filerevlog, filenodes,
-                                              self._clnodetorev, lookupfilelog)
+                                              cl, lookupfilelog)
                 else:
                     revs = _sortnodesnormal(filerevlog, filenodes,
                                             self._reorder)
@@ -1074,14 +1072,6 @@ class cgpacker(object):
                 return nullrev
 
             if ischangelog:
-                # If we're doing the changelog, it's possible that we
-                # have a parent that is already on the client, and we
-                # need to store some extra mapping information so that
-                # our contained ellipsis nodes will be able to resolve
-                # their parents.
-                if clrev not in self._clrevtolocalrev:
-                    clnode = store.node(clrev)
-                    self._clnodetorev[clnode] = clrev
                 return clrev
 
             # Walk the ellipsis-ized changelog breadth-first looking for a

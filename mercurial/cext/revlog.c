@@ -323,7 +323,7 @@ static void _index_clearcaches(indexObject *self)
 	}
 	if (self->nt != NULL) {
 		free(self->nt->nodes);
-		free(self->nt);
+		PyMem_Free(self->nt);
 	}
 	self->nt = NULL;
 	Py_CLEAR(self->headrevs);
@@ -1106,7 +1106,7 @@ static int nt_init(indexObject *self)
 
 		self->nt->nodes = calloc(self->nt->capacity, sizeof(nodetreenode));
 		if (self->nt->nodes == NULL) {
-			free(self->nt);
+			PyMem_Free(self->nt);
 			self->nt = NULL;
 			PyErr_NoMemory();
 			return -1;
@@ -1119,7 +1119,7 @@ static int nt_init(indexObject *self)
 		self->nt->length = 1;
 		if (nt_insert(self, nullid, -1) == -1) {
 			free(self->nt->nodes);
-			free(self->nt);
+			PyMem_Free(self->nt);
 			self->nt = NULL;
 			return -1;
 		}

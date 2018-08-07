@@ -1092,13 +1092,13 @@ static int nt_delete_node(indexObject *self, const char *node)
 static int nt_init(indexObject *self)
 {
 	if (self->nt == NULL) {
+		if ((size_t)self->raw_length > INT_MAX / sizeof(nodetreenode)) {
+			PyErr_SetString(PyExc_ValueError, "overflow in nt_init");
+			return -1;
+		}
 		self->nt = PyMem_Malloc(sizeof(nodetree));
 		if (self->nt == NULL) {
 			PyErr_NoMemory();
-			return -1;
-		}
-		if ((size_t)self->raw_length > INT_MAX / sizeof(nodetreenode)) {
-			PyErr_SetString(PyExc_ValueError, "overflow in nt_init");
 			return -1;
 		}
 		self->nt->capacity = self->raw_length < 4

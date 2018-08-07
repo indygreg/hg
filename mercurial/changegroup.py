@@ -819,19 +819,9 @@ class cgpacker(object):
         mfs.clear()
         clrevs = set(cl.rev(x) for x in clnodes)
 
-        if not fastpathlinkrev:
-            def linknodes(unused, fname):
-                return fnodes.get(fname, {})
-        else:
-            cln = cl.node
-            def linknodes(filerevlog, fname):
-                llr = filerevlog.linkrev
-                fln = filerevlog.node
-                revs = ((r, llr(r)) for r in filerevlog)
-                return dict((fln(r), cln(lr)) for r, lr in revs if lr in clrevs)
-
-        for chunk in self.generatefiles(changedfiles, linknodes, commonrevs,
-                                        source, mfdicts):
+        for chunk in self.generatefiles(changedfiles, commonrevs,
+                                        source, mfdicts, fastpathlinkrev,
+                                        fnodes, clrevs):
             yield chunk
 
         yield self._close()
@@ -986,16 +976,28 @@ class cgpacker(object):
         yield self._manifestsend
 
     # The 'source' parameter is useful for extensions
-    def generatefiles(self, changedfiles, linknodes, commonrevs, source,
-                      mfdicts):
+    def generatefiles(self, changedfiles, commonrevs, source,
+                      mfdicts, fastpathlinkrev, fnodes, clrevs):
         changedfiles = list(filter(self._filematcher, changedfiles))
+
+        if not fastpathlinkrev:
+            def normallinknodes(unused, fname):
+                return fnodes.get(fname, {})
+        else:
+            cln = self._repo.changelog.node
+
+            def normallinknodes(store, fname):
+                flinkrev = store.linkrev
+                fnode = store.node
+                revs = ((r, flinkrev(r)) for r in store)
+                return dict((fnode(r), cln(lr))
+                            for r, lr in revs if lr in clrevs)
 
         if self._isshallow:
             # In a shallow clone, the linknodes callback needs to also include
             # those file nodes that are in the manifests we sent but weren't
             # introduced by those manifests.
             commonctxs = [self._repo[c] for c in commonrevs]
-            oldlinknodes = linknodes
             clrev = self._repo.changelog.rev
 
             # Defining this function has a side-effect of overriding the
@@ -1008,7 +1010,7 @@ class cgpacker(object):
                         self._clrevtolocalrev[c.rev()] = flog.rev(fnode)
                     except error.ManifestLookupError:
                         pass
-                links = oldlinknodes(flog, fname)
+                links = normallinknodes(flog, fname)
                 if len(links) != len(mfdicts):
                     for mf, lr in mfdicts:
                         fnode = mf.get(fname, None)
@@ -1017,6 +1019,8 @@ class cgpacker(object):
                         elif fnode:
                             links[fnode] = lr
                 return links
+        else:
+            linknodes = normallinknodes
 
         return self._generatefiles(changedfiles, linknodes, commonrevs, source)
 

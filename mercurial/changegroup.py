@@ -834,22 +834,6 @@ class cgpacker(object):
         rr, rl = store.rev, store.linkrev
         return [n for n in missing if rl(rr(n)) not in commonrevs]
 
-    def _packmanifests(self, dir, dirlog, revs, lookuplinknode,
-                       clrevtolocalrev):
-        """Pack manifests into a changegroup stream.
-
-        Encodes the directory name in the output so multiple manifests
-        can be sent. Multiple manifests is not supported by cg1 and cg2.
-        """
-        if dir:
-            assert self.version == b'03'
-            yield _fileheader(dir)
-
-        for chunk in self.group(revs, dirlog, False, lookuplinknode,
-                                units=_('manifests'),
-                                clrevtolocalrev=clrevtolocalrev):
-            yield chunk
-
     def generate(self, commonrevs, clnodes, fastpathlinkrev, source):
         """Yield a sequence of changegroup byte chunks."""
 
@@ -1061,10 +1045,17 @@ class cgpacker(object):
                 revs = _sortnodesnormal(store, prunednodes,
                                         self._reorder)
 
-            for x in self._packmanifests(dir, store, revs, lookupfn,
-                                         clrevtolocalrev):
-                size += len(x)
-                yield x
+            if dir:
+                assert self.version == b'03'
+                chunk = _fileheader(dir)
+                size += len(chunk)
+                yield chunk
+
+            for chunk in self.group(revs, store, False, lookupfn,
+                                    units=_('manifests'),
+                                    clrevtolocalrev=clrevtolocalrev):
+                size += len(chunk)
+                yield chunk
 
         self._verbosenote(_('%8.i (manifests)\n') % size)
         yield self._manifestsend

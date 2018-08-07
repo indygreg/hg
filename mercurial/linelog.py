@@ -360,13 +360,15 @@ class linelog(object):
     def annotate(self, rev):
         pc = 1
         lines = []
-        # Sanity check: if len(lines) is longer than len(program), we
+        executed = 0
+        # Sanity check: if instructions executed exceeds len(program), we
         # hit an infinite loop in the linelog program somehow and we
         # should stop.
-        while pc is not None and len(lines) < len(self._program):
+        while pc is not None and executed < len(self._program):
             inst = self._program[pc]
             lastpc = pc
             pc = inst.execute(rev, pc, lines.append)
+            executed += 1
         if pc is not None:
             raise LineLogError(
                 'Probably hit an infinite loop in linelog. Program:\n' +

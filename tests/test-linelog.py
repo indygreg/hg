@@ -179,6 +179,15 @@ class linelogtests(unittest.TestCase):
             ar = ll.annotate(rev)
             self.assertEqual([(l.rev, l.linenum) for l in ar], lines)
 
+    def testinfinitebadprogram(self):
+        ll = linelog.linelog.fromdata(
+            b'\x00\x00\x00\x00\x00\x00\x00\x02'  # header
+            b'\x00\x00\x00\x00\x00\x00\x00\x01'  # JUMP to self
+        )
+        with self.assertRaises(linelog.LineLogError):
+            # should not be an infinite loop and raise
+            ll.annotate(1)
+
 if __name__ == '__main__':
     import silenttestrunner
     silenttestrunner.main(__name__)

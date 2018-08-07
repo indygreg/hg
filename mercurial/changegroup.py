@@ -658,17 +658,11 @@ class cgpacker(object):
         else:
             self._verbosenote = lambda s: None
 
-        # Maps CL revs to per-revlog revisions. Cleared in close() at
-        # the end of each group.
-        self._clrevtolocalrev = {}
-
     def _close(self):
-        # Ellipses serving mode.
-        self._clrevtolocalrev.clear()
-
         return closechunk()
 
-    def group(self, revs, store, ischangelog, lookup, units=None):
+    def group(self, revs, store, ischangelog, lookup, units=None,
+              clrevtolocalrev=None):
         """Calculate a delta group, yielding a sequence of changegroup chunks
         (strings).
 
@@ -706,7 +700,7 @@ class cgpacker(object):
 
             if self._ellipses:
                 linkrev = cl.rev(linknode)
-                self._clrevtolocalrev[linkrev] = curr
+                clrevtolocalrev[linkrev] = curr
 
                 # This is a node to send in full, because the changeset it
                 # corresponds to was a full changeset.
@@ -717,7 +711,8 @@ class cgpacker(object):
                     delta = None
                 else:
                     delta = self._revisiondeltanarrow(store, ischangelog,
-                                                      curr, linkrev, linknode)
+                                                      curr, linkrev, linknode,
+                                                      clrevtolocalrev)
             else:
                 delta = _revisiondeltanormal(store, curr, prev, linknode,
                                              self._deltaparentfn)
@@ -746,7 +741,8 @@ class cgpacker(object):
         rr, rl = store.rev, store.linkrev
         return [n for n in missing if rl(rr(n)) not in commonrevs]
 
-    def _packmanifests(self, dir, dirlog, revs, lookuplinknode):
+    def _packmanifests(self, dir, dirlog, revs, lookuplinknode,
+                       clrevtolocalrev):
         """Pack manifests into a changegroup stream.
 
         Encodes the directory name in the output so multiple manifests
@@ -757,7 +753,8 @@ class cgpacker(object):
             yield _fileheader(dir)
 
         for chunk in self.group(revs, dirlog, False, lookuplinknode,
-                                units=_('manifests')):
+                                units=_('manifests'),
+                                clrevtolocalrev=clrevtolocalrev):
             yield chunk
 
     def generate(self, commonrevs, clnodes, fastpathlinkrev, source):
@@ -779,9 +776,6 @@ class cgpacker(object):
         clrevorder = clstate['clrevorder']
         mfs = clstate['mfs']
         changedfiles = clstate['changedfiles']
-
-        if self._ellipses:
-            self._clrevtolocalrev = clstate['clrevtomanifestrev']
 
         # We need to make sure that the linkrev in the changegroup refers to
         # the first changeset that introduced the manifest or file revision.
@@ -808,7 +802,8 @@ class cgpacker(object):
         fnodes = {}  # needed file nodes
 
         for chunk in self.generatemanifests(commonrevs, clrevorder,
-                fastpathlinkrev, mfs, fnodes, source):
+                fastpathlinkrev, mfs, fnodes, source,
+                clstate['clrevtomanifestrev']):
             yield chunk
 
         mfdicts = None
@@ -895,12 +890,13 @@ class cgpacker(object):
             'clrevtomanifestrev': clrevtomanifestrev,
         }
 
-        gen = self.group(revs, cl, True, lookupcl, units=_('changesets'))
+        gen = self.group(revs, cl, True, lookupcl, units=_('changesets'),
+                         clrevtolocalrev={})
 
         return state, gen
 
     def generatemanifests(self, commonrevs, clrevorder, fastpathlinkrev, mfs,
-                          fnodes, source):
+                          fnodes, source, clrevtolocalrev):
         """Returns an iterator of changegroup chunks containing manifests.
 
         `source` is unused here, but is used by extensions like remotefilelog to
@@ -969,7 +965,8 @@ class cgpacker(object):
                     revs = _sortnodesnormal(store, prunednodes,
                                             self._reorder)
 
-                for x in self._packmanifests(dir, store, revs, lookupfn):
+                for x in self._packmanifests(dir, store, revs, lookupfn,
+                                             clrevtolocalrev):
                     size += len(x)
                     yield x
         self._verbosenote(_('%8.i (manifests)\n') % size)
@@ -993,6 +990,8 @@ class cgpacker(object):
                 return dict((fnode(r), cln(lr))
                             for r, lr in revs if lr in clrevs)
 
+        clrevtolocalrev = {}
+
         if self._isshallow:
             # In a shallow clone, the linknodes callback needs to also include
             # those file nodes that are in the manifests we sent but weren't
@@ -1007,7 +1006,7 @@ class cgpacker(object):
                 for c in commonctxs:
                     try:
                         fnode = c.filenode(fname)
-                        self._clrevtolocalrev[c.rev()] = flog.rev(fnode)
+                        clrevtolocalrev[c.rev()] = flog.rev(fnode)
                     except error.ManifestLookupError:
                         pass
                 links = normallinknodes(flog, fname)
@@ -1032,6 +1031,8 @@ class cgpacker(object):
                 raise error.Abort(_("empty or missing file data for %s") %
                                   fname)
 
+            clrevtolocalrev.clear()
+
             linkrevnodes = linknodes(filerevlog, fname)
             # Lookup for filenodes, we collected the linkrev nodes above in the
             # fastpath case and with lookupmf in the slowpath case.
@@ -1051,13 +1052,15 @@ class cgpacker(object):
                 h = _fileheader(fname)
                 size = len(h)
                 yield h
-                for chunk in self.group(revs, filerevlog, False, lookupfilelog):
+                for chunk in self.group(revs, filerevlog, False, lookupfilelog,
+                                        clrevtolocalrev=clrevtolocalrev):
                     size += len(chunk)
                     yield chunk
                 self._verbosenote(_('%8.i  %s\n') % (size, fname))
         progress.complete()
 
-    def _revisiondeltanarrow(self, store, ischangelog, rev, linkrev, linknode):
+    def _revisiondeltanarrow(self, store, ischangelog, rev, linkrev, linknode,
+                             clrevtolocalrev):
         linkparents = self._precomputedellipsis[linkrev]
         def local(clrev):
             """Turn a changelog revnum into a local revnum.
@@ -1089,8 +1092,8 @@ class cgpacker(object):
             while walk:
                 p = walk[0]
                 walk = walk[1:]
-                if p in self._clrevtolocalrev:
-                    return self._clrevtolocalrev[p]
+                if p in clrevtolocalrev:
+                    return clrevtolocalrev[p]
                 elif p in self._fullclnodes:
                     walk.extend([pp for pp in self._repo.changelog.parentrevs(p)
                                     if pp != nullrev])

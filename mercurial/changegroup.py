@@ -1022,9 +1022,6 @@ class cgpacker(object):
         else:
             linknodes = normallinknodes
 
-        return self._generatefiles(changedfiles, linknodes, commonrevs, source)
-
-    def _generatefiles(self, changedfiles, linknodes, commonrevs, source):
         repo = self._repo
         cl = repo.changelog
         progress = repo.ui.makeprogress(_('bundling'), unit=_('files'),

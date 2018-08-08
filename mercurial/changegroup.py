@@ -901,10 +901,24 @@ class cgpacker(object):
         mfs.clear()
         clrevs = set(cl.rev(x) for x in clnodes)
 
-        for chunk in self.generatefiles(changedfiles, commonrevs,
-                                        source, mfdicts, fastpathlinkrev,
-                                        fnodes, clrevs):
-            yield chunk
+        it = self.generatefiles(changedfiles, commonrevs,
+                                source, mfdicts, fastpathlinkrev,
+                                fnodes, clrevs)
+
+        for path, chunks in it:
+            h = _fileheader(path)
+            size = len(h)
+            yield h
+
+            for chunk in chunks:
+                size += len(chunk)
+                yield chunk
+
+            close = closechunk()
+            size += len(close)
+            yield close
+
+            self._verbosenote(_('%8.i  %s\n') % (size, path))
 
         yield closechunk()
 
@@ -1157,9 +1171,6 @@ class cgpacker(object):
                                             self._reorder)
 
                 progress.update(i + 1, item=fname)
-                h = _fileheader(fname)
-                size = len(h)
-                yield h
 
                 it = deltagroup(
                     self._repo, revs, filerevlog, False, lookupfilelog,
@@ -1169,15 +1180,8 @@ class cgpacker(object):
                     fullclnodes=self._fullclnodes,
                     precomputedellipsis=self._precomputedellipsis)
 
-                for chunk in it:
-                    size += len(chunk)
-                    yield chunk
+                yield fname, it
 
-                close = closechunk()
-                size += len(close)
-                yield close
-
-                self._verbosenote(_('%8.i  %s\n') % (size, fname))
         progress.complete()
 
 def _deltaparentprev(store, rev, p1, p2, prev):

@@ -313,6 +313,8 @@ class linelog(object):
         appendinst = self._program.append
 
         # insert
+        blineinfos = []
+        bappend = blineinfos.append
         if b1 < b2:
             # Determine the jump target for the JGE at the start of
             # the new block.
@@ -321,9 +323,12 @@ class linelog(object):
             appendinst(_jl(rev, tgt))
             for linenum in pycompat.xrange(b1, b2):
                 if _internal_blines is None:
+                    bappend(lineinfo(rev, linenum, programlen()))
                     appendinst(_line(rev, linenum))
                 else:
-                    appendinst(_line(*_internal_blines[linenum]))
+                    newrev, newlinenum = _internal_blines[linenum]
+                    bappend(lineinfo(newrev, newlinenum, programlen()))
+                    appendinst(_line(newrev, newlinenum))
         # delete
         if a1 < a2:
             if a2 > len(ar.lines):
@@ -342,6 +347,7 @@ class linelog(object):
                 endaddr = ar.lines[a2 - 1]._offset + 1
             appendinst(_jge(rev, endaddr))
         # copy instruction from a1
+        a1instpc = programlen()
         appendinst(a1inst)
         # if a1inst isn't a jump or EOF, then we need to add an unconditional
         # jump back into the program here.
@@ -349,12 +355,18 @@ class linelog(object):
             appendinst(_jump(0, a1info._offset + 1))
         # Patch instruction at a1, which makes our patch live.
         self._program[a1info._offset] = _jump(0, oldproglen)
-        # For compat with the C version, re-annotate rev so that
-        # self.annotateresult is cromulent.. We could fix up the
-        # annotateresult in place (which is how the C version works),
-        # but for now we'll pass on that and see if it matters in
-        # practice.
-        self.annotate(max(self._lastannotate.rev, rev))
+
+        # Update self._lastannotate in place. This serves as a cache to avoid
+        # expensive "self.annotate" in this function, when "replacelines" is
+        # used continuously.
+        if len(self._lastannotate.lines) > a1:
+            self._lastannotate.lines[a1]._offset = a1instpc
+        else:
+            assert isinstance(a1inst, _eof)
+            self._lastannotate._eof = a1instpc
+        self._lastannotate.lines[a1:a2] = blineinfos
+        self._lastannotate.rev = max(self._lastannotate.rev, rev)
+
         if rev > self._maxrev:
             self._maxrev = rev
 

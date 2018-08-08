@@ -751,8 +751,10 @@ class cgpacker(object):
         else:
             self._verbosenote = lambda s: None
 
-    def group(self, revs, store, ischangelog, lookup, units=None,
-              clrevtolocalrev=None):
+    def group(self, repo, revs, store, ischangelog, lookup, deltaparentfn,
+              deltaheaderfn, units=None,
+              ellipses=False, clrevtolocalrev=None, fullclnodes=None,
+              precomputedellipsis=None):
         """Calculate a delta group, yielding a sequence of changegroup chunks
         (strings).
 
@@ -771,7 +773,7 @@ class cgpacker(object):
             yield closechunk()
             return
 
-        cl = self._repo.changelog
+        cl = repo.changelog
 
         # add the parent of the first rev
         p = store.parentrevs(revs[0])[0]
@@ -780,38 +782,38 @@ class cgpacker(object):
         # build deltas
         progress = None
         if units is not None:
-            progress = self._repo.ui.makeprogress(_('bundling'), unit=units,
-                                                  total=(len(revs) - 1))
+            progress = repo.ui.makeprogress(_('bundling'), unit=units,
+                                            total=(len(revs) - 1))
         for r in pycompat.xrange(len(revs) - 1):
             if progress:
                 progress.update(r + 1)
             prev, curr = revs[r], revs[r + 1]
             linknode = lookup(store.node(curr))
 
-            if self._ellipses:
+            if ellipses:
                 linkrev = cl.rev(linknode)
                 clrevtolocalrev[linkrev] = curr
 
                 # This is a node to send in full, because the changeset it
                 # corresponds to was a full changeset.
-                if linknode in self._fullclnodes:
+                if linknode in fullclnodes:
                     delta = _revisiondeltanormal(store, curr, prev, linknode,
-                                                 self._deltaparentfn)
-                elif linkrev not in self._precomputedellipsis:
+                                                 deltaparentfn)
+                elif linkrev not in precomputedellipsis:
                     delta = None
                 else:
                     delta = _revisiondeltanarrow(
                         cl, store, ischangelog, curr, linkrev, linknode,
-                        clrevtolocalrev, self._fullclnodes,
-                        self._precomputedellipsis)
+                        clrevtolocalrev, fullclnodes,
+                        precomputedellipsis)
             else:
                 delta = _revisiondeltanormal(store, curr, prev, linknode,
-                                             self._deltaparentfn)
+                                             deltaparentfn)
 
             if not delta:
                 continue
 
-            meta = self._builddeltaheader(delta)
+            meta = deltaheaderfn(delta)
             l = len(meta) + sum(len(x) for x in delta.deltachunks)
             yield chunkheader(l)
             yield meta
@@ -956,8 +958,13 @@ class cgpacker(object):
             'clrevtomanifestrev': clrevtomanifestrev,
         }
 
-        gen = self.group(revs, cl, True, lookupcl, units=_('changesets'),
-                         clrevtolocalrev={})
+        gen = self.group(self._repo, revs, cl, True, lookupcl,
+                         self._deltaparentfn, self._builddeltaheader,
+                         ellipses=self._ellipses,
+                         units=_('changesets'),
+                         clrevtolocalrev={},
+                         fullclnodes=self._fullclnodes,
+                         precomputedellipsis=self._precomputedellipsis)
 
         return state, gen
 
@@ -1046,9 +1053,16 @@ class cgpacker(object):
                 size += len(chunk)
                 yield chunk
 
-            for chunk in self.group(revs, store, False, lookupfn,
-                                    units=_('manifests'),
-                                    clrevtolocalrev=clrevtolocalrev):
+            it = self.group(
+                self._repo, revs, store, False, lookupfn,
+                self._deltaparentfn, self._builddeltaheader,
+                ellipses=self._ellipses,
+                units=_('manifests'),
+                clrevtolocalrev=clrevtolocalrev,
+                fullclnodes=self._fullclnodes,
+                precomputedellipsis=self._precomputedellipsis)
+
+            for chunk in it:
                 size += len(chunk)
                 yield chunk
 
@@ -1138,8 +1152,16 @@ class cgpacker(object):
                 h = _fileheader(fname)
                 size = len(h)
                 yield h
-                for chunk in self.group(revs, filerevlog, False, lookupfilelog,
-                                        clrevtolocalrev=clrevtolocalrev):
+
+                it = self.group(
+                    self._repo, revs, filerevlog, False, lookupfilelog,
+                    self._deltaparentfn, self._builddeltaheader,
+                    ellipses=self._ellipses,
+                    clrevtolocalrev=clrevtolocalrev,
+                    fullclnodes=self._fullclnodes,
+                    precomputedellipsis=self._precomputedellipsis)
+
+                for chunk in it:
                     size += len(chunk)
                     yield chunk
                 self._verbosenote(_('%8.i  %s\n') % (size, fname))

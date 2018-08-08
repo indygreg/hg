@@ -26,7 +26,6 @@ from .thirdparty import (
 from . import (
     dagutil,
     error,
-    manifest,
     match as matchmod,
     mdiff,
     phases,
@@ -824,16 +823,6 @@ class cgpacker(object):
 
         yield closechunk()
 
-    # filter any nodes that claim to be part of the known set
-    def _prune(self, store, missing, commonrevs):
-        # TODO this violates storage abstraction for manifests.
-        if isinstance(store, manifest.manifestrevlog):
-            if not self._filematcher.visitdir(store._dir[:-1] or '.'):
-                return []
-
-        rr, rl = store.rev, store.linkrev
-        return [n for n in missing if rl(rr(n)) not in commonrevs]
-
     def generate(self, commonrevs, clnodes, fastpathlinkrev, source):
         """Yield a sequence of changegroup byte chunks."""
 
@@ -1031,7 +1020,13 @@ class cgpacker(object):
         while tmfnodes:
             dir, nodes = tmfnodes.popitem()
             store = dirlog(dir)
-            prunednodes = self._prune(store, nodes, commonrevs)
+
+            if not self._filematcher.visitdir(store._dir[:-1] or '.'):
+                prunednodes = []
+            else:
+                frev, flr = store.rev, store.linkrev
+                prunednodes = [n for n in nodes
+                               if flr(frev(n)) not in commonrevs]
 
             if dir and not prunednodes:
                 continue
@@ -1127,7 +1122,10 @@ class cgpacker(object):
             def lookupfilelog(x):
                 return linkrevnodes[x]
 
-            filenodes = self._prune(filerevlog, linkrevnodes, commonrevs)
+            frev, flr = filerevlog.rev, filerevlog.linkrev
+            filenodes = [n for n in linkrevnodes
+                         if flr(frev(n)) not in commonrevs]
+
             if filenodes:
                 if self._ellipses:
                     revs = _sortnodesellipsis(filerevlog, filenodes,

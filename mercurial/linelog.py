@@ -308,7 +308,8 @@ class linelog(object):
         else:
             a1info = ar.lines[a1]
             a1inst = self._program[a1info._offset]
-        oldproglen = len(self._program)
+        programlen = self._program.__len__
+        oldproglen = programlen()
         appendinst = self._program.append
 
         # insert

@@ -681,6 +681,80 @@ def _revisiondeltanarrow(cl, store, ischangelog, rev, linkrev,
         deltachunks=(diffheader, data),
     )
 
+def deltagroup(repo, revs, store, ischangelog, lookup, deltaparentfn,
+               deltaheaderfn, units=None,
+               ellipses=False, clrevtolocalrev=None, fullclnodes=None,
+               precomputedellipsis=None):
+    """Calculate a delta group, yielding a sequence of changegroup chunks
+    (strings).
+
+    Given a list of changeset revs, return a set of deltas and
+    metadata corresponding to nodes. The first delta is
+    first parent(nodelist[0]) -> nodelist[0], the receiver is
+    guaranteed to have this parent as it has all history before
+    these changesets. In the case firstparent is nullrev the
+    changegroup starts with a full revision.
+
+    If units is not None, progress detail will be generated, units specifies
+    the type of revlog that is touched (changelog, manifest, etc.).
+    """
+    # if we don't have any revisions touched by these changesets, bail
+    if len(revs) == 0:
+        yield closechunk()
+        return
+
+    cl = repo.changelog
+
+    # add the parent of the first rev
+    p = store.parentrevs(revs[0])[0]
+    revs.insert(0, p)
+
+    # build deltas
+    progress = None
+    if units is not None:
+        progress = repo.ui.makeprogress(_('bundling'), unit=units,
+                                        total=(len(revs) - 1))
+    for r in pycompat.xrange(len(revs) - 1):
+        if progress:
+            progress.update(r + 1)
+        prev, curr = revs[r], revs[r + 1]
+        linknode = lookup(store.node(curr))
+
+        if ellipses:
+            linkrev = cl.rev(linknode)
+            clrevtolocalrev[linkrev] = curr
+
+            # This is a node to send in full, because the changeset it
+            # corresponds to was a full changeset.
+            if linknode in fullclnodes:
+                delta = _revisiondeltanormal(store, curr, prev, linknode,
+                                             deltaparentfn)
+            elif linkrev not in precomputedellipsis:
+                delta = None
+            else:
+                delta = _revisiondeltanarrow(
+                    cl, store, ischangelog, curr, linkrev, linknode,
+                    clrevtolocalrev, fullclnodes,
+                    precomputedellipsis)
+        else:
+            delta = _revisiondeltanormal(store, curr, prev, linknode,
+                                         deltaparentfn)
+
+        if not delta:
+            continue
+
+        meta = deltaheaderfn(delta)
+        l = len(meta) + sum(len(x) for x in delta.deltachunks)
+        yield chunkheader(l)
+        yield meta
+        for x in delta.deltachunks:
+            yield x
+
+    if progress:
+        progress.complete()
+
+    yield closechunk()
+
 class cgpacker(object):
     def __init__(self, repo, filematcher, version, allowreorder,
                  deltaparentfn, builddeltaheader, manifestsend,
@@ -750,80 +824,6 @@ class cgpacker(object):
             self._verbosenote = self._repo.ui.note
         else:
             self._verbosenote = lambda s: None
-
-    def group(self, repo, revs, store, ischangelog, lookup, deltaparentfn,
-              deltaheaderfn, units=None,
-              ellipses=False, clrevtolocalrev=None, fullclnodes=None,
-              precomputedellipsis=None):
-        """Calculate a delta group, yielding a sequence of changegroup chunks
-        (strings).
-
-        Given a list of changeset revs, return a set of deltas and
-        metadata corresponding to nodes. The first delta is
-        first parent(nodelist[0]) -> nodelist[0], the receiver is
-        guaranteed to have this parent as it has all history before
-        these changesets. In the case firstparent is nullrev the
-        changegroup starts with a full revision.
-
-        If units is not None, progress detail will be generated, units specifies
-        the type of revlog that is touched (changelog, manifest, etc.).
-        """
-        # if we don't have any revisions touched by these changesets, bail
-        if len(revs) == 0:
-            yield closechunk()
-            return
-
-        cl = repo.changelog
-
-        # add the parent of the first rev
-        p = store.parentrevs(revs[0])[0]
-        revs.insert(0, p)
-
-        # build deltas
-        progress = None
-        if units is not None:
-            progress = repo.ui.makeprogress(_('bundling'), unit=units,
-                                            total=(len(revs) - 1))
-        for r in pycompat.xrange(len(revs) - 1):
-            if progress:
-                progress.update(r + 1)
-            prev, curr = revs[r], revs[r + 1]
-            linknode = lookup(store.node(curr))
-
-            if ellipses:
-                linkrev = cl.rev(linknode)
-                clrevtolocalrev[linkrev] = curr
-
-                # This is a node to send in full, because the changeset it
-                # corresponds to was a full changeset.
-                if linknode in fullclnodes:
-                    delta = _revisiondeltanormal(store, curr, prev, linknode,
-                                                 deltaparentfn)
-                elif linkrev not in precomputedellipsis:
-                    delta = None
-                else:
-                    delta = _revisiondeltanarrow(
-                        cl, store, ischangelog, curr, linkrev, linknode,
-                        clrevtolocalrev, fullclnodes,
-                        precomputedellipsis)
-            else:
-                delta = _revisiondeltanormal(store, curr, prev, linknode,
-                                             deltaparentfn)
-
-            if not delta:
-                continue
-
-            meta = deltaheaderfn(delta)
-            l = len(meta) + sum(len(x) for x in delta.deltachunks)
-            yield chunkheader(l)
-            yield meta
-            for x in delta.deltachunks:
-                yield x
-
-        if progress:
-            progress.complete()
-
-        yield closechunk()
 
     def generate(self, commonrevs, clnodes, fastpathlinkrev, source):
         """Yield a sequence of changegroup byte chunks."""
@@ -958,13 +958,14 @@ class cgpacker(object):
             'clrevtomanifestrev': clrevtomanifestrev,
         }
 
-        gen = self.group(self._repo, revs, cl, True, lookupcl,
-                         self._deltaparentfn, self._builddeltaheader,
-                         ellipses=self._ellipses,
-                         units=_('changesets'),
-                         clrevtolocalrev={},
-                         fullclnodes=self._fullclnodes,
-                         precomputedellipsis=self._precomputedellipsis)
+        gen = deltagroup(
+            self._repo, revs, cl, True, lookupcl,
+            self._deltaparentfn, self._builddeltaheader,
+            ellipses=self._ellipses,
+            units=_('changesets'),
+            clrevtolocalrev={},
+            fullclnodes=self._fullclnodes,
+            precomputedellipsis=self._precomputedellipsis)
 
         return state, gen
 
@@ -1053,7 +1054,7 @@ class cgpacker(object):
                 size += len(chunk)
                 yield chunk
 
-            it = self.group(
+            it = deltagroup(
                 self._repo, revs, store, False, lookupfn,
                 self._deltaparentfn, self._builddeltaheader,
                 ellipses=self._ellipses,
@@ -1153,7 +1154,7 @@ class cgpacker(object):
                 size = len(h)
                 yield h
 
-                it = self.group(
+                it = deltagroup(
                     self._repo, revs, filerevlog, False, lookupfilelog,
                     self._deltaparentfn, self._builddeltaheader,
                     ellipses=self._ellipses,

@@ -522,6 +522,15 @@ class revisiondelta(object):
     # Iterable of chunks holding raw delta data.
     deltachunks = attr.ib()
 
+def _revisiondeltatochunks(delta, headerfn):
+    """Serialize a revisiondelta to changegroup chunks."""
+    meta = headerfn(delta)
+    l = len(meta) + sum(len(x) for x in delta.deltachunks)
+    yield chunkheader(l)
+    yield meta
+    for x in delta.deltachunks:
+        yield x
+
 def _sortnodesnormal(store, nodes, reorder):
     """Sort nodes for changegroup generation and turn into revnums."""
     # for generaldelta revlogs, we linearize the revs; this will both be
@@ -682,18 +691,12 @@ def _revisiondeltanarrow(cl, store, ischangelog, rev, linkrev,
     )
 
 def deltagroup(repo, revs, store, ischangelog, lookup, deltaparentfn,
-               deltaheaderfn, units=None,
+               units=None,
                ellipses=False, clrevtolocalrev=None, fullclnodes=None,
                precomputedellipsis=None):
-    """Calculate a delta group, yielding a sequence of changegroup chunks
-    (strings).
+    """Calculate deltas for a set of revisions.
 
-    Given a list of changeset revs, return a set of deltas and
-    metadata corresponding to nodes. The first delta is
-    first parent(nodelist[0]) -> nodelist[0], the receiver is
-    guaranteed to have this parent as it has all history before
-    these changesets. In the case firstparent is nullrev the
-    changegroup starts with a full revision.
+    Is a generator of ``revisiondelta`` instances.
 
     If units is not None, progress detail will be generated, units specifies
     the type of revlog that is touched (changelog, manifest, etc.).
@@ -739,15 +742,8 @@ def deltagroup(repo, revs, store, ischangelog, lookup, deltaparentfn,
             delta = _revisiondeltanormal(store, curr, prev, linknode,
                                          deltaparentfn)
 
-        if not delta:
-            continue
-
-        meta = deltaheaderfn(delta)
-        l = len(meta) + sum(len(x) for x in delta.deltachunks)
-        yield chunkheader(l)
-        yield meta
-        for x in delta.deltachunks:
-            yield x
+        if delta:
+            yield delta
 
     if progress:
         progress.complete()
@@ -831,10 +827,11 @@ class cgpacker(object):
         self._verbosenote(_('uncompressed size of bundle content:\n'))
         size = 0
 
-        clstate, chunks = self._generatechangelog(cl, clnodes)
-        for chunk in chunks:
-            size += len(chunk)
-            yield chunk
+        clstate, deltas = self._generatechangelog(cl, clnodes)
+        for delta in deltas:
+            for chunk in _revisiondeltatochunks(delta, self._builddeltaheader):
+                size += len(chunk)
+                yield chunk
 
         close = closechunk()
         size += len(close)
@@ -875,16 +872,18 @@ class cgpacker(object):
             commonrevs, clrevorder, fastpathlinkrev, mfs, fnodes, source,
             clstate['clrevtomanifestrev'])
 
-        for dir, chunks in it:
+        for dir, deltas in it:
             if dir:
                 assert self.version == b'03'
                 chunk = _fileheader(dir)
                 size += len(chunk)
                 yield chunk
 
-            for chunk in chunks:
-                size += len(chunk)
-                yield chunk
+            for delta in deltas:
+                chunks = _revisiondeltatochunks(delta, self._builddeltaheader)
+                for chunk in chunks:
+                    size += len(chunk)
+                    yield chunk
 
             close = closechunk()
             size += len(close)
@@ -905,14 +904,16 @@ class cgpacker(object):
                                 source, mfdicts, fastpathlinkrev,
                                 fnodes, clrevs)
 
-        for path, chunks in it:
+        for path, deltas in it:
             h = _fileheader(path)
             size = len(h)
             yield h
 
-            for chunk in chunks:
-                size += len(chunk)
-                yield chunk
+            for delta in deltas:
+                chunks = _revisiondeltatochunks(delta, self._builddeltaheader)
+                for chunk in chunks:
+                    size += len(chunk)
+                    yield chunk
 
             close = closechunk()
             size += len(close)
@@ -993,7 +994,7 @@ class cgpacker(object):
 
         gen = deltagroup(
             self._repo, revs, cl, True, lookupcl,
-            self._deltaparentfn, self._builddeltaheader,
+            self._deltaparentfn,
             ellipses=self._ellipses,
             units=_('changesets'),
             clrevtolocalrev={},
@@ -1080,16 +1081,16 @@ class cgpacker(object):
                 revs = _sortnodesnormal(store, prunednodes,
                                         self._reorder)
 
-            it = deltagroup(
+            deltas = deltagroup(
                 self._repo, revs, store, False, lookupfn,
-                self._deltaparentfn, self._builddeltaheader,
+                self._deltaparentfn,
                 ellipses=self._ellipses,
                 units=_('manifests'),
                 clrevtolocalrev=clrevtolocalrev,
                 fullclnodes=self._fullclnodes,
                 precomputedellipsis=self._precomputedellipsis)
 
-            yield dir, it
+            yield dir, deltas
 
     # The 'source' parameter is useful for extensions
     def generatefiles(self, changedfiles, commonrevs, source,
@@ -1172,15 +1173,15 @@ class cgpacker(object):
 
                 progress.update(i + 1, item=fname)
 
-                it = deltagroup(
+                deltas = deltagroup(
                     self._repo, revs, filerevlog, False, lookupfilelog,
-                    self._deltaparentfn, self._builddeltaheader,
+                    self._deltaparentfn,
                     ellipses=self._ellipses,
                     clrevtolocalrev=clrevtolocalrev,
                     fullclnodes=self._fullclnodes,
                     precomputedellipsis=self._precomputedellipsis)
 
-                yield fname, it
+                yield fname, deltas
 
         progress.complete()
 

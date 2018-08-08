@@ -500,4 +500,8 @@ test -rMULTIREV with --all-files
   $ hg grep -r "0:2" "unmod" --all-files
   um:0:unmod
   um:1:unmod
+  $ hg grep -r "0:2" "unmod" --all-files um
+  um:0:unmod
+  um:1:unmod
   $ cd ..
+

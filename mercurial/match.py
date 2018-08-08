@@ -1193,10 +1193,11 @@ def _roots(kindpats):
 def _rootsdirsandparents(kindpats):
     '''Returns roots and exact directories from patterns.
 
-    roots are directories to match recursively, whereas exact directories should
-    be matched non-recursively. The returned (roots, dirs) tuple will also
-    include directories that need to be implicitly considered as either, such as
-    parent directories.
+    `roots` are directories to match recursively, `dirs` should
+    be matched non-recursively, and `parents` are the implicitly required
+    directories to walk to items in either roots or dirs.
+
+    Returns a tuple of (roots, dirs, parents).
 
     >>> _rootsdirsandparents(
     ...     [(b'glob', b'g/h/*', b''), (b'glob', b'g/h', b''),

@@ -7,6 +7,7 @@
 from __future__ import absolute_import
 
 import itertools
+import os
 
 from mercurial.i18n import _
 from mercurial import (
@@ -25,6 +26,7 @@ from mercurial import (
     repair,
     repository,
     repoview,
+    sparse,
     util,
 )
 
@@ -43,6 +45,8 @@ def setup():
                      _("create a narrow clone of select files")))
     entry[1].append(('', 'depth', '',
                      _("limit the history fetched by distance from heads")))
+    entry[1].append(('', 'narrowspec', '',
+                     _("read narrowspecs from file")))
     # TODO(durin42): unify sparse/narrow --include/--exclude logic a bit
     if 'sparse' not in extensions.enabled():
         entry[1].append(('', 'include', [],
@@ -73,6 +77,27 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
     opts = pycompat.byteskwargs(opts)
     wrappedextraprepare = util.nullcontextmanager()
     opts_narrow = opts['narrow']
+    narrowspecfile = opts['narrowspec']
+
+    if narrowspecfile:
+        filepath = os.path.join(pycompat.getcwd(), narrowspecfile)
+        ui.status(_("reading narrowspec from '%s'\n") % filepath)
+        try:
+            fp = open(filepath, 'rb')
+        except IOError:
+            raise error.Abort(_("file '%s' not found") % filepath)
+
+        includes, excludes, profiles = sparse.parseconfig(ui, fp.read(),
+                                                          'narrow')
+        if profiles:
+            raise error.Abort(_("cannot specify other files using '%include' in"
+                                " narrowspec"))
+
+        # narrowspec is passed so we should assume that user wants narrow clone
+        opts_narrow = True
+        opts['include'].extend(includes)
+        opts['exclude'].extend(excludes)
+
     if opts_narrow:
         def pullbundle2extraprepare_widen(orig, pullop, kwargs):
             # Create narrow spec patterns from clone flags

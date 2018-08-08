@@ -218,3 +218,39 @@ simple clone
   dir/tests/t9
 
   $ cd ..
+
+Testing the --narrowspec flag to clone
+
+  $ cat >> narrowspecs <<EOF
+  > %include foo
+  > [include]
+  > path:dir/tests/
+  > dir/src/f12
+  > EOF
+
+  $ hg clone ssh://user@dummy/master specfile --narrowspec narrowspecs
+  reading narrowspec from '$TESTTMP/narrowspecs'
+  abort: cannot specify other files using '%include' in narrowspec
+  [255]
+
+  $ cat > narrowspecs <<EOF
+  > [include]
+  > path:dir/tests/
+  > file:dir/src/f12
+  > EOF
+
+  $ hg clone ssh://user@dummy/master specfile --narrowspec narrowspecs
+  reading narrowspec from '$TESTTMP/narrowspecs'
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 21 changesets with 20 changes to 20 files
+  new changesets f93383bb3e99:26ce255d5b5d
+  updating to branch default
+  20 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd specfile
+  $ hg tracked
+  I path:dir/tests
+  I path:file:dir/src/f12
+  $ cd ..

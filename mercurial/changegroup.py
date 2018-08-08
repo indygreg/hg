@@ -871,11 +871,24 @@ class cgpacker(object):
         fnodes = {}  # needed file nodes
 
         size = 0
-        for chunk in self.generatemanifests(commonrevs, clrevorder,
-                fastpathlinkrev, mfs, fnodes, source,
-                clstate['clrevtomanifestrev']):
-            size += len(chunk)
-            yield chunk
+        it = self.generatemanifests(
+            commonrevs, clrevorder, fastpathlinkrev, mfs, fnodes, source,
+            clstate['clrevtomanifestrev'])
+
+        for dir, chunks in it:
+            if dir:
+                assert self.version == b'03'
+                chunk = _fileheader(dir)
+                size += len(chunk)
+                yield chunk
+
+            for chunk in chunks:
+                size += len(chunk)
+                yield chunk
+
+            close = closechunk()
+            size += len(close)
+            yield close
 
         self._verbosenote(_('%8.i (manifests)\n') % size)
         yield self._manifestsend
@@ -1053,11 +1066,6 @@ class cgpacker(object):
                 revs = _sortnodesnormal(store, prunednodes,
                                         self._reorder)
 
-            if dir:
-                assert self.version == b'03'
-                chunk = _fileheader(dir)
-                yield chunk
-
             it = deltagroup(
                 self._repo, revs, store, False, lookupfn,
                 self._deltaparentfn, self._builddeltaheader,
@@ -1067,11 +1075,7 @@ class cgpacker(object):
                 fullclnodes=self._fullclnodes,
                 precomputedellipsis=self._precomputedellipsis)
 
-            for chunk in it:
-                yield chunk
-
-            close = closechunk()
-            yield close
+            yield dir, it
 
     # The 'source' parameter is useful for extensions
     def generatefiles(self, changedfiles, commonrevs, source,

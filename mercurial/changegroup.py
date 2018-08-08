@@ -701,25 +701,27 @@ def deltagroup(repo, revs, store, ischangelog, lookup, deltaparentfn,
     If units is not None, progress detail will be generated, units specifies
     the type of revlog that is touched (changelog, manifest, etc.).
     """
-    # if we don't have any revisions touched by these changesets, bail
-    if len(revs) == 0:
+    if not revs:
         return
 
     cl = repo.changelog
 
-    # add the parent of the first rev
-    p = store.parentrevs(revs[0])[0]
-    revs.insert(0, p)
+    # Add the parent of the first rev.
+    revs.insert(0, store.parentrevs(revs[0])[0])
 
     # build deltas
     progress = None
     if units is not None:
         progress = repo.ui.makeprogress(_('bundling'), unit=units,
                                         total=(len(revs) - 1))
-    for r in pycompat.xrange(len(revs) - 1):
+
+    for i in pycompat.xrange(len(revs) - 1):
         if progress:
-            progress.update(r + 1)
-        prev, curr = revs[r], revs[r + 1]
+            progress.update(i + 1)
+
+        prev = revs[i]
+        curr = revs[i + 1]
+
         linknode = lookup(store.node(curr))
 
         if ellipses:

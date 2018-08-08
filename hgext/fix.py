@@ -435,6 +435,9 @@ def fixfile(ui, opts, fixers, fixctx, path, basectxs):
     starting with the file's content in the fixctx. Fixers that support line
     ranges will affect lines that have changed relative to any of the basectxs
     (i.e. they will only avoid lines that are common to all basectxs).
+
+    A fixer tool's stdout will become the file's new content if and only if it
+    exits with code zero.
     """
     newdata = fixctx[path].data()
     for fixername, fixer in fixers.iteritems():
@@ -454,8 +457,11 @@ def fixfile(ui, opts, fixers, fixctx, path, basectxs):
             newerdata, stderr = proc.communicate(newdata)
             if stderr:
                 showstderr(ui, fixctx.rev(), fixername, stderr)
-            else:
+            if proc.returncode == 0:
                 newdata = newerdata
+            elif not stderr:
+                showstderr(ui, fixctx.rev(), fixername,
+                           _('exited with status %d\n') % (proc.returncode,))
     return newdata
 
 def showstderr(ui, rev, fixername, stderr):

@@ -502,12 +502,13 @@ write back to the file, so for example the mtime shouldn't change.
 
   $ cd ..
 
-When a fixer prints to stderr, we assume that it has failed. We should show the
-error messages to the user, and we should not let the failing fixer affect the
-file it was fixing (many code formatters might emit error messages on stderr
-and nothing on stdout, which would cause us the clear the file). We show the
-user which fixer failed and which revision, but we assume that the fixer will
-print the filename if it is relevant.
+When a fixer prints to stderr, we don't assume that it has failed. We show the
+error messages to the user, and we still let the fixer affect the file it was
+fixing if its exit code is zero. Some code formatters might emit error messages
+on stderr and nothing on stdout, which would cause us the clear the file,
+except that they also exit with a non-zero code. We show the user which fixer
+emitted the stderr, and which revision, but we assume that the fixer will print
+the filename if it is relevant (since the issue may be non-specific).
 
   $ hg init showstderr
   $ cd showstderr
@@ -515,17 +516,37 @@ print the filename if it is relevant.
   $ printf "hello\n" > hello.txt
   $ hg add
   adding hello.txt
-  $ cat >> $TESTTMP/cmd.sh <<'EOF'
+  $ cat > $TESTTMP/fail.sh <<'EOF'
   > printf 'HELLO\n'
   > printf "$@: some\nerror" >&2
+  > exit 0 # success despite the stderr output
   > EOF
-  $ hg --config "fix.fail:command=sh $TESTTMP/cmd.sh {rootpath}" \
+  $ hg --config "fix.fail:command=sh $TESTTMP/fail.sh {rootpath}" \
   >    --config "fix.fail:fileset=hello.txt" \
   >    fix --working-dir
   [wdir] fail: hello.txt: some
   [wdir] fail: error
   $ cat hello.txt
-  hello
+  HELLO
+
+  $ printf "goodbye\n" > hello.txt
+  $ cat > $TESTTMP/work.sh <<'EOF'
+  > printf 'GOODBYE\n'
+  > printf "$@: some\nerror\n" >&2
+  > exit 42 # success despite the stdout output
+  > EOF
+  $ hg --config "fix.fail:command=sh $TESTTMP/work.sh {rootpath}" \
+  >    --config "fix.fail:fileset=hello.txt" \
+  >    fix --working-dir
+  [wdir] fail: hello.txt: some
+  [wdir] fail: error
+  $ cat hello.txt
+  goodbye
+
+  $ hg --config "fix.fail:command=exit 42" \
+  >    --config "fix.fail:fileset=hello.txt" \
+  >    fix --working-dir
+  [wdir] fail: exited with status 42
 
   $ cd ..
 

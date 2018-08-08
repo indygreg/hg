@@ -700,7 +700,6 @@ def deltagroup(repo, revs, store, ischangelog, lookup, deltaparentfn,
     """
     # if we don't have any revisions touched by these changesets, bail
     if len(revs) == 0:
-        yield closechunk()
         return
 
     cl = repo.changelog
@@ -752,8 +751,6 @@ def deltagroup(repo, revs, store, ischangelog, lookup, deltaparentfn,
 
     if progress:
         progress.complete()
-
-    yield closechunk()
 
 class cgpacker(object):
     def __init__(self, repo, filematcher, version, allowreorder,
@@ -838,6 +835,10 @@ class cgpacker(object):
         for chunk in chunks:
             size += len(chunk)
             yield chunk
+
+        close = closechunk()
+        size += len(close)
+        yield closechunk()
 
         self._verbosenote(_('%8.i (changelog)\n') % size)
 
@@ -1067,6 +1068,10 @@ class cgpacker(object):
                 size += len(chunk)
                 yield chunk
 
+            close = closechunk()
+            size += len(close)
+            yield close
+
         self._verbosenote(_('%8.i (manifests)\n') % size)
         yield self._manifestsend
 
@@ -1165,6 +1170,11 @@ class cgpacker(object):
                 for chunk in it:
                     size += len(chunk)
                     yield chunk
+
+                close = closechunk()
+                size += len(close)
+                yield close
+
                 self._verbosenote(_('%8.i  %s\n') % (size, fname))
         progress.complete()
 

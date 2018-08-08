@@ -870,10 +870,15 @@ class cgpacker(object):
 
         fnodes = {}  # needed file nodes
 
+        size = 0
         for chunk in self.generatemanifests(commonrevs, clrevorder,
                 fastpathlinkrev, mfs, fnodes, source,
                 clstate['clrevtomanifestrev']):
+            size += len(chunk)
             yield chunk
+
+        self._verbosenote(_('%8.i (manifests)\n') % size)
+        yield self._manifestsend
 
         mfdicts = None
         if self._ellipses and self._isshallow:
@@ -1025,7 +1030,6 @@ class cgpacker(object):
                 return clnode
             return lookupmflinknode
 
-        size = 0
         while tmfnodes:
             dir, nodes = tmfnodes.popitem()
             store = dirlog(dir)
@@ -1052,7 +1056,6 @@ class cgpacker(object):
             if dir:
                 assert self.version == b'03'
                 chunk = _fileheader(dir)
-                size += len(chunk)
                 yield chunk
 
             it = deltagroup(
@@ -1065,15 +1068,10 @@ class cgpacker(object):
                 precomputedellipsis=self._precomputedellipsis)
 
             for chunk in it:
-                size += len(chunk)
                 yield chunk
 
             close = closechunk()
-            size += len(close)
             yield close
-
-        self._verbosenote(_('%8.i (manifests)\n') % size)
-        yield self._manifestsend
 
     # The 'source' parameter is useful for extensions
     def generatefiles(self, changedfiles, commonrevs, source,

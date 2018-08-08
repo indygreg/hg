@@ -507,6 +507,8 @@ class revisiondelta(object):
 
     Captured data is sufficient to serialize the delta into multiple
     formats.
+
+    ``revision`` and ``delta`` are mutually exclusive.
     """
     # 20 byte node of this revision.
     node = attr.ib()
@@ -519,17 +521,40 @@ class revisiondelta(object):
     linknode = attr.ib()
     # 2 bytes of flags to apply to revision data.
     flags = attr.ib()
-    # Iterable of chunks holding raw delta data.
-    deltachunks = attr.ib()
+    # Size of base revision this delta is against. May be None if
+    # basenode is nullid.
+    baserevisionsize = attr.ib()
+    # Raw fulltext revision data.
+    revision = attr.ib()
+    # Delta between the basenode and node.
+    delta = attr.ib()
 
 def _revisiondeltatochunks(delta, headerfn):
     """Serialize a revisiondelta to changegroup chunks."""
+
+    # The captured revision delta may be encoded as a delta against
+    # a base revision or as a full revision. The changegroup format
+    # requires that everything on the wire be deltas. So for full
+    # revisions, we need to invent a header that says to rewrite
+    # data.
+
+    if delta.delta is not None:
+        prefix, data = b'', delta.delta
+    elif delta.basenode == nullid:
+        data = delta.revision
+        prefix = mdiff.trivialdiffheader(len(data))
+    else:
+        data = delta.revision
+        prefix = mdiff.replacediffheader(delta.baserevisionsize,
+                                         len(data))
+
     meta = headerfn(delta)
-    l = len(meta) + sum(len(x) for x in delta.deltachunks)
-    yield chunkheader(l)
+
+    yield chunkheader(len(meta) + len(prefix) + len(data))
     yield meta
-    for x in delta.deltachunks:
-        yield x
+    if prefix:
+        yield prefix
+    yield data
 
 def _sortnodesnormal(store, nodes, reorder):
     """Sort nodes for changegroup generation and turn into revnums."""
@@ -568,22 +593,24 @@ def _revisiondeltanormal(store, rev, prev, linknode, deltaparentfn):
     p1, p2 = store.parentrevs(rev)
     base = deltaparentfn(store, rev, p1, p2, prev)
 
-    prefix = ''
+    revision = None
+    delta = None
+    baserevisionsize = None
+
     if store.iscensored(base) or store.iscensored(rev):
         try:
-            delta = store.revision(node, raw=True)
+            revision = store.revision(node, raw=True)
         except error.CensoredNodeError as e:
-            delta = e.tombstone
-        if base == nullrev:
-            prefix = mdiff.trivialdiffheader(len(delta))
-        else:
-            baselen = store.rawsize(base)
-            prefix = mdiff.replacediffheader(baselen, len(delta))
+            revision = e.tombstone
+
+        if base != nullrev:
+            baserevisionsize = store.rawsize(base)
+
     elif base == nullrev:
-        delta = store.revision(node, raw=True)
-        prefix = mdiff.trivialdiffheader(len(delta))
+        revision = store.revision(node, raw=True)
     else:
         delta = store.revdiff(base, rev)
+
     p1n, p2n = store.parents(node)
 
     return revisiondelta(
@@ -593,7 +620,9 @@ def _revisiondeltanormal(store, rev, prev, linknode, deltaparentfn):
         basenode=store.node(base),
         linknode=linknode,
         flags=store.flags(rev),
-        deltachunks=(prefix, delta),
+        baserevisionsize=baserevisionsize,
+        revision=revision,
+        delta=delta,
     )
 
 def _revisiondeltanarrow(cl, store, ischangelog, rev, linkrev,
@@ -677,8 +706,6 @@ def _revisiondeltanarrow(cl, store, ischangelog, rev, linkrev,
     flags |= revlog.REVIDX_ELLIPSIS
 
     # TODO: try and actually send deltas for ellipsis data blocks
-    data = store.revision(n)
-    diffheader = mdiff.trivialdiffheader(len(data))
 
     return revisiondelta(
         node=n,
@@ -687,7 +714,9 @@ def _revisiondeltanarrow(cl, store, ischangelog, rev, linkrev,
         basenode=nullid,
         linknode=linknode,
         flags=flags,
-        deltachunks=(diffheader, data),
+        baserevisionsize=None,
+        revision=store.revision(n),
+        delta=None,
     )
 
 def deltagroup(repo, revs, store, ischangelog, lookup, deltaparentfn,

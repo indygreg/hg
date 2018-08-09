@@ -210,4 +210,3 @@ class parseindex2tests(unittest.TestCase):
 if __name__ == '__main__':
     import silenttestrunner
     silenttestrunner.main(__name__)
-    print("done")

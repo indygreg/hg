@@ -176,12 +176,8 @@ class parseindex2tests(unittest.TestCase):
 
     def testbadargs(self):
         # Check that parse_index2() raises TypeError on bad arguments.
-        try:
+        with self.assertRaises(TypeError):
             parse_index2(0, True)
-        except TypeError:
-            pass
-        else:
-            print("Expected to get TypeError.")
 
     def testparseindexfile(self):
         # Check parsers.parse_index2() on an index file against the
@@ -194,20 +190,17 @@ class parseindex2tests(unittest.TestCase):
         py_res_2 = py_parseindex(data_non_inlined, False)
         c_res_2 = parse_index2(data_non_inlined, False)
 
-        if py_res_1 != c_res_1:
-            print("Parse index result (with inlined data) differs!")
-
-        if py_res_2 != c_res_2:
-            print("Parse index result (no inlined data) differs!")
+        self.assertEqual(py_res_1, c_res_1) # inline data
+        self.assertEqual(py_res_2, c_res_2) # no inline data
 
         ix = parsers.parse_index2(data_inlined, True)[0]
         for i, r in enumerate(ix):
             if r[7] == nullid:
                 i = -1
             try:
-                if ix[r[7]] != i:
-                    print('Reverse lookup inconsistent for %r'
-                        % r[7].encode('hex'))
+                self.assertEqual(
+                    ix[r[7]], i,
+                    'Reverse lookup inconsistent for %r' % r[7].encode('hex'))
             except TypeError:
                 # pure version doesn't support this
                 break

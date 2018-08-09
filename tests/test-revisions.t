@@ -3,7 +3,7 @@
 
   $ echo 0 > a
   $ hg ci -qAm 0
-  $ for i in 5 8 14 43; do
+  $ for i in 5 8 14 43 167; do
   >   hg up -q 0
   >   echo $i > a
   >   hg ci -qm $i
@@ -14,6 +14,7 @@
   > EOF
 
   $ hg l
+  5:00f
   4:7ba5d
   3:7ba57
   2:72
@@ -21,9 +22,10 @@
   0:b
   $ cat <<EOF >> .hg/hgrc
   > [experimental]
-  > revisions.disambiguatewithin=:3
+  > revisions.disambiguatewithin=not 4
   > EOF
   $ hg l
+  5:0
   4:7ba5d
   3:7b
   2:72

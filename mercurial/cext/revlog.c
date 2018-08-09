@@ -1075,10 +1075,6 @@ static int nt_init(nodetree *self, indexObject *index, unsigned capacity)
 		return -1;
 	}
 	self->length = 1;
-	if (nt_insert(self, nullid, -1) == -1) {
-		free(self->nodes);
-		return -1;
-	}
 	return 0;
 }
 
@@ -1148,6 +1144,11 @@ static int index_init_nt(indexObject *self)
 		}
 		unsigned capacity = (self->raw_length < 4 ? 4 : (int)self->raw_length / 2);
 		if (nt_init(self->nt, self, capacity) == -1) {
+			PyMem_Free(self->nt);
+			self->nt = NULL;
+			return -1;
+		}
+		if (nt_insert(self->nt, nullid, -1) == -1) {
 			PyMem_Free(self->nt);
 			self->nt = NULL;
 			return -1;

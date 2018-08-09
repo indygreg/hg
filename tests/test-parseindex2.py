@@ -157,59 +157,60 @@ def makehex(major, minor, micro):
     return int("%x%02x%02x00" % (major, minor, micro), 16)
 
 class parseindex2tests(unittest.TestCase):
-  def testversiondetection(self):
-    """Check the version-detection logic when importing parsers."""
-    # Only test the version-detection logic if it is present.
-    try:
-        parsers.versionerrortext
-    except AttributeError:
-        return
-    info = sys.version_info
-    major, minor, micro = info[0], info[1], info[2]
-    # Test same major-minor versions.
-    testversionokay(1, makehex(major, minor, micro))
-    testversionokay(2, makehex(major, minor, micro + 1))
-    # Test different major-minor versions.
-    testversionfail(3, makehex(major + 1, minor, micro))
-    testversionfail(4, makehex(major, minor + 1, micro))
-    testversionfail(5, "'foo'")
-
-  def testbadargs(self):
-    # Check that parse_index2() raises TypeError on bad arguments.
-    try:
-        parse_index2(0, True)
-    except TypeError:
-        pass
-    else:
-        print("Expected to get TypeError.")
-
-  def testparseindexfile(self):
-   # Check parsers.parse_index2() on an index file against the original
-   # Python implementation of parseindex, both with and without inlined data.
-
-    py_res_1 = py_parseindex(data_inlined, True)
-    c_res_1 = parse_index2(data_inlined, True)
-
-    py_res_2 = py_parseindex(data_non_inlined, False)
-    c_res_2 = parse_index2(data_non_inlined, False)
-
-    if py_res_1 != c_res_1:
-        print("Parse index result (with inlined data) differs!")
-
-    if py_res_2 != c_res_2:
-        print("Parse index result (no inlined data) differs!")
-
-    ix = parsers.parse_index2(data_inlined, True)[0]
-    for i, r in enumerate(ix):
-        if r[7] == nullid:
-            i = -1
+    def testversiondetection(self):
+        """Check the version-detection logic when importing parsers."""
+        # Only test the version-detection logic if it is present.
         try:
-            if ix[r[7]] != i:
-                print('Reverse lookup inconsistent for %r'
-                    % r[7].encode('hex'))
+            parsers.versionerrortext
+        except AttributeError:
+            return
+        info = sys.version_info
+        major, minor, micro = info[0], info[1], info[2]
+        # Test same major-minor versions.
+        testversionokay(1, makehex(major, minor, micro))
+        testversionokay(2, makehex(major, minor, micro + 1))
+        # Test different major-minor versions.
+        testversionfail(3, makehex(major + 1, minor, micro))
+        testversionfail(4, makehex(major, minor + 1, micro))
+        testversionfail(5, "'foo'")
+
+    def testbadargs(self):
+        # Check that parse_index2() raises TypeError on bad arguments.
+        try:
+            parse_index2(0, True)
         except TypeError:
-            # pure version doesn't support this
-            break
+            pass
+        else:
+            print("Expected to get TypeError.")
+
+    def testparseindexfile(self):
+        # Check parsers.parse_index2() on an index file against the
+        # original Python implementation of parseindex, both with and
+        # without inlined data.
+
+        py_res_1 = py_parseindex(data_inlined, True)
+        c_res_1 = parse_index2(data_inlined, True)
+
+        py_res_2 = py_parseindex(data_non_inlined, False)
+        c_res_2 = parse_index2(data_non_inlined, False)
+
+        if py_res_1 != c_res_1:
+            print("Parse index result (with inlined data) differs!")
+
+        if py_res_2 != c_res_2:
+            print("Parse index result (no inlined data) differs!")
+
+        ix = parsers.parse_index2(data_inlined, True)[0]
+        for i, r in enumerate(ix):
+            if r[7] == nullid:
+                i = -1
+            try:
+                if ix[r[7]] != i:
+                    print('Reverse lookup inconsistent for %r'
+                        % r[7].encode('hex'))
+            except TypeError:
+                # pure version doesn't support this
+                break
 
 if __name__ == '__main__':
     import silenttestrunner

@@ -1,4 +1,6 @@
 test-abort-checkin.t
+test-absorb-phase.t
+test-absorb-strip.t
 test-add.t
 test-addremove-similar.t
 test-addremove.t

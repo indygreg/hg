@@ -245,7 +245,7 @@ def overlaycontext(memworkingcopy, ctx, parents=None, extra=None):
     date = ctx.date()
     desc = ctx.description()
     user = ctx.user()
-    files = set(ctx.files()).union(memworkingcopy.iterkeys())
+    files = set(ctx.files()).union(memworkingcopy)
     store = overlaystore(ctx, memworkingcopy)
     return context.memctx(
         repo=ctx.repo(), parents=parents, text=desc,
@@ -286,7 +286,7 @@ class filefixupstate(object):
 
         # following fields are built from fctxs. they exist for perf reason
         self.contents = [f.data() for f in fctxs]
-        self.contentlines = map(mdiff.splitnewlines, self.contents)
+        self.contentlines = pycompat.maplist(mdiff.splitnewlines, self.contents)
         self.linelog = self._buildlinelog()
         if self.ui.debugflag:
             assert self._checkoutlinelog() == self.contents
@@ -805,7 +805,7 @@ class fixupstate(object):
                 return False
             pctx = parents[0]
         # ctx changes more files (not a subset of memworkingcopy)
-        if not set(ctx.files()).issubset(set(memworkingcopy.iterkeys())):
+        if not set(ctx.files()).issubset(set(memworkingcopy)):
             return False
         for path, content in memworkingcopy.iteritems():
             if path not in pctx or path not in ctx:

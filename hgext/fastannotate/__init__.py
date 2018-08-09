@@ -53,18 +53,10 @@ annotate cache greatly. Run "debugbuildlinkrevcache" before
     serverbuildondemand = True
 
     # update local annotate cache from remote on demand
-    # (default: True for remotefilelog repo, False otherwise)
-    client = True
+    client = False
 
     # path to use when connecting to the remote server (default: default)
     remotepath = default
-
-    # share sshpeer with remotefilelog. this would allow fastannotate to peek
-    # into remotefilelog internals, and steal its sshpeer, or in the reversed
-    # direction: donate its sshpeer to remotefilelog. disable this if
-    # fastannotate and remotefilelog should not share a sshpeer when their
-    # endpoints are different and incompatible. (default: True)
-    clientsharepeer = True
 
     # minimal length of the history of a file required to fetch linelog from
     # the server. (default: 10)
@@ -108,11 +100,7 @@ annotate cache greatly. Run "debugbuildlinkrevcache" before
 #
 # * rename the config knob for updating the local cache from a remote server
 #
-# * remove the remotefilelog-peer-sharing functionality
-#
 # * move various global-setup bits to extsetup() or reposetup()
-#
-# * assume repo.requirements will always exist
 #
 # * move `flock` based locking to a common area
 #
@@ -154,7 +142,7 @@ configitem = registrar.configitem(configtable)
 configitem('fastannotate', 'modes', default=['fastannotate'])
 configitem('fastannotate', 'server', default=False)
 configitem('fastannotate', 'useflock', default=True)
-configitem('fastannotate', 'client')
+configitem('fastannotate', 'client', default=False)
 configitem('fastannotate', 'unfilteredrepo', default=True)
 configitem('fastannotate', 'defaultformat', default=['number'])
 configitem('fastannotate', 'perfhack', default=False)
@@ -162,7 +150,6 @@ configitem('fastannotate', 'mainbranch')
 configitem('fastannotate', 'forcetext', default=True)
 configitem('fastannotate', 'forcefollow', default=True)
 configitem('fastannotate', 'clientfetchthreshold', default=10)
-configitem('fastannotate', 'clientsharepeer', default=True)
 configitem('fastannotate', 'serverbuildondemand', default=True)
 configitem('fastannotate', 'remotepath', default='default')
 
@@ -188,7 +175,6 @@ def uisetup(ui):
         elif name == 'fctx':
             from . import support
             support.replacefctxannotate()
-            support.replaceremotefctxannotate()
             commands.wrapdefault()
         else:
             raise hgerror.Abort(_('fastannotate: invalid mode: %s') % name)
@@ -203,9 +189,5 @@ def uisetup(ui):
     localrepo.localrepository._wlockfreeprefix.add('fastannotate/')
 
 def reposetup(ui, repo):
-    client = ui.configbool('fastannotate', 'client', default=None)
-    if client is None:
-        if util.safehasattr(repo, 'requirements'):
-            client = 'remotefilelog' in repo.requirements
-    if client:
+    if ui.configbool('fastannotate', 'client'):
         protocol.clientreposetup(ui, repo)

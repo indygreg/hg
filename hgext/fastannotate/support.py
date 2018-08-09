@@ -120,12 +120,3 @@ def replacehgwebannotate():
 
 def replacefctxannotate():
     extensions.wrapfunction(hgcontext.basefilectx, 'annotate', _fctxannotate)
-
-def replaceremotefctxannotate():
-    try:
-        r = extensions.find('remotefilelog')
-    except KeyError:
-        return
-    else:
-        extensions.wrapfunction(r.remotefilectx.remotefilectx, 'annotate',
-                                _remotefctxannotate)

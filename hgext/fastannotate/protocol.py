@@ -134,33 +134,14 @@ def peersetup(ui, peer):
 def annotatepeer(repo):
     ui = repo.ui
 
-    # fileservice belongs to remotefilelog
-    fileservice = getattr(repo, 'fileservice', None)
-    sharepeer = ui.configbool('fastannotate', 'clientsharepeer', True)
-
-    if sharepeer and fileservice:
-        ui.debug('fastannotate: using remotefilelog connection pool\n')
-        conn = repo.connectionpool.get(repo.fallbackpath)
-        peer = conn.peer
-        stolen = True
-    else:
-        remotepath = ui.expandpath(
-            ui.config('fastannotate', 'remotepath', 'default'))
-        peer = hg.peer(ui, {}, remotepath)
-        stolen = False
+    remotepath = ui.expandpath(
+        ui.config('fastannotate', 'remotepath', 'default'))
+    peer = hg.peer(ui, {}, remotepath)
 
     try:
-        # Note: fastannotate requests should never trigger a remotefilelog
-        # "getfiles" request, because "getfiles" puts the stream into a state
-        # that does not exit. See "clientfetch": it does "getannotate" before
-        # any hg stuff that could potentially trigger a "getfiles".
         yield peer
     finally:
-        if not stolen:
-            for i in ['close', 'cleanup']:
-                getattr(peer, i, lambda: None)()
-        else:
-            conn.__exit__(None, None, None)
+        peer.close()
 
 def clientfetch(repo, paths, lastnodemap=None, peer=None):
     """download annotate cache from the server for paths"""
@@ -209,16 +190,10 @@ def _filterfetchpaths(repo, paths):
 
     master = repo.ui.config('fastannotate', 'mainbranch') or 'default'
 
-    if 'remotefilelog' in repo.requirements:
-        ctx = scmutil.revsingle(repo, master)
-        f = lambda path: len(ctx[path].ancestormap())
-    else:
-        f = lambda path: len(repo.file(path))
-
     result = []
     for path in paths:
         try:
-            if f(path) >= threshold:
+            if len(repo.file(path)) >= threshold:
                 result.append(path)
         except Exception: # file not found etc.
             result.append(path)

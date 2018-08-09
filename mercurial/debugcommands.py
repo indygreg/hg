@@ -896,6 +896,8 @@ def debugextensions(ui, repo, **opts):
     _('[-r REV] [--all-files] [OPTION]... FILESPEC'))
 def debugfileset(ui, repo, expr, **opts):
     '''parse and apply a fileset specification'''
+    from . import fileset
+    fileset.symbols # force import of fileset so we have predicates to optimize
     opts = pycompat.byteskwargs(opts)
     ctx = scmutil.revsingle(repo, opts.get('rev'), None)
 

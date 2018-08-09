@@ -517,12 +517,12 @@ class revisiondeltarequest(object):
     p1node = attr.ib()
     p2node = attr.ib()
 
-    # Base revision that delta should be generated against. If nullrev,
+    # Base revision that delta should be generated against. If nullid,
     # the full revision data should be populated. If None, the delta
     # may be generated against any base revision that is an ancestor of
-    # this revision. If any other numeric value, the delta should be
-    # produced against that revision.
-    baserev = attr.ib()
+    # this revision. If any other value, the delta should be produced
+    # against that revision.
+    basenode = attr.ib()
 
     # Whether this should be marked as an ellipsis revision.
     ellipsis = attr.ib(default=False)
@@ -613,18 +613,18 @@ def _sortnodesellipsis(store, nodes, cl, lookup):
     key = lambda n: cl.rev(lookup(n))
     return [store.rev(n) for n in sorted(nodes, key=key)]
 
-def _handlerevisiondeltarequest(store, request, prev):
+def _handlerevisiondeltarequest(store, request, prevnode):
     """Obtain a revisiondelta from a revisiondeltarequest"""
 
     node = request.node
     rev = store.rev(node)
 
     # Requesting a full revision.
-    if request.baserev == nullrev:
-        base = nullrev
+    if request.basenode == nullid:
+        baserev = nullrev
     # Requesting an explicit revision.
-    elif request.baserev is not None:
-        base = request.baserev
+    elif request.basenode is not None:
+        baserev = store.rev(request.basenode)
     # Allowing us to choose.
     else:
         p1, p2 = store.parentrevs(rev)
@@ -638,37 +638,37 @@ def _handlerevisiondeltarequest(store, request, prev):
             # expensive. The revlog caches should have prev cached, meaning
             # less CPU for changegroup generation. There is likely room to add
             # a flag and/or config option to control this behavior.
-            base = prev
+            baserev = store.rev(prevnode)
         elif dp == nullrev:
             # revlog is configured to use full snapshot for a reason,
             # stick to full snapshot.
-            base = nullrev
-        elif dp not in (p1, p2, prev):
+            baserev = nullrev
+        elif dp not in (p1, p2, store.rev(prevnode)):
             # Pick prev when we can't be sure remote has the base revision.
-            base = prev
+            baserev = store.rev(prevnode)
         else:
-            base = dp
+            baserev = dp
 
-        if base != nullrev and not store.candelta(base, rev):
-            base = nullrev
+        if baserev != nullrev and not store.candelta(baserev, rev):
+            baserev = nullrev
 
     revision = None
     delta = None
     baserevisionsize = None
 
-    if store.iscensored(base) or store.iscensored(rev):
+    if store.iscensored(baserev) or store.iscensored(rev):
         try:
             revision = store.revision(node, raw=True)
         except error.CensoredNodeError as e:
             revision = e.tombstone
 
-        if base != nullrev:
-            baserevisionsize = store.rawsize(base)
+        if baserev != nullrev:
+            baserevisionsize = store.rawsize(baserev)
 
-    elif base == nullrev:
+    elif baserev == nullrev:
         revision = store.revision(node, raw=True)
     else:
-        delta = store.revdiff(base, rev)
+        delta = store.revdiff(baserev, rev)
 
     extraflags = revlog.REVIDX_ELLIPSIS if request.ellipsis else 0
 
@@ -677,7 +677,7 @@ def _handlerevisiondeltarequest(store, request, prev):
         p1node=request.p1node,
         p2node=request.p2node,
         linknode=request.linknode,
-        basenode=store.node(base),
+        basenode=store.node(baserev),
         flags=store.flags(rev) | extraflags,
         baserevisionsize=baserevisionsize,
         revision=revision,
@@ -767,7 +767,7 @@ def _makenarrowdeltarequest(cl, store, ischangelog, rev, node, linkrev,
         p1node=p1node,
         p2node=p2node,
         linknode=linknode,
-        baserev=nullrev,
+        basenode=nullid,
         ellipsis=True,
     )
 
@@ -824,7 +824,7 @@ def deltagroup(repo, revs, store, ischangelog, lookup, forcedeltaparentprev,
                     p1node=p1node,
                     p2node=p2node,
                     linknode=linknode,
-                    baserev=None,
+                    basenode=None,
                 ))
 
             elif linkrev not in precomputedellipsis:
@@ -840,7 +840,7 @@ def deltagroup(repo, revs, store, ischangelog, lookup, forcedeltaparentprev,
                 p1node=p1node,
                 p2node=p2node,
                 linknode=linknode,
-                baserev=prev if forcedeltaparentprev else None,
+                basenode=store.node(prev) if forcedeltaparentprev else None,
             ))
 
     # We expect the first pass to be fast, so we only engage the progress
@@ -850,16 +850,16 @@ def deltagroup(repo, revs, store, ischangelog, lookup, forcedeltaparentprev,
         progress = repo.ui.makeprogress(_('bundling'), unit=units,
                                         total=len(requests))
 
-    prevrev = revs[0]
+    prevnode = store.node(revs[0])
     for i, request in enumerate(requests):
         if progress:
             progress.update(i + 1)
 
-        delta = _handlerevisiondeltarequest(store, request, prevrev)
+        delta = _handlerevisiondeltarequest(store, request, prevnode)
 
         yield delta
 
-        prevrev = store.rev(request.node)
+        prevnode = request.node
 
     if progress:
         progress.complete()

@@ -1065,7 +1065,9 @@ static int nt_delete_node(nodetree *self, const char *node)
 static int nt_init(nodetree *self, indexObject *index, unsigned capacity)
 {
 	self->index = index;
-	self->capacity = capacity;
+	/* The input capacity is in terms of revisions, while the field is in
+	 * terms of nodetree nodes. */
+	self->capacity = (capacity < 4 ? 4 : capacity / 2);
 	self->depth = 0;
 	self->splits = 0;
 	if ((size_t)self->capacity > INT_MAX / sizeof(nodetreenode)) {
@@ -1141,8 +1143,7 @@ static int index_init_nt(indexObject *self)
 			PyErr_NoMemory();
 			return -1;
 		}
-		unsigned capacity = (self->raw_length < 4 ? 4 : (int)self->raw_length / 2);
-		if (nt_init(self->nt, self, capacity) == -1) {
+		if (nt_init(self->nt, self, self->raw_length) == -1) {
 			PyMem_Free(self->nt);
 			self->nt = NULL;
 			return -1;

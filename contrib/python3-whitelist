@@ -1,4 +1,5 @@
 test-abort-checkin.t
+test-absorb-filefixupstate.py
 test-absorb-phase.t
 test-absorb-strip.t
 test-add.t

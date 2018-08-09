@@ -912,6 +912,11 @@ class dirstate(object):
                         continue
                     raise
                 for f, kind, st in entries:
+                    # If we needed to inspect any files, visitentries would have
+                    # been 'this' or 'all', and we would have set it to None
+                    # above. If we have visitentries populated here, we don't
+                    # care about any files in this directory, so no need to
+                    # check the type of `f`.
                     if visitentries and f not in visitentries:
                         continue
                     if normalizefile:

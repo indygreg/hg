@@ -84,8 +84,8 @@ struct indexObjectStruct {
 static Py_ssize_t index_length(const indexObject *self)
 {
 	if (self->added == NULL)
-		return self->length - 1;
-	return self->length + PyList_GET_SIZE(self->added) - 1;
+		return self->length;
+	return self->length + PyList_GET_SIZE(self->added);
 }
 
 static PyObject *nullentry;
@@ -124,9 +124,8 @@ static const char *index_deref(indexObject *self, Py_ssize_t pos)
 static inline int index_get_parents(indexObject *self, Py_ssize_t rev,
 				    int *ps, int maxrev)
 {
-	if (rev >= self->length - 1) {
-		PyObject *tuple = PyList_GET_ITEM(self->added,
-						  rev - self->length + 1);
+	if (rev >= self->length) {
+		PyObject *tuple = PyList_GET_ITEM(self->added, rev - self->length);
 		ps[0] = (int)PyInt_AS_LONG(PyTuple_GET_ITEM(tuple, 5));
 		ps[1] = (int)PyInt_AS_LONG(PyTuple_GET_ITEM(tuple, 6));
 	} else {
@@ -175,9 +174,9 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 		return NULL;
 	}
 
-	if (pos >= self->length - 1) {
+	if (pos >= self->length) {
 		PyObject *obj;
-		obj = PyList_GET_ITEM(self->added, pos - self->length + 1);
+		obj = PyList_GET_ITEM(self->added, pos - self->length);
 		Py_INCREF(obj);
 		return obj;
 	}
@@ -241,9 +240,9 @@ static const char *index_node(indexObject *self, Py_ssize_t pos)
 	if (pos >= length)
 		return NULL;
 
-	if (pos >= self->length - 1) {
+	if (pos >= self->length) {
 		PyObject *tuple, *str;
-		tuple = PyList_GET_ITEM(self->added, pos - self->length + 1);
+		tuple = PyList_GET_ITEM(self->added, pos - self->length);
 		str = PyTuple_GetItem(tuple, 7);
 		return str ? PyBytes_AS_STRING(str) : NULL;
 	}
@@ -338,7 +337,7 @@ static PyObject *index_stats(indexObject *self)
 		Py_DECREF(t);
 	}
 
-	if (self->raw_length != self->length - 1)
+	if (self->raw_length != self->length)
 		istat(raw_length, "revs on disk");
 	istat(length, "revs in memory");
 	istat(ntlookups, "node trie lookups");
@@ -802,9 +801,8 @@ static inline int index_baserev(indexObject *self, int rev)
 {
 	const char *data;
 
-	if (rev >= self->length - 1) {
-		PyObject *tuple = PyList_GET_ITEM(self->added,
-			rev - self->length + 1);
+	if (rev >= self->length) {
+		PyObject *tuple = PyList_GET_ITEM(self->added, rev - self->length);
 		return (int)PyInt_AS_LONG(PyTuple_GET_ITEM(tuple, 3));
 	}
 	else {
@@ -1827,11 +1825,11 @@ static int index_slice_del(indexObject *self, PyObject *item)
 		return -1;
 	}
 
-	if (start < self->length - 1) {
+	if (start < self->length) {
 		if (self->nt) {
 			Py_ssize_t i;
 
-			for (i = start + 1; i < self->length - 1; i++) {
+			for (i = start + 1; i < self->length; i++) {
 				const char *node = index_node_existing(self, i);
 				if (node == NULL)
 					return -1;
@@ -1843,7 +1841,7 @@ static int index_slice_del(indexObject *self, PyObject *item)
 			if (self->ntrev > start)
 				self->ntrev = (int)start;
 		}
-		self->length = start + 1;
+		self->length = start;
 		if (start < self->raw_length) {
 			if (self->cache) {
 				Py_ssize_t i;
@@ -1856,12 +1854,12 @@ static int index_slice_del(indexObject *self, PyObject *item)
 	}
 
 	if (self->nt) {
-		index_invalidate_added(self, start - self->length + 1);
+		index_invalidate_added(self, start - self->length);
 		if (self->ntrev > start)
 			self->ntrev = (int)start;
 	}
 	if (self->added)
-		ret = PyList_SetSlice(self->added, start - self->length + 1,
+		ret = PyList_SetSlice(self->added, start - self->length,
 				      PyList_GET_SIZE(self->added), NULL);
 done:
 	Py_CLEAR(self->headrevs);
@@ -1974,14 +1972,14 @@ static int index_init(indexObject *self, PyObject *args)
 		if (len == -1)
 			goto bail;
 		self->raw_length = len;
-		self->length = len + 1;
+		self->length = len;
 	} else {
 		if (size % v1_hdrsize) {
 			PyErr_SetString(PyExc_ValueError, "corrupt index file");
 			goto bail;
 		}
 		self->raw_length = size / v1_hdrsize;
-		self->length = self->raw_length + 1;
+		self->length = self->raw_length;
 	}
 
 	return 0;

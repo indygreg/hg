@@ -1281,25 +1281,27 @@ class cgpacker(object):
             filenodes = [n for n in linkrevnodes
                          if flr(frev(n)) not in commonrevs]
 
-            if filenodes:
-                if self._ellipses:
-                    revs = _sortnodesellipsis(filerevlog, filenodes,
-                                              cl, lookupfilelog)
-                else:
-                    revs = _sortnodesnormal(filerevlog, filenodes,
-                                            self._reorder)
+            if not filenodes:
+                continue
 
-                progress.update(i + 1, item=fname)
+            if self._ellipses:
+                revs = _sortnodesellipsis(filerevlog, filenodes,
+                                          cl, lookupfilelog)
+            else:
+                revs = _sortnodesnormal(filerevlog, filenodes,
+                                        self._reorder)
 
-                deltas = deltagroup(
-                    self._repo, revs, filerevlog, False, lookupfilelog,
-                    self._forcedeltaparentprev,
-                    ellipses=self._ellipses,
-                    clrevtolocalrev=clrevtolocalrev,
-                    fullclnodes=self._fullclnodes,
-                    precomputedellipsis=self._precomputedellipsis)
+            progress.update(i + 1, item=fname)
 
-                yield fname, deltas
+            deltas = deltagroup(
+                self._repo, revs, filerevlog, False, lookupfilelog,
+                self._forcedeltaparentprev,
+                ellipses=self._ellipses,
+                clrevtolocalrev=clrevtolocalrev,
+                fullclnodes=self._fullclnodes,
+                precomputedellipsis=self._precomputedellipsis)
+
+            yield fname, deltas
 
         progress.complete()
 

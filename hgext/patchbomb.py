@@ -73,7 +73,7 @@ You can set patchbomb to always ask for confirmation by setting
 '''
 from __future__ import absolute_import
 
-import email as emailmod
+import email.encoders as emailencoders
 import email.generator as emailgen
 import email.mime.base as emimebase
 import email.mime.multipart as emimemultipart
@@ -380,7 +380,7 @@ def _getbundlemsgs(repo, sender, bundle, **opts):
     bundlename = '%s.hg' % opts.get(r'bundlename', 'bundle')
     datapart.add_header('Content-Disposition', 'attachment',
                         filename=bundlename)
-    emailmod.Encoders.encode_base64(datapart)
+    emailencoders.encode_base64(datapart)
     msg.attach(datapart)
     msg['Subject'] = mail.headencode(ui, subj, _charsets, opts.get(r'test'))
     return [(msg, subj, None)]

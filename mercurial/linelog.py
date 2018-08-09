@@ -371,7 +371,7 @@ class linelog(object):
             executed += 1
         if pc is not None:
             raise LineLogError(
-                'Probably hit an infinite loop in linelog. Program:\n' +
+                r'Probably hit an infinite loop in linelog. Program:\n' +
                 self.debugstr())
         ar = annotateresult(rev, lines, lastpc)
         self._lastannotate = ar

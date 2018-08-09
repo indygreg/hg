@@ -207,6 +207,16 @@ class parseindex2tests(unittest.TestCase):
                 # pure version doesn't support this
                 break
 
+    def testminusone(self):
+        want = (0, 0, 0, -1, -1, -1, -1, nullid)
+        index, junk = parsers.parse_index2(data_inlined, True)
+        got = index[-1]
+        self.assertEqual(want, got) # inline data
+
+        index, junk = parsers.parse_index2(data_non_inlined, False)
+        got = index[-1]
+        self.assertEqual(want, got) # no inline data
+
 if __name__ == '__main__':
     import silenttestrunner
     silenttestrunner.main(__name__)

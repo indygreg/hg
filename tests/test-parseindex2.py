@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function
 import struct
 import subprocess
 import sys
+import unittest
 
 from mercurial.node import (
     nullid,
@@ -155,8 +156,14 @@ def testversionfail(testnumber, hexversion):
 def makehex(major, minor, micro):
     return int("%x%02x%02x00" % (major, minor, micro), 16)
 
-def runversiontests():
+class parseindex2tests(unittest.TestCase):
+  def testversiondetection(self):
     """Check the version-detection logic when importing parsers."""
+    # Only test the version-detection logic if it is present.
+    try:
+        parsers.versionerrortext
+    except AttributeError:
+        return
     info = sys.version_info
     major, minor, micro = info[0], info[1], info[2]
     # Test same major-minor versions.
@@ -167,15 +174,7 @@ def runversiontests():
     testversionfail(4, makehex(major, minor + 1, micro))
     testversionfail(5, "'foo'")
 
-def runtest() :
-    # Only test the version-detection logic if it is present.
-    try:
-        parsers.versionerrortext
-    except AttributeError:
-        pass
-    else:
-        runversiontests()
-
+  def testbadargs(self):
     # Check that parse_index2() raises TypeError on bad arguments.
     try:
         parse_index2(0, True)
@@ -184,6 +183,7 @@ def runtest() :
     else:
         print("Expected to get TypeError.")
 
+  def testparseindexfile(self):
    # Check parsers.parse_index2() on an index file against the original
    # Python implementation of parseindex, both with and without inlined data.
 
@@ -211,6 +211,7 @@ def runtest() :
             # pure version doesn't support this
             break
 
+if __name__ == '__main__':
+    import silenttestrunner
+    silenttestrunner.main(__name__)
     print("done")
-
-runtest()

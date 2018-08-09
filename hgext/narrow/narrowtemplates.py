@@ -42,7 +42,7 @@ def outsidenarrow(context, mapping):
             return 'outsidenarrow'
     return ''
 
-@revsetpredicate('ellipsis')
+@revsetpredicate('ellipsis()')
 def ellipsisrevset(repo, subset, x):
     """Changesets that are ellipsis nodes."""
     return subset.filter(lambda r: _isellipsis(repo, r))

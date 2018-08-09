@@ -73,7 +73,7 @@ class SMTPS(smtplib.SMTP):
 
     def _get_socket(self, host, port, timeout):
         if self.debuglevel > 0:
-            self._ui.debug('connect: %r\n' % (host, port))
+            self._ui.debug('connect: %r\n' % ((host, port),))
         new_socket = socket.create_connection((host, port), timeout)
         new_socket = sslutil.wrapsocket(new_socket,
                                         self.keyfile, self.certfile,

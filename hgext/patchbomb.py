@@ -375,7 +375,7 @@ def _getbundlemsgs(repo, sender, bundle, **opts):
     msg = emimemultipart.MIMEMultipart()
     if body:
         msg.attach(mail.mimeencode(ui, body, _charsets, opts.get(r'test')))
-    datapart = emimebase.MIMEBase('application', 'x-mercurial-bundle')
+    datapart = emimebase.MIMEBase(r'application', r'x-mercurial-bundle')
     datapart.set_payload(bundle)
     bundlename = '%s.hg' % opts.get(r'bundlename', 'bundle')
     datapart.add_header(r'Content-Disposition', r'attachment',

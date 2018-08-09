@@ -237,7 +237,7 @@ Using status to get more context
   # To mark files as resolved:  hg resolve --mark FILE
   
   # To continue:    hg graft --continue
-  # To abort:       hg update --clean . (warning: this will discard uncommitted changes)
+  # To abort:       hg graft --abort
   
 
 Commit while interrupted should fail:

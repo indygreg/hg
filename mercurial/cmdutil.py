@@ -613,7 +613,7 @@ def _updatecleanmsg(dest=None):
 
 def _graftmsg():
     # tweakdefaults requires `update` to have a rev hence the `.`
-    return _helpmessage('hg graft --continue', _updatecleanmsg())
+    return _helpmessage('hg graft --continue', 'hg graft --abort')
 
 def _mergemsg():
     # tweakdefaults requires `update` to have a rev hence the `.`

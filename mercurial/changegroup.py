@@ -502,6 +502,32 @@ class headerlessfixup(object):
         return readexactly(self._fh, n)
 
 @attr.s(slots=True, frozen=True)
+class revisiondeltarequest(object):
+    """Describes a request to construct a revision delta.
+
+    Instances are converted into ``revisiondelta`` later.
+    """
+    # Revision whose delta will be generated.
+    node = attr.ib()
+
+    # Linknode value.
+    linknode = attr.ib()
+
+    # Parent revisions to record in ``revisiondelta`` instance.
+    p1node = attr.ib()
+    p2node = attr.ib()
+
+    # Base revision that delta should be generated against. If nullrev,
+    # the full revision data should be populated. If None, the delta
+    # may be generated against any base revision that is an ancestor of
+    # this revision. If any other numeric value, the delta should be
+    # produced against that revision.
+    baserev = attr.ib()
+
+    # Whether this should be marked as an ellipsis revision.
+    ellipsis = attr.ib(default=False)
+
+@attr.s(slots=True, frozen=True)
 class revisiondelta(object):
     """Describes a delta entry in a changegroup.
 
@@ -587,14 +613,21 @@ def _sortnodesellipsis(store, nodes, cl, lookup):
     key = lambda n: cl.rev(lookup(n))
     return [store.rev(n) for n in sorted(nodes, key=key)]
 
-def _revisiondeltanormal(store, rev, prev, linknode, forcedeltaparentprev):
-    """Construct a revision delta for non-ellipses changegroup generation."""
-    node = store.node(rev)
-    p1, p2 = store.parentrevs(rev)
+def _handlerevisiondeltarequest(store, request, prev):
+    """Obtain a revisiondelta from a revisiondeltarequest"""
 
-    if forcedeltaparentprev:
-        base = prev
+    node = request.node
+    rev = store.rev(node)
+
+    # Requesting a full revision.
+    if request.baserev == nullrev:
+        base = nullrev
+    # Requesting an explicit revision.
+    elif request.baserev is not None:
+        base = request.baserev
+    # Allowing us to choose.
     else:
+        p1, p2 = store.parentrevs(rev)
         dp = store.deltaparent(rev)
 
         if dp == nullrev and store.storedeltachains:
@@ -637,23 +670,23 @@ def _revisiondeltanormal(store, rev, prev, linknode, forcedeltaparentprev):
     else:
         delta = store.revdiff(base, rev)
 
-    p1n, p2n = store.parents(node)
+    extraflags = revlog.REVIDX_ELLIPSIS if request.ellipsis else 0
 
     return revisiondelta(
         node=node,
-        p1node=p1n,
-        p2node=p2n,
+        p1node=request.p1node,
+        p2node=request.p2node,
+        linknode=request.linknode,
         basenode=store.node(base),
-        linknode=linknode,
-        flags=store.flags(rev),
+        flags=store.flags(rev) | extraflags,
         baserevisionsize=baserevisionsize,
         revision=revision,
         delta=delta,
     )
 
-def _revisiondeltanarrow(cl, store, ischangelog, rev, linkrev,
-                         linknode, clrevtolocalrev, fullclnodes,
-                         precomputedellipsis):
+def _makenarrowdeltarequest(cl, store, ischangelog, rev, node, linkrev,
+                            linknode, clrevtolocalrev, fullclnodes,
+                            precomputedellipsis):
     linkparents = precomputedellipsis[linkrev]
     def local(clrev):
         """Turn a changelog revnum into a local revnum.
@@ -726,23 +759,16 @@ def _revisiondeltanarrow(cl, store, ischangelog, rev, linkrev,
     else:
         p1, p2 = sorted(local(p) for p in linkparents)
 
-    n = store.node(rev)
-    p1n, p2n = store.node(p1), store.node(p2)
-    flags = store.flags(rev)
-    flags |= revlog.REVIDX_ELLIPSIS
+    p1node, p2node = store.node(p1), store.node(p2)
 
     # TODO: try and actually send deltas for ellipsis data blocks
-
-    return revisiondelta(
-        node=n,
-        p1node=p1n,
-        p2node=p2n,
-        basenode=nullid,
+    return revisiondeltarequest(
+        node=node,
+        p1node=p1node,
+        p2node=p2node,
         linknode=linknode,
-        flags=flags,
-        baserevisionsize=None,
-        revision=store.revision(n),
-        delta=None,
+        baserev=nullrev,
+        ellipsis=True,
     )
 
 def deltagroup(repo, revs, store, ischangelog, lookup, forcedeltaparentprev,
@@ -759,25 +785,32 @@ def deltagroup(repo, revs, store, ischangelog, lookup, forcedeltaparentprev,
     if not revs:
         return
 
+    # We perform two passes over the revisions whose data we will emit.
+    #
+    # In the first pass, we obtain information about the deltas that will
+    # be generated. This involves computing linknodes and adjusting the
+    # request to take shallow fetching into account. The end result of
+    # this pass is a list of "request" objects stating which deltas
+    # to obtain.
+    #
+    # The second pass is simply resolving the requested deltas.
+
     cl = repo.changelog
+
+    # In the first pass, collect info about the deltas we'll be
+    # generating.
+    requests = []
 
     # Add the parent of the first rev.
     revs.insert(0, store.parentrevs(revs[0])[0])
 
-    # build deltas
-    progress = None
-    if units is not None:
-        progress = repo.ui.makeprogress(_('bundling'), unit=units,
-                                        total=(len(revs) - 1))
-
     for i in pycompat.xrange(len(revs) - 1):
-        if progress:
-            progress.update(i + 1)
-
         prev = revs[i]
         curr = revs[i + 1]
 
-        linknode = lookup(store.node(curr))
+        node = store.node(curr)
+        linknode = lookup(node)
+        p1node, p2node = store.parents(node)
 
         if ellipses:
             linkrev = cl.rev(linknode)
@@ -786,21 +819,47 @@ def deltagroup(repo, revs, store, ischangelog, lookup, forcedeltaparentprev,
             # This is a node to send in full, because the changeset it
             # corresponds to was a full changeset.
             if linknode in fullclnodes:
-                delta = _revisiondeltanormal(store, curr, prev, linknode,
-                                             forcedeltaparentprev)
-            elif linkrev not in precomputedellipsis:
-                delta = None
-            else:
-                delta = _revisiondeltanarrow(
-                    cl, store, ischangelog, curr, linkrev, linknode,
-                    clrevtolocalrev, fullclnodes,
-                    precomputedellipsis)
-        else:
-            delta = _revisiondeltanormal(store, curr, prev, linknode,
-                                         forcedeltaparentprev)
+                requests.append(revisiondeltarequest(
+                    node=node,
+                    p1node=p1node,
+                    p2node=p2node,
+                    linknode=linknode,
+                    baserev=None,
+                ))
 
-        if delta:
-            yield delta
+            elif linkrev not in precomputedellipsis:
+                pass
+            else:
+                requests.append(_makenarrowdeltarequest(
+                    cl, store, ischangelog, curr, node, linkrev, linknode,
+                    clrevtolocalrev, fullclnodes,
+                    precomputedellipsis))
+        else:
+            requests.append(revisiondeltarequest(
+                node=node,
+                p1node=p1node,
+                p2node=p2node,
+                linknode=linknode,
+                baserev=prev if forcedeltaparentprev else None,
+            ))
+
+    # We expect the first pass to be fast, so we only engage the progress
+    # meter for constructing the revision deltas.
+    progress = None
+    if units is not None:
+        progress = repo.ui.makeprogress(_('bundling'), unit=units,
+                                        total=len(requests))
+
+    prevrev = revs[0]
+    for i, request in enumerate(requests):
+        if progress:
+            progress.update(i + 1)
+
+        delta = _handlerevisiondeltarequest(store, request, prevrev)
+
+        yield delta
+
+        prevrev = store.rev(request.node)
 
     if progress:
         progress.complete()

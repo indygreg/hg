@@ -98,6 +98,32 @@ annotate cache greatly. Run "debugbuildlinkrevcache" before
     perfhack = True
 """
 
+# TODO from import:
+# * `branch` is probably the wrong term, throughout the code.
+#
+# * replace the fastannotate `modes` configuration with a collection
+#   of booleans.
+#
+# * Use the templater instead of bespoke formatting
+#
+# * rename the config knob for updating the local cache from a remote server
+#
+# * remove the remotefilelog-peer-sharing functionality
+#
+# * move various global-setup bits to extsetup() or reposetup()
+#
+# * assume repo.requirements will always exist
+#
+# * move `flock` based locking to a common area
+#
+# * revise wireprotocol for sharing annotate files
+#
+# * figure out a sensible default for `mainbranch` (with the caveat
+#   that we probably also want to figure out a better term than
+#   `branch`, see above)
+#
+# * format changes to the revmap file (maybe use length-encoding
+#   instead of null-terminated file paths at least?)
 from __future__ import absolute_import
 
 from mercurial.i18n import _

@@ -910,6 +910,7 @@ class prefixdirmatcher(basematcher):
             return self._matcher.visitchildrenset(dir[len(self._pathprefix):])
         if dir in self._pathdirs:
             return 'this'
+        return set()
 
     def isexact(self):
         return self._matcher.isexact()

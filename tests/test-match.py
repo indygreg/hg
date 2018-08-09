@@ -97,6 +97,8 @@ class PatternMatcherTests(unittest.TestCase):
         self.assertEqual(m.visitchildrenset('.'), 'this')
         self.assertEqual(m.visitchildrenset('dir/subdir/x'), set())
         self.assertEqual(m.visitchildrenset('folder'), set())
+        # FIXME: These should probably be {'subdir'} and 'this', respectively,
+        # or at least 'this' and 'this'.
         self.assertEqual(m.visitchildrenset('dir'), set())
         self.assertEqual(m.visitchildrenset('dir/subdir'), set())
 

@@ -15,6 +15,7 @@ from mercurial.node import (
     nullrev,
 )
 from mercurial import (
+    node as nodemod,
     policy,
     pycompat,
 )
@@ -201,7 +202,7 @@ class parseindex2tests(unittest.TestCase):
             try:
                 self.assertEqual(
                     ix[r[7]], i,
-                    'Reverse lookup inconsistent for %r' % r[7].encode('hex'))
+                    'Reverse lookup inconsistent for %r' % nodemod.hex(r[7]))
             except TypeError:
                 # pure version doesn't support this
                 break

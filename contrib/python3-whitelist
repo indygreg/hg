@@ -363,6 +363,7 @@ test-parents.t
 test-parseindex2.py
 test-patch-offset.t
 test-patch.t
+test-patchbomb-bookmark.t
 test-patchbomb-tls.t
 test-pathconflicts-merge.t
 test-pathconflicts-update.t

@@ -789,12 +789,19 @@ def email(ui, repo, *revs, **opts):
         # TODO(durin42): this should probably be cleaned up above in the future.
         if pycompat.ispy3:
             for hdr, val in list(m.items()):
+                change = False
                 if isinstance(hdr, bytes):
                     del m[hdr]
                     hdr = pycompat.strurl(hdr)
+                    change = True
                 if isinstance(val, bytes):
                     val = pycompat.strurl(val)
-                m[hdr] = val
+                    if not change:
+                        # prevent duplicate headers
+                        del m[hdr]
+                    change = True
+                if change:
+                    m[hdr] = val
         if opts.get('test'):
             ui.status(_('displaying '), subj, ' ...\n')
             ui.pager('email')

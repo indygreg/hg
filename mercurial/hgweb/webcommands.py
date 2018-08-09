@@ -276,9 +276,9 @@ def _search(web):
         if not funcsused.issubset(revset.safesymbols):
             return MODE_KEYWORD, query
 
-        mfunc = revset.match(web.repo.ui, revdef,
-                             lookup=revset.lookupfn(web.repo))
         try:
+            mfunc = revset.match(web.repo.ui, revdef,
+                                 lookup=revset.lookupfn(web.repo))
             revs = mfunc(web.repo)
             return MODE_REVSET, revs
             # ParseError: wrongly placed tokens, wrongs arguments, etc

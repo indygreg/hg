@@ -1227,6 +1227,16 @@ Search with revset syntax
   # Mode literal keyword search
   
   
+  $ get-with-headers.py $LOCALIP:$HGPORT 'log?rev=first(::)&style=raw'
+  200 Script output follows
+  
+  
+  # HG changesets search
+  # Node ID cad8025a2e87f88c06259790adfa15acb4080123
+  # Query "first(::)"
+  # Mode literal keyword search
+  
+  
 
 Revset query with foo-bar bookmark (issue5879)
 

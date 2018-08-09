@@ -100,8 +100,6 @@ annotate cache greatly. Run "debugbuildlinkrevcache" before
 #
 # * rename the config knob for updating the local cache from a remote server
 #
-# * move various global-setup bits to extsetup() or reposetup()
-#
 # * move `flock` based locking to a common area
 #
 # * revise wireprotocol for sharing annotate files
@@ -185,7 +183,9 @@ def uisetup(ui):
     if ui.configbool('fastannotate', 'useflock', _flockavailable()):
         context.pathhelper.lock = context.pathhelper._lockflock
 
+def extsetup(ui):
     # fastannotate has its own locking, without depending on repo lock
+    # TODO: avoid mutating this unless the specific repo has it enabled
     localrepo.localrepository._wlockfreeprefix.add('fastannotate/')
 
 def reposetup(ui, repo):

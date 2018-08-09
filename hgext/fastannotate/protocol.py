@@ -223,5 +223,7 @@ def clientreposetup(ui, repo):
     _registerwireprotocommand()
     if isinstance(repo, localrepo.localrepository):
         localreposetup(ui, repo)
+    # TODO: this mutates global state, but only if at least one repo
+    # has the extension enabled. This is probably bad for hgweb.
     if peersetup not in hg.wirepeersetupfuncs:
         hg.wirepeersetupfuncs.append(peersetup)

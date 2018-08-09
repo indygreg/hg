@@ -21,6 +21,7 @@ from mercurial.thirdparty.zope.interface import (
     verify as ziverify,
 )
 from mercurial import (
+    changegroup,
     bundlerepo,
     filelog,
     httppeer,
@@ -195,5 +196,30 @@ def main():
 
     # Conforms to imanifestdict.
     checkzobject(mctx.read())
+
+    ziverify.verifyClass(repository.irevisiondelta,
+                         changegroup.revisiondelta)
+    ziverify.verifyClass(repository.irevisiondeltarequest,
+                         changegroup.revisiondeltarequest)
+
+    rd = changegroup.revisiondelta(
+        node=b'',
+        p1node=b'',
+        p2node=b'',
+        basenode=b'',
+        linknode=b'',
+        flags=b'',
+        baserevisionsize=None,
+        revision=b'',
+        delta=None)
+    checkzobject(rd)
+
+    rdr = changegroup.revisiondeltarequest(
+        node=b'',
+        linknode=b'',
+        p1node=b'',
+        p2node=b'',
+        basenode=b'')
+    checkzobject(rdr)
 
 main()

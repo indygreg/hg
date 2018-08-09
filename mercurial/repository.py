@@ -318,6 +318,87 @@ class peer(object):
             _('cannot %s; remote repository does not support the %r '
               'capability') % (purpose, name))
 
+class irevisiondelta(interfaceutil.Interface):
+    """Represents a delta between one revision and another.
+
+    Instances convey enough information to allow a revision to be exchanged
+    with another repository.
+
+    Instances represent the fulltext revision data or a delta against
+    another revision. Therefore the ``revision`` and ``delta`` attributes
+    are mutually exclusive.
+
+    Typically used for changegroup generation.
+    """
+
+    node = interfaceutil.Attribute(
+        """20 byte node of this revision.""")
+
+    p1node = interfaceutil.Attribute(
+        """20 byte node of 1st parent of this revision.""")
+
+    p2node = interfaceutil.Attribute(
+        """20 byte node of 2nd parent of this revision.""")
+
+    linknode = interfaceutil.Attribute(
+        """20 byte node of the changelog revision this node is linked to.""")
+
+    flags = interfaceutil.Attribute(
+        """2 bytes of integer flags that apply to this revision.""")
+
+    basenode = interfaceutil.Attribute(
+        """20 byte node of the revision this data is a delta against.
+
+        ``nullid`` indicates that the revision is a full revision and not
+        a delta.
+        """)
+
+    baserevisionsize = interfaceutil.Attribute(
+        """Size of base revision this delta is against.
+
+        May be ``None`` if ``basenode`` is ``nullid``.
+        """)
+
+    revision = interfaceutil.Attribute(
+        """Raw fulltext of revision data for this node.""")
+
+    delta = interfaceutil.Attribute(
+        """Delta between ``basenode`` and ``node``.
+
+        Stored in the bdiff delta format.
+        """)
+
+class irevisiondeltarequest(interfaceutil.Interface):
+    """Represents a request to generate an ``irevisiondelta``."""
+
+    node = interfaceutil.Attribute(
+        """20 byte node of revision being requested.""")
+
+    p1node = interfaceutil.Attribute(
+        """20 byte node of 1st parent of revision.""")
+
+    p2node = interfaceutil.Attribute(
+        """20 byte node of 2nd parent of revision.""")
+
+    linknode = interfaceutil.Attribute(
+        """20 byte node to store in ``linknode`` attribute.""")
+
+    basenode = interfaceutil.Attribute(
+        """Base revision that delta should be generated against.
+
+        If ``nullid``, the derived ``irevisiondelta`` should have its
+        ``revision`` field populated and no delta should be generated.
+
+        If ``None``, the delta may be generated against any revision that
+        is an ancestor of this revision. Or a full revision may be used.
+
+        If any other value, the delta should be produced against that
+        revision.
+        """)
+
+    ellipsis = interfaceutil.Attribute(
+        """Boolean on whether the ellipsis flag should be set.""")
+
 class ifilerevisionssequence(interfaceutil.Interface):
     """Contains index data for all revisions of a file.
 

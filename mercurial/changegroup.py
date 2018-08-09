@@ -36,6 +36,7 @@ from . import (
 )
 
 from .utils import (
+    interfaceutil,
     stringutil,
 )
 
@@ -501,58 +502,27 @@ class headerlessfixup(object):
             return d
         return readexactly(self._fh, n)
 
+@interfaceutil.implementer(repository.irevisiondeltarequest)
 @attr.s(slots=True, frozen=True)
 class revisiondeltarequest(object):
-    """Describes a request to construct a revision delta.
-
-    Instances are converted into ``revisiondelta`` later.
-    """
-    # Revision whose delta will be generated.
     node = attr.ib()
-
-    # Linknode value.
     linknode = attr.ib()
-
-    # Parent revisions to record in ``revisiondelta`` instance.
     p1node = attr.ib()
     p2node = attr.ib()
-
-    # Base revision that delta should be generated against. If nullid,
-    # the full revision data should be populated. If None, the delta
-    # may be generated against any base revision that is an ancestor of
-    # this revision. If any other value, the delta should be produced
-    # against that revision.
     basenode = attr.ib()
-
-    # Whether this should be marked as an ellipsis revision.
     ellipsis = attr.ib(default=False)
 
+@interfaceutil.implementer(repository.irevisiondelta)
 @attr.s(slots=True, frozen=True)
 class revisiondelta(object):
-    """Describes a delta entry in a changegroup.
-
-    Captured data is sufficient to serialize the delta into multiple
-    formats.
-
-    ``revision`` and ``delta`` are mutually exclusive.
-    """
-    # 20 byte node of this revision.
     node = attr.ib()
-    # 20 byte nodes of parent revisions.
     p1node = attr.ib()
     p2node = attr.ib()
-    # 20 byte node of node this delta is against.
     basenode = attr.ib()
-    # 20 byte node of changeset revision this delta is associated with.
     linknode = attr.ib()
-    # 2 bytes of flags to apply to revision data.
     flags = attr.ib()
-    # Size of base revision this delta is against. May be None if
-    # basenode is nullid.
     baserevisionsize = attr.ib()
-    # Raw fulltext revision data.
     revision = attr.ib()
-    # Delta between the basenode and node.
     delta = attr.ib()
 
 def _revisiondeltatochunks(delta, headerfn):

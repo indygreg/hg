@@ -130,33 +130,35 @@ def importparsers(hexversion):
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     return p.communicate()  # returns stdout, stderr
 
-def printhexfail(testnumber, hexversion, stdout, expected):
+def hexfailmsg(testnumber, hexversion, stdout, expected):
     try:
         hexstring = hex(hexversion)
     except TypeError:
         hexstring = None
-    print("FAILED: version test #%s with Python %s and patched "
-          "sys.hexversion %r (%r):\n Expected %s but got:\n-->'%s'\n" %
-          (testnumber, sys.version_info, hexversion, hexstring, expected,
-           stdout))
-
-def testversionokay(testnumber, hexversion):
-    stdout, stderr = importparsers(hexversion)
-    if stdout:
-        printhexfail(testnumber, hexversion, stdout, expected="no stdout")
-
-def testversionfail(testnumber, hexversion):
-    stdout, stderr = importparsers(hexversion)
-    # We include versionerrortext to distinguish from other ImportErrors.
-    errtext = b"ImportError: %s" % pycompat.sysbytes(parsers.versionerrortext)
-    if errtext not in stdout:
-        printhexfail(testnumber, hexversion, stdout,
-                     expected="stdout to contain %r" % errtext)
+    return ("FAILED: version test #%s with Python %s and patched "
+            "sys.hexversion %r (%r):\n Expected %s but got:\n-->'%s'\n" %
+            (testnumber, sys.version_info, hexversion, hexstring, expected,
+             stdout))
 
 def makehex(major, minor, micro):
     return int("%x%02x%02x00" % (major, minor, micro), 16)
 
 class parseindex2tests(unittest.TestCase):
+
+    def assertversionokay(self, testnumber, hexversion):
+        stdout, stderr = importparsers(hexversion)
+        self.assertFalse(
+            stdout, hexfailmsg(testnumber, hexversion, stdout, 'no stdout'))
+
+    def assertversionfail(self, testnumber, hexversion):
+        stdout, stderr = importparsers(hexversion)
+        # We include versionerrortext to distinguish from other ImportErrors.
+        errtext = b"ImportError: %s" % pycompat.sysbytes(
+            parsers.versionerrortext)
+        self.assertIn(errtext, stdout,
+                      hexfailmsg(testnumber, hexversion, stdout,
+                                 expected="stdout to contain %r" % errtext))
+
     def testversiondetection(self):
         """Check the version-detection logic when importing parsers."""
         # Only test the version-detection logic if it is present.
@@ -167,12 +169,12 @@ class parseindex2tests(unittest.TestCase):
         info = sys.version_info
         major, minor, micro = info[0], info[1], info[2]
         # Test same major-minor versions.
-        testversionokay(1, makehex(major, minor, micro))
-        testversionokay(2, makehex(major, minor, micro + 1))
+        self.assertversionokay(1, makehex(major, minor, micro))
+        self.assertversionokay(2, makehex(major, minor, micro + 1))
         # Test different major-minor versions.
-        testversionfail(3, makehex(major + 1, minor, micro))
-        testversionfail(4, makehex(major, minor + 1, micro))
-        testversionfail(5, "'foo'")
+        self.assertversionfail(3, makehex(major + 1, minor, micro))
+        self.assertversionfail(4, makehex(major, minor + 1, micro))
+        self.assertversionfail(5, "'foo'")
 
     def testbadargs(self):
         # Check that parse_index2() raises TypeError on bad arguments.

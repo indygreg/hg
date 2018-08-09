@@ -378,8 +378,8 @@ def _getbundlemsgs(repo, sender, bundle, **opts):
     datapart = emimebase.MIMEBase('application', 'x-mercurial-bundle')
     datapart.set_payload(bundle)
     bundlename = '%s.hg' % opts.get(r'bundlename', 'bundle')
-    datapart.add_header('Content-Disposition', 'attachment',
-                        filename=bundlename)
+    datapart.add_header(r'Content-Disposition', r'attachment',
+                        filename=encoding.strfromlocal(bundlename))
     emailencoders.encode_base64(datapart)
     msg.attach(datapart)
     msg['Subject'] = mail.headencode(ui, subj, _charsets, opts.get(r'test'))

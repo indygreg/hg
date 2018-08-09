@@ -303,7 +303,7 @@ class changelog(revlog.revlog):
         # Delta chains for changelogs tend to be very small because entries
         # tend to be small and don't delta well with each. So disable delta
         # chains.
-        self.storedeltachains = False
+        self._storedeltachains = False
 
         self._realopener = opener
         self._delayed = False

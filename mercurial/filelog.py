@@ -26,7 +26,6 @@ class filelog(object):
         self.filename = path
         self.index = self._revlog.index
         self.version = self._revlog.version
-        self.storedeltachains = self._revlog.storedeltachains
         self._generaldelta = self._revlog._generaldelta
 
     def __len__(self):

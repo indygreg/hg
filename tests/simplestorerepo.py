@@ -105,7 +105,6 @@ class filestorage(object):
 
         # This is used by changegroup code :/
         self._generaldelta = True
-        self.storedeltachains = False
 
         self.version = 1
 

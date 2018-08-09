@@ -723,14 +723,6 @@ class ifilestorage(ifileindex, ifiledata, ifilemutation):
         TODO this feels revlog centric and could likely be removed.
         """)
 
-    storedeltachains = interfaceutil.Attribute(
-        """Whether the store stores deltas.
-
-        TODO deltachains are revlog centric. This can probably removed
-        once there are better abstractions for obtaining/writing
-        data.
-        """)
-
     _generaldelta = interfaceutil.Attribute(
         """Whether deltas can be against any parent revision.
 

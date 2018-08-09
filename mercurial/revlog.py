@@ -627,7 +627,7 @@ class _deltacomputer(object):
         p1r, p2r = revlog.rev(p1), revlog.rev(p2)
 
         # should we try to build a delta?
-        if prev != nullrev and revlog.storedeltachains:
+        if prev != nullrev and revlog._storedeltachains:
             tested = set()
             # This condition is true most of the time when processing
             # changegroup data into a generaldelta repo. The only time it
@@ -1075,7 +1075,7 @@ class revlog(object):
             raise RevlogError(_('unknown version (%d) in revlog %s') %
                               (fmt, self.indexfile))
 
-        self.storedeltachains = True
+        self._storedeltachains = True
 
         self._io = revlogio()
         if self.version == REVLOGV0:
@@ -2995,7 +2995,7 @@ class revlog(object):
                 # cached, meaning less CPU for delta generation. There is
                 # likely room to add a flag and/or config option to control this
                 # behavior.
-                if deltaparentrev == nullrev and self.storedeltachains:
+                if deltaparentrev == nullrev and self._storedeltachains:
                     baserev = prevrev
 
                 # Revlog is configured to use full snapshot for a reason.

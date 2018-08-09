@@ -186,11 +186,10 @@ class parseindex2tests(unittest.TestCase):
 
         py_res_1 = py_parseindex(data_inlined, True)
         c_res_1 = parse_index2(data_inlined, True)
+        self.assertEqual(py_res_1, c_res_1) # inline data
 
         py_res_2 = py_parseindex(data_non_inlined, False)
         c_res_2 = parse_index2(data_non_inlined, False)
-
-        self.assertEqual(py_res_1, c_res_1) # inline data
         self.assertEqual(py_res_2, c_res_2) # no inline data
 
         ix = parsers.parse_index2(data_inlined, True)[0]

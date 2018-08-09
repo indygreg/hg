@@ -184,13 +184,13 @@ class parseindex2tests(unittest.TestCase):
         # original Python implementation of parseindex, both with and
         # without inlined data.
 
-        py_res_1 = py_parseindex(data_inlined, True)
-        c_res_1 = parse_index2(data_inlined, True)
-        self.assertEqual(py_res_1, c_res_1) # inline data
+        want = py_parseindex(data_inlined, True)
+        got = parse_index2(data_inlined, True)
+        self.assertEqual(want, got) # inline data
 
-        py_res_2 = py_parseindex(data_non_inlined, False)
-        c_res_2 = parse_index2(data_non_inlined, False)
-        self.assertEqual(py_res_2, c_res_2) # no inline data
+        want = py_parseindex(data_non_inlined, False)
+        got = parse_index2(data_non_inlined, False)
+        self.assertEqual(want, got) # no inline data
 
         ix = parsers.parse_index2(data_inlined, True)[0]
         for i, r in enumerate(ix):

@@ -52,7 +52,7 @@ class BaseIndexObject(object):
         return i
 
     def __getitem__(self, i):
-        if i == -1 or i == len(self):
+        if i == -1:
             return (0, 0, 0, -1, -1, -1, -1, nullid)
         i = self._fix_index(i)
         if i >= self._lgt:

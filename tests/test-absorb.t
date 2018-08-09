@@ -268,7 +268,7 @@ Use pattern to select files to be fixed up:
   b Line 1
   b Line 2
 
-Test config option absorb.maxstacksize:
+Test config option absorb.max-stack-size:
 
   $ sedi 's/Line/line/' a b
   $ hg log -T '{rev}:{node} {desc}\n'
@@ -276,7 +276,7 @@ Test config option absorb.maxstacksize:
   2:74cfa6294160149d60adbf7582b99ce37a4597ec commit b 1
   1:28f10dcf96158f84985358a2e5d5b3505ca69c22 commit a 2
   0:f9a81da8dc53380ed91902e5b82c1b36255a4bd0 commit a 1
-  $ hg --config absorb.maxstacksize=1 absorb -pn
+  $ hg --config absorb.max-stack-size=1 absorb -pn
   absorb: only the recent 1 changesets will be analysed
   showing changes for a
           @@ -0,2 +0,2 @@
@@ -297,10 +297,10 @@ Test obsolete markers creation:
   > [experimental]
   > evolution=createmarkers
   > [absorb]
-  > addnoise=1
+  > add-noise=1
   > EOF
 
-  $ hg --config absorb.maxstacksize=3 absorb
+  $ hg --config absorb.max-stack-size=3 absorb
   absorb: only the recent 3 changesets will be analysed
   2 of 2 chunk(s) applied
   $ hg log -T '{rev}:{node|short} {desc} {get(extras, "absorb_source")}\n'

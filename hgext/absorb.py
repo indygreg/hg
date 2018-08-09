@@ -14,11 +14,11 @@ amend modified chunks into the corresponding non-public changesets.
 
     [absorb]
     # only check 50 recent non-public changesets at most
-    maxstacksize = 50
+    max-stack-size = 50
     # whether to add noise to new commits to avoid obsolescence cycle
-    addnoise = 1
+    add-noise = 1
     # make `amend --correlated` a shortcut to the main command
-    amendflag = correlated
+    amend-flag = correlated
 
     [color]
     absorb.node = blue bold
@@ -69,9 +69,9 @@ command = registrar.command(cmdtable)
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('absorb', 'addnoise', default=True)
-configitem('absorb', 'amendflag', default=None)
-configitem('absorb', 'maxstacksize', default=50)
+configitem('absorb', 'add-noise', default=True)
+configitem('absorb', 'amend-flag', default=None)
+configitem('absorb', 'max-stack-size', default=50)
 
 colortable = {
     'absorb.node': 'blue bold',
@@ -826,7 +826,7 @@ class fixupstate(object):
         """
         parents = p1 and (p1, node.nullid)
         extra = ctx.extra()
-        if self._useobsolete and self.ui.configbool('absorb', 'addnoise'):
+        if self._useobsolete and self.ui.configbool('absorb', 'add-noise'):
             extra['absorb_source'] = ctx.hex()
         mctx = overlaycontext(memworkingcopy, ctx, parents, extra=extra)
         # preserve phase
@@ -910,7 +910,7 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
     return fixupstate.
     """
     if stack is None:
-        limit = ui.configint('absorb', 'maxstacksize')
+        limit = ui.configint('absorb', 'max-stack-size')
         stack = getdraftstack(repo['.'], limit)
         if limit and len(stack) >= limit:
             ui.warn(_('absorb: only the recent %d changesets will '

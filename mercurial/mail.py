@@ -152,8 +152,9 @@ def _smtp(ui):
 def _sendmail(ui, sender, recipients, msg):
     '''send mail using sendmail.'''
     program = ui.config('email', 'method')
-    cmdline = '%s -f %s %s' % (program, stringutil.email(sender),
-                               ' '.join(map(stringutil.email, recipients)))
+    stremail = lambda x: stringutil.email(encoding.strtolocal(x))
+    cmdline = '%s -f %s %s' % (program, stremail(sender),
+                               ' '.join(map(stremail, recipients)))
     ui.note(_('sending mail: %s\n') % cmdline)
     fp = procutil.popen(cmdline, 'wb')
     fp.write(util.tonativeeol(msg))
@@ -169,7 +170,8 @@ def _mbox(mbox, sender, recipients, msg):
     # Should be time.asctime(), but Windows prints 2-characters day
     # of month instead of one. Make them print the same thing.
     date = time.strftime(r'%a %b %d %H:%M:%S %Y', time.localtime())
-    fp.write('From %s %s\n' % (sender, date))
+    fp.write('From %s %s\n' % (encoding.strtolocal(sender),
+                               encoding.strtolocal(date)))
     fp.write(msg)
     fp.write('\n\n')
     fp.close()

@@ -31,7 +31,6 @@ from . import (
     phases,
     pycompat,
     repository,
-    revlog,
     util,
 )
 
@@ -512,19 +511,6 @@ class revisiondeltarequest(object):
     basenode = attr.ib()
     ellipsis = attr.ib(default=False)
 
-@interfaceutil.implementer(repository.irevisiondelta)
-@attr.s(slots=True, frozen=True)
-class revisiondelta(object):
-    node = attr.ib()
-    p1node = attr.ib()
-    p2node = attr.ib()
-    basenode = attr.ib()
-    linknode = attr.ib()
-    flags = attr.ib()
-    baserevisionsize = attr.ib()
-    revision = attr.ib()
-    delta = attr.ib()
-
 def _revisiondeltatochunks(delta, headerfn):
     """Serialize a revisiondelta to changegroup chunks."""
 
@@ -582,77 +568,6 @@ def _sortnodesellipsis(store, nodes, cl, lookup):
     # by the order in which they are used by the changelog.
     key = lambda n: cl.rev(lookup(n))
     return [store.rev(n) for n in sorted(nodes, key=key)]
-
-def _handlerevisiondeltarequest(store, request, prevnode):
-    """Obtain a revisiondelta from a revisiondeltarequest"""
-
-    node = request.node
-    rev = store.rev(node)
-
-    # Requesting a full revision.
-    if request.basenode == nullid:
-        baserev = nullrev
-    # Requesting an explicit revision.
-    elif request.basenode is not None:
-        baserev = store.rev(request.basenode)
-    # Allowing us to choose.
-    else:
-        p1, p2 = store.parentrevs(rev)
-        dp = store.deltaparent(rev)
-
-        if dp == nullrev and store.storedeltachains:
-            # Avoid sending full revisions when delta parent is null. Pick prev
-            # in that case. It's tempting to pick p1 in this case, as p1 will
-            # be smaller in the common case. However, computing a delta against
-            # p1 may require resolving the raw text of p1, which could be
-            # expensive. The revlog caches should have prev cached, meaning
-            # less CPU for changegroup generation. There is likely room to add
-            # a flag and/or config option to control this behavior.
-            baserev = store.rev(prevnode)
-        elif dp == nullrev:
-            # revlog is configured to use full snapshot for a reason,
-            # stick to full snapshot.
-            baserev = nullrev
-        elif dp not in (p1, p2, store.rev(prevnode)):
-            # Pick prev when we can't be sure remote has the base revision.
-            baserev = store.rev(prevnode)
-        else:
-            baserev = dp
-
-        if baserev != nullrev and not store.candelta(baserev, rev):
-            baserev = nullrev
-
-    revision = None
-    delta = None
-    baserevisionsize = None
-
-    if store.iscensored(baserev) or store.iscensored(rev):
-        try:
-            revision = store.revision(node, raw=True)
-        except error.CensoredNodeError as e:
-            revision = e.tombstone
-
-        if baserev != nullrev:
-            baserevisionsize = store.rawsize(baserev)
-
-    elif baserev == nullrev:
-        revision = store.revision(node, raw=True)
-    else:
-        delta = store.revdiff(baserev, rev)
-
-    extraflags = revlog.REVIDX_ELLIPSIS if request.ellipsis else 0
-
-    return revisiondelta(
-        node=node,
-        p1node=request.p1node,
-        p2node=request.p2node,
-        linknode=request.linknode,
-        basenode=store.node(baserev),
-        flags=store.flags(rev) | extraflags,
-        baserevisionsize=baserevisionsize,
-        revision=revision,
-        delta=delta,
-    )
 
 def _makenarrowdeltarequest(cl, store, ischangelog, rev, node, linkrev,
                             linknode, clrevtolocalrev, fullclnodes,
@@ -832,16 +747,11 @@ def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
         progress = repo.ui.makeprogress(_('bundling'), unit=units,
                                         total=len(requests))
 
-    prevnode = store.node(revs[0])
-    for i, request in enumerate(requests):
+    for i, delta in enumerate(store.emitrevisiondeltas(requests)):
         if progress:
             progress.update(i + 1)
 
-        delta = _handlerevisiondeltarequest(store, request, prevnode)
-
         yield delta
-
-        prevnode = request.node
 
     if progress:
         progress.complete()

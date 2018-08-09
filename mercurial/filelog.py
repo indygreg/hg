@@ -95,6 +95,9 @@ class filelog(object):
     def revdiff(self, rev1, rev2):
         return self._revlog.revdiff(rev1, rev2)
 
+    def emitrevisiondeltas(self, requests):
+        return self._revlog.emitrevisiondeltas(requests)
+
     def addrevision(self, revisiondata, transaction, linkrev, p1, p2,
                     node=None, flags=revlog.REVIDX_DEFAULT_FLAGS,
                     cachedelta=None):

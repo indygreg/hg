@@ -621,6 +621,30 @@ class ifiledata(interfaceutil.Interface):
         revision data.
         """
 
+    def emitrevisiondeltas(requests):
+        """Produce ``irevisiondelta`` from ``irevisiondeltarequest``s.
+
+        Given an iterable of objects conforming to the ``irevisiondeltarequest``
+        interface, emits objects conforming to the ``irevisiondelta``
+        interface.
+
+        This method is a generator.
+
+        ``irevisiondelta`` should be emitted in the same order of
+        ``irevisiondeltarequest`` that was passed in.
+
+        The emitted objects MUST conform by the results of
+        ``irevisiondeltarequest``. Namely, they must respect any requests
+        for building a delta from a specific ``basenode`` if defined.
+
+        When sending deltas, implementations must take into account whether
+        the client has the base delta before encoding a delta against that
+        revision. A revision encountered previously in ``requests`` is
+        always a suitable base revision. An example of a bad delta is a delta
+        against a non-ancestor revision. Another example of a bad delta is a
+        delta against a censored revision.
+        """
+
 class ifilemutation(interfaceutil.Interface):
     """Storage interface for mutation events of a tracked file."""
 

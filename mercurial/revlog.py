@@ -45,10 +45,12 @@ from . import (
     mdiff,
     policy,
     pycompat,
+    repository,
     templatefilters,
     util,
 )
 from .utils import (
+    interfaceutil,
     stringutil,
 )
 
@@ -820,6 +822,19 @@ class _revisioninfo(object):
     textlen = attr.ib()
     cachedelta = attr.ib()
     flags = attr.ib()
+
+@interfaceutil.implementer(repository.irevisiondelta)
+@attr.s(slots=True, frozen=True)
+class revlogrevisiondelta(object):
+    node = attr.ib()
+    p1node = attr.ib()
+    p2node = attr.ib()
+    basenode = attr.ib()
+    linknode = attr.ib()
+    flags = attr.ib()
+    baserevisionsize = attr.ib()
+    revision = attr.ib()
+    delta = attr.ib()
 
 # index v0:
 #  4 bytes: offset
@@ -2949,6 +2964,87 @@ class revlog(object):
         if not self._inline:
             res.append(self.datafile)
         return res
+
+    def emitrevisiondeltas(self, requests):
+        frev = self.rev
+
+        prevrev = None
+        for request in requests:
+            node = request.node
+            rev = frev(node)
+
+            if prevrev is None:
+                prevrev = self.index[rev][5]
+
+            # Requesting a full revision.
+            if request.basenode == nullid:
+                baserev = nullrev
+            # Requesting an explicit revision.
+            elif request.basenode is not None:
+                baserev = frev(request.basenode)
+            # Allowing us to choose.
+            else:
+                p1rev, p2rev = self.parentrevs(rev)
+                deltaparentrev = self.deltaparent(rev)
+
+                # Avoid sending full revisions when delta parent is null. Pick
+                # prev in that case. It's tempting to pick p1 in this case, as
+                # p1 will be smaller in the common case. However, computing a
+                # delta against p1 may require resolving the raw text of p1,
+                # which could be expensive. The revlog caches should have prev
+                # cached, meaning less CPU for delta generation. There is
+                # likely room to add a flag and/or config option to control this
+                # behavior.
+                if deltaparentrev == nullrev and self.storedeltachains:
+                    baserev = prevrev
+
+                # Revlog is configured to use full snapshot for a reason.
+                # Stick to full snapshot.
+                elif deltaparentrev == nullrev:
+                    baserev = nullrev
+
+                # Pick previous when we can't be sure the base is available
+                # on consumer.
+                elif deltaparentrev not in (p1rev, p2rev, prevrev):
+                    baserev = prevrev
+                else:
+                    baserev = deltaparentrev
+
+                if baserev != nullrev and not self.candelta(baserev, rev):
+                    baserev = nullrev
+
+            revision = None
+            delta = None
+            baserevisionsize = None
+
+            if self.iscensored(baserev) or self.iscensored(rev):
+                try:
+                    revision = self.revision(node, raw=True)
+                except error.CensoredNodeError as e:
+                    revision = e.tombstone
+
+                if baserev != nullrev:
+                    baserevisionsize = self.rawsize(baserev)
+
+            elif baserev == nullrev:
+                revision = self.revision(node, raw=True)
+            else:
+                delta = self.revdiff(baserev, rev)
+
+            extraflags = REVIDX_ELLIPSIS if request.ellipsis else 0
+
+            yield revlogrevisiondelta(
+                node=node,
+                p1node=request.p1node,
+                p2node=request.p2node,
+                linknode=request.linknode,
+                basenode=self.node(baserev),
+                flags=self.flags(rev) | extraflags,
+                baserevisionsize=baserevisionsize,
+                revision=revision,
+                delta=delta)
+
+            prevrev = rev
 
     DELTAREUSEALWAYS = 'always'
     DELTAREUSESAMEREVS = 'samerevs'

@@ -29,6 +29,7 @@ from mercurial import (
     manifest,
     pycompat,
     repository,
+    revlog,
     sshpeer,
     statichttprepo,
     ui as uimod,
@@ -198,11 +199,11 @@ def main():
     checkzobject(mctx.read())
 
     ziverify.verifyClass(repository.irevisiondelta,
-                         changegroup.revisiondelta)
+                         revlog.revlogrevisiondelta)
     ziverify.verifyClass(repository.irevisiondeltarequest,
                          changegroup.revisiondeltarequest)
 
-    rd = changegroup.revisiondelta(
+    rd = revlog.revlogrevisiondelta(
         node=b'',
         p1node=b'',
         p2node=b'',

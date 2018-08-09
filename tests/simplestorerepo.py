@@ -22,6 +22,7 @@ from mercurial.node import (
     nullrev,
 )
 from mercurial.thirdparty import (
+    attr,
     cbor,
 )
 from mercurial import (
@@ -59,6 +60,19 @@ def validatenode(node):
 def validaterev(rev):
     if not isinstance(rev, int):
         raise ValueError('expected int')
+
+@interfaceutil.implementer(repository.irevisiondelta)
+@attr.s(slots=True, frozen=True)
+class simplestorerevisiondelta(object):
+    node = attr.ib()
+    p1node = attr.ib()
+    p2node = attr.ib()
+    basenode = attr.ib()
+    linknode = attr.ib()
+    flags = attr.ib()
+    baserevisionsize = attr.ib()
+    revision = attr.ib()
+    delta = attr.ib()
 
 @interfaceutil.implementer(repository.ifilestorage)
 class filestorage(object):
@@ -499,6 +513,54 @@ class filestorage(object):
 
         return mdiff.textdiff(self.revision(node1, raw=True),
                               self.revision(node2, raw=True))
+
+    def emitrevisiondeltas(self, requests):
+        for request in requests:
+            node = request.node
+            rev = self.rev(node)
+
+            if request.basenode == nullid:
+                baserev = nullrev
+            elif request.basenode is not None:
+                baserev = self.rev(request.basenode)
+            else:
+                # This is a test extension and we can do simple things
+                # for choosing a delta parent.
+                baserev = self.deltaparent(rev)
+
+                if baserev != nullrev and not self.candelta(baserev, rev):
+                    baserev = nullrev
+
+            revision = None
+            delta = None
+            baserevisionsize = None
+
+            if self.iscensored(baserev) or self.iscensored(rev):
+                try:
+                    revision = self.revision(node, raw=True)
+                except error.CensoredNodeError as e:
+                    revision = e.tombstone
+
+                if baserev != nullrev:
+                    baserevisionsize = self.rawsize(baserev)
+
+            elif baserev == nullrev:
+                revision = self.revision(node, raw=True)
+            else:
+                delta = self.revdiff(baserev, rev)
+
+            extraflags = revlog.REVIDX_ELLIPSIS if request.ellipsis else 0
+
+            yield simplestorerevisiondelta(
+                node=node,
+                p1node=request.p1node,
+                p2node=request.p2node,
+                linknode=request.linknode,
+                basenode=self.node(baserev),
+                flags=self.flags(rev) | extraflags,
+                baserevisionsize=baserevisionsize,
+                revision=revision,
+                delta=delta)
 
     def headrevs(self):
         # Assume all revisions are heads by default.

@@ -1069,6 +1069,10 @@ static int nt_init(nodetree *self, indexObject *index, unsigned capacity)
 	self->capacity = capacity;
 	self->depth = 0;
 	self->splits = 0;
+	if ((size_t)self->capacity > INT_MAX / sizeof(nodetreenode)) {
+		PyErr_SetString(PyExc_ValueError, "overflow in init_nt");
+		return -1;
+	}
 	self->nodes = calloc(self->capacity, sizeof(nodetreenode));
 	if (self->nodes == NULL) {
 		PyErr_NoMemory();
@@ -1133,10 +1137,6 @@ static int nt_shortest(nodetree *self, const char *node)
 static int index_init_nt(indexObject *self)
 {
 	if (self->nt == NULL) {
-		if ((size_t)self->raw_length > INT_MAX / sizeof(nodetreenode)) {
-			PyErr_SetString(PyExc_ValueError, "overflow in index_init_nt");
-			return -1;
-		}
 		self->nt = PyMem_Malloc(sizeof(nodetree));
 		if (self->nt == NULL) {
 			PyErr_NoMemory();

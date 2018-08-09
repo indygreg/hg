@@ -771,7 +771,8 @@ def _makenarrowdeltarequest(cl, store, ischangelog, rev, node, linkrev,
         ellipsis=True,
     )
 
-def deltagroup(repo, revs, store, ischangelog, lookup, forcedeltaparentprev,
+def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
+               allowreorder,
                units=None,
                ellipses=False, clrevtolocalrev=None, fullclnodes=None,
                precomputedellipsis=None):
@@ -782,7 +783,7 @@ def deltagroup(repo, revs, store, ischangelog, lookup, forcedeltaparentprev,
     If units is not None, progress detail will be generated, units specifies
     the type of revlog that is touched (changelog, manifest, etc.).
     """
-    if not revs:
+    if not nodes:
         return
 
     # We perform two passes over the revisions whose data we will emit.
@@ -796,6 +797,17 @@ def deltagroup(repo, revs, store, ischangelog, lookup, forcedeltaparentprev,
     # The second pass is simply resolving the requested deltas.
 
     cl = repo.changelog
+
+    if ischangelog:
+        # Changelog doesn't benefit from reordering revisions. So send
+        # out revisions in store order.
+        # TODO the API would be cleaner if this were controlled by the
+        # store producing the deltas.
+        revs = sorted(cl.rev(n) for n in nodes)
+    elif ellipses:
+        revs = _sortnodesellipsis(store, nodes, cl, lookup)
+    else:
+        revs = _sortnodesnormal(store, nodes, allowreorder)
 
     # In the first pass, collect info about the deltas we'll be
     # generating.
@@ -1099,10 +1111,6 @@ class cgpacker(object):
 
             return x
 
-        # Changelog doesn't benefit from reordering revisions. So send out
-        # revisions in store order.
-        revs = sorted(cl.rev(n) for n in nodes)
-
         state = {
             'clrevorder': clrevorder,
             'mfs': mfs,
@@ -1111,8 +1119,10 @@ class cgpacker(object):
         }
 
         gen = deltagroup(
-            self._repo, revs, cl, True, lookupcl,
+            self._repo, cl, nodes, True, lookupcl,
             self._forcedeltaparentprev,
+            # Reorder settings are currently ignored for changelog.
+            True,
             ellipses=self._ellipses,
             units=_('changesets'),
             clrevtolocalrev={},
@@ -1129,7 +1139,6 @@ class cgpacker(object):
         change what is sent based in pulls vs pushes, etc.
         """
         repo = self._repo
-        cl = repo.changelog
         mfl = repo.manifestlog
         dirlog = mfl._revlog.dirlog
         tmfnodes = {'': mfs}
@@ -1192,16 +1201,9 @@ class cgpacker(object):
 
             lookupfn = makelookupmflinknode(dir, nodes)
 
-            if self._ellipses:
-                revs = _sortnodesellipsis(store, prunednodes, cl,
-                                          lookupfn)
-            else:
-                revs = _sortnodesnormal(store, prunednodes,
-                                        self._reorder)
-
             deltas = deltagroup(
-                self._repo, revs, store, False, lookupfn,
-                self._forcedeltaparentprev,
+                self._repo, store, prunednodes, False, lookupfn,
+                self._forcedeltaparentprev, self._reorder,
                 ellipses=self._ellipses,
                 units=_('manifests'),
                 clrevtolocalrev=clrevtolocalrev,
@@ -1260,7 +1262,6 @@ class cgpacker(object):
             linknodes = normallinknodes
 
         repo = self._repo
-        cl = repo.changelog
         progress = repo.ui.makeprogress(_('bundling'), unit=_('files'),
                                         total=len(changedfiles))
         for i, fname in enumerate(sorted(changedfiles)):
@@ -1284,18 +1285,11 @@ class cgpacker(object):
             if not filenodes:
                 continue
 
-            if self._ellipses:
-                revs = _sortnodesellipsis(filerevlog, filenodes,
-                                          cl, lookupfilelog)
-            else:
-                revs = _sortnodesnormal(filerevlog, filenodes,
-                                        self._reorder)
-
             progress.update(i + 1, item=fname)
 
             deltas = deltagroup(
-                self._repo, revs, filerevlog, False, lookupfilelog,
-                self._forcedeltaparentprev,
+                self._repo, filerevlog, filenodes, False, lookupfilelog,
+                self._forcedeltaparentprev, self._reorder,
                 ellipses=self._ellipses,
                 clrevtolocalrev=clrevtolocalrev,
                 fullclnodes=self._fullclnodes,

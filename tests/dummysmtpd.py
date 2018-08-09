@@ -26,7 +26,7 @@ class dummysmtpserver(smtpd.SMTPServer):
     def __init__(self, localaddr):
         smtpd.SMTPServer.__init__(self, localaddr, remoteaddr=None)
 
-    def process_message(self, peer, mailfrom, rcpttos, data):
+    def process_message(self, peer, mailfrom, rcpttos, data, **kwargs):
         log('%s from=%s to=%s\n' % (peer[0], mailfrom, ', '.join(rcpttos)))
 
     def handle_error(self):

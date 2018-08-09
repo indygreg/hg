@@ -1164,6 +1164,13 @@ def debugindexdot(ui, repo, file_=None, **opts):
             ui.write("\t%d -> %d\n" % (r.rev(pp[1]), i))
     ui.write("}\n")
 
+@command('debugindexstats', [])
+def debugindexstats(ui, repo):
+    """show stats related to the changelog index"""
+    repo.changelog.shortest(nullid, 1)
+    for k, v in sorted(repo.changelog.index.stats().items()):
+        ui.write('%s: %s\n' % (k, v))
+
 @command('debuginstall', [] + cmdutil.formatteropts, '', norepo=True)
 def debuginstall(ui, **opts):
     '''test Mercurial installation

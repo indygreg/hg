@@ -942,6 +942,8 @@ Test list of internal help commands
    debugindex    dump index data for a storage primitive
    debugindexdot
                  dump an index DAG as a graphviz dot file
+   debugindexstats
+                 show stats related to the changelog index
    debuginstall  test Mercurial installation
    debugknown    test whether node ids are known to a repo
    debuglocks    show or modify state of locks

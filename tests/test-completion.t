@@ -94,6 +94,7 @@ Show debug commands if there are no other candidates
   debugignore
   debugindex
   debugindexdot
+  debugindexstats
   debuginstall
   debugknown
   debuglabelcomplete
@@ -282,6 +283,7 @@ Show all commands + options
   debugignore: 
   debugindex: changelog, manifest, dir, template
   debugindexdot: changelog, manifest, dir
+  debugindexstats: 
   debuginstall: template
   debugknown: 
   debuglabelcomplete: 

@@ -177,6 +177,16 @@ Test debugindex, with and without the --verbose/--debug flag
 debugdelta chain basic output
 
 #if reporevlogstore
+  $ hg debugindexstats
+  node trie capacity: 4
+  node trie count: 2
+  node trie depth: 1
+  node trie last rev scanned: -1
+  node trie lookups: 4
+  node trie misses: 1
+  node trie splits: 1
+  revs in memory: 3
+
   $ hg debugdeltachain -m
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
         0       1        1       -1    base         44         43         44   1.02326        44         0    0.00000

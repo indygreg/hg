@@ -427,6 +427,8 @@ def ellipsis(text, maxlength=400):
     return encoding.trim(text, maxlength, ellipsis='...')
 
 def escapestr(s):
+    if isinstance(s, memoryview):
+        s = bytes(s)
     # call underlying function of s.encode('string_escape') directly for
     # Python 3 compatibility
     return codecs.escape_encode(s)[0]

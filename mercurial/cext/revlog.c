@@ -1535,7 +1535,7 @@ static PyObject *find_deepest(indexObject *self, PyObject *revs)
 		goto bail;
 	}
 
-	interesting = calloc(sizeof(*interesting), 1 << revcount);
+	interesting = calloc(sizeof(*interesting), ((size_t)1) << revcount);
 	if (interesting == NULL) {
 		PyErr_NoMemory();
 		goto bail;

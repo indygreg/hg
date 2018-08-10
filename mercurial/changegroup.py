@@ -946,8 +946,6 @@ class cgpacker(object):
         clrevorder = {}
         mfs = {} # needed manifests
         mfl = self._repo.manifestlog
-        # TODO violates storage abstraction.
-        mfrevlog = mfl._revlog
         changedfiles = set()
         clrevtomanifestrev = {}
 
@@ -973,7 +971,7 @@ class cgpacker(object):
                     # manifest revnum to look up for this cl revnum. (Part of
                     # mapping changelog ellipsis parents to manifest ellipsis
                     # parents)
-                    clrevtomanifestrev.setdefault(cl.rev(x), mfrevlog.rev(n))
+                    clrevtomanifestrev.setdefault(cl.rev(x), mfl.rev(n))
                 # We can't trust the changed files list in the changeset if the
                 # client requested a shallow clone.
                 if self._isshallow:

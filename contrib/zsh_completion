@@ -1214,11 +1214,6 @@ _arguments -s -S : $_hg_global_opts \
   '--sourcesort[preserve source changesets order]'
 }
 
-# Graphlog
-_hg_cmd_glog() {
-  _hg_cmd_log $@
-}
-
 # Purge
 _hg_cmd_purge() {
   _arguments -s -S : $_hg_global_opts $_hg_pat_opts $_hg_subrepos_opts \

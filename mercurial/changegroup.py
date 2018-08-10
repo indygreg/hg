@@ -850,7 +850,7 @@ class cgpacker(object):
         self._verbosenote(_('%8.i (changelog)\n') % size)
 
         clrevorder = clstate['clrevorder']
-        mfs = clstate['mfs']
+        manifests = clstate['manifests']
         changedfiles = clstate['changedfiles']
 
         # We need to make sure that the linkrev in the changegroup refers to
@@ -879,7 +879,7 @@ class cgpacker(object):
 
         size = 0
         it = self.generatemanifests(
-            commonrevs, clrevorder, fastpathlinkrev, mfs, fnodes, source,
+            commonrevs, clrevorder, fastpathlinkrev, manifests, fnodes, source,
             clstate['clrevtomanifestrev'])
 
         for tree, deltas in it:
@@ -905,9 +905,9 @@ class cgpacker(object):
         mfdicts = None
         if self._ellipses and self._isshallow:
             mfdicts = [(self._repo.manifestlog[n].read(), lr)
-                       for (n, lr) in mfs.iteritems()]
+                       for (n, lr) in manifests.iteritems()]
 
-        mfs.clear()
+        manifests.clear()
         clrevs = set(cl.rev(x) for x in clnodes)
 
         it = self.generatefiles(changedfiles, commonrevs,
@@ -944,7 +944,7 @@ class cgpacker(object):
         chunk stream has been fully consumed.
         """
         clrevorder = {}
-        mfs = {} # needed manifests
+        manifests = {}
         mfl = self._repo.manifestlog
         changedfiles = set()
         clrevtomanifestrev = {}
@@ -957,7 +957,7 @@ class cgpacker(object):
             clrevorder[x] = len(clrevorder)
 
             if self._ellipses:
-                # Only update mfs if x is going to be sent. Otherwise we
+                # Only update manifests if x is going to be sent. Otherwise we
                 # end up with bogus linkrevs specified for manifests and
                 # we skip some manifest nodes that we should otherwise
                 # have sent.
@@ -967,7 +967,7 @@ class cgpacker(object):
                     manifestnode = c.manifest
                     # Record the first changeset introducing this manifest
                     # version.
-                    mfs.setdefault(manifestnode, x)
+                    manifests.setdefault(manifestnode, x)
                     # Set this narrow-specific dict so we have the lowest
                     # manifest revnum to look up for this cl revnum. (Part of
                     # mapping changelog ellipsis parents to manifest ellipsis
@@ -982,7 +982,7 @@ class cgpacker(object):
                     changedfiles.update(c.files)
             else:
                 # record the first changeset introducing this manifest version
-                mfs.setdefault(c.manifest, x)
+                manifests.setdefault(c.manifest, x)
                 # Record a complete list of potentially-changed files in
                 # this manifest.
                 changedfiles.update(c.files)
@@ -991,7 +991,7 @@ class cgpacker(object):
 
         state = {
             'clrevorder': clrevorder,
-            'mfs': mfs,
+            'manifests': manifests,
             'changedfiles': changedfiles,
             'clrevtomanifestrev': clrevtomanifestrev,
         }
@@ -1009,8 +1009,8 @@ class cgpacker(object):
 
         return state, gen
 
-    def generatemanifests(self, commonrevs, clrevorder, fastpathlinkrev, mfs,
-                          fnodes, source, clrevtolocalrev):
+    def generatemanifests(self, commonrevs, clrevorder, fastpathlinkrev,
+                          manifests, fnodes, source, clrevtolocalrev):
         """Returns an iterator of changegroup chunks containing manifests.
 
         `source` is unused here, but is used by extensions like remotefilelog to
@@ -1019,7 +1019,7 @@ class cgpacker(object):
         repo = self._repo
         mfl = repo.manifestlog
         dirlog = mfl._revlog.dirlog
-        tmfnodes = {'': mfs}
+        tmfnodes = {'': manifests}
 
         # Callback for the manifest, used to collect linkrevs for filelog
         # revisions.
@@ -1027,7 +1027,7 @@ class cgpacker(object):
         def makelookupmflinknode(tree, nodes):
             if fastpathlinkrev:
                 assert not tree
-                return mfs.__getitem__
+                return manifests.__getitem__
 
             def lookupmflinknode(x):
                 """Callback for looking up the linknode for manifests.

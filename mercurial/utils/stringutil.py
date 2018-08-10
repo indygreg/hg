@@ -59,6 +59,9 @@ def pprint(o, bprefix=False):
             '%s: %s' % (pprint(k, bprefix=bprefix),
                         pprint(v, bprefix=bprefix))
             for k, v in sorted(o.items())))
+    elif isinstance(o, set):
+        return 'set([%s])' % (b', '.join(
+            pprint(k, bprefix=bprefix) for k in sorted(o)))
     elif isinstance(o, tuple):
         return '(%s)' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
     else:

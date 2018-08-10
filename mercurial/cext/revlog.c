@@ -303,7 +303,7 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 		return NULL;
 
 	if (self->nt)
-		nt_insert(self->nt, node, len);
+		nt_insert(self->nt, node, (int)len);
 
 	Py_CLEAR(self->headrevs);
 	Py_RETURN_NONE;
@@ -578,7 +578,7 @@ static PyObject *reachableroots2(indexObject *self, PyObject *args)
 			      revstates[parents[1] + 1]) & RS_REACHABLE)
 			    && !(revstates[i + 1] & RS_REACHABLE)) {
 				revstates[i + 1] |= RS_REACHABLE;
-				val = PyInt_FromLong(i);
+				val = PyInt_FromSsize_t(i);
 				if (val == NULL)
 					goto bail;
 				r = PyList_Append(reachable, val);
@@ -665,7 +665,7 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 		}
 	}
 	/* Transform phase list to a python list */
-	phasessize = PyInt_FromLong(len);
+	phasessize = PyInt_FromSsize_t(len);
 	if (phasessize == NULL)
 		goto release;
 	for (i = 0; i < len; i++) {
@@ -674,7 +674,7 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 		 * is computed as a difference */
 		if (phase != 0) {
 			phaseset = PyList_GET_ITEM(phasessetlist, phase);
-			rev = PyInt_FromLong(i);
+			rev = PyInt_FromSsize_t(i);
 			if (rev == NULL)
 				goto release;
 			PySet_Add(phaseset, rev);

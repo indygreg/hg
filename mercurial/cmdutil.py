@@ -617,7 +617,7 @@ def _graftmsg():
 
 def _mergemsg():
     # tweakdefaults requires `update` to have a rev hence the `.`
-     return _helpmessage('hg commit', 'hg merge --abort')
+    return _helpmessage('hg commit', 'hg merge --abort')
 
 def _bisectmsg():
     msg = _('To mark the changeset good:    hg bisect --good\n'

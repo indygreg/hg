@@ -301,6 +301,7 @@ test-merge9.t
 test-minifileset.py
 test-minirst.py
 test-mq-git.t
+test-mq-guards.t
 test-mq-header-date.t
 test-mq-header-from.t
 test-mq-merge.t
@@ -313,6 +314,7 @@ test-mq-qgoto.t
 test-mq-qimport-fail-cleanup.t
 test-mq-qnew.t
 test-mq-qpush-exact.t
+test-mq-qpush-fail.t
 test-mq-qqueue.t
 test-mq-qrefresh-interactive.t
 test-mq-qrefresh-replace-log-message.t

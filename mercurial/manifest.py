@@ -1325,7 +1325,7 @@ class manifestrevlog(revlog.revlog):
     def clearcaches(self, clear_persisted_data=False):
         super(manifestrevlog, self).clearcaches()
         self._fulltextcache.clear(clear_persisted_data=clear_persisted_data)
-        self._dirlogcache = {'': self}
+        self._dirlogcache = {self._dir: self}
 
     def dirlog(self, d):
         if d:

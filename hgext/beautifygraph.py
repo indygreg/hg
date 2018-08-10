@@ -55,7 +55,9 @@ def convertedges(line):
     line = ' %s ' % line
     pretty = []
     for idx in pycompat.xrange(len(line) - 2):
-        pretty.append(prettyedge(line[idx], line[idx + 1], line[idx + 2]))
+        pretty.append(prettyedge(line[idx:idx + 1],
+                                 line[idx + 1:idx + 2],
+                                 line[idx + 2:idx + 3]))
     return ''.join(pretty)
 
 def getprettygraphnode(orig, *args, **kwargs):

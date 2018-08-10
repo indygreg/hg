@@ -2625,7 +2625,7 @@ def grep(ui, repo, pattern, *pats, **opts):
         if fm.isplain():
             formatuser = ui.shortuser
         else:
-            formatuser = str
+            formatuser = pycompat.bytestr
         if ui.quiet:
             datefmt = '%Y-%m-%d'
         else:

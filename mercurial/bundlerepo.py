@@ -187,7 +187,7 @@ class bundlechangelog(bundlerevlog, changelog.changelog):
 class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
     def __init__(self, opener, cgunpacker, linkmapper, dirlogstarts=None,
                  dir=''):
-        manifest.manifestrevlog.__init__(self, opener, dir=dir)
+        manifest.manifestrevlog.__init__(self, opener, tree=dir)
         bundlerevlog.__init__(self, opener, self.indexfile, cgunpacker,
                               linkmapper)
         if dirlogstarts is None:

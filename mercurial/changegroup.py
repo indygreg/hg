@@ -1068,7 +1068,7 @@ class cgpacker(object):
             tree, nodes = tmfnodes.popitem()
             store = dirlog(tree)
 
-            if not self._filematcher.visitdir(store._dir[:-1] or '.'):
+            if not self._filematcher.visitdir(store._tree[:-1] or '.'):
                 prunednodes = []
             else:
                 frev, flr = store.rev, store.linkrev

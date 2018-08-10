@@ -1250,7 +1250,7 @@ class manifestrevlog(revlog.revlog):
     '''A revlog that stores manifest texts. This is responsible for caching the
     full-text manifest contents.
     '''
-    def __init__(self, opener, dir='', dirlogcache=None, indexfile=None,
+    def __init__(self, opener, tree='', dirlogcache=None, indexfile=None,
                  treemanifest=False):
         """Constructs a new manifest revlog
 
@@ -1276,24 +1276,24 @@ class manifestrevlog(revlog.revlog):
 
         self._fulltextcache = manifestfulltextcache(cachesize)
 
-        if dir:
+        if tree:
             assert self._treeondisk, 'opts is %r' % opts
 
         if indexfile is None:
             indexfile = '00manifest.i'
-            if dir:
-                indexfile = "meta/" + dir + indexfile
+            if tree:
+                indexfile = "meta/" + tree + indexfile
 
-        self._dir = dir
+        self._tree = tree
         # The dirlogcache is kept on the root manifest log
-        if dir:
+        if tree:
             self._dirlogcache = dirlogcache
         else:
             self._dirlogcache = {'': self}
 
         super(manifestrevlog, self).__init__(opener, indexfile,
                                              # only root indexfile is cached
-                                             checkambig=not bool(dir),
+                                             checkambig=not bool(tree),
                                              mmaplargeindex=True)
 
     def _setupmanifestcachehooks(self, repo):
@@ -1325,7 +1325,7 @@ class manifestrevlog(revlog.revlog):
     def clearcaches(self, clear_persisted_data=False):
         super(manifestrevlog, self).clearcaches()
         self._fulltextcache.clear(clear_persisted_data=clear_persisted_data)
-        self._dirlogcache = {self._dir: self}
+        self._dirlogcache = {self._tree: self}
 
     def dirlog(self, d):
         if d:
@@ -1360,8 +1360,8 @@ class manifestrevlog(revlog.revlog):
             # process.
             if self._treeondisk:
                 assert readtree, "readtree must be set for treemanifest writes"
-                m1 = readtree(self._dir, p1)
-                m2 = readtree(self._dir, p2)
+                m1 = readtree(self._tree, p1)
+                m2 = readtree(self._tree, p2)
                 n = self._addtree(m, transaction, link, m1, m2, readtree)
                 arraytext = None
             else:
@@ -1377,7 +1377,8 @@ class manifestrevlog(revlog.revlog):
     def _addtree(self, m, transaction, link, m1, m2, readtree):
         # If the manifest is unchanged compared to one parent,
         # don't write a new revision
-        if self._dir != '' and (m.unmodifiedsince(m1) or m.unmodifiedsince(m2)):
+        if self._tree != '' and (m.unmodifiedsince(m1) or m.unmodifiedsince(
+            m2)):
             return m.node()
         def writesubtree(subm, subp1, subp2):
             sublog = self.dirlog(subm.dir())
@@ -1386,7 +1387,7 @@ class manifestrevlog(revlog.revlog):
         m.writesubtrees(m1, m2, writesubtree)
         text = m.dirtext()
         n = None
-        if self._dir != '':
+        if self._tree != '':
             # Double-check whether contents are unchanged to one parent
             if text == m1.dirtext():
                 n = m1.node()

@@ -450,7 +450,7 @@ def _revlogfrompath(repo, path):
         return changelog.changelog(repo.svfs)
     elif path.endswith('00manifest.i'):
         mandir = path[:-len('00manifest.i')]
-        return manifest.manifestrevlog(repo.svfs, dir=mandir)
+        return manifest.manifestrevlog(repo.svfs, tree=mandir)
     else:
         #reverse of "/".join(("data", path + ".i"))
         return filelog.filelog(repo.svfs, path[5:-2])

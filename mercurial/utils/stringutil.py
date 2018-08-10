@@ -114,7 +114,7 @@ def buildrepr(r):
     elif callable(r):
         return r()
     else:
-        return pycompat.byterepr(r)
+        return pprint(r)
 
 def binary(s):
     """return true if a string is binary data"""

@@ -607,10 +607,6 @@ def _histeditmsg():
 def _unshelvemsg():
     return _helpmessage('hg unshelve --continue', 'hg unshelve --abort')
 
-def _updatecleanmsg(dest=None):
-    warning = _('warning: this will discard uncommitted changes')
-    return 'hg update --clean %s (%s)' % (dest or '.', warning)
-
 def _graftmsg():
     # tweakdefaults requires `update` to have a rev hence the `.`
     return _helpmessage('hg graft --continue', 'hg graft --abort')

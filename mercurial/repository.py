@@ -552,9 +552,6 @@ class ifileindex(interfaceutil.Interface):
     def deltaparent(rev):
         """"Return the revision that is a suitable parent to delta against."""
 
-    def candelta(baserev, rev):
-        """"Whether a delta can be generated between two revisions."""
-
 class ifiledata(interfaceutil.Interface):
     """Storage interface for data storage of a specific file.
 

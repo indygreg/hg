@@ -76,9 +76,6 @@ class filelog(object):
     def deltaparent(self, rev):
         return self._revlog.deltaparent(rev)
 
-    def candelta(self, baserev, rev):
-        return self._revlog.candelta(baserev, rev)
-
     def iscensored(self, rev):
         return self._revlog.iscensored(rev)
 

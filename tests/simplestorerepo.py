@@ -241,7 +241,7 @@ class filestorage(object):
         p1node = self.parents(self.node(rev))[0]
         return self.rev(p1node)
 
-    def candelta(self, baserev, rev):
+    def _candelta(self, baserev, rev):
         validaterev(baserev)
         validaterev(rev)
 
@@ -527,7 +527,7 @@ class filestorage(object):
                 # for choosing a delta parent.
                 baserev = self.deltaparent(rev)
 
-                if baserev != nullrev and not self.candelta(baserev, rev):
+                if baserev != nullrev and not self._candelta(baserev, rev):
                     baserev = nullrev
 
             revision = None

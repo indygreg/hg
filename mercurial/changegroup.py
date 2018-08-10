@@ -953,7 +953,7 @@ class cgpacker(object):
         # manifest nodes.
         # Returns the linkrev node (identity in the changelog case).
         def lookupcl(x):
-            c = cl.read(x)
+            c = cl.changelogrevision(x)
             clrevorder[x] = len(clrevorder)
 
             if self._ellipses:
@@ -963,29 +963,29 @@ class cgpacker(object):
                 # have sent.
                 if (x in self._fullclnodes
                     or cl.rev(x) in self._precomputedellipsis):
-                    n = c[0]
+
+                    manifestnode = c.manifest
                     # Record the first changeset introducing this manifest
                     # version.
-                    mfs.setdefault(n, x)
+                    mfs.setdefault(manifestnode, x)
                     # Set this narrow-specific dict so we have the lowest
                     # manifest revnum to look up for this cl revnum. (Part of
                     # mapping changelog ellipsis parents to manifest ellipsis
                     # parents)
-                    clrevtomanifestrev.setdefault(cl.rev(x), mfl.rev(n))
+                    clrevtomanifestrev.setdefault(
+                        cl.rev(x), mfl.rev(manifestnode))
                 # We can't trust the changed files list in the changeset if the
                 # client requested a shallow clone.
                 if self._isshallow:
-                    changedfiles.update(mfl[c[0]].read().keys())
+                    changedfiles.update(mfl[c.manifest].read().keys())
                 else:
-                    changedfiles.update(c[3])
+                    changedfiles.update(c.files)
             else:
-
-                n = c[0]
                 # record the first changeset introducing this manifest version
-                mfs.setdefault(n, x)
+                mfs.setdefault(c.manifest, x)
                 # Record a complete list of potentially-changed files in
                 # this manifest.
-                changedfiles.update(c[3])
+                changedfiles.update(c.files)
 
             return x
 

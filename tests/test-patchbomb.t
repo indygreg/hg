@@ -526,7 +526,14 @@ mime encoded mbox (base64):
   QEAgLTAsMCArMSwxIEBACitow7ZtbWEhCg==
   
   
-  $ $PYTHON -c 'print open("mbox").read().split("\n\n")[1].decode("base64")'
+  >>> import base64
+  >>> patch = base64.b64decode(open("mbox").read().split("\n\n")[1])
+  >>> if not isinstance(patch, str):
+  ...     import sys
+  ...     sys.stdout.flush()
+  ...     junk = sys.stdout.buffer.write(patch + b"\n")
+  ... else:
+  ...     print(patch)
   # HG changeset patch
   # User test
   # Date 4 0
@@ -551,7 +558,7 @@ mime encoded mbox (base64):
   $ rm mbox
 
 mime encoded mbox (quoted-printable):
-  $ $PYTHON -c 'fp = open("long", "wb"); fp.write(b"%s\nfoo\n\nbar\n" % ("x" * 1024)); fp.close();'
+  $ $PYTHON -c 'fp = open("long", "wb"); fp.write(b"%s\nfoo\n\nbar\n" % (b"x" * 1024)); fp.close();'
   $ hg commit -A -d '4 0' -m 'long line'
   adding long
 
@@ -2531,10 +2538,11 @@ test flag template plus --flag:
   
 
 test multi-byte domain parsing:
-  $ UUML=`$PYTHON -c 'import sys; sys.stdout.write("\374")'`
+  >>> with open('toaddress.txt', 'wb') as f:
+  ...  f.write(b'bar@\xfcnicode.com') and None
   $ HGENCODING=iso-8859-1
   $ export HGENCODING
-  $ hg email --date '1980-1-1 0:1' -m tmp.mbox -f quux -t "bar@${UUML}nicode.com" -s test -r 0
+  $ hg email --date '1980-1-1 0:1' -m tmp.mbox -f quux -t "`cat toaddress.txt`" -s test -r 0
   this patch series consists of 1 patches.
   
   Cc: 

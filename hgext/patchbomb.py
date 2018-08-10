@@ -278,10 +278,11 @@ def makepatch(ui, repo, rev, patchlines, opts, _charsets, idx, total, numbered,
                                                  seqno=idx, total=total)
             else:
                 patchname = cmdutil.makefilename(repo[node], '%b.patch')
-        disposition = 'inline'
+        disposition = r'inline'
         if opts.get('attach'):
-            disposition = 'attachment'
-        p['Content-Disposition'] = disposition + '; filename=' + patchname
+            disposition = r'attachment'
+        p[r'Content-Disposition'] = (
+            disposition + r'; filename=' + encoding.strfromlocal(patchname))
         msg.attach(p)
     else:
         msg = mail.mimetextpatch(body, display=opts.get('test'))

@@ -2005,7 +2005,7 @@ static void _index_clearcaches(indexObject *self)
 		self->cache = NULL;
 	}
 	if (self->offsets) {
-		PyMem_Free(self->offsets);
+		PyMem_Free((void *)self->offsets);
 		self->offsets = NULL;
 	}
 	if (self->nt != NULL) {

@@ -3207,7 +3207,8 @@ def debugwireproto(ui, repo, path=None, **opts):
                 res = opener.open(req)
                 body = res.read()
             except util.urlerr.urlerror as e:
-                e.read()
+                # read() method must be called, but only exists in Python 2
+                getattr(e, 'read', lambda: None)()
                 continue
 
             if res.headers.get('Content-Type') == 'application/mercurial-cbor':

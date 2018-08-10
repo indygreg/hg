@@ -2608,13 +2608,13 @@ def grep(ui, repo, pattern, *pats, **opts):
     def difflinestates(a, b):
         sm = difflib.SequenceMatcher(None, a, b)
         for tag, alo, ahi, blo, bhi in sm.get_opcodes():
-            if tag == 'insert':
+            if tag == r'insert':
                 for i in pycompat.xrange(blo, bhi):
                     yield ('+', b[i])
-            elif tag == 'delete':
+            elif tag == r'delete':
                 for i in pycompat.xrange(alo, ahi):
                     yield ('-', a[i])
-            elif tag == 'replace':
+            elif tag == r'replace':
                 for i in pycompat.xrange(alo, ahi):
                     yield ('-', a[i])
                 for i in pycompat.xrange(blo, bhi):

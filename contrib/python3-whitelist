@@ -185,6 +185,7 @@ test-getbundle.t
 test-git-export.t
 test-glog-beautifygraph.t
 test-glog-topological.t
+test-glog.t
 test-gpg.t
 test-graft.t
 test-grep.t

@@ -253,7 +253,8 @@ class cg1unpacker(object):
         # be empty during the pull
         self.manifestheader()
         deltas = self.deltaiter()
-        repo.manifestlog.addgroup(deltas, revmap, trp)
+        # TODO this violates storage abstraction.
+        repo.manifestlog._revlog.addgroup(deltas, revmap, trp)
         prog.complete()
         self.callback = None
 

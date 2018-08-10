@@ -81,7 +81,7 @@ def _collectrevlog(revlog, striprev):
     return [revlog.linkrev(r) for r in brokenset]
 
 def _collectmanifest(repo, striprev):
-    return _collectrevlog(repo.manifestlog._revlog, striprev)
+    return _collectrevlog(repo.manifestlog.getstorage(b''), striprev)
 
 def _collectbrokencsets(repo, files, striprev):
     """return the changesets which will be broken by the truncation"""
@@ -322,7 +322,7 @@ def delayedstrip(ui, repo, nodelist, topic=None, backup=True):
     callback.addnodes(nodelist)
 
 def stripmanifest(repo, striprev, tr, files):
-    revlog = repo.manifestlog._revlog
+    revlog = repo.manifestlog.getstorage(b'')
     revlog.strip(striprev, tr)
     striptrees(repo, tr, striprev, files)
 
@@ -333,7 +333,7 @@ def striptrees(repo, tr, striprev, files):
             if (unencoded.startswith('meta/') and
                 unencoded.endswith('00manifest.i')):
                 dir = unencoded[5:-12]
-                repo.manifestlog._revlog.dirlog(dir).strip(striprev, tr)
+                repo.manifestlog.getstorage(dir).strip(striprev, tr)
 
 def rebuildfncache(ui, repo):
     """Rebuilds the fncache file from repo history.

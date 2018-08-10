@@ -1023,6 +1023,15 @@ class imanifestlog(interfaceutil.Interface):
         interface.
         """
 
+    def getstorage(tree):
+        """Retrieve an interface to storage for a particular tree.
+
+        If ``tree`` is the empty bytestring, storage for the root manifest will
+        be returned. Otherwise storage for a tree manifest is returned.
+
+        TODO formalize interface for returned object.
+        """
+
     def clearcaches():
         """Clear caches associated with this collection."""
 

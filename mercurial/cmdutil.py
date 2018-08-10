@@ -1083,11 +1083,11 @@ def openrevlog(repo, cmd, file_, opts):
                                    "treemanifest enabled"))
             if not dir.endswith('/'):
                 dir = dir + '/'
-            dirlog = repo.manifestlog._revlog.dirlog(dir)
+            dirlog = repo.manifestlog.getstorage(dir)
             if len(dirlog):
                 r = dirlog
         elif mf:
-            r = repo.manifestlog._revlog
+            r = repo.manifestlog.getstorage(b'')
         elif file_:
             filelog = repo.file(file_)
             if len(filelog):

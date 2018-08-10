@@ -253,8 +253,7 @@ class cg1unpacker(object):
         # be empty during the pull
         self.manifestheader()
         deltas = self.deltaiter()
-        # TODO this violates storage abstraction.
-        repo.manifestlog._revlog.addgroup(deltas, revmap, trp)
+        repo.manifestlog.getstorage(b'').addgroup(deltas, revmap, trp)
         prog.complete()
         self.callback = None
 
@@ -485,9 +484,8 @@ class cg3unpacker(cg2unpacker):
             # If we get here, there are directory manifests in the changegroup
             d = chunkdata["filename"]
             repo.ui.debug("adding %s revisions\n" % d)
-            dirlog = repo.manifestlog._revlog.dirlog(d)
             deltas = self.deltaiter()
-            if not dirlog.addgroup(deltas, revmap, trp):
+            if not repo.manifestlog.getstorage(d).addgroup(deltas, revmap, trp):
                 raise error.Abort(_("received dir revlog group is empty"))
 
 class headerlessfixup(object):
@@ -1019,7 +1017,6 @@ class cgpacker(object):
         """
         repo = self._repo
         mfl = repo.manifestlog
-        dirlog = mfl._revlog.dirlog
         tmfnodes = {'': manifests}
 
         # Callback for the manifest, used to collect linkrevs for filelog
@@ -1066,7 +1063,7 @@ class cgpacker(object):
 
         while tmfnodes:
             tree, nodes = tmfnodes.popitem()
-            store = dirlog(tree)
+            store = mfl.getstorage(tree)
 
             if not self._filematcher.visitdir(store._tree[:-1] or '.'):
                 prunednodes = []

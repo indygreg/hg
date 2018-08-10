@@ -1452,7 +1452,7 @@ class manifestlog(object):
         if tree:
             if self._revlog._treeondisk:
                 if verify:
-                    dirlog = self._revlog.dirlog(tree)
+                    dirlog = self.getstorage(tree)
                     if node not in dirlog.nodemap:
                         raise LookupError(node, dirlog.indexfile,
                                           _('no node'))
@@ -1478,6 +1478,9 @@ class manifestlog(object):
                 self._dirmancache[tree] = mancache
             mancache[node] = m
         return m
+
+    def getstorage(self, tree):
+        return self._revlog.dirlog(tree)
 
     def clearcaches(self, clear_persisted_data=False):
         self._dirmancache.clear()
@@ -1638,7 +1641,7 @@ class treemanifestctx(object):
         if not narrowmatch.always():
             if not narrowmatch.visitdir(self._dir[:-1] or '.'):
                 return excludedmanifestrevlog(self._dir)
-        return self._manifestlog._revlog.dirlog(self._dir)
+        return self._manifestlog.getstorage(self._dir)
 
     def read(self):
         if self._data is None:

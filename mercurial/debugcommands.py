@@ -1486,7 +1486,7 @@ def debuglocks(ui, repo, **opts):
 def debugmanifestfulltextcache(ui, repo, add=None, **opts):
     """show, clear or amend the contents of the manifest fulltext cache"""
     with repo.lock():
-        r = repo.manifestlog._revlog
+        r = repo.manifestlog.getstorage(b'')
         try:
             cache = r._fulltextcache
         except AttributeError:

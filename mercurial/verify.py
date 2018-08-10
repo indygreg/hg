@@ -45,7 +45,7 @@ class verifier(object):
         self.errors = 0
         self.warnings = 0
         self.havecl = len(repo.changelog) > 0
-        self.havemf = len(repo.manifestlog._revlog) > 0
+        self.havemf = len(repo.manifestlog.getstorage(b'')) > 0
         self.revlogv1 = repo.changelog.version != revlog.REVLOGV0
         self.lrugetctx = util.lrucachefunc(repo.__getitem__)
         self.refersmf = False
@@ -205,7 +205,7 @@ class verifier(object):
         ui = self.ui
         match = self.match
         mfl = self.repo.manifestlog
-        mf = mfl._revlog.dirlog(dir)
+        mf = mfl.getstorage(dir)
 
         if not dir:
             self.ui.status(_("checking manifests\n"))

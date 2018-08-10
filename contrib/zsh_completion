@@ -245,10 +245,10 @@ _hg_missing() {
   _wanted files expl 'missing files' _multi_parts / status_files
 }
 
-_hg_modified() {
+_hg_committable() {
   typeset -a status_files
-  _hg_status m
-  _wanted files expl 'modified files' _multi_parts / status_files
+  _hg_status mar
+  _wanted files expl 'modified, added or removed files' _multi_parts / status_files
 }
 
 _hg_resolve() {
@@ -570,7 +570,7 @@ _hg_cmd_commit() {
   '(--user -u)'{-u+,--user=}'[record user as commiter]:user:' \
   '--amend[amend the parent of the working dir]' \
   '--close-branch[mark a branch as closed]' \
-  '*:file:_hg_files'
+  '*:file:_hg_committable'
 }
 
 _hg_cmd_copy() {
@@ -599,7 +599,7 @@ _hg_cmd_diff() {
     then
       _hg_files
     else
-      _hg_modified
+      _hg_committable
     fi
   fi
 }

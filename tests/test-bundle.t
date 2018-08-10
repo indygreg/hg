@@ -796,13 +796,13 @@ bundle single branch
   057f4db07f61970e1c11e83be79e9d08adc4dc31
   bundle2-output-bundle: "HG20", (1 params) 2 parts total
   bundle2-output-part: "changegroup" (params: 1 mandatory 1 advisory) streamed payload
-  bundling: 1/2 changesets (50.00%)
-  bundling: 2/2 changesets (100.00%)
-  bundling: 1/2 manifests (50.00%)
-  bundling: 2/2 manifests (100.00%)
-  bundling: b 1/3 files (33.33%)
-  bundling: b1 2/3 files (66.67%)
-  bundling: x 3/3 files (100.00%)
+  changesets: 1/2 chunks (50.00%)
+  changesets: 2/2 chunks (100.00%)
+  manifests: 1/2 chunks (50.00%)
+  manifests: 2/2 chunks (100.00%)
+  files: b 1/3 files (33.33%)
+  files: b1 2/3 files (66.67%)
+  files: x 3/3 files (100.00%)
   bundle2-output-part: "cache:rev-branch-cache" (advisory) streamed payload
 
 #if repobundlerepo

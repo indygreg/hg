@@ -658,15 +658,15 @@ def _makenarrowdeltarequest(cl, store, ischangelog, rev, node, linkrev,
 
 def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
                allowreorder,
-               units=None,
+               topic=None,
                ellipses=False, clrevtolocalrev=None, fullclnodes=None,
                precomputedellipsis=None):
     """Calculate deltas for a set of revisions.
 
     Is a generator of ``revisiondelta`` instances.
 
-    If units is not None, progress detail will be generated, units specifies
-    the type of revlog that is touched (changelog, manifest, etc.).
+    If topic is not None, progress detail will be generated using this
+    topic name (e.g. changesets, manifests, etc).
     """
     if not nodes:
         return
@@ -743,8 +743,8 @@ def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
     # We expect the first pass to be fast, so we only engage the progress
     # meter for constructing the revision deltas.
     progress = None
-    if units is not None:
-        progress = repo.ui.makeprogress(_('bundling'), unit=units,
+    if topic is not None:
+        progress = repo.ui.makeprogress(topic, unit=_('chunks'),
                                         total=len(requests))
 
     for i, delta in enumerate(store.emitrevisiondeltas(requests)):
@@ -1002,7 +1002,7 @@ class cgpacker(object):
             # Reorder settings are currently ignored for changelog.
             True,
             ellipses=self._ellipses,
-            units=_('changesets'),
+            topic=_('changesets'),
             clrevtolocalrev={},
             fullclnodes=self._fullclnodes,
             precomputedellipsis=self._precomputedellipsis)
@@ -1083,7 +1083,7 @@ class cgpacker(object):
                 self._repo, store, prunednodes, False, lookupfn,
                 self._forcedeltaparentprev, self._reorder,
                 ellipses=self._ellipses,
-                units=_('manifests'),
+                topic=_('manifests'),
                 clrevtolocalrev=clrevtolocalrev,
                 fullclnodes=self._fullclnodes,
                 precomputedellipsis=self._precomputedellipsis)
@@ -1140,7 +1140,7 @@ class cgpacker(object):
             linknodes = normallinknodes
 
         repo = self._repo
-        progress = repo.ui.makeprogress(_('bundling'), unit=_('files'),
+        progress = repo.ui.makeprogress(_('files'), unit=_('files'),
                                         total=len(changedfiles))
         for i, fname in enumerate(sorted(changedfiles)):
             filerevlog = repo.file(fname)

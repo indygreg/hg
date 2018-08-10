@@ -882,10 +882,10 @@ class cgpacker(object):
             commonrevs, clrevorder, fastpathlinkrev, mfs, fnodes, source,
             clstate['clrevtomanifestrev'])
 
-        for dir, deltas in it:
-            if dir:
+        for tree, deltas in it:
+            if tree:
                 assert self.version == b'03'
-                chunk = _fileheader(dir)
+                chunk = _fileheader(tree)
                 size += len(chunk)
                 yield chunk
 
@@ -1026,9 +1026,9 @@ class cgpacker(object):
         # Callback for the manifest, used to collect linkrevs for filelog
         # revisions.
         # Returns the linkrev node (collected in lookupcl).
-        def makelookupmflinknode(dir, nodes):
+        def makelookupmflinknode(tree, nodes):
             if fastpathlinkrev:
-                assert not dir
+                assert not tree
                 return mfs.__getitem__
 
             def lookupmflinknode(x):
@@ -1048,16 +1048,16 @@ class cgpacker(object):
                 treemanifests to send.
                 """
                 clnode = nodes[x]
-                mdata = mfl.get(dir, x).readfast(shallow=True)
+                mdata = mfl.get(tree, x).readfast(shallow=True)
                 for p, n, fl in mdata.iterentries():
                     if fl == 't': # subdirectory manifest
-                        subdir = dir + p + '/'
-                        tmfclnodes = tmfnodes.setdefault(subdir, {})
+                        subtree = tree + p + '/'
+                        tmfclnodes = tmfnodes.setdefault(subtree, {})
                         tmfclnode = tmfclnodes.setdefault(n, clnode)
                         if clrevorder[clnode] < clrevorder[tmfclnode]:
                             tmfclnodes[n] = clnode
                     else:
-                        f = dir + p
+                        f = tree + p
                         fclnodes = fnodes.setdefault(f, {})
                         fclnode = fclnodes.setdefault(n, clnode)
                         if clrevorder[clnode] < clrevorder[fclnode]:
@@ -1066,8 +1066,8 @@ class cgpacker(object):
             return lookupmflinknode
 
         while tmfnodes:
-            dir, nodes = tmfnodes.popitem()
-            store = dirlog(dir)
+            tree, nodes = tmfnodes.popitem()
+            store = dirlog(tree)
 
             if not self._filematcher.visitdir(store._dir[:-1] or '.'):
                 prunednodes = []
@@ -1076,10 +1076,10 @@ class cgpacker(object):
                 prunednodes = [n for n in nodes
                                if flr(frev(n)) not in commonrevs]
 
-            if dir and not prunednodes:
+            if tree and not prunednodes:
                 continue
 
-            lookupfn = makelookupmflinknode(dir, nodes)
+            lookupfn = makelookupmflinknode(tree, nodes)
 
             deltas = deltagroup(
                 self._repo, store, prunednodes, False, lookupfn,
@@ -1090,7 +1090,7 @@ class cgpacker(object):
                 fullclnodes=self._fullclnodes,
                 precomputedellipsis=self._precomputedellipsis)
 
-            yield dir, deltas
+            yield tree, deltas
 
     # The 'source' parameter is useful for extensions
     def generatefiles(self, changedfiles, commonrevs, source,

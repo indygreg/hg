@@ -1453,10 +1453,10 @@ class manifestlog(object):
         if tree:
             if self._revlog._treeondisk:
                 if verify:
-                    dirlog = self.getstorage(tree)
-                    if node not in dirlog.nodemap:
-                        raise LookupError(node, dirlog.indexfile,
-                                          _('no node'))
+                    # Side-effect is LookupError is raised if node doesn't
+                    # exist.
+                    self.getstorage(tree).rev(node)
+
                 m = treemanifestctx(self, tree, node)
             else:
                 raise error.Abort(
@@ -1464,9 +1464,9 @@ class manifestlog(object):
                           "manifest") % tree)
         else:
             if verify:
-                if node not in self._revlog.nodemap:
-                    raise LookupError(node, self._revlog.indexfile,
-                                      _('no node'))
+                # Side-effect is LookupError is raised if node doesn't exist.
+                self._revlog.rev(node)
+
             if self._treemanifests:
                 m = treemanifestctx(self, '', node)
             else:

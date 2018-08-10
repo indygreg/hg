@@ -2721,7 +2721,7 @@ def _parsewirelangblocks(fh):
         if line.startswith(b'#'):
             continue
 
-        if not line.startswith(' '):
+        if not line.startswith(b' '):
             # New block. Flush previous one.
             if activeaction:
                 yield activeaction, blocklines

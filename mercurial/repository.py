@@ -989,7 +989,13 @@ class imanifestrevisionwritable(imanifestrevisionbase):
         """
 
 class imanifestlog(interfaceutil.Interface):
-    """Interface representing a collection of manifest snapshots."""
+    """Interface representing a collection of manifest snapshots.
+
+    Represents the root manifest in a repository.
+
+    Also serves as a means to access nested tree manifests and to cache
+    tree manifests.
+    """
 
     def __getitem__(node):
         """Obtain a manifest instance for a given binary node.

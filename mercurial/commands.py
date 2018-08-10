@@ -2650,20 +2650,22 @@ def grep(ui, repo, pattern, *pats, **opts):
             fm.data(node=fm.hexfunc(scmutil.binnode(ctx)))
 
             cols = [
-                ('filename', fn, True),
-                ('rev', rev, not plaingrep),
-                ('linenumber', l.linenum, opts.get('line_number')),
+                ('filename', '%s', fn, True),
+                ('rev', '%d', rev, not plaingrep),
+                ('linenumber', '%d', l.linenum, opts.get('line_number')),
             ]
             if diff:
-                cols.append(('change', change, True))
+                cols.append(('change', '%s', change, True))
             cols.extend([
-                ('user', formatuser(ctx.user()), opts.get('user')),
-                ('date', fm.formatdate(ctx.date(), datefmt), opts.get('date')),
+                ('user', '%s', formatuser(ctx.user()), opts.get('user')),
+                ('date', '%s', fm.formatdate(ctx.date(), datefmt),
+                 opts.get('date')),
             ])
-            lastcol = next(name for name, data, cond in reversed(cols) if cond)
-            for name, data, cond in cols:
+            lastcol = next(
+                name for name, fmt, data, cond in reversed(cols) if cond)
+            for name, fmt, data, cond in cols:
                 field = fieldnamemap.get(name, name)
-                fm.condwrite(cond, field, '%s', data, label='grep.%s' % name)
+                fm.condwrite(cond, field, fmt, data, label='grep.%s' % name)
                 if cond and name != lastcol:
                     fm.plain(sep, label='grep.sep')
             if not opts.get('files_with_matches'):

@@ -20,19 +20,19 @@ from mercurial import (
     wireprotov2server,
 )
 
-@wireprotov1server.wireprotocommand('customreadonly', permission='pull')
+@wireprotov1server.wireprotocommand(b'customreadonly', permission=b'pull')
 def customreadonlyv1(repo, proto):
     return wireprototypes.bytesresponse(b'customreadonly bytes response')
 
-@wireprotov2server.wireprotocommand('customreadonly', permission='pull')
+@wireprotov2server.wireprotocommand(b'customreadonly', permission=b'pull')
 def customreadonlyv2(repo, proto):
     return wireprototypes.cborresponse(b'customreadonly bytes response')
 
-@wireprotov1server.wireprotocommand('customreadwrite', permission='push')
+@wireprotov1server.wireprotocommand(b'customreadwrite', permission=b'push')
 def customreadwrite(repo, proto):
     return wireprototypes.bytesresponse(b'customreadwrite bytes response')
 
-@wireprotov2server.wireprotocommand('customreadwrite', permission='push')
+@wireprotov2server.wireprotocommand(b'customreadwrite', permission=b'push')
 def customreadwritev2(repo, proto):
     return wireprototypes.cborresponse(b'customreadwrite bytes response')
 EOF

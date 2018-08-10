@@ -51,6 +51,7 @@ test-cat.t
 test-cbor.py
 test-censor.t
 test-changelog-exec.t
+test-check-code.t
 test-check-commit.t
 test-check-execute.t
 test-check-interfaces.py

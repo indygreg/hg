@@ -3201,7 +3201,7 @@ def debugwireproto(ui, repo, path=None, **opts):
             # urllib.Request insists on using has_data() as a proxy for
             # determining the request method. Override that to use our
             # explicitly requested method.
-            req.get_method = lambda: method
+            req.get_method = lambda: pycompat.sysstr(method)
 
             try:
                 res = opener.open(req)

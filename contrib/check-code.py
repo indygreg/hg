@@ -30,7 +30,7 @@ if sys.version_info[0] < 3:
     opentext = open
 else:
     def opentext(f):
-        return open(f, encoding='ascii')
+        return open(f, encoding='latin1')
 try:
     xrange
 except NameError:

@@ -454,8 +454,8 @@ no mime encoding for email --test:
   
   displaying [PATCH] utf-8 content ...
   MIME-Version: 1.0
-  Content-Type: text/plain; charset="us-ascii"
-  Content-Transfer-Encoding: 8bit
+  Content-Type: text/plain; charset="iso-8859-1"
+  Content-Transfer-Encoding: quoted-printable
   Subject: [PATCH] utf-8 content
   X-Mercurial-Node: 909a00e13e9d78b575aeee23dddbada46d5a143f
   X-Mercurial-Series-Index: 1
@@ -487,7 +487,7 @@ no mime encoding for email --test:
   --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   +++ b/utf	Thu Jan 01 00:00:04 1970 +0000
   @@ -0,0 +1,1 @@
-  +h\xc3\xb6mma! (esc)
+  +h=C3=B6mma!
   
 
 mime encoded mbox (base64):
@@ -2673,8 +2673,8 @@ test outgoing:
   
   displaying [PATCH 2 of 6] utf-8 content ...
   MIME-Version: 1.0
-  Content-Type: text/plain; charset="us-ascii"
-  Content-Transfer-Encoding: 8bit
+  Content-Type: text/plain; charset="iso-8859-1"
+  Content-Transfer-Encoding: quoted-printable
   Subject: [PATCH 2 of 6] utf-8 content
   X-Mercurial-Node: 909a00e13e9d78b575aeee23dddbada46d5a143f
   X-Mercurial-Series-Index: 2
@@ -2707,7 +2707,7 @@ test outgoing:
   --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   +++ b/utf	Thu Jan 01 00:00:04 1970 +0000
   @@ -0,0 +1,1 @@
-  +h\xc3\xb6mma! (esc)
+  +h=C3=B6mma!
   
   displaying [PATCH 3 of 6] long line ...
   MIME-Version: 1.0
@@ -2758,8 +2758,8 @@ test outgoing:
   
   displaying [PATCH 4 of 6] isolatin 8-bit encoding ...
   MIME-Version: 1.0
-  Content-Type: text/plain; charset="us-ascii"
-  Content-Transfer-Encoding: 8bit
+  Content-Type: text/plain; charset="iso-8859-1"
+  Content-Transfer-Encoding: quoted-printable
   Subject: [PATCH 4 of 6] isolatin 8-bit encoding
   X-Mercurial-Node: 240fb913fc1b7ff15ddb9f33e73d82bf5277c720
   X-Mercurial-Series-Index: 4
@@ -2785,7 +2785,7 @@ test outgoing:
   --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
   +++ b/isolatin	Thu Jan 01 00:00:05 1970 +0000
   @@ -0,0 +1,1 @@
-  +h\xf6mma! (esc)
+  +h=F6mma!
   
   displaying [PATCH 5 of 6] Added tag zero, zero.foo for changeset 8580ff50825a ...
   MIME-Version: 1.0

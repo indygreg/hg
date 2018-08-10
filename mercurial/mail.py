@@ -220,7 +220,7 @@ def mimetextpatch(s, subtype='plain', display=False):
 
     cs = ['us-ascii', 'utf-8', encoding.encoding, encoding.fallbackencoding]
     if display:
-        return mimetextqp(s, subtype, 'us-ascii')
+        cs = ['us-ascii']
     for charset in cs:
         try:
             s.decode(pycompat.sysstr(charset))

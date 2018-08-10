@@ -113,7 +113,7 @@ o  (0) root
   >             else:
   >                 tree = []
   >             ui = repo.ui
-  >             ui.write(b'%r\n' % (opts.get(b'rev', []),))
+  >             ui.write(b'%s\n' % stringutil.pprint(opts.get(b'rev', [])))
   >             ui.write(revsetlang.prettyformat(tree) + b'\n')
   >             ui.write(stringutil.prettyrepr(revs) + b'\n')
   >             revs = smartset.baseset()  # display no revisions
@@ -2043,7 +2043,7 @@ Test "set:..." and parent revision
     <spanset- 0:7>,
     <matchfiles patterns=[], include=['set:copied()'] exclude=[], default='relpath', rev=2147483647>>
   $ testlog -r "sort(file('set:copied()'), -rev)"
-  ["sort(file('set:copied()'), -rev)"]
+  ['sort(file(\'set:copied()\'), -rev)']
   []
   <filteredset
     <fullreposet- 0:7>,

@@ -1418,7 +1418,8 @@ class manifestlog(object):
         if opts is not None:
             usetreemanifest = opts.get('treemanifest', usetreemanifest)
             cachesize = opts.get('manifestcachesize', cachesize)
-        self._treeinmem = usetreemanifest
+
+        self._treemanifests = usetreemanifest
 
         self._revlog = repo._constructmanifest()
         self._revlog._setupmanifestcachehooks(repo)
@@ -1466,7 +1467,7 @@ class manifestlog(object):
                 if node not in self._revlog.nodemap:
                     raise LookupError(node, self._revlog.indexfile,
                                       _('no node'))
-            if self._treeinmem:
+            if self._treemanifests:
                 m = treemanifestctx(self, '', node)
             else:
                 m = manifestctx(self, node)

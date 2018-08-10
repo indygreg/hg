@@ -948,12 +948,12 @@ class socketobserver(baseproxyobserver):
 
         self.fh.write('%s> gettimeout() -> %f\n' % (self.name, res))
 
-    def setsockopt(self, level, optname, value):
+    def setsockopt(self, res, level, optname, value):
         if not self.states:
             return
 
         self.fh.write('%s> setsockopt(%r, %r, %r) -> %r\n' % (
-            self.name, level, optname, value))
+            self.name, level, optname, value, res))
 
 def makeloggingsocket(logh, fh, name, reads=True, writes=True, states=True,
                       logdata=False, logdataapis=True):

@@ -1435,31 +1435,31 @@ class manifestlog(object):
         """
         return self.get('', node)
 
-    def get(self, dir, node, verify=True):
+    def get(self, tree, node, verify=True):
         """Retrieves the manifest instance for the given node. Throws a
         LookupError if not found.
 
         `verify` - if True an exception will be thrown if the node is not in
                    the revlog
         """
-        if node in self._dirmancache.get(dir, ()):
-            return self._dirmancache[dir][node]
+        if node in self._dirmancache.get(tree, ()):
+            return self._dirmancache[tree][node]
 
         if not self._narrowmatch.always():
-            if not self._narrowmatch.visitdir(dir[:-1] or '.'):
-                return excludeddirmanifestctx(dir, node)
-        if dir:
+            if not self._narrowmatch.visitdir(tree[:-1] or '.'):
+                return excludeddirmanifestctx(tree, node)
+        if tree:
             if self._revlog._treeondisk:
                 if verify:
-                    dirlog = self._revlog.dirlog(dir)
+                    dirlog = self._revlog.dirlog(tree)
                     if node not in dirlog.nodemap:
                         raise LookupError(node, dirlog.indexfile,
                                           _('no node'))
-                m = treemanifestctx(self, dir, node)
+                m = treemanifestctx(self, tree, node)
             else:
                 raise error.Abort(
                         _("cannot ask for manifest directory '%s' in a flat "
-                          "manifest") % dir)
+                          "manifest") % tree)
         else:
             if verify:
                 if node not in self._revlog.nodemap:
@@ -1471,10 +1471,10 @@ class manifestlog(object):
                 m = manifestctx(self, node)
 
         if node != revlog.nullid:
-            mancache = self._dirmancache.get(dir)
+            mancache = self._dirmancache.get(tree)
             if not mancache:
                 mancache = util.lrucachedict(self._cachesize)
-                self._dirmancache[dir] = mancache
+                self._dirmancache[tree] = mancache
             mancache[node] = m
         return m
 

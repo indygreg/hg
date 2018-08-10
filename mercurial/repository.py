@@ -1000,15 +1000,15 @@ class imanifestlog(interfaceutil.Interface):
         interface.
         """
 
-    def get(dir, node, verify=True):
+    def get(tree, node, verify=True):
         """Retrieve the manifest instance for a given directory and binary node.
 
         ``node`` always refers to the node of the root manifest (which will be
         the only manifest if flat manifests are being used).
 
-        If ``dir`` is the empty string, the root manifest is returned. Otherwise
-        the manifest for the specified directory will be returned (requires
-        tree manifests).
+        If ``tree`` is the empty string, the root manifest is returned.
+        Otherwise the manifest for the specified directory will be returned
+        (requires tree manifests).
 
         If ``verify`` is True, ``LookupError`` is raised if the node is not
         known.

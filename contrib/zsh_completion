@@ -424,12 +424,12 @@ _hg_ignore_space_opts=(
   '(--ignore-space-change -b)'{-b,--ignore-space-change}'[ignore changes in the amount of white space]'
   '(--ignore-blank-lines -B)'{-B,--ignore-blank-lines}'[ignore changes whose lines are all blank]')
 
-_hg_style_opts=(
-  '--style[display using template map file]:'
-  '--template[display with template]:')
+_hg_template_opts=(
+  '--template[display with template]:template'
+)
 
 _hg_log_opts=(
-  $_hg_global_opts $_hg_style_opts $_hg_gitlike_opts
+  $_hg_global_opts $_hg_template_opts $_hg_gitlike_opts
   '(--limit -l)'{-l+,--limit=}'[limit number of changes displayed]:'
   '(--no-merges -M)'{-M,--no-merges}'[do not show merges]'
   '(--patch -p)'{-p,--patch}'[show patch]'
@@ -642,7 +642,7 @@ _hg_cmd_grep() {
 }
 
 _hg_cmd_heads() {
-  _arguments -s -w : $_hg_global_opts $_hg_style_opts \
+  _arguments -s -w : $_hg_global_opts $_hg_template_opts \
   '(--topo -t)'{-t,--topo}'[show topological heads only]' \
   '(--closed -c)'{-c,--closed}'[show normal and closed branch heads]' \
   '(--rev -r)'{-r+,--rev=}'[show only heads which are descendants of rev]:revision:_hg_labels'
@@ -745,7 +745,7 @@ _hg_cmd_outgoing() {
 }
 
 _hg_cmd_parents() {
-  _arguments -s -w : $_hg_global_opts $_hg_style_opts \
+  _arguments -s -w : $_hg_global_opts $_hg_template_opts \
   '(--rev -r)'{-r+,--rev=}'[show parents of the specified rev]:revision:_hg_labels' \
   ':last modified file:_hg_files'
 }
@@ -905,7 +905,7 @@ _hg_cmd_tag() {
 }
 
 _hg_cmd_tip() {
-  _arguments -s -w : $_hg_global_opts $_hg_gitlike_opts $_hg_style_opts \
+  _arguments -s -w : $_hg_global_opts $_hg_gitlike_opts $_hg_template_opts \
   '(--patch -p)'{-p,--patch}'[show patch]'
 }
 

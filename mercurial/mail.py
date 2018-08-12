@@ -348,7 +348,7 @@ def addrlistencode(ui, addrs, charsets=None, display=False):
             [encoding.strfromlocal(a) for a in addrs]):
         if name or addr:
             result.append(_addressencode(ui, name, addr, charsets))
-    return [pycompat.bytesurl(r) for r in result]
+    return result
 
 def mimeencode(ui, s, charsets=None, display=False):
     '''creates mime text object, encodes it if needed, and sets

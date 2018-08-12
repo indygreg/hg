@@ -308,13 +308,12 @@ def headencode(ui, s, charsets=None, display=False):
     return s
 
 def _addressencode(ui, name, addr, charsets=None):
+    assert isinstance(addr, bytes)
     name = headencode(ui, name, charsets)
     try:
-        acc, dom = addr.split(r'@')
+        acc, dom = addr.split('@')
         acc = acc.encode('ascii')
-        if isinstance(dom, bytes):
-            dom = dom.decode(encoding.encoding)
-        dom = dom.encode('idna')
+        dom = dom.decode(encoding.encoding).encode('idna')
         addr = '%s@%s' % (acc, dom)
     except UnicodeDecodeError:
         raise error.Abort(_('invalid email address: %s') % addr)
@@ -332,7 +331,7 @@ def addressencode(ui, address, charsets=None, display=False):
     if display or not address:
         return address or ''
     name, addr = email.utils.parseaddr(encoding.strfromlocal(address))
-    return _addressencode(ui, name, addr, charsets)
+    return _addressencode(ui, name, encoding.strtolocal(addr), charsets)
 
 def addrlistencode(ui, addrs, charsets=None, display=False):
     '''Turns a list of addresses into a list of RFC-2047 compliant headers.
@@ -347,7 +346,8 @@ def addrlistencode(ui, addrs, charsets=None, display=False):
     for name, addr in email.utils.getaddresses(
             [encoding.strfromlocal(a) for a in addrs]):
         if name or addr:
-            result.append(_addressencode(ui, name, addr, charsets))
+            r = _addressencode(ui, name, encoding.strtolocal(addr), charsets)
+            result.append(r)
     return result
 
 def mimeencode(ui, s, charsets=None, display=False):

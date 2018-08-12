@@ -169,6 +169,11 @@ def replacetokens(tokens, opts):
                 yield adjusttokenpos(t._replace(string=fn[4:]), coloffset)
                 continue
 
+        # Looks like "if __name__ == '__main__'".
+        if (t.type == token.NAME and t.string == '__name__'
+            and _isop(i + 1, '==')):
+            _ensuresysstr(i + 2)
+
         # Emit unmodified token.
         yield adjusttokenpos(t, coloffset)
 

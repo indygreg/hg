@@ -313,7 +313,7 @@ def _addressencode(ui, name, addr, charsets=None):
     try:
         acc, dom = addr.split('@')
         acc.decode('ascii')
-        dom = dom.decode(encoding.encoding).encode('idna')
+        dom = dom.decode(pycompat.sysstr(encoding.encoding)).encode('idna')
         addr = '%s@%s' % (acc, dom)
     except UnicodeDecodeError:
         raise error.Abort(_('invalid email address: %s') % addr)

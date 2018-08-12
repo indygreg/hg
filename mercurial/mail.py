@@ -312,7 +312,7 @@ def _addressencode(ui, name, addr, charsets=None):
     name = headencode(ui, name, charsets)
     try:
         acc, dom = addr.split('@')
-        acc = acc.encode('ascii')
+        acc.decode('ascii')
         dom = dom.decode(encoding.encoding).encode('idna')
         addr = '%s@%s' % (acc, dom)
     except UnicodeDecodeError:
@@ -320,7 +320,7 @@ def _addressencode(ui, name, addr, charsets=None):
     except ValueError:
         try:
             # too strict?
-            addr = addr.encode('ascii')
+            addr.decode('ascii')
         except UnicodeDecodeError:
             raise error.Abort(_('invalid local address: %s') % addr)
     return pycompat.bytesurl(

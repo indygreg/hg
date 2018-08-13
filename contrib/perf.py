@@ -1751,6 +1751,31 @@ def perfbranchmap(ui, repo, *filternames, **opts):
         branchcachewrite.restore()
     fm.end()
 
+@command('perfbranchmapload', [
+     ('f', 'filter', '', 'Specify repoview filter'),
+     ('', 'list', False, 'List brachmap filter caches'),
+    ] + formatteropts)
+def perfbranchmapread(ui, repo, filter='', list=False, **opts):
+    """benchmark reading the branchmap"""
+    if list:
+        for name, kind, st in repo.cachevfs.readdir(stat=True):
+            if name.startswith('branch2'):
+                filtername = name.partition('-')[2] or 'unfiltered'
+                ui.status('%s - %s\n'
+                          % (filtername, util.bytecount(st.st_size)))
+        return
+    if filter:
+        repo = repoview.repoview(repo, filter)
+    else:
+        repo = repo.unfiltered()
+    # try once without timer, the filter may not be cached
+    if branchmap.read(repo) is None:
+        raise error.Abort('No brachmap cached for %s repo'
+                          % (filter or 'unfiltered'))
+    timer, fm = gettimer(ui, opts)
+    timer(lambda: branchmap.read(repo) and None)
+    fm.end()
+
 @command('perfloadmarkers')
 def perfloadmarkers(ui, repo):
     """benchmark the time to parse the on-disk markers for a repo

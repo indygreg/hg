@@ -55,6 +55,8 @@ perfstatus
                  benchmark parsing bookmarks from disk to memory
    perfbranchmap
                  benchmark the update of a branchmap
+   perfbranchmapload
+                 benchmark reading the branchmap
    perfbundleread
                  Benchmark reading of bundle files.
    perfcca       (no help text available)

@@ -40,13 +40,7 @@ def _filename(repo):
 def read(repo):
     try:
         f = repo.cachevfs(_filename(repo))
-        lines = f.read().split('\n')
-        f.close()
-    except (IOError, OSError):
-        return None
-
-    try:
-        cachekey = lines.pop(0).split(" ", 2)
+        cachekey = next(f).split(" ", 2)
         last, lrev = cachekey[:2]
         last, lrev = bin(last), int(lrev)
         filteredhash = None
@@ -58,7 +52,7 @@ def read(repo):
             # invalidate the cache
             raise ValueError(r'tip differs')
         cl = repo.changelog
-        for l in lines:
+        for l in f:
             if not l:
                 continue
             node, state, label = l.split(" ", 2)
@@ -72,6 +66,10 @@ def read(repo):
             partial.setdefault(label, []).append(node)
             if state == 'c':
                 partial._closednodes.add(node)
+
+    except (IOError, OSError):
+        return None
+
     except Exception as inst:
         if repo.ui.debugflag:
             msg = 'invalid branchheads cache'

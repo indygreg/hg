@@ -2130,7 +2130,8 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
 
     for f in forget:
         if ui.verbose or not match.exact(f) or interactive:
-            ui.status(_('removing %s\n') % match.rel(f))
+            ui.status(_('removing %s\n') % match.rel(f),
+                      label='addremove.removed')
 
     if not dryrun:
         rejected = wctx.forget(forget, prefix)
@@ -2263,7 +2264,8 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
     for f in list:
         if ui.verbose or not m.exact(f):
             progress.increment()
-            ui.status(_('removing %s\n') % m.rel(f))
+            ui.status(_('removing %s\n') % m.rel(f),
+                      label='addremove.removed')
     progress.complete()
 
     if not dryrun:

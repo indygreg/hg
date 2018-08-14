@@ -470,7 +470,7 @@ def _itagmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
     success, status = tagmerge.merge(repo, fcd, fco, fca)
     return success, status, False
 
-@internaltool('dump', fullmerge)
+@internaltool('dump', fullmerge, binary=True, symlink=True)
 def _idump(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
     """
     Creates three versions of the files to merge, containing the
@@ -496,7 +496,7 @@ def _idump(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
     repo.wwrite(fd + ".base", fca.data(), fca.flags())
     return False, 1, False
 
-@internaltool('forcedump', mergeonly)
+@internaltool('forcedump', mergeonly, binary=True, symlink=True)
 def _forcedump(repo, mynode, orig, fcd, fco, fca, toolconf, files,
                 labels=None):
     """

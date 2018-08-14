@@ -399,7 +399,8 @@ class internalmerge(_funcregistrarbase):
         internalmerge = registrar.internalmerge()
 
         @internalmerge('mymerge', internalmerge.mergeonly,
-                       onfailure=None, precheck=None):
+                       onfailure=None, precheck=None,
+                       binary=False, symlink=False):
         def mymergefunc(repo, mynode, orig, fcd, fco, fca,
                         toolconf, files, labels=None):
             '''Explanation of this internal merge tool ....
@@ -430,6 +431,12 @@ class internalmerge(_funcregistrarbase):
     'files' and 'labels'. If it returns false value, merging is aborted
     immediately (and file is marked as "unresolved").
 
+    Optional argument 'binary' is a binary files capability of internal
+    merge tool. 'nomerge' merge type implies binary=True.
+
+    Optional argument 'symlink' is a symlinks capability of inetrnal
+    merge function. 'nomerge' merge type implies symlink=True.
+
     'internalmerge' instance in example above can be used to
     decorate multiple functions.
 
@@ -447,7 +454,14 @@ class internalmerge(_funcregistrarbase):
     fullmerge = 'fullmerge'  # both premerge and merge
 
     def _extrasetup(self, name, func, mergetype,
-                    onfailure=None, precheck=None):
+                    onfailure=None, precheck=None,
+                    binary=False, symlink=False):
         func.mergetype = mergetype
         func.onfailure = onfailure
         func.precheck = precheck
+
+        binarycap = binary or mergetype == self.nomerge
+        symlinkcap = symlink or mergetype == self.nomerge
+
+        # actual capabilities, which this internal merge tool has
+        func.capabilities = {"binary": binarycap, "symlink": symlinkcap}

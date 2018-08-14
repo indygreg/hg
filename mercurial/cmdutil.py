@@ -2031,7 +2031,8 @@ def add(ui, repo, match, prefix, explicitonly, **opts):
                 cca(f)
             names.append(f)
             if ui.verbose or not exact:
-                ui.status(_('adding %s\n') % match.rel(f))
+                ui.status(_('adding %s\n') % match.rel(f),
+                          label='addremove.added')
 
     for subpath in sorted(wctx.substate):
         sub = wctx.sub(subpath)

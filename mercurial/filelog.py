@@ -205,47 +205,6 @@ class filelog(object):
     def opener(self):
         return self._revlog.opener
 
-    @property
-    def _lazydeltabase(self):
-        return self._revlog._lazydeltabase
-
-    @_lazydeltabase.setter
-    def _lazydeltabase(self, value):
-        self._revlog._lazydeltabase = value
-
-    @property
-    def _deltabothparents(self):
-        return self._revlog._deltabothparents
-
-    @_deltabothparents.setter
-    def _deltabothparents(self, value):
-        self._revlog._deltabothparents = value
-
-    @property
-    def _inline(self):
-        return self._revlog._inline
-
-    @property
-    def _withsparseread(self):
-        return getattr(self._revlog, '_withsparseread', False)
-
-    @property
-    def _srmingapsize(self):
-        return self._revlog._srmingapsize
-
-    @property
-    def _srdensitythreshold(self):
-        return self._revlog._srdensitythreshold
-
-    def _deltachain(self, rev, stoprev=None):
-        return self._revlog._deltachain(rev, stoprev)
-
-    def chainbase(self, rev):
-        return self._revlog.chainbase(rev)
-
-    def chainlen(self, rev):
-        return self._revlog.chainlen(rev)
-
     def clone(self, tr, destrevlog, **kwargs):
         if not isinstance(destrevlog, filelog):
             raise error.ProgrammingError('expected filelog to clone()')

@@ -809,6 +809,9 @@ class revlogoldindex(list):
             return (0, 0, 0, -1, -1, -1, -1, nullid)
         return list.__getitem__(self, i)
 
+# maximum <delta-chain-data>/<revision-text-length> ratio
+LIMIT_DELTA2TEXT = 2
+
 class revlogoldio(object):
     def __init__(self):
         self.size = indexformatv0.size
@@ -2493,7 +2496,7 @@ class revlog(object):
         # Bad delta from cumulated payload size:
         #
         #   If the sum of delta get larger than K * target text length.
-        if textlen * 2  < deltainfo.compresseddeltalen:
+        if textlen * LIMIT_DELTA2TEXT < deltainfo.compresseddeltalen:
             return False
 
         # Bad delta from chain length:

@@ -2473,9 +2473,30 @@ class revlog(object):
             # certain size. Be also apply this tradeoff here and relax span
             # constraint for small enought content.
             maxdist = self._srmingapsize
-        if (distance > maxdist or deltainfo.deltalen > textlen or
-            deltainfo.compresseddeltalen > textlen * 2 or
-            (self._maxchainlen and deltainfo.chainlen > self._maxchainlen)):
+
+        # Bad delta from read span:
+        #
+        #   If the span of data read is larger than the maximum allowed.
+        if maxdist < distance:
+            return False
+
+        # Bad delta from new delta size:
+        #
+        #   If the delta size is larger than the target text, storing the
+        #   delta will be inefficient.
+        if textlen < deltainfo.deltalen:
+            return False
+
+        # Bad delta from cumulated payload size:
+        #
+        #   If the sum of delta get larger than K * target text length.
+        if textlen * 2  < deltainfo.compresseddeltalen:
+            return False
+
+        # Bad delta from chain length:
+        #
+        #   If the number of delta in the chain gets too high.
+        if self._maxchainlen and  self._maxchainlen < deltainfo.chainlen:
             return False
 
         return True

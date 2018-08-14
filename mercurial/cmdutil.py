@@ -1054,7 +1054,7 @@ def makefileobj(ctx, pat, mode='wb', **props):
     fn = makefilename(ctx, pat, **props)
     return open(fn, mode)
 
-def openrevlog(repo, cmd, file_, opts):
+def openstorage(repo, cmd, file_, opts, returnrevlog=False):
     """opens the changelog, manifest, a filelog or a given revlog"""
     cl = opts['changelog']
     mf = opts['manifest']
@@ -1092,7 +1092,21 @@ def openrevlog(repo, cmd, file_, opts):
             filelog = repo.file(file_)
             if len(filelog):
                 r = filelog
+
+        # Not all storage may be revlogs. If requested, try to return an actual
+        # revlog instance.
+        if returnrevlog:
+            if isinstance(r, revlog.revlog):
+                pass
+            elif util.safehasattr(r, '_revlog'):
+                r = r._revlog
+            elif r is not None:
+                raise error.Abort(_('%r does not appear to be a revlog') % r)
+
     if not r:
+        if not returnrevlog:
+            raise error.Abort(_('cannot give path to non-revlog'))
+
         if not file_:
             raise error.CommandError(cmd, _('invalid arguments'))
         if not os.path.isfile(file_):
@@ -1100,6 +1114,18 @@ def openrevlog(repo, cmd, file_, opts):
         r = revlog.revlog(vfsmod.vfs(pycompat.getcwd(), audit=False),
                           file_[:-2] + ".i")
     return r
+
+def openrevlog(repo, cmd, file_, opts):
+    """Obtain a revlog backing storage of an item.
+
+    This is similar to ``openstorage()`` except it always returns a revlog.
+
+    In most cases, a caller cares about the main storage object - not the
+    revlog backing it. Therefore, this function should only be used by code
+    that needs to examine low-level revlog implementation details. e.g. debug
+    commands.
+    """
+    return openstorage(repo, cmd, file_, opts, returnrevlog=True)
 
 def copy(ui, repo, pats, opts, rename=False):
     # called with the repo lock held

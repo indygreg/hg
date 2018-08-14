@@ -1829,17 +1829,25 @@ Test dynamic list of merge tools only shows up once
         This implies premerge. Therefore, files aren't dumped, if premerge runs
         successfully. Use :forcedump to forcibly write files out.
   
+        (actual capabilities: binary, symlink)
+  
       ":fail"
         Rather than attempting to merge files that were modified on both
         branches, it marks them as unresolved. The resolve command must be used
         to resolve these conflicts.
   
+        (actual capabilities: binary, symlink)
+  
       ":forcedump"
         Creates three versions of the files as same as :dump, but omits
         premerge.
   
+        (actual capabilities: binary, symlink)
+  
       ":local"
         Uses the local 'p1()' version of files as the merged version.
+  
+        (actual capabilities: binary, symlink)
   
       ":merge"
         Uses the internal non-interactive simple merge algorithm for merging
@@ -1864,9 +1872,13 @@ Test dynamic list of merge tools only shows up once
       ":other"
         Uses the other 'p2()' version of files as the merged version.
   
+        (actual capabilities: binary, symlink)
+  
       ":prompt"
         Asks the user which of the local 'p1()' or the other 'p2()' version to
         keep as the merged version.
+  
+        (actual capabilities: binary, symlink)
   
       ":tagmerge"
         Uses the internal tag merge algorithm (experimental).
@@ -1877,7 +1889,8 @@ Test dynamic list of merge tools only shows up once
         markers are inserted.
   
       Internal tools are always available and do not require a GUI but will by
-      default not handle symlinks or binary files.
+      default not handle symlinks or binary files. See next section for detail
+      about "actual capabilities" described above.
   
       Choosing a merge tool
       =====================

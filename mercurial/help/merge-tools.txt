@@ -36,8 +36,9 @@ merge tools are:
 
 .. internaltoolsmarker
 
-Internal tools are always available and do not require a GUI but will by default
-not handle symlinks or binary files.
+Internal tools are always available and do not require a GUI but will
+by default not handle symlinks or binary files. See next section for
+detail about "actual capabilities" described above.
 
 Choosing a merge tool
 =====================

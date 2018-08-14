@@ -989,6 +989,12 @@ def loadinternalmerge(ui, extname, registrarobj):
         internals['internal:' + name] = func
         internalsdoc[fullname] = func
 
+        capabilities = sorted([k for k, v in func.capabilities.items() if v])
+        if capabilities:
+            capdesc = _("(actual capabilities: %s)") % ', '.join(capabilities)
+            func.__doc__ = (func.__doc__ +
+                            pycompat.sysstr("\n\n    %s" % capdesc))
+
 # load built-in merge tools explicitly to setup internalsdoc
 loadinternalmerge(None, None, internaltool)
 

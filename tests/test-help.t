@@ -1892,8 +1892,7 @@ Test dynamic list of merge tools only shows up once
          must be executable by the shell.
       3. If the filename of the file to be merged matches any of the patterns in
          the merge-patterns configuration section, the first usable merge tool
-         corresponding to a matching pattern is used. Here, binary capabilities
-         of the merge tool are not considered.
+         corresponding to a matching pattern is used.
       4. If ui.merge is set it will be considered next. If the value is not the
          name of a configured tool, the specified value is used and must be
          executable by the shell. Otherwise the named tool is used if it is
@@ -1905,6 +1904,17 @@ Test dynamic list of merge tools only shows up once
       7. If the file to be merged is not binary and is not a symlink, then
          internal ":merge" is used.
       8. Otherwise, ":prompt" is used.
+  
+      For historical reason, Mercurial assumes capabilities of internal merge
+      tools as below while examining rules above, regardless of actual
+      capabilities of them.
+  
+      step specified via  binary symlink
+      ----------------------------------
+      1.   --tool         o      o
+      2.   HGMERGE        o      o
+      3.   merge-patterns o      x
+      4.   ui.merge       x      x
   
       Note:
          After selecting a merge program, Mercurial will by default attempt to

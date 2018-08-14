@@ -137,6 +137,12 @@ def findexternaltool(ui, tool):
     return procutil.findexe(util.expandpath(exe))
 
 def _picktool(repo, ui, path, binary, symlink, changedelete):
+    def hascapability(tool, capability, strict=False):
+        if strict and tool in internals:
+            if internals[tool].capabilities.get(capability):
+                return True
+        return _toolbool(ui, tool, capability)
+
     def supportscd(tool):
         return tool in internals and internals[tool].mergetype == nomerge
 
@@ -149,9 +155,9 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
                 ui.warn(_("couldn't find merge tool %s\n") % tmsg)
             else: # configured but non-existing tools are more silent
                 ui.note(_("couldn't find merge tool %s\n") % tmsg)
-        elif symlink and not _toolbool(ui, tool, "symlink"):
+        elif symlink and not hascapability(tool, "symlink"):
             ui.warn(_("tool %s can't handle symlinks\n") % tmsg)
-        elif binary and not _toolbool(ui, tool, "binary"):
+        elif binary and not hascapability(tool, "binary"):
             ui.warn(_("tool %s can't handle binary\n") % tmsg)
         elif changedelete and not supportscd(tool):
             # the nomerge tools are the only tools that support change/delete

@@ -17,10 +17,17 @@
   $ hg ci -qAm 'add foo/file'
   $ hg tag some-tag
   $ hg tag -l local-tag
+  $ echo '1234567890123456789012345678901234567890 missing_tag' >> .hgtags
+  $ hg ci -m 'add a missing tag'
   $ hg log
+  changeset:   4:3fb95ee23a66
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     add a missing tag
+  
   changeset:   3:593cbf6fb2b4
   tag:         local-tag
-  tag:         tip
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     Added tag some-tag for changeset ad681a868e44
@@ -48,12 +55,16 @@
   scanning source...
   sorting...
   converting...
-  3 add foo and bar
-  2 remove foo
-  1 add foo/file
-  0 Added tag some-tag for changeset ad681a868e44
+  4 add foo and bar
+  3 remove foo
+  2 add foo/file
+  1 Added tag some-tag for changeset ad681a868e44
+  0 add a missing tag
+  missing tag entry: "1234567890123456789012345678901234567890 missing_tag"
   $ cd new
   $ hg log -G --template '{rev} {node|short} ({phase}) "{desc}"\n'
+  o  4 3fb95ee23a66 (public) "add a missing tag"
+  |
   o  3 593cbf6fb2b4 (public) "Added tag some-tag for changeset ad681a868e44"
   |
   o  2 ad681a868e44 (public) "add foo/file"
@@ -125,14 +136,16 @@ test tag rewriting
   scanning source...
   sorting...
   converting...
-  4 add foo and bar
-  3 remove foo
-  2 add foo/file
-  1 Added tag some-tag for changeset ad681a868e44
+  5 add foo and bar
+  4 remove foo
+  3 add foo/file
+  2 Added tag some-tag for changeset ad681a868e44
+  1 add a missing tag
+  missing tag entry: "1234567890123456789012345678901234567890 missing_tag"
   0 add baz
   $ cd new-filemap
   $ hg tags
-  tip                                2:3c74706b1ff8
+  tip                                3:7bb553f2c68a
   some-tag                           0:ba8636729451
   $ cd ..
 

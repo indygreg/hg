@@ -143,12 +143,17 @@ class mercurial_sink(common.converter_sink):
         for line in data.splitlines():
             s = line.split(' ', 1)
             if len(s) != 2:
+                self.ui.warn(_('invalid tag entry: "%s"\n') % line)
+                fp.write('%s\n' % line)  # Bogus, but keep for hash stability
                 continue
             revid = revmap.get(source.lookuprev(s[0]))
             if not revid:
                 if s[0] == nodemod.nullhex:
                     revid = s[0]
                 else:
+                    # missing, but keep for hash stability
+                    self.ui.warn(_('missing tag entry: "%s"\n') % line)
+                    fp.write('%s\n' % line)
                     continue
             fp.write('%s %s\n' % (revid, s[1]))
         return fp.getvalue()

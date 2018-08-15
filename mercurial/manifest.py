@@ -1642,13 +1642,12 @@ class manifestctx(object):
                 self._data = manifestdict()
             else:
                 store = self._storage()
-                # TODO accessing non-public API.
-                if self._node in store._fulltextcache:
-                    text = pycompat.bytestr(store._fulltextcache[self._node])
+                if self._node in store.fulltextcache:
+                    text = pycompat.bytestr(store.fulltextcache[self._node])
                 else:
                     text = store.revision(self._node)
                     arraytext = bytearray(text)
-                    store._fulltextcache[self._node] = arraytext
+                    store.fulltextcache[self._node] = arraytext
                 self._data = manifestdict(text)
         return self._data
 

@@ -1317,7 +1317,7 @@ class manifestrevlog(object):
             self = manifestrevlogref()
             if repo is None or self is None:
                 return
-            if repo.manifestlog._revlog is not self:
+            if repo.manifestlog.getstorage(b'') is not self:
                 # there's a different manifest in play now, abort
                 return
             self._fulltextcache.write()
@@ -1583,7 +1583,7 @@ class memmanifestctx(object):
         self._manifestdict = manifestdict()
 
     def _storage(self):
-        return self._manifestlog._revlog
+        return self._manifestlog.getstorage(b'')
 
     def new(self):
         return memmanifestctx(self._manifestlog)
@@ -1619,7 +1619,7 @@ class manifestctx(object):
         #self.linkrev = store.linkrev(rev)
 
     def _storage(self):
-        return self._manifestlog._revlog
+        return self._manifestlog.getstorage(b'')
 
     def node(self):
         return self._node
@@ -1689,7 +1689,7 @@ class memtreemanifestctx(object):
         self._treemanifest = treemanifest()
 
     def _storage(self):
-        return self._manifestlog._revlog
+        return self._manifestlog.getstorage(b'')
 
     def new(self, dir=''):
         return memtreemanifestctx(self._manifestlog, dir=dir)

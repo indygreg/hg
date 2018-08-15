@@ -195,6 +195,12 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
     for pat, tool in ui.configitems("merge-patterns"):
         mf = match.match(repo.root, '', [pat])
         if mf(path) and check(tool, pat, symlink, False, changedelete):
+            if binary and not hascapability(tool, "binary", strict=True):
+                ui.warn(_("warning: check merge-patterns configurations,"
+                          " if %r for binary file %r is unintentional\n"
+                          "(see 'hg help merge-tools'"
+                          " for binary files capability)\n")
+                        % (pycompat.bytestr(tool), pycompat.bytestr(path)))
             toolpath = _findtool(ui, tool)
             return (tool, _quotetoolpath(toolpath))
 

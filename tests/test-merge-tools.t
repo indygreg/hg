@@ -1805,6 +1805,41 @@ Verify naming of temporary files and that extension is preserved
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
+Binary files capability checking
+
+  $ hg update -q -C 0
+  $ python <<EOF
+  > with open('b', 'wb') as fp:
+  >     fp.write(b'\x00\x01\x02\x03')
+  > EOF
+  $ hg add b
+  $ hg commit -qm "add binary file (#1)"
+
+  $ hg update -q -C 0
+  $ python <<EOF
+  > with open('b', 'wb') as fp:
+  >     fp.write(b'\x03\x02\x01\x00')
+  > EOF
+  $ hg add b
+  $ hg commit -qm "add binary file (#2)"
+
+By default, binary files capability of internal merge tools is not
+checked strictly.
+
+(for merge-patterns, chosen unintentionally)
+
+  $ hg merge 9 \
+  > --config merge-patterns.b=:merge-other \
+  > --config merge-patterns.re:[a-z]=:other
+  warning: check merge-patterns configurations, if ':merge-other' for binary file 'b' is unintentional
+  (see 'hg help merge-tools' for binary files capability)
+  merging b
+  warning: b looks like a binary file.
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ hg merge --abort -q
+
 Check that debugpicktool examines which merge tool is chosen for
 specified file as expected
 
@@ -1836,9 +1871,9 @@ specified file as expected
 
 (-r REV causes checking files in specified revision)
 
-  $ hg manifest -r tip
+  $ hg manifest -r 8
   f.txt
-  $ hg debugpickmergetool -r tip
+  $ hg debugpickmergetool -r 8
   f.txt = true
 
 #if symlink

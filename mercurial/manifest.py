@@ -1507,8 +1507,8 @@ class manifestlog(object):
 
         self._treemanifests = usetreemanifest
 
-        self._revlog = repo._constructmanifest()
-        self._revlog._setupmanifestcachehooks(repo)
+        self._rootstore = repo._constructmanifest()
+        self._rootstore._setupmanifestcachehooks(repo)
         self._narrowmatch = repo.narrowmatch()
 
         # A cache of the manifestctx or treemanifestctx for each directory
@@ -1537,7 +1537,7 @@ class manifestlog(object):
             if not self._narrowmatch.visitdir(tree[:-1] or '.'):
                 return excludeddirmanifestctx(tree, node)
         if tree:
-            if self._revlog._treeondisk:
+            if self._rootstore._treeondisk:
                 if verify:
                     # Side-effect is LookupError is raised if node doesn't
                     # exist.
@@ -1551,7 +1551,7 @@ class manifestlog(object):
         else:
             if verify:
                 # Side-effect is LookupError is raised if node doesn't exist.
-                self._revlog.rev(node)
+                self._rootstore.rev(node)
 
             if self._treemanifests:
                 m = treemanifestctx(self, '', node)
@@ -1567,14 +1567,14 @@ class manifestlog(object):
         return m
 
     def getstorage(self, tree):
-        return self._revlog.dirlog(tree)
+        return self._rootstore.dirlog(tree)
 
     def clearcaches(self, clear_persisted_data=False):
         self._dirmancache.clear()
-        self._revlog.clearcaches(clear_persisted_data=clear_persisted_data)
+        self._rootstore.clearcaches(clear_persisted_data=clear_persisted_data)
 
     def rev(self, node):
-        return self._revlog.rev(node)
+        return self._rootstore.rev(node)
 
 @interfaceutil.implementer(repository.imanifestrevisionwritable)
 class memmanifestctx(object):

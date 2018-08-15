@@ -818,7 +818,7 @@ def rebase(ui, repo, **opts):
     if dryrun and confirm:
         raise error.Abort(_('cannot specify both --confirm and --dry-run'))
 
-    if action in {'abort', 'continue'} or repo.currenttransaction() is not None:
+    if action or repo.currenttransaction() is not None:
         # in-memory rebase is not compatible with resuming rebases.
         # (Or if it is run within a transaction, since the restart logic can
         # fail the entire transaction.)

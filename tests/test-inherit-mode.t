@@ -69,7 +69,7 @@ new directories are setgid
   00600 ./.hg/00changelog.i
   00770 ./.hg/cache/
   00660 ./.hg/cache/branch2-served
-  00660 ./.hg/cache/manifestfulltextcache
+  00660 ./.hg/cache/manifestfulltextcache (reporevlogstore !)
   00660 ./.hg/cache/rbc-names-v1
   00660 ./.hg/cache/rbc-revs-v1
   00660 ./.hg/dirstate

@@ -510,7 +510,7 @@ Test cache warming command
   $ ls -r .hg/cache/*
   .hg/cache/rbc-revs-v1
   .hg/cache/rbc-names-v1
-  .hg/cache/manifestfulltextcache
+  .hg/cache/manifestfulltextcache (reporevlogstore !)
   .hg/cache/branch2-served
 
 Test debugcolor

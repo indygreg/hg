@@ -32,7 +32,7 @@ share shouldn't have a cache dir, original repo should
   [1]
   $ ls -1 ../repo1/.hg/cache
   branch2-served
-  manifestfulltextcache
+  manifestfulltextcache (reporevlogstore !)
   rbc-names-v1
   rbc-revs-v1
   tags2-visible

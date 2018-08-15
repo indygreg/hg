@@ -262,13 +262,17 @@ def _trimchunk(revlog, revs, startidx, endidx=None):
     if endidx is None:
         endidx = len(revs)
 
-    # Trim empty revs at the end, but never the very first revision of a chain
-    while endidx > 1 and endidx > startidx and length(revs[endidx - 1]) == 0:
-        endidx -= 1
+    # If we have a non-emtpy delta candidate, there are nothing to trim
+    if revs[endidx - 1] < len(revlog):
+        # Trim empty revs at the end, except the very first revision of a chain
+        while (endidx > 1
+                and endidx > startidx
+                and length(revs[endidx - 1]) == 0):
+            endidx -= 1
 
     return revs[startidx:endidx]
 
-def _segmentspan(revlog, revs):
+def _segmentspan(revlog, revs, deltainfo=None):
     """Get the byte span of a segment of revisions
 
     revs is a sorted array of revision numbers
@@ -294,7 +298,14 @@ def _segmentspan(revlog, revs):
     """
     if not revs:
         return 0
-    return revlog.end(revs[-1]) - revlog.start(revs[0])
+    if deltainfo is not None and len(revlog) <= revs[-1]:
+        if len(revs) == 1:
+            return deltainfo.deltalen
+        offset = revlog.end(len(revlog) - 1)
+        end = deltainfo.deltalen + offset
+    else:
+        end = revlog.end(revs[-1])
+    return end - revlog.start(revs[0])
 
 def _slicechunk(revlog, revs, deltainfo=None, targetsize=None):
     """slice revs to reduce the amount of unrelated data to be read from disk.
@@ -526,7 +537,7 @@ def _slicechunktodensity(revlog, revs, deltainfo=None, targetdensity=0.5,
         yield revs
         return
 
-    if deltainfo is not None:
+    if deltainfo is not None and deltainfo.deltalen:
         revs = list(revs)
         revs.append(nextrev)
 
@@ -2444,7 +2455,8 @@ class revlog(object):
                 deltachain = []
 
             chunks = _slicechunk(self, deltachain, deltainfo)
-            distance = max(map(lambda revs:_segmentspan(self, revs), chunks))
+            all_span = [_segmentspan(self, revs, deltainfo) for revs in chunks]
+            distance = max(all_span)
         else:
             distance = deltainfo.distance
 

@@ -806,7 +806,6 @@ def rebase(ui, repo, **opts):
     inmemory = ui.configbool('rebase', 'experimental.inmemory')
     dryrun = opts.get('dry_run')
     confirm = opts.get('confirm')
-    stop = opts.get('stop')
     selactions = [k for k in ['abort', 'stop', 'continue'] if opts.get(k)]
     if len(selactions) > 1:
         raise error.Abort(_('cannot use --%s with --%s')
@@ -819,8 +818,7 @@ def rebase(ui, repo, **opts):
     if dryrun and confirm:
         raise error.Abort(_('cannot specify both --confirm and --dry-run'))
 
-    if (opts.get('continue') or opts.get('abort') or
-        repo.currenttransaction() is not None):
+    if action in {'abort', 'continue'} or repo.currenttransaction() is not None:
         # in-memory rebase is not compatible with resuming rebases.
         # (Or if it is run within a transaction, since the restart logic can
         # fail the entire transaction.)
@@ -836,8 +834,8 @@ def rebase(ui, repo, **opts):
         opts['dest'] = '_destautoorphanrebase(SRC)'
 
     if dryrun or confirm:
-        return _dryrunrebase(ui, repo, opts)
-    elif stop:
+        return _dryrunrebase(ui, repo, action, opts)
+    elif action == 'stop':
         rbsrt = rebaseruntime(repo, ui)
         rbsrt.restorestatus()
 
@@ -863,16 +861,16 @@ def rebase(ui, repo, **opts):
             # and re-run as an on-disk merge.
             overrides = {('rebase', 'singletransaction'): True}
             with ui.configoverride(overrides, 'rebase'):
-                return _dorebase(ui, repo, opts, inmemory=inmemory)
+                return _dorebase(ui, repo, action, opts, inmemory=inmemory)
         except error.InMemoryMergeConflictsError:
             ui.warn(_('hit merge conflicts; re-running rebase without in-memory'
                       ' merge\n'))
-            _dorebase(ui, repo, {'abort': True})
-            return _dorebase(ui, repo, opts, inmemory=False)
+            _dorebase(ui, repo, action='abort')
+            return _dorebase(ui, repo, action, opts, inmemory=False)
     else:
-        return _dorebase(ui, repo, opts)
+        return _dorebase(ui, repo, action, opts)
 
-def _dryrunrebase(ui, repo, opts):
+def _dryrunrebase(ui, repo, action, opts):
     rbsrt = rebaseruntime(repo, ui, inmemory=True, opts=opts)
     confirm = opts.get('confirm')
     if confirm:
@@ -885,7 +883,7 @@ def _dryrunrebase(ui, repo, opts):
         try:
             overrides = {('rebase', 'singletransaction'): True}
             with ui.configoverride(overrides, 'rebase'):
-                _origrebase(ui, repo, opts, rbsrt, inmemory=True,
+                _origrebase(ui, repo, action, opts, rbsrt, inmemory=True,
                             leaveunfinished=True)
         except error.InMemoryMergeConflictsError:
             ui.status(_('hit a merge conflict\n'))
@@ -911,11 +909,13 @@ def _dryrunrebase(ui, repo, opts):
                 rbsrt._prepareabortorcontinue(isabort=True, backup=False,
                                               suppwarns=True)
 
-def _dorebase(ui, repo, opts, inmemory=False):
+def _dorebase(ui, repo, action, opts, inmemory=False):
     rbsrt = rebaseruntime(repo, ui, inmemory, opts)
-    return _origrebase(ui, repo, opts, rbsrt, inmemory=inmemory)
+    return _origrebase(ui, repo, action, opts, rbsrt, inmemory=inmemory)
 
-def _origrebase(ui, repo, opts, rbsrt, inmemory=False, leaveunfinished=False):
+def _origrebase(ui, repo, action, opts, rbsrt, inmemory=False,
+                leaveunfinished=False):
+    assert action != 'stop'
     with repo.wlock(), repo.lock():
         # Validate input and define rebasing points
         destf = opts.get('dest', None)
@@ -925,8 +925,6 @@ def _origrebase(ui, repo, opts, rbsrt, inmemory=False, leaveunfinished=False):
         # search default destination in this space
         # used in the 'hg pull --rebase' case, see issue 5214.
         destspace = opts.get('_destspace')
-        contf = opts.get('continue')
-        abortf = opts.get('abort')
         if opts.get('interactive'):
             try:
                 if extensions.find('histedit'):
@@ -942,20 +940,20 @@ def _origrebase(ui, repo, opts, rbsrt, inmemory=False, leaveunfinished=False):
             raise error.Abort(
                 _('message can only be specified with collapse'))
 
-        if contf or abortf:
+        if action:
             if rbsrt.collapsef:
                 raise error.Abort(
                     _('cannot use collapse with continue or abort'))
             if srcf or basef or destf:
                 raise error.Abort(
                     _('abort and continue do not allow specifying revisions'))
-            if abortf and opts.get('tool', False):
+            if action == 'abort' and opts.get('tool', False):
                 ui.warn(_('tool option will be ignored\n'))
-            if contf:
+            if action == 'continue':
                 ms = mergemod.mergestate.read(repo)
                 mergeutil.checkunresolved(ms)
 
-            retcode = rbsrt._prepareabortorcontinue(abortf)
+            retcode = rbsrt._prepareabortorcontinue(isabort=(action == 'abort'))
             if retcode is not None:
                 return retcode
         else:

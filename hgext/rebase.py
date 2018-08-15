@@ -837,18 +837,17 @@ def rebase(ui, repo, **opts):
         return _dryrunrebase(ui, repo, action, opts)
     elif action == 'stop':
         rbsrt = rebaseruntime(repo, ui)
-        rbsrt.restorestatus()
-
-        if rbsrt.collapsef:
-            raise error.Abort(_("cannot stop in --collapse session"))
-        allowunstable = obsolete.isenabled(repo, obsolete.allowunstableopt)
-        if not (rbsrt.keepf or allowunstable):
-            raise error.Abort(_("cannot remove original changesets with"
-                                " unrebased descendants"),
-                hint=_('either enable obsmarkers to allow unstable '
-                       'revisions or use --keep to keep original '
-                       'changesets'))
         with repo.wlock(), repo.lock():
+            rbsrt.restorestatus()
+            if rbsrt.collapsef:
+                raise error.Abort(_("cannot stop in --collapse session"))
+            allowunstable = obsolete.isenabled(repo, obsolete.allowunstableopt)
+            if not (rbsrt.keepf or allowunstable):
+                raise error.Abort(_("cannot remove original changesets with"
+                                    " unrebased descendants"),
+                    hint=_('either enable obsmarkers to allow unstable '
+                           'revisions or use --keep to keep original '
+                           'changesets'))
             if needupdate(repo, rbsrt.state):
                 # update to the current working revision
                 # to clear interrupted merge

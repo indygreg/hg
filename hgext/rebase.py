@@ -811,22 +811,13 @@ def rebase(ui, repo, **opts):
     if len(selactions) > 1:
         raise error.Abort(_('cannot use --%s with --%s')
                           % tuple(selactions[:2]))
-    if stop:
-        if opts.get('dry_run') or opts.get('confirm'):
-            raise error.Abort(_('cannot use --stop with --dry-run '
-                                'or --confirm'))
-    if dryrun:
-        if opts.get('abort'):
-            raise error.Abort(_('cannot specify both --dry-run and --abort'))
-        if opts.get('continue'):
-            raise error.Abort(_('cannot specify both --dry-run and --continue'))
-    if confirm:
-        if opts.get('dry_run'):
-            raise error.Abort(_('cannot specify both --confirm and --dry-run'))
-        if opts.get('abort'):
-            raise error.Abort(_('cannot specify both --confirm and --abort'))
-        if opts.get('continue'):
-            raise error.Abort(_('cannot specify both --confirm and --continue'))
+    action = selactions[0] if selactions else None
+    if dryrun and action:
+        raise error.Abort(_('cannot specify both --dry-run and --%s') % action)
+    if confirm and action:
+        raise error.Abort(_('cannot specify both --confirm and --%s') % action)
+    if dryrun and confirm:
+        raise error.Abort(_('cannot specify both --confirm and --dry-run'))
 
     if (opts.get('continue') or opts.get('abort') or
         repo.currenttransaction() is not None):

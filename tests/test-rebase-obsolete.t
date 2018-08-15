@@ -2012,7 +2012,7 @@ Test --stop raise errors with conflicting options:
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
   $ hg rebase --stop --dry-run
-  abort: cannot use --stop with --dry-run or --confirm
+  abort: cannot specify both --dry-run and --stop
   [255]
 
   $ hg rebase -s 3 -d 5

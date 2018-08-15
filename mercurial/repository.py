@@ -991,6 +991,12 @@ class imanifestrevisionwritable(imanifestrevisionbase):
 class imanifeststorage(interfaceutil.Interface):
     """Storage interface for manifest data."""
 
+    tree = interfaceutil.Attribute(
+        """The path to the directory this manifest tracks.
+
+        The empty bytestring represents the root manifest.
+        """)
+
     index = interfaceutil.Attribute(
         """An ``ifilerevisionssequence`` instance.""")
 

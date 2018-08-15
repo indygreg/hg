@@ -2097,6 +2097,8 @@ def debugrevlog(ui, repo, file_=None, **opts):
     numfull = 0
     # intermediate snapshot against a prior snapshot
     numsemi = 0
+    # snapshot count per depth
+    numsnapdepth = collections.defaultdict(lambda: 0)
     # delta against previous revision
     numprev = 0
     # delta against first or second parent (not prev)
@@ -2118,6 +2120,8 @@ def debugrevlog(ui, repo, file_=None, **opts):
     datasize = [None, 0, 0]
     fullsize = [None, 0, 0]
     semisize = [None, 0, 0]
+    # snapshot count per depth
+    snapsizedepth = collections.defaultdict(lambda: [None, 0, 0])
     deltasize = [None, 0, 0]
     chunktypecounts = {}
     chunktypesizes = {}
@@ -2147,7 +2151,9 @@ def debugrevlog(ui, repo, file_=None, **opts):
                 numemptytext += 1
             else:
                 numfull += 1
+                numsnapdepth[0] += 1
                 addsize(size, fullsize)
+                addsize(size, snapsizedepth[0])
         else:
             chainlengths.append(chainlengths[delta] + 1)
             baseaddr = chainbases[delta]
@@ -2160,6 +2166,9 @@ def debugrevlog(ui, repo, file_=None, **opts):
             elif r.issnapshot(rev):
                 addsize(size, semisize)
                 numsemi += 1
+                depth = r.snapshotdepth(rev)
+                numsnapdepth[depth] += 1
+                addsize(size, snapsizedepth[depth])
             else:
                 addsize(size, deltasize)
                 if delta == rev - 1:
@@ -2204,8 +2213,13 @@ def debugrevlog(ui, repo, file_=None, **opts):
     fulltotal = fullsize[2]
     fullsize[2] /= numfull
     semitotal = semisize[2]
+    snaptotal = {}
     if 0 < numsemi:
         semisize[2] /= numsemi
+    for depth in snapsizedepth:
+        snaptotal[depth] = snapsizedepth[depth][2]
+        snapsizedepth[depth][2] /= numsnapdepth[depth]
+
     deltatotal = deltasize[2]
     if numdeltas > 0:
         deltasize[2] /= numdeltas
@@ -2246,12 +2260,17 @@ def debugrevlog(ui, repo, file_=None, **opts):
              + fmt % pcfmt(numemptytext, numemptytext + numemptydelta))
     ui.write(('                   delta : ')
              + fmt % pcfmt(numemptydelta, numemptytext + numemptydelta))
-    ui.write(('    full      : ') + fmt % pcfmt(numfull, numrevs))
-    ui.write(('    inter     : ') + fmt % pcfmt(numsemi, numrevs))
+    ui.write(('    snapshot  : ') + fmt % pcfmt(numfull + numsemi, numrevs))
+    for depth in sorted(numsnapdepth):
+        ui.write(('      lvl-%-3d :       ' % depth)
+                 + fmt % pcfmt(numsnapdepth[depth], numrevs))
     ui.write(('    deltas    : ') + fmt % pcfmt(numdeltas, numrevs))
     ui.write(('revision size : ') + fmt2 % totalsize)
-    ui.write(('    full      : ') + fmt % pcfmt(fulltotal, totalsize))
-    ui.write(('    inter     : ') + fmt % pcfmt(semitotal, totalsize))
+    ui.write(('    snapshot  : ')
+             + fmt % pcfmt(fulltotal + semitotal, totalsize))
+    for depth in sorted(numsnapdepth):
+        ui.write(('      lvl-%-3d :       ' % depth)
+                 + fmt % pcfmt(snaptotal[depth], totalsize))
     ui.write(('    deltas    : ') + fmt % pcfmt(deltatotal, totalsize))
 
     def fmtchunktype(chunktype):
@@ -2285,6 +2304,13 @@ def debugrevlog(ui, repo, file_=None, **opts):
                  % tuple(datasize))
     ui.write(('full revision size (min/max/avg)     : %d / %d / %d\n')
              % tuple(fullsize))
+    ui.write(('inter-snapshot size (min/max/avg)    : %d / %d / %d\n')
+             % tuple(semisize))
+    for depth in sorted(snapsizedepth):
+        if depth == 0:
+            continue
+        ui.write(('    level-%-3d (min/max/avg)          : %d / %d / %d\n')
+                 % ((depth,) + tuple(snapsizedepth[depth])))
     ui.write(('delta size (min/max/avg)             : %d / %d / %d\n')
              % tuple(deltasize))
 

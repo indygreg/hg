@@ -26,12 +26,12 @@
       empty     :   0 ( 0.00%)
                      text  :   0 (100.00%)
                      delta :   0 (100.00%)
-      full      :   3 (100.00%)
-      inter     :   0 ( 0.00%)
+      snapshot  :   3 (100.00%)
+        lvl-0   :         3 (100.00%)
       deltas    :   0 ( 0.00%)
   revision size : 191
-      full      : 191 (100.00%)
-      inter     :   0 ( 0.00%)
+      snapshot  : 191 (100.00%)
+        lvl-0   :       191 (100.00%)
       deltas    :   0 ( 0.00%)
   
   chunks        :   3
@@ -46,6 +46,7 @@
   
   uncompressed data size (min/max/avg) : 57 / 66 / 62
   full revision size (min/max/avg)     : 58 / 67 / 63
+  inter-snapshot size (min/max/avg)    : 0 / 0 / 0
   delta size (min/max/avg)             : 0 / 0 / 0
   $ hg debugrevlog -m
   format : 1
@@ -58,12 +59,12 @@
       empty     :  1 (33.33%)
                      text  :  1 (100.00%)
                      delta :  0 ( 0.00%)
-      full      :  2 (66.67%)
-      inter     :  0 ( 0.00%)
+      snapshot  :  2 (66.67%)
+        lvl-0   :        2 (66.67%)
       deltas    :  0 ( 0.00%)
   revision size : 88
-      full      : 88 (100.00%)
-      inter     :  0 ( 0.00%)
+      snapshot  : 88 (100.00%)
+        lvl-0   :       88 (100.00%)
       deltas    :  0 ( 0.00%)
   
   chunks        :  3
@@ -80,6 +81,7 @@
   
   uncompressed data size (min/max/avg) : 0 / 43 / 28
   full revision size (min/max/avg)     : 44 / 44 / 44
+  inter-snapshot size (min/max/avg)    : 0 / 0 / 0
   delta size (min/max/avg)             : 0 / 0 / 0
   $ hg debugrevlog a
   format : 1
@@ -92,12 +94,12 @@
       empty     : 0 ( 0.00%)
                      text  : 0 (100.00%)
                      delta : 0 (100.00%)
-      full      : 1 (100.00%)
-      inter     : 0 ( 0.00%)
+      snapshot  : 1 (100.00%)
+        lvl-0   :       1 (100.00%)
       deltas    : 0 ( 0.00%)
   revision size : 3
-      full      : 3 (100.00%)
-      inter     : 0 ( 0.00%)
+      snapshot  : 3 (100.00%)
+        lvl-0   :       3 (100.00%)
       deltas    : 0 ( 0.00%)
   
   chunks        : 1
@@ -112,6 +114,7 @@
   
   uncompressed data size (min/max/avg) : 2 / 2 / 2
   full revision size (min/max/avg)     : 3 / 3 / 3
+  inter-snapshot size (min/max/avg)    : 0 / 0 / 0
   delta size (min/max/avg)             : 0 / 0 / 0
 #endif
 

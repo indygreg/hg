@@ -805,6 +805,7 @@ def rebase(ui, repo, **opts):
     opts = pycompat.byteskwargs(opts)
     inmemory = ui.configbool('rebase', 'experimental.inmemory')
     dryrun = opts.get('dry_run')
+    confirm = opts.get('confirm')
     stop = opts.get('stop')
     if stop:
         if opts.get('dry_run') or opts.get('confirm'):
@@ -817,8 +818,7 @@ def rebase(ui, repo, **opts):
             raise error.Abort(_('cannot specify both --dry-run and --abort'))
         if opts.get('continue'):
             raise error.Abort(_('cannot specify both --dry-run and --continue'))
-    if opts.get('confirm'):
-        dryrun = True
+    if confirm:
         if opts.get('dry_run'):
             raise error.Abort(_('cannot specify both --confirm and --dry-run'))
         if opts.get('abort'):
@@ -842,7 +842,7 @@ def rebase(ui, repo, **opts):
         opts['rev'] = [revsetlang.formatspec('%ld and orphan()', userrevs)]
         opts['dest'] = '_destautoorphanrebase(SRC)'
 
-    if dryrun:
+    if dryrun or confirm:
         return _dryrunrebase(ui, repo, opts)
     elif stop:
         rbsrt = rebaseruntime(repo, ui)

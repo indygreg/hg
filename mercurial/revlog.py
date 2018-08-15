@@ -2108,6 +2108,12 @@ class revlog(object):
             return False
         return self.issnapshot(deltap)
 
+    def snapshotdepth(self, rev):
+        """number of snapshot in the chain before this one"""
+        if not self.issnapshot(rev):
+            raise ProgrammingError('revision %d not a snapshot')
+        return len(self._deltachain(rev)[0]) - 1
+
     def revdiff(self, rev1, rev2):
         """return or calculate a delta between two revisions
 

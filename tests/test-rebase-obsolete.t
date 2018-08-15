@@ -2020,7 +2020,7 @@ Test --stop raise errors with conflicting options:
   (use 'hg rebase --continue' or 'hg rebase --abort')
   [255]
   $ hg rebase --stop --continue
-  abort: cannot use --stop with --abort or --continue
+  abort: cannot use --stop with --continue
   [255]
 
 Test --stop moves bookmarks of original revisions to new rebased nodes:

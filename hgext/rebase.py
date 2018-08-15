@@ -807,12 +807,14 @@ def rebase(ui, repo, **opts):
     dryrun = opts.get('dry_run')
     confirm = opts.get('confirm')
     stop = opts.get('stop')
+    selactions = [k for k in ['abort', 'stop', 'continue'] if opts.get(k)]
+    if len(selactions) > 1:
+        raise error.Abort(_('cannot use --%s with --%s')
+                          % tuple(selactions[:2]))
     if stop:
         if opts.get('dry_run') or opts.get('confirm'):
             raise error.Abort(_('cannot use --stop with --dry-run '
                                 'or --confirm'))
-        if opts.get('abort') or opts.get('continue'):
-            raise error.Abort(_('cannot use --stop with --abort or --continue'))
     if dryrun:
         if opts.get('abort'):
             raise error.Abort(_('cannot specify both --dry-run and --abort'))
@@ -950,8 +952,6 @@ def _origrebase(ui, repo, opts, rbsrt, inmemory=False, leaveunfinished=False):
                 _('message can only be specified with collapse'))
 
         if contf or abortf:
-            if contf and abortf:
-                raise error.Abort(_('cannot use both abort and continue'))
             if rbsrt.collapsef:
                 raise error.Abort(
                     _('cannot use collapse with continue or abort'))

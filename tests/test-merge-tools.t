@@ -1840,6 +1840,51 @@ checked strictly.
   [1]
   $ hg merge --abort -q
 
+(for ui.merge, ignored unintentionally)
+
+  $ hg merge 9 \
+  > --config ui.merge=:other
+  tool :other (for pattern b) can't handle binary
+  tool true can't handle binary
+  tool false can't handle binary
+  no tool found to merge b
+  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for b? u
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ hg merge --abort -q
+
+With merge.strict-capability-check=true, binary files capability of
+internal merge tools is checked strictly.
+
+  $ f --hexdump b
+  b:
+  0000: 03 02 01 00                                     |....|
+
+(for merge-patterns)
+
+  $ hg merge 9 --config merge.strict-capability-check=true \
+  > --config merge-patterns.b=:merge-other \
+  > --config merge-patterns.re:[a-z]=:other
+  tool :merge-other (for pattern b) can't handle binary
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ f --hexdump b
+  b:
+  0000: 00 01 02 03                                     |....|
+  $ hg merge --abort -q
+
+(for ui.merge)
+
+  $ hg merge 9 --config merge.strict-capability-check=true \
+  > --config ui.merge=:other
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ f --hexdump b
+  b:
+  0000: 00 01 02 03                                     |....|
+  $ hg merge --abort -q
+
 Check that debugpicktool examines which merge tool is chosen for
 specified file as expected
 
@@ -1882,6 +1927,36 @@ specified file as expected
 
   $ hg debugpickmergetool -r 6d00b3726f6e
   f = :prompt
+
+(by default, it is assumed that no internal merge tools has symlinks
+capability)
+
+  $ hg debugpickmergetool \
+  > -r 6d00b3726f6e \
+  > --config merge-patterns.f=:merge-other \
+  > --config merge-patterns.re:[f]=:merge-local \
+  > --config merge-patterns.re:[a-z]=:other
+  f = :prompt
+
+  $ hg debugpickmergetool \
+  > -r 6d00b3726f6e \
+  > --config ui.merge=:other
+  f = :prompt
+
+(with strict-capability-check=true, actual symlink capabilities are
+checked striclty)
+
+  $ hg debugpickmergetool --config merge.strict-capability-check=true \
+  > -r 6d00b3726f6e \
+  > --config merge-patterns.f=:merge-other \
+  > --config merge-patterns.re:[f]=:merge-local \
+  > --config merge-patterns.re:[a-z]=:other
+  f = :other
+
+  $ hg debugpickmergetool --config merge.strict-capability-check=true \
+  > -r 6d00b3726f6e \
+  > --config ui.merge=:other
+  f = :other
 
 #endif
 

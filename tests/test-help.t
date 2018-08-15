@@ -1913,8 +1913,12 @@ Test dynamic list of merge tools only shows up once
       ----------------------------------
       1.   --tool         o      o
       2.   HGMERGE        o      o
-      3.   merge-patterns o      x
-      4.   ui.merge       x      x
+      3.   merge-patterns o (*)  x (*)
+      4.   ui.merge       x (*)  x (*)
+  
+      If "merge.strict-capability-check" configuration is true, Mercurial checks
+      capabilities of internal merge tools strictly in (*) cases above. It is
+      false by default for backward compatibility.
   
       Note:
          After selecting a merge program, Mercurial will by default attempt to

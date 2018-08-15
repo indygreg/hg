@@ -137,6 +137,8 @@ def findexternaltool(ui, tool):
     return procutil.findexe(util.expandpath(exe))
 
 def _picktool(repo, ui, path, binary, symlink, changedelete):
+    strictcheck = ui.configbool('merge', 'strict-capability-check')
+
     def hascapability(tool, capability, strict=False):
         if strict and tool in internals:
             if internals[tool].capabilities.get(capability):
@@ -155,9 +157,9 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
                 ui.warn(_("couldn't find merge tool %s\n") % tmsg)
             else: # configured but non-existing tools are more silent
                 ui.note(_("couldn't find merge tool %s\n") % tmsg)
-        elif symlink and not hascapability(tool, "symlink"):
+        elif symlink and not hascapability(tool, "symlink", strictcheck):
             ui.warn(_("tool %s can't handle symlinks\n") % tmsg)
-        elif binary and not hascapability(tool, "binary"):
+        elif binary and not hascapability(tool, "binary", strictcheck):
             ui.warn(_("tool %s can't handle binary\n") % tmsg)
         elif changedelete and not supportscd(tool):
             # the nomerge tools are the only tools that support change/delete
@@ -192,9 +194,13 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
             return (hgmerge, hgmerge)
 
     # then patterns
+
+    # whether binary capability should be checked strictly
+    binarycap = binary and strictcheck
+
     for pat, tool in ui.configitems("merge-patterns"):
         mf = match.match(repo.root, '', [pat])
-        if mf(path) and check(tool, pat, symlink, False, changedelete):
+        if mf(path) and check(tool, pat, symlink, binarycap, changedelete):
             if binary and not hascapability(tool, "binary", strict=True):
                 ui.warn(_("warning: check merge-patterns configurations,"
                           " if %r for binary file %r is unintentional\n"

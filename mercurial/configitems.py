@@ -771,6 +771,9 @@ coreconfigitem('merge', 'on-failure',
 coreconfigitem('merge', 'preferancestor',
         default=lambda: ['*'],
 )
+coreconfigitem('merge', 'strict-capability-check',
+    default=False,
+)
 coreconfigitem('merge-tools', '.*',
     default=None,
     generic=True,

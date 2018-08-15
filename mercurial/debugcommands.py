@@ -2170,7 +2170,10 @@ def debugrevlog(ui, repo, file_=None, **opts):
                     numother += 1
 
         # Obtain data on the raw chunks in the revlog.
-        segment = r._getsegmentforrevs(rev, rev)[1]
+        if util.safehasattr(r, '_getsegmentforrevs'):
+            segment = r._getsegmentforrevs(rev, rev)[1]
+        else:
+            segment = r._revlog._getsegmentforrevs(rev, rev)[1]
         if segment:
             chunktype = bytes(segment[0:1])
         else:

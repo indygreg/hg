@@ -15,6 +15,36 @@
   adding a
   $ hg ci -Am make-it-full
 #if reporevlogstore
+  $ hg debugrevlog -c
+  format : 1
+  flags  : inline
+  
+  revisions     :   3
+      merges    :   0 ( 0.00%)
+      normal    :   3 (100.00%)
+  revisions     :   3
+      empty     :   0 ( 0.00%)
+                     text  :   0 (100.00%)
+                     delta :   0 (100.00%)
+      full      :   3 (100.00%)
+      deltas    :   0 ( 0.00%)
+  revision size : 191
+      full      : 191 (100.00%)
+      deltas    :   0 ( 0.00%)
+  
+  chunks        :   3
+      0x75 (u)  :   3 (100.00%)
+  chunks size   : 191
+      0x75 (u)  : 191 (100.00%)
+  
+  avg chain length  :  0
+  max chain length  :  0
+  max chain reach   : 67
+  compression ratio :  0
+  
+  uncompressed data size (min/max/avg) : 57 / 66 / 62
+  full revision size (min/max/avg)     : 58 / 67 / 63
+  delta size (min/max/avg)             : 0 / 0 / 0
   $ hg debugrevlog -m
   format : 1
   flags  : inline, generaldelta
@@ -46,6 +76,36 @@
   
   uncompressed data size (min/max/avg) : 0 / 43 / 28
   full revision size (min/max/avg)     : 44 / 44 / 44
+  delta size (min/max/avg)             : 0 / 0 / 0
+  $ hg debugrevlog a
+  format : 1
+  flags  : inline, generaldelta
+  
+  revisions     : 1
+      merges    : 0 ( 0.00%)
+      normal    : 1 (100.00%)
+  revisions     : 1
+      empty     : 0 ( 0.00%)
+                     text  : 0 (100.00%)
+                     delta : 0 (100.00%)
+      full      : 1 (100.00%)
+      deltas    : 0 ( 0.00%)
+  revision size : 3
+      full      : 3 (100.00%)
+      deltas    : 0 ( 0.00%)
+  
+  chunks        : 1
+      0x75 (u)  : 1 (100.00%)
+  chunks size   : 3
+      0x75 (u)  : 3 (100.00%)
+  
+  avg chain length  : 0
+  max chain length  : 0
+  max chain reach   : 3
+  compression ratio : 0
+  
+  uncompressed data size (min/max/avg) : 2 / 2 / 2
+  full revision size (min/max/avg)     : 3 / 3 / 3
   delta size (min/max/avg)             : 0 / 0 / 0
 #endif
 

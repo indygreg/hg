@@ -593,16 +593,16 @@ def _fullcopytracing(repo, c1, c2, base):
             continue
         elif dsrc in d1 and ddst in d1:
             # directory wasn't entirely moved locally
-            invalid.add(dsrc + "/")
+            invalid.add(dsrc)
         elif dsrc in d2 and ddst in d2:
             # directory wasn't entirely moved remotely
-            invalid.add(dsrc + "/")
-        elif dsrc + "/" in dirmove and dirmove[dsrc + "/"] != ddst + "/":
+            invalid.add(dsrc)
+        elif dsrc in dirmove and dirmove[dsrc] != ddst:
             # files from the same directory moved to two different places
-            invalid.add(dsrc + "/")
+            invalid.add(dsrc)
         else:
             # looks good so far
-            dirmove[dsrc + "/"] = ddst + "/"
+            dirmove[dsrc] = ddst
 
     for i in invalid:
         if i in dirmove:
@@ -611,6 +611,8 @@ def _fullcopytracing(repo, c1, c2, base):
 
     if not dirmove:
         return copy, {}, diverge, renamedelete, {}
+
+    dirmove = {k + "/": v + "/" for k, v in dirmove.iteritems()}
 
     for d in dirmove:
         repo.ui.debug("   discovered dir src: '%s' -> dst: '%s'\n" %

@@ -861,7 +861,21 @@ def perfmanifest(ui, repo, rev, manifest_rev=False, clear_disk=False, **opts):
         ctx = scmutil.revsingle(repo, rev, rev)
         t = ctx.manifestnode()
     else:
-        t = repo.manifestlog._revlog.lookup(rev)
+        from mercurial.node import bin
+
+        if len(rev) == 40:
+            t = bin(rev)
+        else:
+            try:
+                rev = int(rev)
+
+                if util.safehasattr(repo.manifestlog, 'getstorage'):
+                    t = repo.manifestlog.getstorage(b'').node(rev)
+                else:
+                    t = repo.manifestlog._revlog.lookup(rev)
+            except ValueError:
+                raise error.Abort('manifest revision must be integer or full '
+                                  'node')
     def d():
         repo.manifestlog.clearcaches(clear_persisted_data=clear_disk)
         repo.manifestlog[t].read()

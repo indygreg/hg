@@ -166,6 +166,10 @@ perfstatus
   $ hg perflookup 2
   $ hg perflrucache
   $ hg perfmanifest 2
+  $ hg perfmanifest -m 44fe2c8352bb3a478ffd7d8350bbc721920134d1
+  $ hg perfmanifest -m 44fe2c8352bb
+  abort: manifest revision must be integer or full node
+  [255]
   $ hg perfmergecalculate -r 3
   $ hg perfmoonwalk
   $ hg perfnodelookup 2

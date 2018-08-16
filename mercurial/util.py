@@ -3377,6 +3377,9 @@ class _CompressedStreamReader(object):
                 return ''.join(buf)
             chunk = self._reader(65536)
             self._decompress(chunk)
+            if not chunk and not self._pending and not self._eof:
+                # No progress and no new data, bail out
+                return ''.join(buf)
 
 class _GzipCompressedStreamReader(_CompressedStreamReader):
     def __init__(self, fh):

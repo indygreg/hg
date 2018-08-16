@@ -1967,31 +1967,23 @@ class revlog(object):
 
         deltainfo = deltacomputer.finddeltainfo(revinfo, fh)
 
-        if deltainfo is not None:
-            base = deltainfo.base
-            chainbase = deltainfo.chainbase
-            data = deltainfo.data
-            l = deltainfo.deltalen
-        else:
-            rawtext = deltacomputer.buildtext(revinfo, fh)
-            data = self.compress(rawtext)
-            l = len(data[1]) + len(data[0])
-            base = chainbase = curr
-
-        e = (offset_type(offset, flags), l, textlen,
-             base, link, p1r, p2r, node)
+        e = (offset_type(offset, flags), deltainfo.deltalen, textlen,
+             deltainfo.base, link, p1r, p2r, node)
         self.index.append(e)
         self.nodemap[node] = curr
 
         entry = self._io.packentry(e, self.node, self.version, curr)
-        self._writeentry(transaction, ifh, dfh, entry, data, link, offset)
+        self._writeentry(transaction, ifh, dfh, entry, deltainfo.data,
+                         link, offset)
+
+        rawtext = btext[0]
 
         if alwayscache and rawtext is None:
             rawtext = deltacomputer.buildtext(revinfo, fh)
 
         if type(rawtext) == bytes: # only accept immutable objects
             self._cache = (node, curr, rawtext)
-        self._chainbasecache[curr] = chainbase
+        self._chainbasecache[curr] = deltainfo.chainbase
         return node
 
     def _writeentry(self, transaction, ifh, dfh, entry, data, link, offset):

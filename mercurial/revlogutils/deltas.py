@@ -690,6 +690,19 @@ class deltacomputer(object):
                           chainbase, chainlen, compresseddeltalen,
                           snapshotdepth)
 
+    def _fullsnapshotinfo(self, fh, revinfo):
+        curr = len(self.revlog)
+        rawtext = self.buildtext(revinfo, fh)
+        data = self.revlog.compress(rawtext)
+        compresseddeltalen = deltalen = dist = len(data[1]) + len(data[0])
+        deltabase = chainbase = curr
+        snapshotdepth = 0
+        chainlen = 1
+
+        return _deltainfo(dist, deltalen, data, deltabase,
+                          chainbase, chainlen, compresseddeltalen,
+                          snapshotdepth)
+
     def finddeltainfo(self, revinfo, fh):
         """Find an acceptable delta against a candidate revision
 
@@ -699,15 +712,18 @@ class deltacomputer(object):
 
         Returns the first acceptable candidate revision, as ordered by
         _getcandidaterevs
+
+        If no suitable deltabase is found, we return delta info for a full
+        snapshot.
         """
         if not revinfo.textlen:
-            return None # empty file do not need delta
+            return self._fullsnapshotinfo(fh, revinfo)
 
         # no delta for flag processor revision (see "candelta" for why)
         # not calling candelta since only one revision needs test, also to
         # avoid overhead fetching flags again.
         if revinfo.flags & REVIDX_RAWTEXT_CHANGING_FLAGS:
-            return None
+            return self._fullsnapshotinfo(fh, revinfo)
 
         cachedelta = revinfo.cachedelta
         p1 = revinfo.p1
@@ -742,4 +758,6 @@ class deltacomputer(object):
                 deltainfo = min(nominateddeltas, key=lambda x: x.deltalen)
                 break
 
+        if deltainfo is None:
+            deltainfo = self._fullsnapshotinfo(fh, revinfo)
         return deltainfo

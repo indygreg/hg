@@ -41,6 +41,3 @@ REVIDX_FLAGS_ORDER = [
 REVIDX_KNOWN_FLAGS = util.bitsfrom(REVIDX_FLAGS_ORDER)
 # bitmark for flags that could cause rawdata content change
 REVIDX_RAWTEXT_CHANGING_FLAGS = REVIDX_ISCENSORED | REVIDX_EXTSTORED
-
-# maximum <delta-chain-data>/<revision-text-length> ratio
-LIMIT_DELTA2TEXT = 2

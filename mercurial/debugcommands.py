@@ -88,6 +88,10 @@ from .utils import (
     stringutil,
 )
 
+from .revlogutils import (
+    deltas as deltautil
+)
+
 release = lockmod.release
 
 command = registrar.command()
@@ -706,7 +710,7 @@ def debugdeltachain(ui, repo, file_=None, **opts):
             largestblock = 0
             srchunks = 0
 
-            for revschunk in revlog._slicechunk(r, chain):
+            for revschunk in deltautil.slicechunk(r, chain):
                 srchunks += 1
                 blkend = start(revschunk[-1]) + length(revschunk[-1])
                 blksize = blkend - start(revschunk[0])

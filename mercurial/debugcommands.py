@@ -791,9 +791,11 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
             if not opts.get('nonheads'):
                 ui.write(("unpruned common: %s\n") %
                          " ".join(sorted(short(n) for n in common)))
-                dag = dagutil.revlogdag(repo.changelog)
+                cl = repo.changelog
+                clnode = cl.node
+                dag = dagutil.revlogdag(cl)
                 all = dag.ancestorset(dag.internalizeall(common))
-                common = dag.externalizeall(dag.headsetofconnecteds(all))
+                common = {clnode(r) for r in dag.headsetofconnecteds(all)}
         else:
             nodes = None
             if pushedrevs:

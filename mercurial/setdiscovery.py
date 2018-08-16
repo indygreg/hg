@@ -142,7 +142,9 @@ def findcommonheads(ui, local, remote,
 
     roundtrips = 0
     cl = local.changelog
+    clnode = cl.node
     localsubset = None
+
     if ancestorsof is not None:
         rev = local.changelog.rev
         localsubset = [rev(n) for n in ancestorsof]
@@ -159,7 +161,7 @@ def findcommonheads(ui, local, remote,
     with remote.commandexecutor() as e:
         fheads = e.callcommand('heads', {})
         fknown = e.callcommand('known', {
-            'nodes': dag.externalizeall(sample),
+            'nodes': [clnode(r) for r in sample],
         })
 
     srvheadhashes, yesno = fheads.result(), fknown.result()
@@ -176,12 +178,12 @@ def findcommonheads(ui, local, remote,
     srvheads = dag.internalizeall(srvheadhashes, filterunknown=True)
     if len(srvheads) == len(srvheadhashes):
         ui.debug("all remote heads known locally\n")
-        return (srvheadhashes, False, srvheadhashes,)
+        return srvheadhashes, False, srvheadhashes
 
     if len(sample) == len(ownheads) and all(yesno):
         ui.note(_("all local heads known remotely\n"))
-        ownheadhashes = dag.externalizeall(ownheads)
-        return (ownheadhashes, True, srvheadhashes,)
+        ownheadhashes = [clnode(r) for r in ownheads]
+        return ownheadhashes, True, srvheadhashes
 
     # full blown discovery
 
@@ -235,7 +237,7 @@ def findcommonheads(ui, local, remote,
 
         with remote.commandexecutor() as e:
             yesno = e.callcommand('known', {
-                'nodes': dag.externalizeall(sample),
+                'nodes': [clnode(r) for r in sample],
             }).result()
 
         full = True
@@ -268,4 +270,5 @@ def findcommonheads(ui, local, remote,
         return ({nullid}, True, srvheadhashes,)
 
     anyincoming = (srvheadhashes != [nullid])
-    return dag.externalizeall(result), anyincoming, srvheadhashes
+    result = {clnode(r) for r in result}
+    return result, anyincoming, srvheadhashes

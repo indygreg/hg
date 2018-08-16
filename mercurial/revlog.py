@@ -1965,13 +1965,7 @@ class revlog(object):
 
         revinfo = _revisioninfo(node, p1, p2, btext, textlen, cachedelta, flags)
 
-        # no delta for flag processor revision (see "candelta" for why)
-        # not calling candelta since only one revision needs test, also to
-        # avoid overhead fetching flags again.
-        if flags & REVIDX_RAWTEXT_CHANGING_FLAGS:
-            deltainfo = None
-        else:
-            deltainfo = deltacomputer.finddeltainfo(revinfo, fh)
+        deltainfo = deltacomputer.finddeltainfo(revinfo, fh)
 
         if deltainfo is not None:
             base = deltainfo.base

@@ -703,6 +703,12 @@ class deltacomputer(object):
         if not revinfo.textlen:
             return None # empty file do not need delta
 
+        # no delta for flag processor revision (see "candelta" for why)
+        # not calling candelta since only one revision needs test, also to
+        # avoid overhead fetching flags again.
+        if revinfo.flags & REVIDX_RAWTEXT_CHANGING_FLAGS:
+            return None
+
         cachedelta = revinfo.cachedelta
         p1 = revinfo.p1
         p2 = revinfo.p2

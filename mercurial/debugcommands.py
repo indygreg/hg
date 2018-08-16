@@ -42,7 +42,6 @@ from . import (
     color,
     context,
     dagparser,
-    dagutil,
     encoding,
     error,
     exchange,
@@ -791,11 +790,10 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
             if not opts.get('nonheads'):
                 ui.write(("unpruned common: %s\n") %
                          " ".join(sorted(short(n) for n in common)))
-                cl = repo.changelog
-                clnode = cl.node
-                dag = dagutil.revlogdag(cl)
-                all = dag.ancestorset(cl.rev(n) for n in common)
-                common = {clnode(r) for r in dag.headsetofconnecteds(all)}
+
+                clnode = repo.changelog.node
+                common = repo.revs('heads(::%ln)', common)
+                common = {clnode(r) for r in common}
         else:
             nodes = None
             if pushedrevs:

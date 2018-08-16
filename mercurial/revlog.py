@@ -2661,7 +2661,7 @@ class revlog(object):
         self._writeentry(transaction, ifh, dfh, entry, data, link, offset)
 
         if alwayscache and rawtext is None:
-            rawtext = deltacomputer._buildtext(revinfo, fh)
+            rawtext = deltacomputer.buildtext(revinfo, fh)
 
         if type(rawtext) == bytes: # only accept immutable objects
             self._cache = (node, curr, rawtext)

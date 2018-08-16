@@ -686,6 +686,7 @@ class treemanifest(object):
         self._copyfunc = _noop
         self._dirty = False
         self._dirs = {}
+        self._lazydirs = {}
         # Using _lazymanifest here is a little slower than plain old dicts
         self._files = {}
         self._flags = {}
@@ -699,9 +700,20 @@ class treemanifest(object):
     def _subpath(self, path):
         return self._dir + path
 
+    def _loadalllazy(self):
+        for k, (path, node, readsubtree) in self._lazydirs.iteritems():
+            self._dirs[k] = readsubtree(path, node)
+        self._lazydirs = {}
+
+    def _loadlazy(self, d):
+        path, node, readsubtree = self._lazydirs[d]
+        self._dirs[d] = readsubtree(path, node)
+        del self._lazydirs[d]
+
     def __len__(self):
         self._load()
         size = len(self._files)
+        self._loadalllazy()
         for m in self._dirs.values():
             size += m.__len__()
         return size
@@ -714,6 +726,7 @@ class treemanifest(object):
 
     def _isempty(self):
         self._load() # for consistency; already loaded by all callers
+        self._loadalllazy()
         return (not self._files and (not self._dirs or
                 all(m._isempty() for m in self._dirs.values())))
 
@@ -741,6 +754,7 @@ class treemanifest(object):
 
     def iterentries(self):
         self._load()
+        self._loadalllazy()
         for p, n in sorted(itertools.chain(self._dirs.items(),
                                            self._files.items())):
             if p in self._files:
@@ -751,6 +765,7 @@ class treemanifest(object):
 
     def items(self):
         self._load()
+        self._loadalllazy()
         for p, n in sorted(itertools.chain(self._dirs.items(),
                                            self._files.items())):
             if p in self._files:
@@ -763,6 +778,7 @@ class treemanifest(object):
 
     def iterkeys(self):
         self._load()
+        self._loadalllazy()
         for p in sorted(itertools.chain(self._dirs, self._files)):
             if p in self._files:
                 yield self._subpath(p)
@@ -782,8 +798,12 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
+            if dir in self._lazydirs:
+                self._loadlazy(dir)
+
             if dir not in self._dirs:
                 return False
+
             return self._dirs[dir].__contains__(subpath)
         else:
             return f in self._files
@@ -792,6 +812,9 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
+            if dir in self._lazydirs:
+                self._loadlazy(dir)
+
             if dir not in self._dirs:
                 return default
             return self._dirs[dir].get(subpath, default)
@@ -802,6 +825,9 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
+            if dir in self._lazydirs:
+                self._loadlazy(dir)
+
             return self._dirs[dir].__getitem__(subpath)
         else:
             return self._files[f]
@@ -810,11 +836,14 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
+            if dir in self._lazydirs:
+                self._loadlazy(dir)
+
             if dir not in self._dirs:
                 return ''
             return self._dirs[dir].flags(subpath)
         else:
-            if f in self._dirs:
+            if f in self._lazydirs or f in self._dirs:
                 return ''
             return self._flags.get(f, '')
 
@@ -822,6 +851,9 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
+            if dir in self._lazydirs:
+                self._loadlazy(dir)
+
             return self._dirs[dir].find(subpath)
         else:
             return self._files[f], self._flags.get(f, '')
@@ -830,6 +862,9 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
+            if dir in self._lazydirs:
+                self._loadlazy(dir)
+
             self._dirs[dir].__delitem__(subpath)
             # If the directory is now empty, remove it
             if self._dirs[dir]._isempty():
@@ -845,6 +880,8 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
+            if dir in self._lazydirs:
+                self._loadlazy(dir)
             if dir not in self._dirs:
                 self._dirs[dir] = treemanifest(self._subpath(dir))
             self._dirs[dir].__setitem__(subpath, n)
@@ -865,6 +902,8 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
+            if dir in self._lazydirs:
+                self._loadlazy(dir)
             if dir not in self._dirs:
                 self._dirs[dir] = treemanifest(self._subpath(dir))
             self._dirs[dir].setflag(subpath, flags)
@@ -879,8 +918,12 @@ class treemanifest(object):
         if self._copyfunc is _noop:
             def _copyfunc(s):
                 self._load()
-                for d in self._dirs:
-                    s._dirs[d] = self._dirs[d].copy()
+                # OPT: it'd be nice to not load everything here. Unfortunately
+                # this makes a mess of the "dirty" state tracking if we don't.
+                self._loadalllazy()
+                sdirs = s._dirs
+                for d, v in self._dirs.iteritems():
+                    sdirs[d] = v.copy()
                 s._files = dict.copy(self._files)
                 s._flags = dict.copy(self._flags)
             if self._loadfunc is _noop:
@@ -904,6 +947,8 @@ class treemanifest(object):
                 return
             t1._load()
             t2._load()
+            t1._loadalllazy()
+            t2._loadalllazy()
             for d, m1 in t1._dirs.iteritems():
                 if d in t2._dirs:
                     m2 = t2._dirs[d]
@@ -929,10 +974,13 @@ class treemanifest(object):
         self._load()
         topdir, subdir = _splittopdir(dir)
         if topdir:
+            if topdir in self._lazydirs:
+                self._loadlazy(topdir)
             if topdir in self._dirs:
                 return self._dirs[topdir].hasdir(subdir)
             return False
-        return (dir + '/') in self._dirs
+        dirslash = dir + '/'
+        return dirslash in self._dirs or dirslash in self._lazydirs
 
     def walk(self, match):
         '''Generates matching file names.
@@ -970,6 +1018,7 @@ class treemanifest(object):
 
         # yield this dir's files and walk its submanifests
         self._load()
+        self._loadalllazy()
         for p in sorted(list(self._dirs) + list(self._files)):
             if p in self._files:
                 fullp = self._subpath(p)
@@ -1006,6 +1055,8 @@ class treemanifest(object):
             if fn in self._flags:
                 ret._flags[fn] = self._flags[fn]
 
+        # OPT: use visitchildrenset to avoid loading everything
+        self._loadalllazy()
         for dir, subm in self._dirs.iteritems():
             m = subm._matches(match)
             if not m._isempty():
@@ -1041,6 +1092,9 @@ class treemanifest(object):
                 return
             t1._load()
             t2._load()
+            # OPT: do we need to load everything?
+            t1._loadalllazy()
+            t2._loadalllazy()
             for d, m1 in t1._dirs.iteritems():
                 m2 = t2._dirs.get(d, emptytree)
                 _diff(m1, m2)
@@ -1070,10 +1124,12 @@ class treemanifest(object):
         return not self._dirty and not m2._dirty and self._node == m2._node
 
     def parse(self, text, readsubtree):
+        selflazy = self._lazydirs
+        subpath = self._subpath
         for f, n, fl in _parse(text):
             if fl == 't':
                 f = f + '/'
-                self._dirs[f] = readsubtree(self._subpath(f), n)
+                selflazy[f] = (subpath(f), n, readsubtree)
             elif '/' in f:
                 # This is a flat manifest, so use __setitem__ and setflag rather
                 # than assigning directly to _files and _flags, so we can
@@ -1100,9 +1156,11 @@ class treemanifest(object):
         """
         self._load()
         flags = self.flags
+        lazydirs = [(d[:-1], node, 't') for
+                    d, (path, node, readsubtree) in self._lazydirs.iteritems()]
         dirs = [(d[:-1], self._dirs[d]._node, 't') for d in self._dirs]
         files = [(f, self._files[f], flags(f)) for f in self._files]
-        return _text(sorted(dirs + files))
+        return _text(sorted(dirs + files + lazydirs))
 
     def read(self, gettext, readsubtree):
         def _load_for_read(s):
@@ -1115,6 +1173,11 @@ class treemanifest(object):
         m1._load()
         m2._load()
         emptytree = treemanifest()
+        # OPT: Do we really need to load everything? Presumably things in lazy
+        # aren't dirty and don't need to be written.
+        self._loadalllazy()
+        m1._loadalllazy()
+        m2._loadalllazy()
         for d, subm in self._dirs.iteritems():
             subp1 = m1._dirs.get(d, emptytree)._node
             subp2 = m2._dirs.get(d, emptytree)._node
@@ -1134,6 +1197,8 @@ class treemanifest(object):
             yield self
 
         self._load()
+        # OPT: use visitchildrenset to avoid loading everything.
+        self._loadalllazy()
         for d, subm in self._dirs.iteritems():
             for subtree in subm.walksubtrees(matcher=matcher):
                 yield subtree

@@ -794,7 +794,7 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
                 cl = repo.changelog
                 clnode = cl.node
                 dag = dagutil.revlogdag(cl)
-                all = dag.ancestorset(dag.internalizeall(common))
+                all = dag.ancestorset(cl.rev(n) for n in common)
                 common = {clnode(r) for r in dag.headsetofconnecteds(all)}
         else:
             nodes = None

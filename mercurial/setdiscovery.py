@@ -143,11 +143,11 @@ def findcommonheads(ui, local, remote,
     roundtrips = 0
     cl = local.changelog
     clnode = cl.node
+    clrev = cl.rev
     localsubset = None
 
     if ancestorsof is not None:
-        rev = local.changelog.rev
-        localsubset = [rev(n) for n in ancestorsof]
+        localsubset = [clrev(n) for n in ancestorsof]
     dag = dagutil.revlogdag(cl, localsubset=localsubset)
 
     # early exit if we know all the specified remote heads already
@@ -175,7 +175,17 @@ def findcommonheads(ui, local, remote,
     # compatibility reasons)
     ui.status(_("searching for changes\n"))
 
-    srvheads = dag.internalizeall(srvheadhashes, filterunknown=True)
+    srvheads = []
+    for node in srvheadhashes:
+        if node == nullid:
+            continue
+
+        try:
+            srvheads.append(clrev(node))
+        # Catches unknown and filtered nodes.
+        except error.LookupError:
+            continue
+
     if len(srvheads) == len(srvheadhashes):
         ui.debug("all remote heads known locally\n")
         return srvheadhashes, False, srvheadhashes

@@ -35,7 +35,7 @@ Create a feature and use -B
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
   Subject: [PATCH 0 of 2] bookmark
-  Message-Id: <patchbomb.347155260@*> (glob)
+  Message-Id: <patchbomb.347155260@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1981 00:01:00 +0000
   From: test
@@ -50,10 +50,10 @@ Create a feature and use -B
   X-Mercurial-Node: accde9b8b6dce861c185d0825c1affc09a79cb26
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 2
-  Message-Id: <accde9b8b6dce861c185.347155261@*> (glob)
-  X-Mercurial-Series-Id: <accde9b8b6dce861c185.347155261@*> (glob)
-  In-Reply-To: <patchbomb.347155260@*> (glob)
-  References: <patchbomb.347155260@*> (glob)
+  Message-Id: <accde9b8b6dce861c185.347155261@test-hostname>
+  X-Mercurial-Series-Id: <accde9b8b6dce861c185.347155261@test-hostname>
+  In-Reply-To: <patchbomb.347155260@test-hostname>
+  References: <patchbomb.347155260@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1981 00:01:01 +0000
   From: test
@@ -81,10 +81,10 @@ Create a feature and use -B
   X-Mercurial-Node: 417defd1559c396ba06a44dce8dc1c2d2d653f3f
   X-Mercurial-Series-Index: 2
   X-Mercurial-Series-Total: 2
-  Message-Id: <417defd1559c396ba06a.347155262@*> (glob)
-  X-Mercurial-Series-Id: <accde9b8b6dce861c185.347155261@*> (glob)
-  In-Reply-To: <patchbomb.347155260@*> (glob)
-  References: <patchbomb.347155260@*> (glob)
+  Message-Id: <417defd1559c396ba06a.347155262@test-hostname>
+  X-Mercurial-Series-Id: <accde9b8b6dce861c185.347155261@test-hostname>
+  In-Reply-To: <patchbomb.347155260@test-hostname>
+  References: <patchbomb.347155260@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1981 00:01:02 +0000
   From: test
@@ -145,8 +145,8 @@ Do the same and combine with -o only one must be exported
   X-Mercurial-Node: 8dab2639fd35f1e337ad866c372a5c44f1064e3c
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <8dab2639fd35f1e337ad.378691260@*> (glob)
-  X-Mercurial-Series-Id: <8dab2639fd35f1e337ad.378691260@*> (glob)
+  Message-Id: <8dab2639fd35f1e337ad.378691260@test-hostname>
+  X-Mercurial-Series-Id: <8dab2639fd35f1e337ad.378691260@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Fri, 01 Jan 1982 00:01:00 +0000
   From: test

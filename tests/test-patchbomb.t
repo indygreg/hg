@@ -2,7 +2,6 @@ Note for future hackers of patchbomb: this file is a bit heavy on
 wildcards in test expectations due to how many things like hostnames
 tend to make it into outputs. As a result, you may need to perform the
 following regular expression substitutions:
-@$HOSTNAME> -> @*> (glob)
 Mercurial-patchbomb/.* -> Mercurial-patchbomb/* (glob)
 /mixed; boundary="===+[0-9]+==" -> /mixed; boundary="===*== (glob)"
 --===+[0-9]+=+--$ -> --===*=-- (glob)
@@ -45,8 +44,8 @@ Mercurial-patchbomb/.* -> Mercurial-patchbomb/* (glob)
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <8580ff50825a50c8f716.60@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.60@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.60@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -84,8 +83,8 @@ email.to config setting. Same for --cc:
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <*@*> (glob)
-  X-Mercurial-Series-Id: <*@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.60@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -159,8 +158,8 @@ Test diff.git is respected
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <8580ff50825a50c8f716.60@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.60@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.60@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -197,8 +196,8 @@ Test breaking format changes aren't
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <8580ff50825a50c8f716.60@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.60@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.60@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -236,7 +235,7 @@ Test breaking format changes aren't
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
   Subject: [PATCH 0 of 2] test
-  Message-Id: <patchbomb.120@*> (glob)
+  Message-Id: <patchbomb.120@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:02:00 +0000
   From: quux
@@ -252,10 +251,10 @@ Test breaking format changes aren't
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 2
-  Message-Id: <8580ff50825a50c8f716.121@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.121@*> (glob)
-  In-Reply-To: <patchbomb.120@*> (glob)
-  References: <patchbomb.120@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.121@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.121@test-hostname>
+  In-Reply-To: <patchbomb.120@test-hostname>
+  References: <patchbomb.120@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:02:01 +0000
   From: quux
@@ -284,10 +283,10 @@ Test breaking format changes aren't
   X-Mercurial-Node: 97d72e5f12c7e84f85064aa72e5a297142c36ed9
   X-Mercurial-Series-Index: 2
   X-Mercurial-Series-Total: 2
-  Message-Id: <97d72e5f12c7e84f8506.122@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.121@*> (glob)
-  In-Reply-To: <patchbomb.120@*> (glob)
-  References: <patchbomb.120@*> (glob)
+  Message-Id: <97d72e5f12c7e84f8506.122@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.121@test-hostname>
+  In-Reply-To: <patchbomb.120@test-hostname>
+  References: <patchbomb.120@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:02:02 +0000
   From: quux
@@ -366,7 +365,7 @@ test bundle and description:
   Content-Type: multipart/mixed; boundary="===*==" (glob)
   MIME-Version: 1.0
   Subject: test
-  Message-Id: <patchbomb.180@*> (glob)
+  Message-Id: <patchbomb.180@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:03:00 +0000
   From: quux
@@ -412,7 +411,7 @@ with a specific bundle type
   Content-Type: multipart/mixed; boundary="===*==" (glob)
   MIME-Version: 1.0
   Subject: test
-  Message-Id: <patchbomb.180@*> (glob)
+  Message-Id: <patchbomb.180@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:03:00 +0000
   From: quux
@@ -461,8 +460,8 @@ no mime encoding for email --test:
   X-Mercurial-Node: 909a00e13e9d78b575aeee23dddbada46d5a143f
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <909a00e13e9d78b575ae.240@*> (glob)
-  X-Mercurial-Series-Id: <909a00e13e9d78b575ae.240@*> (glob)
+  Message-Id: <909a00e13e9d78b575ae.240@test-hostname>
+  X-Mercurial-Series-Id: <909a00e13e9d78b575ae.240@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:04:00 +0000
   From: quux
@@ -507,8 +506,8 @@ mime encoded mbox (base64):
   X-Mercurial-Node: 909a00e13e9d78b575aeee23dddbada46d5a143f
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <909a00e13e9d78b575ae.240@*> (glob)
-  X-Mercurial-Series-Id: <909a00e13e9d78b575ae.240@*> (glob)
+  Message-Id: <909a00e13e9d78b575ae.240@test-hostname>
+  X-Mercurial-Series-Id: <909a00e13e9d78b575ae.240@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:04:00 +0000
   From: Q <quux>
@@ -576,8 +575,8 @@ no mime encoding for email --test:
   X-Mercurial-Node: a2ea8fc83dd8b93cfd86ac97b28287204ab806e1
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <a2ea8fc83dd8b93cfd86.240@*> (glob)
-  X-Mercurial-Series-Id: <a2ea8fc83dd8b93cfd86.240@*> (glob)
+  Message-Id: <a2ea8fc83dd8b93cfd86.240@test-hostname>
+  X-Mercurial-Series-Id: <a2ea8fc83dd8b93cfd86.240@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:04:00 +0000
   From: quux
@@ -630,8 +629,8 @@ mime encoded mbox (quoted-printable):
   X-Mercurial-Node: a2ea8fc83dd8b93cfd86ac97b28287204ab806e1
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <a2ea8fc83dd8b93cfd86.240@*> (glob)
-  X-Mercurial-Series-Id: <a2ea8fc83dd8b93cfd86.240@*> (glob)
+  Message-Id: <a2ea8fc83dd8b93cfd86.240@test-hostname>
+  X-Mercurial-Series-Id: <a2ea8fc83dd8b93cfd86.240@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:04:00 +0000
   From: quux
@@ -692,8 +691,8 @@ iso-8859-1 mbox:
   X-Mercurial-Node: 240fb913fc1b7ff15ddb9f33e73d82bf5277c720
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <240fb913fc1b7ff15ddb.300@*> (glob)
-  X-Mercurial-Series-Id: <240fb913fc1b7ff15ddb.300@*> (glob)
+  Message-Id: <240fb913fc1b7ff15ddb.300@test-hostname>
+  X-Mercurial-Series-Id: <240fb913fc1b7ff15ddb.300@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:05:00 +0000
   From: quux
@@ -740,8 +739,8 @@ test diffstat for single patch:
   X-Mercurial-Node: ff2c9fa2018b15fa74b33363bda9527323e2a99f
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
-  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
+  Message-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
+  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -799,7 +798,7 @@ test diffstat for multiple patches:
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
   Subject: [PATCH 0 of 2] test
-  Message-Id: <patchbomb.60@*> (glob)
+  Message-Id: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -819,10 +818,10 @@ test diffstat for multiple patches:
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 2
-  Message-Id: <8580ff50825a50c8f716.61@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.61@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:01 +0000
   From: quux
@@ -855,10 +854,10 @@ test diffstat for multiple patches:
   X-Mercurial-Node: 97d72e5f12c7e84f85064aa72e5a297142c36ed9
   X-Mercurial-Series-Index: 2
   X-Mercurial-Series-Total: 2
-  Message-Id: <97d72e5f12c7e84f8506.62@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <97d72e5f12c7e84f8506.62@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:02 +0000
   From: quux
@@ -896,8 +895,8 @@ test inline for single patch:
   X-Mercurial-Node: ff2c9fa2018b15fa74b33363bda9527323e2a99f
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
-  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
+  Message-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
+  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -939,8 +938,8 @@ test inline for single patch (quoted-printable):
   X-Mercurial-Node: a2ea8fc83dd8b93cfd86ac97b28287204ab806e1
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <a2ea8fc83dd8b93cfd86.60@*> (glob)
-  X-Mercurial-Series-Id: <a2ea8fc83dd8b93cfd86.60@*> (glob)
+  Message-Id: <a2ea8fc83dd8b93cfd86.60@test-hostname>
+  X-Mercurial-Series-Id: <a2ea8fc83dd8b93cfd86.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -999,7 +998,7 @@ test inline for multiple patches:
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
   Subject: [PATCH 0 of 3] test
-  Message-Id: <patchbomb.60@*> (glob)
+  Message-Id: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -1014,10 +1013,10 @@ test inline for multiple patches:
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 3
-  Message-Id: <8580ff50825a50c8f716.61@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.61@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:01 +0000
   From: quux
@@ -1052,10 +1051,10 @@ test inline for multiple patches:
   X-Mercurial-Node: 97d72e5f12c7e84f85064aa72e5a297142c36ed9
   X-Mercurial-Series-Index: 2
   X-Mercurial-Series-Total: 3
-  Message-Id: <97d72e5f12c7e84f8506.62@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <97d72e5f12c7e84f8506.62@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:02 +0000
   From: quux
@@ -1090,10 +1089,10 @@ test inline for multiple patches:
   X-Mercurial-Node: a2ea8fc83dd8b93cfd86ac97b28287204ab806e1
   X-Mercurial-Series-Index: 3
   X-Mercurial-Series-Total: 3
-  Message-Id: <a2ea8fc83dd8b93cfd86.63@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <a2ea8fc83dd8b93cfd86.63@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:03 +0000
   From: quux
@@ -1150,8 +1149,8 @@ test attach for single patch:
   X-Mercurial-Node: ff2c9fa2018b15fa74b33363bda9527323e2a99f
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
-  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
+  Message-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
+  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -1201,8 +1200,8 @@ test attach for single patch (quoted-printable):
   X-Mercurial-Node: a2ea8fc83dd8b93cfd86ac97b28287204ab806e1
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <a2ea8fc83dd8b93cfd86.60@*> (glob)
-  X-Mercurial-Series-Id: <a2ea8fc83dd8b93cfd86.60@*> (glob)
+  Message-Id: <a2ea8fc83dd8b93cfd86.60@test-hostname>
+  X-Mercurial-Series-Id: <a2ea8fc83dd8b93cfd86.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -1268,8 +1267,8 @@ test attach and body for single patch:
   X-Mercurial-Node: ff2c9fa2018b15fa74b33363bda9527323e2a99f
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
-  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
+  Message-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
+  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -1331,7 +1330,7 @@ test attach for multiple patches:
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
   Subject: [PATCH 0 of 3] test
-  Message-Id: <patchbomb.60@*> (glob)
+  Message-Id: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -1346,10 +1345,10 @@ test attach for multiple patches:
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 3
-  Message-Id: <8580ff50825a50c8f716.61@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.61@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:01 +0000
   From: quux
@@ -1393,10 +1392,10 @@ test attach for multiple patches:
   X-Mercurial-Node: 97d72e5f12c7e84f85064aa72e5a297142c36ed9
   X-Mercurial-Series-Index: 2
   X-Mercurial-Series-Total: 3
-  Message-Id: <97d72e5f12c7e84f8506.62@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <97d72e5f12c7e84f8506.62@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:02 +0000
   From: quux
@@ -1440,10 +1439,10 @@ test attach for multiple patches:
   X-Mercurial-Node: a2ea8fc83dd8b93cfd86ac97b28287204ab806e1
   X-Mercurial-Series-Index: 3
   X-Mercurial-Series-Total: 3
-  Message-Id: <a2ea8fc83dd8b93cfd86.63@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <a2ea8fc83dd8b93cfd86.63@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:03 +0000
   From: quux
@@ -1511,7 +1510,7 @@ test intro for single patch:
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
   Subject: [PATCH 0 of 1] test
-  Message-Id: <patchbomb.60@*> (glob)
+  Message-Id: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -1527,10 +1526,10 @@ test intro for single patch:
   X-Mercurial-Node: ff2c9fa2018b15fa74b33363bda9527323e2a99f
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <ff2c9fa2018b15fa74b3.61@*> (glob)
-  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <ff2c9fa2018b15fa74b3.61@test-hostname>
+  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:01 +0000
   From: quux
@@ -1564,7 +1563,7 @@ test --desc without --intro for a single patch:
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
   Subject: [PATCH 0 of 1] test
-  Message-Id: <patchbomb.60@*> (glob)
+  Message-Id: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -1581,10 +1580,10 @@ test --desc without --intro for a single patch:
   X-Mercurial-Node: ff2c9fa2018b15fa74b33363bda9527323e2a99f
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <ff2c9fa2018b15fa74b3.61@*> (glob)
-  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <ff2c9fa2018b15fa74b3.61@test-hostname>
+  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:01 +0000
   From: quux
@@ -1620,7 +1619,7 @@ test intro for multiple patches:
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
   Subject: [PATCH 0 of 2] test
-  Message-Id: <patchbomb.60@*> (glob)
+  Message-Id: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -1636,10 +1635,10 @@ test intro for multiple patches:
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 2
-  Message-Id: <8580ff50825a50c8f716.61@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.61@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:01 +0000
   From: quux
@@ -1668,10 +1667,10 @@ test intro for multiple patches:
   X-Mercurial-Node: 97d72e5f12c7e84f85064aa72e5a297142c36ed9
   X-Mercurial-Series-Index: 2
   X-Mercurial-Series-Total: 2
-  Message-Id: <97d72e5f12c7e84f8506.62@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <97d72e5f12c7e84f8506.62@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:02 +0000
   From: quux
@@ -1707,8 +1706,8 @@ test reply-to via config:
   X-Mercurial-Node: ff2c9fa2018b15fa74b33363bda9527323e2a99f
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
-  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
+  Message-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
+  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -1745,8 +1744,8 @@ test reply-to via command line:
   X-Mercurial-Node: ff2c9fa2018b15fa74b33363bda9527323e2a99f
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
-  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
+  Message-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
+  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -1787,8 +1786,8 @@ test inline for single named patch:
   X-Mercurial-Node: ff2c9fa2018b15fa74b33363bda9527323e2a99f
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
-  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
+  Message-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
+  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -1831,7 +1830,7 @@ test inline for multiple named/unnamed patches:
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
   Subject: [PATCH 0 of 2] test
-  Message-Id: <patchbomb.60@*> (glob)
+  Message-Id: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -1846,10 +1845,10 @@ test inline for multiple named/unnamed patches:
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 2
-  Message-Id: <8580ff50825a50c8f716.61@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.61@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:01 +0000
   From: quux
@@ -1884,10 +1883,10 @@ test inline for multiple named/unnamed patches:
   X-Mercurial-Node: 97d72e5f12c7e84f85064aa72e5a297142c36ed9
   X-Mercurial-Series-Index: 2
   X-Mercurial-Series-Total: 2
-  Message-Id: <97d72e5f12c7e84f8506.62@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <97d72e5f12c7e84f8506.62@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:02 +0000
   From: quux
@@ -1931,8 +1930,8 @@ test inreplyto:
   X-Mercurial-Node: 7aead2484924c445ad8ce2613df91f52f9e502ed
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <7aead2484924c445ad8c.60@*> (glob)
-  X-Mercurial-Series-Id: <7aead2484924c445ad8c.60@*> (glob)
+  Message-Id: <7aead2484924c445ad8c.60@test-hostname>
+  X-Mercurial-Series-Id: <7aead2484924c445ad8c.60@test-hostname>
   In-Reply-To: <baz>
   References: <baz>
   User-Agent: Mercurial-patchbomb/* (glob)
@@ -1974,8 +1973,8 @@ no intro message in non-interactive mode
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 2
-  Message-Id: <8580ff50825a50c8f716.60@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.60@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.60@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.60@test-hostname>
   In-Reply-To: <baz>
   References: <baz>
   User-Agent: Mercurial-patchbomb/* (glob)
@@ -2006,8 +2005,8 @@ no intro message in non-interactive mode
   X-Mercurial-Node: 97d72e5f12c7e84f85064aa72e5a297142c36ed9
   X-Mercurial-Series-Index: 2
   X-Mercurial-Series-Total: 2
-  Message-Id: <97d72e5f12c7e84f8506.61@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.60@*> (glob)
+  Message-Id: <97d72e5f12c7e84f8506.61@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.60@test-hostname>
   In-Reply-To: <baz>
   References: <baz>
   User-Agent: Mercurial-patchbomb/* (glob)
@@ -2046,7 +2045,7 @@ no intro message in non-interactive mode
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
   Subject: [PATCH 0 of 2] test
-  Message-Id: <patchbomb.60@*> (glob)
+  Message-Id: <patchbomb.60@test-hostname>
   In-Reply-To: <baz>
   References: <baz>
   User-Agent: Mercurial-patchbomb/* (glob)
@@ -2064,10 +2063,10 @@ no intro message in non-interactive mode
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 2
-  Message-Id: <8580ff50825a50c8f716.61@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.61@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:01 +0000
   From: quux
@@ -2096,10 +2095,10 @@ no intro message in non-interactive mode
   X-Mercurial-Node: 97d72e5f12c7e84f85064aa72e5a297142c36ed9
   X-Mercurial-Series-Index: 2
   X-Mercurial-Series-Total: 2
-  Message-Id: <97d72e5f12c7e84f8506.62@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <97d72e5f12c7e84f8506.62@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:02 +0000
   From: quux
@@ -2137,8 +2136,8 @@ test single flag for single patch (and no warning when not mailing dirty rev):
   X-Mercurial-Node: ff2c9fa2018b15fa74b33363bda9527323e2a99f
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
-  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
+  Message-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
+  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -2175,7 +2174,7 @@ test single flag for multiple patches (and warning when mailing dirty rev):
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
   Subject: [PATCH 0 of 2 fooFlag] test
-  Message-Id: <patchbomb.60@*> (glob)
+  Message-Id: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -2191,10 +2190,10 @@ test single flag for multiple patches (and warning when mailing dirty rev):
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 2
-  Message-Id: <8580ff50825a50c8f716.61@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.61@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:01 +0000
   From: quux
@@ -2223,10 +2222,10 @@ test single flag for multiple patches (and warning when mailing dirty rev):
   X-Mercurial-Node: 97d72e5f12c7e84f85064aa72e5a297142c36ed9
   X-Mercurial-Series-Index: 2
   X-Mercurial-Series-Total: 2
-  Message-Id: <97d72e5f12c7e84f8506.62@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <97d72e5f12c7e84f8506.62@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:02 +0000
   From: quux
@@ -2264,8 +2263,8 @@ test multiple flags for single patch:
   X-Mercurial-Node: ff2c9fa2018b15fa74b33363bda9527323e2a99f
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
-  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@*> (glob)
+  Message-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
+  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -2301,7 +2300,7 @@ test multiple flags for multiple patches:
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
   Subject: [PATCH 0 of 2 fooFlag barFlag] test
-  Message-Id: <patchbomb.60@*> (glob)
+  Message-Id: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -2317,10 +2316,10 @@ test multiple flags for multiple patches:
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 2
-  Message-Id: <8580ff50825a50c8f716.61@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.61@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:01 +0000
   From: quux
@@ -2349,10 +2348,10 @@ test multiple flags for multiple patches:
   X-Mercurial-Node: 97d72e5f12c7e84f85064aa72e5a297142c36ed9
   X-Mercurial-Series-Index: 2
   X-Mercurial-Series-Total: 2
-  Message-Id: <97d72e5f12c7e84f8506.62@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <97d72e5f12c7e84f8506.62@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:02 +0000
   From: quux
@@ -2391,8 +2390,8 @@ test multi-address parsing:
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <8580ff50825a50c8f716.315532860@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.315532860@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.315532860@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.315532860@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Tue, 01 Jan 1980 00:01:00 +0000
   From: quux
@@ -2430,7 +2429,7 @@ test flag template:
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
   Subject: [PATCH 0 of 2 R1] test
-  Message-Id: <patchbomb.60@*> (glob)
+  Message-Id: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -2446,10 +2445,10 @@ test flag template:
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 2
-  Message-Id: <8580ff50825a50c8f716.61@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.61@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:01 +0000
   From: quux
@@ -2477,10 +2476,10 @@ test flag template:
   X-Mercurial-Node: 97d72e5f12c7e84f85064aa72e5a297142c36ed9
   X-Mercurial-Series-Index: 2
   X-Mercurial-Series-Total: 2
-  Message-Id: <97d72e5f12c7e84f8506.62@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@*> (glob)
-  In-Reply-To: <patchbomb.60@*> (glob)
-  References: <patchbomb.60@*> (glob)
+  Message-Id: <97d72e5f12c7e84f8506.62@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.61@test-hostname>
+  In-Reply-To: <patchbomb.60@test-hostname>
+  References: <patchbomb.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:02 +0000
   From: quux
@@ -2516,8 +2515,8 @@ test flag template plus --flag:
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <8580ff50825a50c8f716.60@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.60@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.60@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.60@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:01:00 +0000
   From: quux
@@ -2559,8 +2558,8 @@ test multi-byte domain parsing:
   X-Mercurial-Node: 8580ff50825a50c8f716709acdf8de0deddcd6ab
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <8580ff50825a50c8f716.315532860@*> (glob)
-  X-Mercurial-Series-Id: <8580ff50825a50c8f716.315532860@*> (glob)
+  Message-Id: <8580ff50825a50c8f716.315532860@test-hostname>
+  X-Mercurial-Series-Id: <8580ff50825a50c8f716.315532860@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Tue, 01 Jan 1980 00:01:00 +0000
   From: quux
@@ -2634,7 +2633,7 @@ test outgoing:
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
   Subject: [PATCH 0 of 6] test
-  Message-Id: <patchbomb.315532860@*> (glob)
+  Message-Id: <patchbomb.315532860@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Tue, 01 Jan 1980 00:01:00 +0000
   From: test
@@ -2649,10 +2648,10 @@ test outgoing:
   X-Mercurial-Node: ff2c9fa2018b15fa74b33363bda9527323e2a99f
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 6
-  Message-Id: <ff2c9fa2018b15fa74b3.315532861@*> (glob)
-  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.315532861@*> (glob)
-  In-Reply-To: <patchbomb.315532860@*> (glob)
-  References: <patchbomb.315532860@*> (glob)
+  Message-Id: <ff2c9fa2018b15fa74b3.315532861@test-hostname>
+  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.315532861@test-hostname>
+  In-Reply-To: <patchbomb.315532860@test-hostname>
+  References: <patchbomb.315532860@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Tue, 01 Jan 1980 00:01:01 +0000
   From: test
@@ -2680,10 +2679,10 @@ test outgoing:
   X-Mercurial-Node: 909a00e13e9d78b575aeee23dddbada46d5a143f
   X-Mercurial-Series-Index: 2
   X-Mercurial-Series-Total: 6
-  Message-Id: <909a00e13e9d78b575ae.315532862@*> (glob)
-  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.315532861@*> (glob)
-  In-Reply-To: <patchbomb.315532860@*> (glob)
-  References: <patchbomb.315532860@*> (glob)
+  Message-Id: <909a00e13e9d78b575ae.315532862@test-hostname>
+  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.315532861@test-hostname>
+  In-Reply-To: <patchbomb.315532860@test-hostname>
+  References: <patchbomb.315532860@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Tue, 01 Jan 1980 00:01:02 +0000
   From: test
@@ -2718,10 +2717,10 @@ test outgoing:
   X-Mercurial-Node: a2ea8fc83dd8b93cfd86ac97b28287204ab806e1
   X-Mercurial-Series-Index: 3
   X-Mercurial-Series-Total: 6
-  Message-Id: <a2ea8fc83dd8b93cfd86.315532863@*> (glob)
-  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.315532861@*> (glob)
-  In-Reply-To: <patchbomb.315532860@*> (glob)
-  References: <patchbomb.315532860@*> (glob)
+  Message-Id: <a2ea8fc83dd8b93cfd86.315532863@test-hostname>
+  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.315532861@test-hostname>
+  In-Reply-To: <patchbomb.315532860@test-hostname>
+  References: <patchbomb.315532860@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Tue, 01 Jan 1980 00:01:03 +0000
   From: test
@@ -2765,10 +2764,10 @@ test outgoing:
   X-Mercurial-Node: 240fb913fc1b7ff15ddb9f33e73d82bf5277c720
   X-Mercurial-Series-Index: 4
   X-Mercurial-Series-Total: 6
-  Message-Id: <240fb913fc1b7ff15ddb.315532864@*> (glob)
-  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.315532861@*> (glob)
-  In-Reply-To: <patchbomb.315532860@*> (glob)
-  References: <patchbomb.315532860@*> (glob)
+  Message-Id: <240fb913fc1b7ff15ddb.315532864@test-hostname>
+  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.315532861@test-hostname>
+  In-Reply-To: <patchbomb.315532860@test-hostname>
+  References: <patchbomb.315532860@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Tue, 01 Jan 1980 00:01:04 +0000
   From: test
@@ -2796,10 +2795,10 @@ test outgoing:
   X-Mercurial-Node: 5d5ef15dfe5e7bd3a4ee154b5fff76c7945ec433
   X-Mercurial-Series-Index: 5
   X-Mercurial-Series-Total: 6
-  Message-Id: <5d5ef15dfe5e7bd3a4ee.315532865@*> (glob)
-  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.315532861@*> (glob)
-  In-Reply-To: <patchbomb.315532860@*> (glob)
-  References: <patchbomb.315532860@*> (glob)
+  Message-Id: <5d5ef15dfe5e7bd3a4ee.315532865@test-hostname>
+  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.315532861@test-hostname>
+  In-Reply-To: <patchbomb.315532860@test-hostname>
+  References: <patchbomb.315532860@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Tue, 01 Jan 1980 00:01:05 +0000
   From: test
@@ -2828,10 +2827,10 @@ test outgoing:
   X-Mercurial-Node: 2f9fa9b998c5fe3ac2bd9a2b14bfcbeecbc7c268
   X-Mercurial-Series-Index: 6
   X-Mercurial-Series-Total: 6
-  Message-Id: <2f9fa9b998c5fe3ac2bd.315532866@*> (glob)
-  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.315532861@*> (glob)
-  In-Reply-To: <patchbomb.315532860@*> (glob)
-  References: <patchbomb.315532860@*> (glob)
+  Message-Id: <2f9fa9b998c5fe3ac2bd.315532866@test-hostname>
+  X-Mercurial-Series-Id: <ff2c9fa2018b15fa74b3.315532861@test-hostname>
+  In-Reply-To: <patchbomb.315532860@test-hostname>
+  References: <patchbomb.315532860@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Tue, 01 Jan 1980 00:01:06 +0000
   From: test
@@ -2873,8 +2872,8 @@ dest#branch URIs:
   X-Mercurial-Node: 2f9fa9b998c5fe3ac2bd9a2b14bfcbeecbc7c268
   X-Mercurial-Series-Index: 1
   X-Mercurial-Series-Total: 1
-  Message-Id: <2f9fa9b998c5fe3ac2bd.315532860@*> (glob)
-  X-Mercurial-Series-Id: <2f9fa9b998c5fe3ac2bd.315532860@*> (glob)
+  Message-Id: <2f9fa9b998c5fe3ac2bd.315532860@test-hostname>
+  X-Mercurial-Series-Id: <2f9fa9b998c5fe3ac2bd.315532860@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Tue, 01 Jan 1980 00:01:00 +0000
   From: test

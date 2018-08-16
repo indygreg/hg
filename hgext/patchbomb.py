@@ -470,8 +470,9 @@ def _getoutgoing(repo, dest, revs):
     return revs
 
 def _msgid(node, timestamp):
-    return '<%s.%d@%s>' % (node, timestamp,
-                           encoding.strtolocal(socket.getfqdn()))
+    hostname = encoding.strtolocal(socket.getfqdn())
+    hostname = encoding.environ.get('HGHOSTNAME', hostname)
+    return '<%s.%d@%s>' % (node, timestamp, hostname)
 
 emailopts = [
     ('', 'body', None, _('send patches as inline message text (default)')),

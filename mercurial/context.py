@@ -1896,7 +1896,7 @@ class overlayworkingctx(committablectx):
         components = path.split('/')
         for i in pycompat.xrange(len(components)):
             component = "/".join(components[0:i])
-            if component in self.p1():
+            if component in self.p1() and self._cache[component]['exists']:
                 fail(path, component)
 
         # Test the other direction -- that this path from p2 isn't a directory

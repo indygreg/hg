@@ -177,8 +177,7 @@ Test reporting of path conflicts
   
   $ hg rebase -r . -d 2
   rebasing 4:daf7dfc139cb "a/a" (tip)
-  abort: error: 'a/a' conflicts with file 'a' in 2.
-  [255]
+  saved backup bundle to $TESTTMP/repo1/repo2/.hg/strip-backup/daf7dfc139cb-fdbfcf4f-rebase.hg
 
   $ cd ..
 

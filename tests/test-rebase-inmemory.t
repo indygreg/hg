@@ -155,8 +155,11 @@ Rebase the working copy parent
   | o  1: fc055c3b4d33 'b'
   |/
   o  0: b173517d0057 'a'
-  
+
+  $ cd ..
+
 Test dry-run rebasing
+
   $ hg init repo3
   $ cd repo3
   $ echo a>a

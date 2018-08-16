@@ -155,6 +155,30 @@ Rebase the working copy parent
   | o  1: fc055c3b4d33 'b'
   |/
   o  0: b173517d0057 'a'
+  
+
+Test reporting of path conflicts
+
+  $ hg rm a
+  $ mkdir a
+  $ touch a/a
+  $ hg ci -Am "a/a"
+  adding a/a
+  $ hg tglog
+  @  4: daf7dfc139cb 'a/a'
+  |
+  o  3: 844a7de3e617 'c'
+  |
+  | o  2: 09c044d2cb43 'd'
+  | |
+  | o  1: fc055c3b4d33 'b'
+  |/
+  o  0: b173517d0057 'a'
+  
+  $ hg rebase -r . -d 2
+  rebasing 4:daf7dfc139cb "a/a" (tip)
+  abort: error: 'a/a' conflicts with file 'a' in 2.
+  [255]
 
   $ cd ..
 

@@ -62,17 +62,6 @@ class basedag(object):
         '''
         raise NotImplementedError
 
-    def externalize(self, ix):
-        '''return a node id'''
-        return self._externalize(ix)
-
-    def externalizeall(self, ixs):
-        '''return a list of (or set if given a set) of node ids'''
-        ids = self._externalizeall(ixs)
-        if isinstance(ixs, set):
-            return set(ids)
-        return list(ids)
-
     def internalize(self, id):
         '''return a node ix'''
         return self._internalize(id)
@@ -129,12 +118,6 @@ class revlogbaseddag(basedag):
         if self._heads is None:
             self._heads = self._getheads()
         return self._heads
-
-    def _externalize(self, ix):
-        return self._revlog.index[ix][7]
-    def _externalizeall(self, ixs):
-        idx = self._revlog.index
-        return [idx[i][7] for i in ixs]
 
     def _internalize(self, id):
         ix = self._revlog.rev(id)

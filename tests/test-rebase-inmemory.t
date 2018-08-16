@@ -509,3 +509,31 @@ Test --confirm option when there is a conflict
   o  0:cb9a9f314b8b test
      a
   
+#if execbit
+
+Test a metadata-only in-memory merge
+  $ cd $TESTTMP
+  $ hg init no_exception
+  $ cd no_exception
+# Produce the following graph:
+#   o  'add +x to foo.txt'
+#   | o  r1  (adds bar.txt, just for something to rebase to)
+#   |/
+#   o  r0   (adds foo.txt, no +x)
+  $ echo hi > foo.txt
+  $ hg ci -qAm r0
+  $ echo hi > bar.txt
+  $ hg ci -qAm r1
+  $ hg co -qr ".^"
+  $ chmod +x foo.txt
+  $ hg ci -qAm 'add +x to foo.txt'
+issue5960: this was raising an AttributeError exception
+  $ hg rebase -r . -d 1
+  rebasing 2:539b93e77479 "add +x to foo.txt" (tip)
+  saved backup bundle to $TESTTMP/no_exception/.hg/strip-backup/*.hg (glob)
+  $ hg diff -c tip
+  diff --git a/foo.txt b/foo.txt
+  old mode 100644
+  new mode 100755
+
+#endif

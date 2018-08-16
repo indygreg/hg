@@ -2033,6 +2033,13 @@ class overlayworkingctx(committablectx):
         return keys
 
     def _markdirty(self, path, exists, data=None, date=None, flags=''):
+        # data not provided, let's see if we already have some; if not, let's
+        # grab it from our underlying context, so that we always have data if
+        # the file is marked as existing.
+        if exists and data is None:
+            oldentry = self._cache.get(path) or {}
+            data = oldentry.get('data') or self._wrappedctx[path].data()
+
         self._cache[path] = {
             'exists': exists,
             'data': data,

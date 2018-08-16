@@ -556,8 +556,8 @@ class changelog(revlog.revlog):
         if revs is not None:
             if revs:
                 assert revs[-1] + 1 == rev
-                revs = pycompat.xrange(revs[0], rev + 1)
+                revs = pycompat.membershiprange(revs[0], rev + 1)
             else:
-                revs = pycompat.xrange(rev, rev + 1)
+                revs = pycompat.membershiprange(rev, rev + 1)
             transaction.changes['revs'] = revs
         return node

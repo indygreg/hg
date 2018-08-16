@@ -469,6 +469,10 @@ def _getoutgoing(repo, dest, revs):
         ui.status(_("no changes found\n"))
     return revs
 
+def _msgid(node, timestamp):
+    return '<%s.%d@%s>' % (node, timestamp,
+                           encoding.strtolocal(socket.getfqdn()))
+
 emailopts = [
     ('', 'body', None, _('send patches as inline message text (default)')),
     ('a', 'attach', None, _('send patches as attachments')),
@@ -677,8 +681,7 @@ def email(ui, repo, *revs, **opts):
         start_time = dateutil.makedate()
 
     def genmsgid(id):
-        return '<%s.%d@%s>' % (id[:20], int(start_time[0]),
-                               encoding.strtolocal(socket.getfqdn()))
+        return _msgid(id[:20], int(start_time[0]))
 
     # deprecated config: patchbomb.from
     sender = (opts.get('from') or ui.config('email', 'from') or

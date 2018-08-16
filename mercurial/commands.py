@@ -901,6 +901,7 @@ def bisect(ui, repo, rev=None, extra=None, command=None,
     ('d', 'delete', False, _('delete a given bookmark')),
     ('m', 'rename', '', _('rename a given bookmark'), _('OLD')),
     ('i', 'inactive', False, _('mark a bookmark inactive')),
+    ('', 'active', False, _('display the active bookmark')),
     ] + formatteropts,
     _('hg bookmarks [OPTIONS]... [NAME]...'))
 def bookmark(ui, repo, *names, **opts):
@@ -926,6 +927,10 @@ def bookmark(ui, repo, *names, **opts):
 
     A bookmark named '@' has the special property that :hg:`clone` will
     check it out by default if it exists.
+
+    The '--active' flag will display the current bookmark or return non-zero,
+    if combined with other action, they will be performed on the active
+    bookmark.
 
     .. container:: verbose
 
@@ -956,6 +961,7 @@ def bookmark(ui, repo, *names, **opts):
     delete = opts.get(r'delete')
     rename = opts.get(r'rename')
     inactive = opts.get(r'inactive')
+    active = opts.get(r'active')
 
     if delete and rename:
         raise error.Abort(_("--delete and --rename are incompatible"))
@@ -963,6 +969,16 @@ def bookmark(ui, repo, *names, **opts):
         raise error.Abort(_("--rev is incompatible with --delete"))
     if rename and rev:
         raise error.Abort(_("--rev is incompatible with --rename"))
+    if delete and active:
+        raise error.Abort(_("--delete is incompatible with --active"))
+    if rev and active:
+        raise error.Abort(_("--rev is incompatible with --active"))
+    if rename and active:
+        raise error.Abort(_("--rename is incompatible with --active"))
+    if names and active:
+        raise error.Abort(_("NAMES is incompatible with --active"))
+    if inactive and active:
+        raise error.Abort(_("--inactive is incompatible with --active"))
     if not names and (delete or rev):
         raise error.Abort(_("bookmark name required"))
 
@@ -987,6 +1003,11 @@ def bookmark(ui, repo, *names, **opts):
                     ui.status(_("no active bookmark\n"))
                 else:
                     bookmarks.deactivate(repo)
+    elif active:
+        book = repo._activebookmark
+        if book is None:
+            return 1
+        ui.write("%s\n" % book, label=bookmarks.activebookmarklabel)
     else: # show bookmarks
         bookmarks.printbookmarks(ui, repo, **opts)
 

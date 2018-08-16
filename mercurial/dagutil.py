@@ -8,7 +8,6 @@
 
 from __future__ import absolute_import
 
-from .i18n import _
 from .node import nullrev
 
 class basedag(object):
@@ -62,18 +61,6 @@ class basedag(object):
         '''
         raise NotImplementedError
 
-    def internalize(self, id):
-        '''return a node ix'''
-        return self._internalize(id)
-
-    def internalizeall(self, ids, filterunknown=False):
-        '''return a list of (or set if given a set) of node ixs'''
-        ixs = self._internalizeall(ids, filterunknown)
-        if isinstance(ids, set):
-            return set(ixs)
-        return list(ixs)
-
-
 class genericdag(basedag):
     '''generic implementations for DAGs'''
 
@@ -118,21 +105,6 @@ class revlogbaseddag(basedag):
         if self._heads is None:
             self._heads = self._getheads()
         return self._heads
-
-    def _internalize(self, id):
-        ix = self._revlog.rev(id)
-        if ix == nullrev:
-            raise LookupError(id, self._revlog.indexfile, _('nullid'))
-        return ix
-    def _internalizeall(self, ids, filterunknown):
-        rl = self._revlog
-        if filterunknown:
-            return [r for r in map(rl.nodemap.get, ids)
-                    if (r is not None
-                        and r != nullrev
-                        and r not in rl.filteredrevs)]
-        return [self._internalize(i) for i in ids]
-
 
 class revlogdag(revlogbaseddag):
     '''dag interface to a revlog'''

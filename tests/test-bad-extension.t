@@ -72,6 +72,7 @@ names of extensions failed to load can be accessed via extensions.notloaded()
   $ hg --config extensions.badexts=showbadexts.py showbadexts 2>&1 | grep '^BADEXTS'
   BADEXTS: badext badext2
 
+#if no-extraextensions
 show traceback for ImportError of hgext.name if devel.debug.extensions is set
 
   $ (hg help help --traceback --debug --config devel.debug.extensions=yes 2>&1) \
@@ -120,6 +121,7 @@ show traceback for ImportError of hgext.name if devel.debug.extensions is set
   debug.extensions: - loading extension registration objects
   debug.extensions: > extension registration object loading took * (glob)
   debug.extensions: extension loading complete
+#endif
 
 confirm that there's no crash when an extension's documentation is bad
 

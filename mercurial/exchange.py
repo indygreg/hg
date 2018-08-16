@@ -24,7 +24,6 @@ from . import (
     bookmarks as bookmod,
     bundle2,
     changegroup,
-    dagutil,
     discovery,
     error,
     lock as lockmod,
@@ -1906,10 +1905,11 @@ def _computeellipsis(repo, common, heads, known, match, depth=None):
     cl = repo.changelog
     mfl = repo.manifestlog
 
-    cldag = dagutil.revlogdag(cl)
-    # dagutil does not like nullid/nullrev
-    commonrevs = cldag.internalizeall(common - set([nullid])) | set([nullrev])
-    headsrevs = cldag.internalizeall(heads)
+    clrev = cl.rev
+
+    commonrevs = {clrev(n) for n in common} | {nullrev}
+    headsrevs = {clrev(n) for n in heads}
+
     if depth:
         revdepth = {h: 0 for h in headsrevs}
 
@@ -1954,7 +1954,7 @@ def _computeellipsis(repo, common, heads, known, match, depth=None):
     required = set(headsrevs) | known
     for rev in visit:
         clrev = cl.changelogrevision(rev)
-        ps = cldag.parents(rev)
+        ps = [prev for prev in cl.parentrevs(rev) if prev != nullrev]
         if depth is not None:
             curdepth = revdepth[rev]
             for p in ps:

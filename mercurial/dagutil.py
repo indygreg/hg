@@ -24,10 +24,6 @@ class basedag(object):
     def __init__(self):
         self._inverse = None
 
-    def nodeset(self):
-        '''set of all node ixs'''
-        raise NotImplementedError
-
     def heads(self):
         '''list of head ixs'''
         raise NotImplementedError
@@ -92,14 +88,10 @@ class genericdag(basedag):
 class revlogbaseddag(basedag):
     '''generic dag interface to a revlog'''
 
-    def __init__(self, revlog, nodeset):
+    def __init__(self, revlog):
         basedag.__init__(self)
         self._revlog = revlog
         self._heads = None
-        self._nodeset = nodeset
-
-    def nodeset(self):
-        return self._nodeset
 
     def heads(self):
         if self._heads is None:
@@ -110,7 +102,7 @@ class revlogdag(revlogbaseddag):
     '''dag interface to a revlog'''
 
     def __init__(self, revlog, localsubset=None):
-        revlogbaseddag.__init__(self, revlog, set(revlog))
+        revlogbaseddag.__init__(self, revlog)
         self._heads = localsubset
 
     def _getheads(self):
@@ -204,7 +196,7 @@ class inverserevlogdag(revlogbaseddag, genericdag):
     '''inverse of an existing revlog dag; see revlogdag.inverse()'''
 
     def __init__(self, orig):
-        revlogbaseddag.__init__(self, orig._revlog, orig._nodeset)
+        revlogbaseddag.__init__(self, orig._revlog)
         self._orig = orig
         self._children = {}
         self._roots = []

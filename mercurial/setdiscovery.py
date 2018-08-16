@@ -144,16 +144,17 @@ def findcommonheads(ui, local, remote,
     cl = local.changelog
     clnode = cl.node
     clrev = cl.rev
-    localsubset = None
 
     if ancestorsof is not None:
-        localsubset = [clrev(n) for n in ancestorsof]
-    dag = dagutil.revlogdag(cl, localsubset=localsubset)
+        ownheads = [clrev(n) for n in ancestorsof]
+    else:
+        ownheads = [rev for rev in cl.headrevs() if rev != nullrev]
+
+    dag = dagutil.revlogdag(cl, localsubset=ownheads)
 
     # early exit if we know all the specified remote heads already
     ui.debug("query 1; heads\n")
     roundtrips += 1
-    ownheads = dag.heads()
     sample = _limitsample(ownheads, initialsamplesize)
     # indices between sample and externalized version must match
     sample = list(sample)

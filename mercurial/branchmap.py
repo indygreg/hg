@@ -40,7 +40,7 @@ def _filename(repo):
 def read(repo):
     try:
         f = repo.cachevfs(_filename(repo))
-        cachekey = next(f).split(" ", 2)
+        cachekey = next(f).rstrip('\n').split(" ", 2)
         last, lrev = cachekey[:2]
         last, lrev = bin(last), int(lrev)
         filteredhash = None
@@ -53,6 +53,7 @@ def read(repo):
             raise ValueError(r'tip differs')
         cl = repo.changelog
         for l in f:
+            l = l.rstrip('\n')
             if not l:
                 continue
             node, state, label = l.split(" ", 2)

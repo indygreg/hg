@@ -41,7 +41,8 @@ def read(repo):
     f = None
     try:
         f = repo.cachevfs(_filename(repo))
-        cachekey = next(f).rstrip('\n').split(" ", 2)
+        lineiter = iter(f)
+        cachekey = next(lineiter).rstrip('\n').split(" ", 2)
         last, lrev = cachekey[:2]
         last, lrev = bin(last), int(lrev)
         filteredhash = None
@@ -53,7 +54,7 @@ def read(repo):
             # invalidate the cache
             raise ValueError(r'tip differs')
         cl = repo.changelog
-        for l in f:
+        for l in lineiter:
             l = l.rstrip('\n')
             if not l:
                 continue

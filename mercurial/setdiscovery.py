@@ -56,7 +56,7 @@ from . import (
     util,
 )
 
-def _updatesample(dag, revs, heads, sample, quicksamplesize=0):
+def _updatesample(revs, heads, sample, parentfn, quicksamplesize=0):
     """update an existing sample to match the expected size
 
     The sample is updated with revs exponentially distant from each head of the
@@ -66,10 +66,10 @@ def _updatesample(dag, revs, heads, sample, quicksamplesize=0):
     reached. Otherwise sampling will happen until roots of the <revs> set are
     reached.
 
-    :dag: a dag object from dagutil
     :revs:  set of revs we want to discover (if None, assume the whole dag)
     :heads: set of DAG head revs
     :sample: a sample to update
+    :parentfn: a callable to resolve parents for a revision
     :quicksamplesize: optional target size of the sample"""
     dist = {}
     visit = collections.deque(heads)
@@ -87,12 +87,13 @@ def _updatesample(dag, revs, heads, sample, quicksamplesize=0):
             if quicksamplesize and (len(sample) >= quicksamplesize):
                 return
         seen.add(curr)
-        for p in dag.parents(curr):
-            if not revs or p in revs:
+
+        for p in parentfn(curr):
+            if p != nullrev and (not revs or p in revs):
                 dist.setdefault(p, d + 1)
                 visit.append(p)
 
-def _takequicksample(repo, dag, headrevs, revs, size):
+def _takequicksample(repo, headrevs, revs, size):
     """takes a quick sample of size <size>
 
     It is meant for initial sampling and focuses on querying heads and close
@@ -107,18 +108,23 @@ def _takequicksample(repo, dag, headrevs, revs, size):
     if len(sample) >= size:
         return _limitsample(sample, size)
 
-    _updatesample(dag, None, headrevs, sample, quicksamplesize=size)
+    _updatesample(None, headrevs, sample, repo.changelog.parentrevs,
+                  quicksamplesize=size)
     return sample
 
-def _takefullsample(repo, dag, headrevs, revs, size):
+def _takefullsample(repo, headrevs, revs, size):
     sample = set(repo.revs('heads(%ld)', revs))
 
     # update from heads
     revsheads = set(repo.revs('heads(%ld)', revs))
-    _updatesample(dag, revs, revsheads, sample)
+    _updatesample(revs, revsheads, sample, repo.changelog.parentrevs)
     # update from roots
     revsroots = set(repo.revs('roots(%ld)', revs))
-    _updatesample(dag.inverse(), revs, revsroots, sample)
+
+    # TODO this is quadratic
+    parentfn = lambda rev: repo.changelog.children(repo.changelog.node(rev))
+
+    _updatesample(revs, revsroots, sample, parentfn)
     assert sample
     sample = _limitsample(sample, size)
     if len(sample) < size:
@@ -244,7 +250,7 @@ def findcommonheads(ui, local, remote,
         if len(undecided) < targetsize:
             sample = list(undecided)
         else:
-            sample = samplefunc(local, dag, ownheads, undecided, targetsize)
+            sample = samplefunc(local, ownheads, undecided, targetsize)
 
         roundtrips += 1
         progress.update(roundtrips)

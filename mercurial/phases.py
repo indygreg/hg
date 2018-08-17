@@ -664,11 +664,39 @@ def newheads(repo, heads, roots):
 
     * `heads`: define the first subset
     * `roots`: define the second we subtract from the first"""
+    # prevent an import cycle
+    # phases > dagop > patch > copies > scmutil > obsolete > obsutil > phases
+    from . import dagop
+
+    repo = repo.unfiltered()
+    cl = repo.changelog
+    rev = cl.nodemap.get
+    if not roots:
+        return heads
+    if not heads or heads == [nullrev]:
+        return []
+    # The logic operated on revisions, convert arguments early for convenience
+    new_heads = set(rev(n) for n in heads if n != nullid)
+    roots = [rev(n) for n in roots]
     if not heads or not roots:
         return heads
-    repo = repo.unfiltered()
-    revs = repo.revs('heads(::%ln - (%ln::%ln))', heads, roots, heads)
-    return pycompat.maplist(repo.changelog.node, revs)
+    # compute the area we need to remove
+    affected_zone = repo.revs("(%ld::%ld)", roots, new_heads)
+    # heads in the area are no longer heads
+    new_heads.difference_update(affected_zone)
+    # revisions in the area have children outside of it,
+    # They might be new heads
+    candidates = repo.revs("parents(%ld + (%ld and merge())) and not null",
+                           roots, affected_zone)
+    candidates -= affected_zone
+    if new_heads or candidates:
+        # remove candidate that are ancestors of other heads
+        new_heads.update(candidates)
+        prunestart = repo.revs("parents(%ld) and not null", new_heads)
+        pruned = dagop.reachableroots(repo, candidates, prunestart)
+        new_heads.difference_update(pruned)
+
+    return pycompat.maplist(cl.node, sorted(new_heads))
 
 def newcommitphase(ui):
     """helper to get the target phase of new commit

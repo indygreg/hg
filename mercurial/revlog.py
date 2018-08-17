@@ -1107,7 +1107,9 @@ class revlog(object):
 
     @util.propertycache
     def nodemap(self):
-        self.rev(self.node(0))
+        if self.index:
+            # populate mapping down to the initial node
+            self.rev(self.node(0))
         return self._nodecache
 
     def hasnode(self, node):

@@ -117,13 +117,33 @@ def _takefullsample(repo, headrevs, revs, size):
     # update from heads
     revsheads = set(repo.revs('heads(%ld)', revs))
     _updatesample(revs, revsheads, sample, repo.changelog.parentrevs)
+
     # update from roots
     revsroots = set(repo.revs('roots(%ld)', revs))
 
-    # TODO this is quadratic
-    parentfn = lambda rev: repo.changelog.children(repo.changelog.node(rev))
+    # _updatesample() essentially does interaction over revisions to look up
+    # their children. This lookup is expensive and doing it in a loop is
+    # quadratic. We precompute the children for all relevant revisions and
+    # make the lookup in _updatesample() a simple dict lookup.
+    #
+    # Because this function can be called multiple times during discovery, we
+    # may still perform redundant work and there is room to optimize this by
+    # keeping a persistent cache of children across invocations.
+    children = {}
 
-    _updatesample(revs, revsroots, sample, parentfn)
+    parentrevs = repo.changelog.parentrevs
+    for rev in repo.changelog.revs(start=min(revsroots)):
+        # Always ensure revision has an entry so we don't need to worry about
+        # missing keys.
+        children.setdefault(rev, [])
+
+        for prev in parentrevs(rev):
+            if prev == nullrev:
+                continue
+
+            children.setdefault(prev, []).append(rev)
+
+    _updatesample(revs, revsroots, sample, children.__getitem__)
     assert sample
     sample = _limitsample(sample, size)
     if len(sample) < size:

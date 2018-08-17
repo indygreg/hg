@@ -21,15 +21,8 @@ class basedag(object):
     Pluralized params are lists or sets.
     '''
 
-    def __init__(self):
-        self._inverse = None
-
     def parents(self, ix):
         '''list of parents ixs of ix'''
-        raise NotImplementedError
-
-    def inverse(self):
-        '''inverse DAG, where parents becomes children, etc.'''
         raise NotImplementedError
 
     def headsetofconnecteds(self, ixs):
@@ -83,11 +76,6 @@ class revlogdag(revlogbaseddag):
             return [prev2]
         return []
 
-    def inverse(self):
-        if self._inverse is None:
-            self._inverse = inverserevlogdag(self)
-        return self._inverse
-
     def headsetofconnecteds(self, ixs):
         if not ixs:
             return set()
@@ -130,41 +118,3 @@ class revlogdag(revlogbaseddag):
                           if p in ixs and p not in finished]
         assert len(sorted) == len(ixs)
         return sorted
-
-
-class inverserevlogdag(revlogbaseddag, genericdag):
-    '''inverse of an existing revlog dag; see revlogdag.inverse()'''
-
-    def __init__(self, orig):
-        revlogbaseddag.__init__(self, orig._revlog)
-        self._orig = orig
-        self._children = {}
-        self._roots = []
-        self._walkfrom = len(self._revlog) - 1
-
-    def _walkto(self, walkto):
-        rev = self._walkfrom
-        cs = self._children
-        roots = self._roots
-        idx = self._revlog.index
-        while rev >= walkto:
-            data = idx[rev]
-            isroot = True
-            for prev in [data[5], data[6]]: # parent revs
-                if prev != nullrev:
-                    cs.setdefault(prev, []).append(rev)
-                    isroot = False
-            if isroot:
-                roots.append(rev)
-            rev -= 1
-        self._walkfrom = rev
-
-    def parents(self, ix):
-        if ix is None:
-            return []
-        if ix <= self._walkfrom:
-            self._walkto(ix)
-        return self._children.get(ix, [])
-
-    def inverse(self):
-        return self._orig

@@ -791,6 +791,63 @@ def perfphases(ui, repo, **opts):
     timer(d)
     fm.end()
 
+@command('perfphasesremote',
+         [], "[DEST]")
+def perfphasesremote(ui, repo, dest=None, **opts):
+    """benchmark time needed to analyse phases of the remote server"""
+    from mercurial.node import (
+        bin,
+    )
+    from mercurial import (
+        exchange,
+        hg,
+        phases,
+    )
+    timer, fm = gettimer(ui, opts)
+
+    path = ui.paths.getpath(dest, default=('default-push', 'default'))
+    if not path:
+        raise error.abort(('default repository not configured!'),
+                         hint=("see 'hg help config.paths'"))
+    dest = path.pushloc or path.loc
+    branches = (path.branch, opts.get('branch') or [])
+    ui.status(('analysing phase of %s\n') % util.hidepassword(dest))
+    revs, checkout = hg.addbranchrevs(repo, repo, branches, opts.get('rev'))
+    other = hg.peer(repo, opts, dest)
+
+    # easier to perform discovery through the operation
+    op = exchange.pushoperation(repo, other)
+    exchange._pushdiscoverychangeset(op)
+
+    remotesubset = op.fallbackheads
+
+    with other.commandexecutor() as e:
+        remotephases = e.callcommand('listkeys',
+                       {'namespace': 'phases'}).result()
+    del other
+    publishing = remotephases.get('publishing', False)
+    if publishing:
+        ui.status(('publishing: yes\n'))
+    else:
+        ui.status(('publishing: no\n'))
+
+    nodemap = repo.changelog.nodemap
+    nonpublishroots = 0
+    for nhex, phase in remotephases.iteritems():
+        if nhex == 'publishing': # ignore data related to publish option
+            continue
+        node = bin(nhex)
+        if node in nodemap and int(phase):
+            nonpublishroots += 1
+    ui.status(('number of roots: %d\n') % len(remotephases))
+    ui.status(('number of known non public roots: %d\n') % nonpublishroots)
+    def d():
+        phases.remotephasessummary(repo,
+                                   remotesubset,
+                                   remotephases)
+    timer(d)
+    fm.end()
+
 @command('perfmanifest', [], 'REV')
 def perfmanifest(ui, repo, rev, **opts):
     """benchmark the time to read a manifest from disk and return a usable

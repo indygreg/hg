@@ -99,6 +99,8 @@ perfstatus
    perfpathcopies
                  (no help text available)
    perfphases    benchmark phasesets computation
+   perfphasesremote
+                 benchmark time needed to analyse phases of the remote server
    perfrawfiles  (no help text available)
    perfrevlogchunks
                  Benchmark operations on revlog chunks.
@@ -204,6 +206,9 @@ Check perf.py for historical portability
   $ (testrepohg files -r 1.2 glob:mercurial/*.c glob:mercurial/*.py;
   >  testrepohg files -r tip glob:mercurial/*.c glob:mercurial/*.py) |
   > "$TESTDIR"/check-perf-code.py contrib/perf.py
+  contrib/perf.py:\d+: (re)
+   >     from mercurial import (
+   import newer module separately in try clause for early Mercurial
   contrib/perf.py:\d+: (re)
    >     from mercurial import (
    import newer module separately in try clause for early Mercurial

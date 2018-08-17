@@ -114,11 +114,11 @@ def _takefullsample(repo, dag, headrevs, revs, size):
     sample = set(repo.revs('heads(%ld)', revs))
 
     # update from heads
-    _updatesample(dag, revs, dag.headsetofconnecteds(revs), sample)
+    revsheads = set(repo.revs('heads(%ld)', revs))
+    _updatesample(dag, revs, revsheads, sample)
     # update from roots
-    inverteddag = dag.inverse()
-    _updatesample(inverteddag, revs, inverteddag.headsetofconnecteds(revs),
-                  sample)
+    revsroots = set(repo.revs('roots(%ld)', revs))
+    _updatesample(dag.inverse(), revs, revsroots, sample)
     assert sample
     sample = _limitsample(sample, size)
     if len(sample) < size:

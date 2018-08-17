@@ -664,6 +664,8 @@ def newheads(repo, heads, roots):
 
     * `heads`: define the first subset
     * `roots`: define the second we subtract from the first"""
+    if not heads or not roots:
+        return heads
     repo = repo.unfiltered()
     revs = repo.revs('heads(::%ln - (%ln::%ln))', heads, roots, heads)
     return pycompat.maplist(repo.changelog.node, revs)

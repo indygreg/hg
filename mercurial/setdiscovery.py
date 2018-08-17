@@ -96,7 +96,7 @@ def _updatesample(dag, revs, sample, quicksamplesize=0):
                 dist.setdefault(p, d + 1)
                 visit.append(p)
 
-def _takequicksample(dag, revs, size):
+def _takequicksample(repo, dag, revs, size):
     """takes a quick sample of size <size>
 
     It is meant for initial sampling and focuses on querying heads and close
@@ -105,14 +105,16 @@ def _takequicksample(dag, revs, size):
     :dag: a dag object
     :revs: set of revs to discover
     :size: the maximum size of the sample"""
-    sample = dag.headsetofconnecteds(revs)
+    sample = set(repo.revs('heads(%ld)', revs))
+
     if len(sample) >= size:
         return _limitsample(sample, size)
     _updatesample(dag, None, sample, quicksamplesize=size)
     return sample
 
-def _takefullsample(dag, revs, size):
-    sample = dag.headsetofconnecteds(revs)
+def _takefullsample(repo, dag, revs, size):
+    sample = set(repo.revs('heads(%ld)', revs))
+
     # update from heads
     _updatesample(dag, revs, sample)
     # update from roots
@@ -242,7 +244,7 @@ def findcommonheads(ui, local, remote,
         if len(undecided) < targetsize:
             sample = list(undecided)
         else:
-            sample = samplefunc(dag, undecided, targetsize)
+            sample = samplefunc(local, dag, undecided, targetsize)
 
         roundtrips += 1
         progress.update(roundtrips)

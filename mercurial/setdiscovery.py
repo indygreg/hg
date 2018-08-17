@@ -56,23 +56,23 @@ from . import (
     util,
 )
 
-def _updatesample(dag, nodes, sample, quicksamplesize=0):
+def _updatesample(dag, revs, sample, quicksamplesize=0):
     """update an existing sample to match the expected size
 
-    The sample is updated with nodes exponentially distant from each head of the
-    <nodes> set. (H~1, H~2, H~4, H~8, etc).
+    The sample is updated with revs exponentially distant from each head of the
+    <revs> set. (H~1, H~2, H~4, H~8, etc).
 
     If a target size is specified, the sampling will stop once this size is
-    reached. Otherwise sampling will happen until roots of the <nodes> set are
+    reached. Otherwise sampling will happen until roots of the <revs> set are
     reached.
 
     :dag: a dag object from dagutil
-    :nodes:  set of nodes we want to discover (if None, assume the whole dag)
+    :revs:  set of revs we want to discover (if None, assume the whole dag)
     :sample: a sample to update
     :quicksamplesize: optional target size of the sample"""
-    # if nodes is empty we scan the entire graph
-    if nodes:
-        heads = dag.headsetofconnecteds(nodes)
+    # if revs is empty we scan the entire graph
+    if revs:
+        heads = dag.headsetofconnecteds(revs)
     else:
         heads = dag.heads()
     dist = {}
@@ -92,36 +92,36 @@ def _updatesample(dag, nodes, sample, quicksamplesize=0):
                 return
         seen.add(curr)
         for p in dag.parents(curr):
-            if not nodes or p in nodes:
+            if not revs or p in revs:
                 dist.setdefault(p, d + 1)
                 visit.append(p)
 
-def _takequicksample(dag, nodes, size):
+def _takequicksample(dag, revs, size):
     """takes a quick sample of size <size>
 
     It is meant for initial sampling and focuses on querying heads and close
     ancestors of heads.
 
     :dag: a dag object
-    :nodes: set of nodes to discover
+    :revs: set of revs to discover
     :size: the maximum size of the sample"""
-    sample = dag.headsetofconnecteds(nodes)
+    sample = dag.headsetofconnecteds(revs)
     if len(sample) >= size:
         return _limitsample(sample, size)
     _updatesample(dag, None, sample, quicksamplesize=size)
     return sample
 
-def _takefullsample(dag, nodes, size):
-    sample = dag.headsetofconnecteds(nodes)
+def _takefullsample(dag, revs, size):
+    sample = dag.headsetofconnecteds(revs)
     # update from heads
-    _updatesample(dag, nodes, sample)
+    _updatesample(dag, revs, sample)
     # update from roots
-    _updatesample(dag.inverse(), nodes, sample)
+    _updatesample(dag.inverse(), revs, sample)
     assert sample
     sample = _limitsample(sample, size)
     if len(sample) < size:
         more = size - len(sample)
-        sample.update(random.sample(list(nodes - sample), more))
+        sample.update(random.sample(list(revs - sample), more))
     return sample
 
 def _limitsample(sample, desiredlen):

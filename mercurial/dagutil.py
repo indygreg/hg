@@ -10,6 +10,10 @@ from __future__ import absolute_import
 
 from .node import nullrev
 
+from . import (
+    dagop,
+)
+
 class revlogdag(object):
     '''dag interface to a revlog'''
 
@@ -31,21 +35,6 @@ class revlogdag(object):
             return [prev2]
         return []
 
-    def headsetofconnecteds(self, ixs):
-        if not ixs:
-            return set()
-        rlog = self._revlog
-        idx = rlog.index
-        headrevs = set(ixs)
-        for rev in ixs:
-            revdata = idx[rev]
-            for i in [5, 6]:
-                prev = revdata[i]
-                if prev != nullrev:
-                    headrevs.discard(prev)
-        assert headrevs
-        return headrevs
-
     def linearize(self, ixs):
         '''linearize and topologically sort a list of revisions
 
@@ -56,7 +45,7 @@ class revlogdag(object):
         parent, then adding the rev itself to the output list.
         '''
         sorted = []
-        visit = list(self.headsetofconnecteds(ixs))
+        visit = list(dagop.headrevs(ixs, self.parents))
         visit.sort(reverse=True)
         finished = set()
 

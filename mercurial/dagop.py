@@ -715,3 +715,26 @@ def toposort(revs, parentsfunc, firstbranch=()):
     for g in groups:
         for r in g[0]:
             yield r
+
+def headrevs(revs, parentsfn):
+    """Resolve the set of heads from a set of revisions.
+
+    Receives an iterable of revision numbers and a callbable that receives a
+    revision number and returns an iterable of parent revision numbers, possibly
+    including nullrev.
+
+    Returns a set of revision numbers that are DAG heads within the passed
+    subset.
+
+    ``nullrev`` is never included in the returned set, even if it is provided in
+    the input set.
+    """
+    headrevs = set(revs)
+
+    for rev in revs:
+        for prev in parentsfn(rev):
+            headrevs.discard(prev)
+
+    headrevs.discard(node.nullrev)
+
+    return headrevs

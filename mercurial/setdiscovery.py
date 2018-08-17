@@ -215,7 +215,12 @@ def findcommonheads(ui, local, remote,
 
         if sample:
             missinginsample = [n for i, n in enumerate(sample) if not yesno[i]]
-            missing.update(dag.descendantset(missinginsample, missing))
+
+            if missing:
+                missing.update(local.revs('descendants(%ld) - descendants(%ld)',
+                                          missinginsample, missing))
+            else:
+                missing.update(local.revs('descendants(%ld)', missinginsample))
 
             undecided.difference_update(missing)
 

@@ -56,7 +56,7 @@ from . import (
     util,
 )
 
-def _updatesample(dag, revs, sample, quicksamplesize=0):
+def _updatesample(dag, revs, heads, sample, quicksamplesize=0):
     """update an existing sample to match the expected size
 
     The sample is updated with revs exponentially distant from each head of the
@@ -68,13 +68,9 @@ def _updatesample(dag, revs, sample, quicksamplesize=0):
 
     :dag: a dag object from dagutil
     :revs:  set of revs we want to discover (if None, assume the whole dag)
+    :heads: set of DAG head revs
     :sample: a sample to update
     :quicksamplesize: optional target size of the sample"""
-    # if revs is empty we scan the entire graph
-    if revs:
-        heads = dag.headsetofconnecteds(revs)
-    else:
-        heads = dag.heads()
     dist = {}
     visit = collections.deque(heads)
     seen = set()
@@ -109,16 +105,19 @@ def _takequicksample(repo, dag, revs, size):
 
     if len(sample) >= size:
         return _limitsample(sample, size)
-    _updatesample(dag, None, sample, quicksamplesize=size)
+
+    _updatesample(dag, None, dag.heads(), sample, quicksamplesize=size)
     return sample
 
 def _takefullsample(repo, dag, revs, size):
     sample = set(repo.revs('heads(%ld)', revs))
 
     # update from heads
-    _updatesample(dag, revs, sample)
+    _updatesample(dag, revs, dag.headsetofconnecteds(revs), sample)
     # update from roots
-    _updatesample(dag.inverse(), revs, sample)
+    inverteddag = dag.inverse()
+    _updatesample(inverteddag, revs, inverteddag.headsetofconnecteds(revs),
+                  sample)
     assert sample
     sample = _limitsample(sample, size)
     if len(sample) < size:

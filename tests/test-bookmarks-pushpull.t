@@ -141,10 +141,10 @@ delete a remote bookmark
   bundle2-output: payload chunk size: 23
   bundle2-output: closing payload chunk
   bundle2-output: bundle part: "check:phases"
-  bundle2-output-part: "check:phases" 48 bytes payload
+  bundle2-output-part: "check:phases" 24 bytes payload
   bundle2-output: part 2: "CHECK:PHASES"
   bundle2-output: header chunk size: 19
-  bundle2-output: payload chunk size: 48
+  bundle2-output: payload chunk size: 24
   bundle2-output: closing payload chunk
   bundle2-output: bundle part: "pushkey"
   bundle2-output-part: "pushkey" (params: 4 mandatory) empty payload
@@ -180,9 +180,9 @@ delete a remote bookmark
   bundle2-input: part parameters: 0
   bundle2-input: found a handler for part check:phases
   bundle2-input-part: "check:phases" supported
-  bundle2-input: payload chunk size: 48
+  bundle2-input: payload chunk size: 24
   bundle2-input: payload chunk size: 0
-  bundle2-input-part: total payload size 48
+  bundle2-input-part: total payload size 24
   bundle2-input: part header size: 90
   bundle2-input: part type: "PUSHKEY"
   bundle2-input: part id: "3"
@@ -253,10 +253,10 @@ delete a remote bookmark
   bundle2-output: payload chunk size: 23
   bundle2-output: closing payload chunk
   bundle2-output: bundle part: "check:phases"
-  bundle2-output-part: "check:phases" 48 bytes payload
+  bundle2-output-part: "check:phases" 24 bytes payload
   bundle2-output: part 2: "CHECK:PHASES"
   bundle2-output: header chunk size: 19
-  bundle2-output: payload chunk size: 48
+  bundle2-output: payload chunk size: 24
   bundle2-output: closing payload chunk
   bundle2-output: bundle part: "bookmarks"
   bundle2-output-part: "bookmarks" 23 bytes payload
@@ -293,9 +293,9 @@ delete a remote bookmark
   bundle2-input: part parameters: 0
   bundle2-input: found a handler for part check:phases
   bundle2-input-part: "check:phases" supported
-  bundle2-input: payload chunk size: 48
+  bundle2-input: payload chunk size: 24
   bundle2-input: payload chunk size: 0
-  bundle2-input-part: total payload size 48
+  bundle2-input-part: total payload size 24
   bundle2-input: part header size: 16
   bundle2-input: part type: "BOOKMARKS"
   bundle2-input: part id: "3"

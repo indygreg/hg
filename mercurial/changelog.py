@@ -22,7 +22,6 @@ from . import (
     error,
     pycompat,
     revlog,
-    util,
 )
 from .utils import (
     dateutil,
@@ -343,12 +342,6 @@ class changelog(revlog.revlog):
         for i in super(changelog, self).revs(start, stop):
             if i not in self.filteredrevs:
                 yield i
-
-    @util.propertycache
-    def nodemap(self):
-        # XXX need filtering too
-        self.rev(self.node(0))
-        return self._nodecache
 
     def reachableroots(self, minroot, heads, roots, includepath=False):
         return self.index.reachableroots2(minroot, heads, roots, includepath)

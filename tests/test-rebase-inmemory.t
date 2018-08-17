@@ -361,8 +361,14 @@ In-memory rebase that fails due to merge conflicts
   transaction abort!
   rollback completed
   hit merge conflicts; re-running rebase without in-memory merge
-  abort: abort and continue do not allow specifying revisions
-  [255]
+  rebase aborted
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  rebasing 4:e860deea161a "e"
+  merging e
+  warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
 
 ==========================
 Test for --confirm option|

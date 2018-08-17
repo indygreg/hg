@@ -864,7 +864,7 @@ def rebase(ui, repo, **opts):
         except error.InMemoryMergeConflictsError:
             ui.warn(_('hit merge conflicts; re-running rebase without in-memory'
                       ' merge\n'))
-            _dorebase(ui, repo, 'abort', opts)
+            _dorebase(ui, repo, action='abort', opts={})
             return _dorebase(ui, repo, action, opts, inmemory=False)
     else:
         return _dorebase(ui, repo, action, opts)

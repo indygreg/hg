@@ -38,6 +38,7 @@ def _filename(repo):
     return filename
 
 def read(repo):
+    f = None
     try:
         f = repo.cachevfs(_filename(repo))
         cachekey = next(f).rstrip('\n').split(" ", 2)
@@ -79,6 +80,11 @@ def read(repo):
             msg += ': %s\n'
             repo.ui.debug(msg % pycompat.bytestr(inst))
         partial = None
+
+    finally:
+        if f:
+            f.close()
+
     return partial
 
 ### Nearest subset relation

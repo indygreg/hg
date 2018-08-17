@@ -24,10 +24,6 @@ class basedag(object):
     def __init__(self):
         self._inverse = None
 
-    def heads(self):
-        '''list of head ixs'''
-        raise NotImplementedError
-
     def parents(self, ix):
         '''list of parents ixs of ix'''
         raise NotImplementedError
@@ -65,22 +61,12 @@ class revlogbaseddag(basedag):
     def __init__(self, revlog):
         basedag.__init__(self)
         self._revlog = revlog
-        self._heads = None
-
-    def heads(self):
-        if self._heads is None:
-            self._heads = self._getheads()
-        return self._heads
 
 class revlogdag(revlogbaseddag):
     '''dag interface to a revlog'''
 
-    def __init__(self, revlog, localsubset=None):
+    def __init__(self, revlog):
         revlogbaseddag.__init__(self, revlog)
-        self._heads = localsubset
-
-    def _getheads(self):
-        return [r for r in self._revlog.headrevs() if r != nullrev]
 
     def parents(self, ix):
         rlog = self._revlog
@@ -172,10 +158,6 @@ class inverserevlogdag(revlogbaseddag, genericdag):
                 roots.append(rev)
             rev -= 1
         self._walkfrom = rev
-
-    def _getheads(self):
-        self._walkto(nullrev)
-        return self._roots
 
     def parents(self, ix):
         if ix is None:

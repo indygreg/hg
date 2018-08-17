@@ -152,7 +152,7 @@ def findcommonheads(ui, local, remote,
     else:
         ownheads = [rev for rev in cl.headrevs() if rev != nullrev]
 
-    dag = dagutil.revlogdag(cl, localsubset=ownheads)
+    dag = dagutil.revlogdag(cl)
 
     # early exit if we know all the specified remote heads already
     ui.debug("query 1; heads\n")

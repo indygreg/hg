@@ -351,6 +351,19 @@ Check dryrun working with --collapse when there is conflicts
   hit a merge conflict
   [1]
 
+In-memory rebase that fails due to merge conflicts
+
+  $ hg rebase -s 2 -d 7
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  rebasing 4:e860deea161a "e"
+  merging e
+  transaction abort!
+  rollback completed
+  hit merge conflicts; re-running rebase without in-memory merge
+  abort: abort and continue do not allow specifying revisions
+  [255]
+
 ==========================
 Test for --confirm option|
 ==========================

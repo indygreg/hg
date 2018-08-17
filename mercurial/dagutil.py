@@ -10,56 +10,11 @@ from __future__ import absolute_import
 
 from .node import nullrev
 
-class basedag(object):
-    '''generic interface for DAGs
-
-    terms:
-    "ix" (short for index) identifies a nodes internally,
-    "id" identifies one externally.
-
-    All params are ixs unless explicitly suffixed otherwise.
-    Pluralized params are lists or sets.
-    '''
-
-    def parents(self, ix):
-        '''list of parents ixs of ix'''
-        raise NotImplementedError
-
-    def headsetofconnecteds(self, ixs):
-        '''
-        subset of connected list of ixs so that no node has a descendant in it
-
-        By "connected list" we mean that if an ancestor and a descendant are in
-        the list, then so is at least one path connecting them.
-        '''
-        raise NotImplementedError
-
-class genericdag(basedag):
-    '''generic implementations for DAGs'''
-
-    def headsetofconnecteds(self, ixs):
-        hds = set(ixs)
-        if not hds:
-            return hds
-        for n in ixs:
-            for p in self.parents(n):
-                hds.discard(p)
-        assert hds
-        return hds
-
-
-class revlogbaseddag(basedag):
-    '''generic dag interface to a revlog'''
-
-    def __init__(self, revlog):
-        basedag.__init__(self)
-        self._revlog = revlog
-
-class revlogdag(revlogbaseddag):
+class revlogdag(object):
     '''dag interface to a revlog'''
 
     def __init__(self, revlog):
-        revlogbaseddag.__init__(self, revlog)
+        self._revlog = revlog
 
     def parents(self, ix):
         rlog = self._revlog

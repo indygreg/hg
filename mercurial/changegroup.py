@@ -24,7 +24,7 @@ from .thirdparty import (
 )
 
 from . import (
-    dagutil,
+    dagop,
     error,
     match as matchmod,
     mdiff,
@@ -587,8 +587,8 @@ def _sortnodesnormal(store, nodes, reorder):
     # for generaldelta revlogs, we linearize the revs; this will both be
     # much quicker and generate a much smaller bundle
     if (store._generaldelta and reorder is None) or reorder:
-        dag = dagutil.revlogdag(store)
-        return dag.linearize(set(store.rev(n) for n in nodes))
+        revs = set(store.rev(n) for n in nodes)
+        return dagop.linearize(revs, store.parentrevs)
     else:
         return sorted([store.rev(n) for n in nodes])
 

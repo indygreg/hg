@@ -738,3 +738,40 @@ def headrevs(revs, parentsfn):
     headrevs.discard(node.nullrev)
 
     return headrevs
+
+def linearize(revs, parentsfn):
+    """Linearize and topologically sort a list of revisions.
+
+    The linearization process tires to create long runs of revs where a child
+    rev comes immediately after its first parent. This is done by visiting the
+    heads of the revs in inverse topological order, and for each visited rev,
+    visiting its second parent, then its first parent, then adding the rev
+    itself to the output list.
+
+    Returns a list of revision numbers.
+    """
+    visit = list(sorted(headrevs(revs, parentsfn), reverse=True))
+    finished = set()
+    result = []
+
+    while visit:
+        rev = visit.pop()
+        if rev < 0:
+            rev = -rev - 1
+
+            if rev not in finished:
+                result.append(rev)
+                finished.add(rev)
+
+        else:
+            visit.append(-rev - 1)
+
+            for prev in parentsfn(rev):
+                if prev == node.nullrev or prev not in revs or prev in finished:
+                    continue
+
+                visit.append(prev)
+
+    assert len(result) == len(revs)
+
+    return result

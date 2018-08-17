@@ -20,21 +20,6 @@ class revlogdag(object):
     def __init__(self, revlog):
         self._revlog = revlog
 
-    def parents(self, ix):
-        rlog = self._revlog
-        idx = rlog.index
-        revdata = idx[ix]
-        prev = revdata[5]
-        if prev != nullrev:
-            prev2 = revdata[6]
-            if prev2 == nullrev:
-                return [prev]
-            return [prev, prev2]
-        prev2 = revdata[6]
-        if prev2 != nullrev:
-            return [prev2]
-        return []
-
     def linearize(self, ixs):
         '''linearize and topologically sort a list of revisions
 
@@ -45,7 +30,7 @@ class revlogdag(object):
         parent, then adding the rev itself to the output list.
         '''
         sorted = []
-        visit = list(dagop.headrevs(ixs, self.parents))
+        visit = list(dagop.headrevs(ixs, self._revlog.parentrevs))
         visit.sort(reverse=True)
         finished = set()
 
@@ -58,7 +43,7 @@ class revlogdag(object):
                     finished.add(cur)
             else:
                 visit.append(-cur - 1)
-                visit += [p for p in self.parents(cur)
-                          if p in ixs and p not in finished]
+                visit += [p for p in self._revlog.parentrevs(cur)
+                          if p != nullrev and p in ixs and p not in finished]
         assert len(sorted) == len(ixs)
         return sorted

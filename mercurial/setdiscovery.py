@@ -51,7 +51,6 @@ from .node import (
     nullrev,
 )
 from . import (
-    dagutil,
     error,
     util,
 )
@@ -157,8 +156,6 @@ def findcommonheads(ui, local, remote,
         ownheads = [clrev(n) for n in ancestorsof]
     else:
         ownheads = [rev for rev in cl.headrevs() if rev != nullrev]
-
-    dag = dagutil.revlogdag(cl)
 
     # early exit if we know all the specified remote heads already
     ui.debug("query 1; heads\n")
@@ -273,10 +270,8 @@ def findcommonheads(ui, local, remote,
 
     # heads(common) == heads(common.bases) since common represents common.bases
     # and all its ancestors
-    result = dag.headsetofconnecteds(common.bases)
-    # common.bases can include nullrev, but our contract requires us to not
-    # return any heads in that case, so discard that
-    result.discard(nullrev)
+    # The presence of nullrev will confuse heads(). So filter it out.
+    result = set(local.revs('heads(%ld)', common.bases - {nullrev}))
     elapsed = util.timer() - start
     progress.complete()
     ui.debug("%d total queries in %.4fs\n" % (roundtrips, elapsed))

@@ -36,18 +36,6 @@ class basedag(object):
         '''inverse DAG, where parents becomes children, etc.'''
         raise NotImplementedError
 
-    def ancestorset(self, starts, stops=None):
-        '''
-        set of all ancestors of starts (incl), but stop walk at stops (excl)
-        '''
-        raise NotImplementedError
-
-    def descendantset(self, starts, stops=None):
-        '''
-        set of all descendants of starts (incl), but stop walk at stops (excl)
-        '''
-        return self.inverse().ancestorset(starts, stops)
-
     def headsetofconnecteds(self, ixs):
         '''
         subset of connected list of ixs so that no node has a descendant in it
@@ -59,20 +47,6 @@ class basedag(object):
 
 class genericdag(basedag):
     '''generic implementations for DAGs'''
-
-    def ancestorset(self, starts, stops=None):
-        if stops:
-            stops = set(stops)
-        else:
-            stops = set()
-        seen = set()
-        pending = list(starts)
-        while pending:
-            n = pending.pop()
-            if n not in seen and n not in stops:
-                seen.add(n)
-                pending.extend(self.parents(n))
-        return seen
 
     def headsetofconnecteds(self, ixs):
         hds = set(ixs)
@@ -127,26 +101,6 @@ class revlogdag(revlogbaseddag):
         if self._inverse is None:
             self._inverse = inverserevlogdag(self)
         return self._inverse
-
-    def ancestorset(self, starts, stops=None):
-        rlog = self._revlog
-        idx = rlog.index
-        if stops:
-            stops = set(stops)
-        else:
-            stops = set()
-        seen = set()
-        pending = list(starts)
-        while pending:
-            rev = pending.pop()
-            if rev not in seen and rev not in stops:
-                seen.add(rev)
-                revdata = idx[rev]
-                for i in [5, 6]:
-                    prev = revdata[i]
-                    if prev != nullrev:
-                        pending.append(prev)
-        return seen
 
     def headsetofconnecteds(self, ixs):
         if not ixs:

@@ -325,10 +325,26 @@ Executable files:
   $ cd ..
   $ hg init repo3
   $ cd repo3
+
+#if execbit
   $ echo > foo.py
   $ chmod +x foo.py
   $ hg add foo.py
   $ hg commit -mfoo
+#else
+  $ hg import -q --bypass - <<EOF
+  > # HG changeset patch
+  > foo
+  > 
+  > diff --git a/foo.py b/foo.py
+  > new file mode 100755
+  > --- /dev/null
+  > +++ b/foo.py
+  > @@ -0,0 +1,1 @@
+  > +
+  > EOF
+  $ hg up -q
+#endif
 
   $ echo bla > foo.py
   $ hg absorb --dry-run --print-changes

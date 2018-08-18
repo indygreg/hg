@@ -568,7 +568,7 @@ def isgooddeltainfo(revlog, deltainfo, revinfo):
 
     return True
 
-def _candidategroups(revlog, p1, p2, cachedelta):
+def _candidategroups(revlog, textlen, p1, p2, cachedelta):
     """Provides group of revision to be tested as delta base
 
     This top level function focus on emitting groups with unique and worthwhile
@@ -578,12 +578,36 @@ def _candidategroups(revlog, p1, p2, cachedelta):
     if not (len(revlog) and revlog._storedeltachains):
         return
 
+    deltalength = revlog.length
+    deltaparent = revlog.deltaparent
+
+    deltas_limit = textlen * LIMIT_DELTA2TEXT
+
     tested = set([nullrev])
-    for group in _rawgroups(revlog, p1, p2, cachedelta):
-        group = tuple(r for r in group if r not in tested)
-        tested.update(group)
+    for temptative in _rawgroups(revlog, p1, p2, cachedelta):
+        group = []
+        for rev in temptative:
+            # skip over empty delta (no need to include them in a chain)
+            while not (rev == nullrev or rev in tested or deltalength(rev)):
+                rev = deltaparent(rev)
+                tested.add(rev)
+            # filter out revision we tested already
+            if rev in tested:
+                continue
+            tested.add(rev)
+            # filter out delta base that will never produce good delta
+            if deltas_limit < revlog.length(rev):
+                continue
+            # no need to try a delta against nullrev, this will be done as a
+            # last resort.
+            if rev == nullrev:
+                continue
+            # no delta for rawtext-changing revs (see "candelta" for why)
+            if revlog.flags(rev) & REVIDX_RAWTEXT_CHANGING_FLAGS:
+                continue
+            group.append(rev)
         if group:
-            yield group
+            yield tuple(group)
 
 def _rawgroups(revlog, p1, p2, cachedelta):
     """Provides group of revision to be tested as delta base
@@ -752,29 +776,13 @@ class deltacomputer(object):
         p2 = revinfo.p2
         revlog = self.revlog
 
-        deltalength = self.revlog.length
-        deltaparent = self.revlog.deltaparent
-
         deltainfo = None
-        deltas_limit = revinfo.textlen * LIMIT_DELTA2TEXT
         p1r, p2r = revlog.rev(p1), revlog.rev(p2)
-        groups = _candidategroups(self.revlog, p1r, p2r, cachedelta)
+        groups = _candidategroups(self.revlog, revinfo.textlen,
+                                             p1r, p2r, cachedelta)
         for candidaterevs in groups:
-            # filter out delta base that will never produce good delta
-            candidaterevs = [r for r in candidaterevs
-                             if self.revlog.length(r) <= deltas_limit]
             nominateddeltas = []
             for candidaterev in candidaterevs:
-                # skip over empty delta (no need to include them in a chain)
-                while candidaterev != nullrev and not deltalength(candidaterev):
-                    candidaterev = deltaparent(candidaterev)
-                # no need to try a delta against nullid, this will be handled
-                # by fulltext later.
-                if candidaterev == nullrev:
-                    continue
-                # no delta for rawtext-changing revs (see "candelta" for why)
-                if revlog.flags(candidaterev) & REVIDX_RAWTEXT_CHANGING_FLAGS:
-                    continue
                 candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
                 if isgooddeltainfo(self.revlog, candidatedelta, revinfo):
                     nominateddeltas.append(candidatedelta)

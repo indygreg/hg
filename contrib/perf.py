@@ -807,7 +807,7 @@ def perfphasesremote(ui, repo, dest=None, **opts):
 
     path = ui.paths.getpath(dest, default=('default-push', 'default'))
     if not path:
-        raise error.abort(('default repository not configured!'),
+        raise error.Abort(('default repository not configured!'),
                          hint=("see 'hg help config.paths'"))
     dest = path.pushloc or path.loc
     branches = (path.branch, opts.get('branch') or [])

@@ -59,10 +59,12 @@ repo not found error
 
 non-existent absolute path
 
+#if no-msys
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy//`pwd`/nonexistent local
   remote: abort: repository /$TESTTMP/nonexistent not found!
   abort: no suitable response from remote hg!
   [255]
+#endif
 
 clone remote via stream
 
@@ -502,7 +504,7 @@ debug output
 
   $ cat dummylog
   Got arguments 1:user@dummy 2:hg -R nonexistent serve --stdio
-  Got arguments 1:user@dummy 2:hg -R /$TESTTMP/nonexistent serve --stdio
+  Got arguments 1:user@dummy 2:hg -R /$TESTTMP/nonexistent serve --stdio (no-msys !)
   Got arguments 1:user@dummy 2:hg -R remote serve --stdio
   Got arguments 1:user@dummy 2:hg -R local-stream serve --stdio (no-reposimplestore !)
   Got arguments 1:user@dummy 2:hg -R remote serve --stdio (no-reposimplestore !)

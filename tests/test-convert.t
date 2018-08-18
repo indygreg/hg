@@ -533,9 +533,11 @@ contents of fncache file:
 
 test bogus URL
 
+#if no-msys
   $ hg convert -q bzr+ssh://foobar@selenic.com/baz baz
   abort: bzr+ssh://foobar@selenic.com/baz: missing or unsupported repository
   [255]
+#endif
 
 test revset converted() lookup
 

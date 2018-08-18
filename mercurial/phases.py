@@ -678,8 +678,6 @@ def newheads(repo, heads, roots):
     # The logic operated on revisions, convert arguments early for convenience
     new_heads = set(rev(n) for n in heads if n != nullid)
     roots = [rev(n) for n in roots]
-    if not heads or not roots:
-        return heads
     # compute the area we need to remove
     affected_zone = repo.revs("(%ld::%ld)", roots, new_heads)
     # heads in the area are no longer heads

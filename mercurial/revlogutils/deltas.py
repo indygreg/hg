@@ -568,57 +568,56 @@ def isgooddeltainfo(revlog, deltainfo, revinfo):
 
     return True
 
+def _candidategroups(revlog, p1, p2, cachedelta):
+    """
+    Provides revisions that present an interest to be diffed against,
+    grouped by level of easiness.
+    """
+    gdelta = revlog._generaldelta
+    curr = len(revlog)
+    prev = curr - 1
+    p1r, p2r = revlog.rev(p1), revlog.rev(p2)
+
+    # should we try to build a delta?
+    if prev != nullrev and revlog._storedeltachains:
+        tested = set()
+        # This condition is true most of the time when processing
+        # changegroup data into a generaldelta repo. The only time it
+        # isn't true is if this is the first revision in a delta chain
+        # or if ``format.generaldelta=true`` disabled ``lazydeltabase``.
+        if cachedelta and gdelta and revlog._lazydeltabase:
+            # Assume what we received from the server is a good choice
+            # build delta will reuse the cache
+            yield (cachedelta[0],)
+            tested.add(cachedelta[0])
+
+        if gdelta:
+            # exclude already lazy tested base if any
+            parents = [p for p in (p1r, p2r)
+                       if p != nullrev and p not in tested]
+
+            if not revlog._deltabothparents and len(parents) == 2:
+                parents.sort()
+                # To minimize the chance of having to build a fulltext,
+                # pick first whichever parent is closest to us (max rev)
+                yield (parents[1],)
+                # then the other one (min rev) if the first did not fit
+                yield (parents[0],)
+                tested.update(parents)
+            elif len(parents) > 0:
+                # Test all parents (1 or 2), and keep the best candidate
+                yield parents
+                tested.update(parents)
+
+        if prev not in tested:
+            # other approach failed try against prev to hopefully save us a
+            # fulltext.
+            yield (prev,)
+            tested.add(prev)
+
 class deltacomputer(object):
     def __init__(self, revlog):
         self.revlog = revlog
-
-    def _getcandidaterevs(self, p1, p2, cachedelta):
-        """
-        Provides revisions that present an interest to be diffed against,
-        grouped by level of easiness.
-        """
-        revlog = self.revlog
-        gdelta = revlog._generaldelta
-        curr = len(revlog)
-        prev = curr - 1
-        p1r, p2r = revlog.rev(p1), revlog.rev(p2)
-
-        # should we try to build a delta?
-        if prev != nullrev and revlog._storedeltachains:
-            tested = set()
-            # This condition is true most of the time when processing
-            # changegroup data into a generaldelta repo. The only time it
-            # isn't true is if this is the first revision in a delta chain
-            # or if ``format.generaldelta=true`` disabled ``lazydeltabase``.
-            if cachedelta and gdelta and revlog._lazydeltabase:
-                # Assume what we received from the server is a good choice
-                # build delta will reuse the cache
-                yield (cachedelta[0],)
-                tested.add(cachedelta[0])
-
-            if gdelta:
-                # exclude already lazy tested base if any
-                parents = [p for p in (p1r, p2r)
-                           if p != nullrev and p not in tested]
-
-                if not revlog._deltabothparents and len(parents) == 2:
-                    parents.sort()
-                    # To minimize the chance of having to build a fulltext,
-                    # pick first whichever parent is closest to us (max rev)
-                    yield (parents[1],)
-                    # then the other one (min rev) if the first did not fit
-                    yield (parents[0],)
-                    tested.update(parents)
-                elif len(parents) > 0:
-                    # Test all parents (1 or 2), and keep the best candidate
-                    yield parents
-                    tested.update(parents)
-
-            if prev not in tested:
-                # other approach failed try against prev to hopefully save us a
-                # fulltext.
-                yield (prev,)
-                tested.add(prev)
 
     def buildtext(self, revinfo, fh):
         """Builds a fulltext version of a revision
@@ -711,7 +710,7 @@ class deltacomputer(object):
                  depending on whether it is inlined or not
 
         Returns the first acceptable candidate revision, as ordered by
-        _getcandidaterevs
+        _candidategroups
 
         If no suitable deltabase is found, we return delta info for a full
         snapshot.
@@ -735,7 +734,8 @@ class deltacomputer(object):
 
         deltainfo = None
         deltas_limit = revinfo.textlen * LIMIT_DELTA2TEXT
-        for candidaterevs in self._getcandidaterevs(p1, p2, cachedelta):
+        groups = _candidategroups(self.revlog, p1, p2, cachedelta)
+        for candidaterevs in groups:
             # filter out delta base that will never produce good delta
             candidaterevs = [r for r in candidaterevs
                              if self.revlog.length(r) <= deltas_limit]

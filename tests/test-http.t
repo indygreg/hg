@@ -476,7 +476,7 @@ disable pull-based clones
 #endif
 
 ... and also keep partial clones and pulls working
-  $ hg clone http://localhost:$HGPORT1 --rev 0 test-partial-clone
+  $ hg clone http://localhost:$HGPORT1 --rev 0 test/partial/clone
   adding changesets
   adding manifests
   adding file changes
@@ -484,7 +484,7 @@ disable pull-based clones
   new changesets 8b6053c928fe
   updating to branch default
   4 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ hg pull -R test-partial-clone
+  $ hg pull -R test/partial/clone
   pulling from http://localhost:$HGPORT1/
   searching for changes
   adding changesets
@@ -493,6 +493,10 @@ disable pull-based clones
   added 2 changesets with 3 changes to 3 files
   new changesets 5fed3813f7f5:56f9bc90cce6
   (run 'hg update' to get a working copy)
+
+  $ hg clone test/partial/clone test/another/clone
+  abort: $ENOTDIR$: 'test/another/clone'
+  [255]
 
 corrupt cookies file should yield a warning
 

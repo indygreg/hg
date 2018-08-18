@@ -29,9 +29,9 @@ nullhex = hex(nullid)
 # manifests.
 # In hex, this is '2121212121212121212121212121212121212121'
 newnodeid = '!!!!!!!!!!!!!!!!!!!!'
-# In hex, this is '0000000000000000000000000000006164646564'
+# In hex, this is '3030303030303030303030303030306164646564'
 addednodeid = '000000000000000added'
-# In hex, this is '0000000000000000000000006d6f646966696564'
+# In hex, this is '3030303030303030303030306d6f646966696564'
 modifiednodeid = '000000000000modified'
 
 wdirfilenodeids = {newnodeid, addednodeid, modifiednodeid}

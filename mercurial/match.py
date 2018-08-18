@@ -496,6 +496,46 @@ class patternmatcher(basematcher):
     def __repr__(self):
         return ('<patternmatcher patterns=%r>' % pycompat.bytestr(self._pats))
 
+# This is basically a reimplementation of util.dirs that stores the children
+# instead of just a count of them, plus a small optional optimization to avoid
+# some directories we don't need.
+class _dirchildren(object):
+    def __init__(self, paths, onlyinclude=None):
+        self._dirs = {}
+        self._onlyinclude = onlyinclude or []
+        addpath = self.addpath
+        for f in paths:
+            addpath(f)
+
+    def addpath(self, path):
+        if path == '.':
+            return
+        dirs = self._dirs
+        findsplitdirs = _dirchildren._findsplitdirs
+        for d, b in findsplitdirs(path):
+            if d not in self._onlyinclude:
+                continue
+            dirs.setdefault(d, set()).add(b)
+
+    @staticmethod
+    def _findsplitdirs(path):
+        # yields (dirname, basename) tuples, walking back to the root.  This is
+        # very similar to util.finddirs, except:
+        #  - produces a (dirname, basename) tuple, not just 'dirname'
+        #  - includes root dir
+        # Unlike manifest._splittopdir, this does not suffix `dirname` with a
+        # slash, and produces '.' for the root instead of ''.
+        oldpos = len(path)
+        pos = path.rfind('/')
+        while pos != -1:
+            yield path[:pos], path[pos + 1:oldpos]
+            oldpos = pos
+            pos = path.rfind('/', 0, pos)
+        yield '.', path[:oldpos]
+
+    def get(self, path):
+        return self._dirs.get(path, set())
+
 class includematcher(basematcher):
 
     def __init__(self, root, cwd, kindpats, listsubrepos=False, badfn=None):
@@ -523,6 +563,18 @@ class includematcher(basematcher):
                 any(parentdir in self._roots
                     for parentdir in util.finddirs(dir)))
 
+    @propertycache
+    def _allparentschildren(self):
+        # It may seem odd that we add dirs, roots, and parents, and then
+        # restrict to only parents. This is to catch the case of:
+        #   dirs = ['foo/bar']
+        #   parents = ['foo']
+        # if we asked for the children of 'foo', but had only added
+        # self._parents, we wouldn't be able to respond ['bar'].
+        return _dirchildren(
+                itertools.chain(self._dirs, self._roots, self._parents),
+                onlyinclude=self._parents)
+
     def visitchildrenset(self, dir):
         if self._prefix and dir in self._roots:
             return 'all'
@@ -535,30 +587,9 @@ class includematcher(basematcher):
                 for parentdir in util.finddirs(dir))):
             return 'this'
 
-        ret = set()
         if dir in self._parents:
-            # We add a '/' on to `dir` so that we don't return items that are
-            # prefixed by `dir` but are actually siblings of `dir`.
-            suffixeddir = dir + '/' if dir != '.' else ''
-            # Look in all _roots, _dirs, and _parents for things that start with
-            # 'suffixeddir'.
-            for d in [q for q in
-                      itertools.chain(self._roots, self._dirs, self._parents) if
-                      q.startswith(suffixeddir)]:
-                # Don't emit '.' in the response for the root directory
-                if not suffixeddir and d == '.':
-                    continue
-
-                # We return the item name without the `suffixeddir` prefix or a
-                # slash suffix
-                d = d[len(suffixeddir):]
-                if '/' in d:
-                    # This is a subdirectory-of-a-subdirectory, i.e.
-                    # suffixeddir='foo/', d was 'foo/bar/baz' before removing
-                    # 'foo/'.
-                    d = d[:d.index('/')]
-                ret.add(d)
-        return ret
+            return self._allparentschildren.get(dir) or set()
+        return set()
 
     @encoding.strmethod
     def __repr__(self):
@@ -1238,6 +1269,10 @@ def _rootsdirsandparents(kindpats):
     # util.dirs() does not include the root directory, so add it manually
     p.append('.')
 
+    # FIXME: all uses of this function convert these to sets, do so before
+    # returning.
+    # FIXME: all uses of this function do not need anything in 'roots' and
+    # 'dirs' to also be in 'parents', consider removing them before returning.
     return r, d, p
 
 def _explicitfiles(kindpats):

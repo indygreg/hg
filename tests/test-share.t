@@ -298,15 +298,15 @@ test pushing bookmarks works
 
 test behavior when sharing a shared repo
 
-  $ hg share -B repo3 repo5
+  $ hg share -B repo3 missingdir/repo5
   updating working directory
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cd repo5
+  $ cd missingdir/repo5
   $ hg book
      bm1                       3:b87954705719
      bm3                       4:62f4ded848e4
      bm4                       5:92793bfc8cad
-  $ cd ..
+  $ cd ../..
 
 test what happens when an active bookmark is deleted
 

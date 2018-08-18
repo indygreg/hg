@@ -266,7 +266,7 @@ def share(ui, source, dest=None, update=True, bookmarks=True, defaultpath=None,
         raise error.Abort(_('destination already exists'))
 
     if not destwvfs.isdir():
-        destwvfs.mkdir()
+        destwvfs.makedirs()
     destvfs.makedir()
 
     requirements = ''

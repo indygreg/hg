@@ -576,7 +576,6 @@ def _candidategroups(revlog, p1, p2, cachedelta):
     gdelta = revlog._generaldelta
     curr = len(revlog)
     prev = curr - 1
-    p1r, p2r = revlog.rev(p1), revlog.rev(p2)
 
     # should we try to build a delta?
     if prev != nullrev and revlog._storedeltachains:
@@ -593,7 +592,7 @@ def _candidategroups(revlog, p1, p2, cachedelta):
 
         if gdelta:
             # exclude already lazy tested base if any
-            parents = [p for p in (p1r, p2r)
+            parents = [p for p in (p1, p2)
                        if p != nullrev and p not in tested]
 
             if not revlog._deltabothparents and len(parents) == 2:
@@ -734,7 +733,8 @@ class deltacomputer(object):
 
         deltainfo = None
         deltas_limit = revinfo.textlen * LIMIT_DELTA2TEXT
-        groups = _candidategroups(self.revlog, p1, p2, cachedelta)
+        p1r, p2r = revlog.rev(p1), revlog.rev(p2)
+        groups = _candidategroups(self.revlog, p1r, p2r, cachedelta)
         for candidaterevs in groups:
             # filter out delta base that will never produce good delta
             candidaterevs = [r for r in candidaterevs

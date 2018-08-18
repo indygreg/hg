@@ -1,0 +1,9 @@
+This directory is meant to cache artifacts useful for tests (such as bundle).
+
+Those artifacts need to be cached because they are slow to regenerate on each
+test but too large to be tracked within the repository. They are not expected
+to change between each run and can be cached.
+
+The `./scripts/` contains code to generate the artifact while the `cache`
+directory contains resulting artifact.
+

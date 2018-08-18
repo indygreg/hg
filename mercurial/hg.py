@@ -634,7 +634,7 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
             srcrepo.hook('preoutgoing', throw=True, source='clone')
             hgdir = os.path.realpath(os.path.join(dest, ".hg"))
             if not os.path.exists(dest):
-                os.mkdir(dest)
+                util.makedirs(dest)
             else:
                 # only clean up directories we create ourselves
                 cleandir = hgdir

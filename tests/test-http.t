@@ -494,9 +494,12 @@ disable pull-based clones
   new changesets 5fed3813f7f5:56f9bc90cce6
   (run 'hg update' to get a working copy)
 
-  $ hg clone test/partial/clone test/another/clone
-  abort: $ENOTDIR$: 'test/another/clone'
-  [255]
+  $ hg clone -U -r 0 test/partial/clone test/another/clone
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 4 changes to 4 files
+  new changesets 8b6053c928fe
 
 corrupt cookies file should yield a warning
 

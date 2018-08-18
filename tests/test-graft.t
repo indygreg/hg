@@ -710,6 +710,7 @@ Transplants of grafts can find a destination...
   resolving manifests
    branchmerge: True, force: True, partial: False
    ancestor: b592ea63bb0c, local: 7e61b508e709+, remote: 7a4785234d87
+  starting 4 threads for background file closing (?)
   committing files:
   b
   warning: can't find ancestor for 'b' copied from 'a'!

@@ -673,7 +673,7 @@ def newheads(repo, heads, roots):
     rev = cl.nodemap.get
     if not roots:
         return heads
-    if not heads or heads == [nullrev]:
+    if not heads or heads == [nullid]:
         return []
     # The logic operated on revisions, convert arguments early for convenience
     new_heads = set(rev(n) for n in heads if n != nullid)

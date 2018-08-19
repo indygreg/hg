@@ -27,6 +27,7 @@ import zlib
 from .node import (
     bin,
     hex,
+    nullhex,
     nullid,
     nullrev,
     wdirfilenodeids,
@@ -1853,6 +1854,8 @@ class revlog(object):
                 nl = [e[7] for e in self.index if e[7].startswith(prefix)]
                 nl = [n for n in nl if hex(n).startswith(id) and
                       self.hasnode(n)]
+                if nullhex.startswith(id):
+                    nl.append(nullid)
                 if len(nl) > 0:
                     if len(nl) == 1 and not maybewdir:
                         self._pcache[id] = nl[0]

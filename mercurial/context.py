@@ -1745,13 +1745,19 @@ class workingfilectx(committablefilectx):
         wvfs = self._repo.wvfs
         f = self._path
         wvfs.audit(f)
-        if wvfs.isdir(f) and not wvfs.islink(f):
-            wvfs.rmtree(f, forcibly=True)
         if self._repo.ui.configbool('experimental', 'merge.checkpathconflicts'):
+            # remove files under the directory as they should already be
+            # warned and backed up
+            if wvfs.isdir(f) and not wvfs.islink(f):
+                wvfs.rmtree(f, forcibly=True)
             for p in reversed(list(util.finddirs(f))):
                 if wvfs.isfileorlink(p):
                     wvfs.unlink(p)
                     break
+        else:
+            # don't remove files if path conflicts are not processed
+            if wvfs.isdir(f) and not wvfs.islink(f):
+                wvfs.removedirs(f)
 
     def setflags(self, l, x):
         self._repo.wvfs.setflags(self._path, l, x)

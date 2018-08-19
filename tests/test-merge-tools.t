@@ -1701,6 +1701,35 @@ for Unix-like permission)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg update -C 1 > /dev/null
+
+#else
+
+Match the non-portable filename commits above for test stability
+
+  $ hg import --bypass -q - << EOF
+  > # HG changeset patch
+  > revision 5
+  > 
+  > diff --git a/"; exit 1; echo " b/"; exit 1; echo "
+  > new file mode 100644
+  > --- /dev/null
+  > +++ b/"; exit 1; echo "
+  > @@ -0,0 +1,1 @@
+  > +revision 5
+  > EOF
+
+  $ hg import --bypass -q - << EOF
+  > # HG changeset patch
+  > revision 6
+  > 
+  > diff --git a/"; exit 1; echo " b/"; exit 1; echo "
+  > new file mode 100644
+  > --- /dev/null
+  > +++ b/"; exit 1; echo "
+  > @@ -0,0 +1,1 @@
+  > +revision 6
+  > EOF
+
 #endif
 
 Merge post-processing
@@ -1760,14 +1789,41 @@ missingbinary is a merge-tool that doesn't exist:
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
-#if symlink
+  $ hg update -q -C 1
+  $ rm f
 
 internal merge cannot handle symlinks and shouldn't try:
 
-  $ hg update -q -C 1
-  $ rm f
+#if symlink
+
   $ ln -s symlink f
   $ hg commit -qm 'f is symlink'
+
+#else
+
+  $ hg import --bypass -q - << EOF
+  > # HG changeset patch
+  > f is symlink
+  > 
+  > diff --git a/f b/f
+  > old mode 100644
+  > new mode 120000
+  > --- a/f
+  > +++ b/f
+  > @@ -1,2 +1,1 @@
+  > -revision 1
+  > -space
+  > +symlink
+  > \ No newline at end of file
+  > EOF
+
+Resolve 'other [destination] changed f which local [working copy] deleted' prompt
+  $ hg up -q -C --config ui.interactive=True << EOF
+  > c
+  > EOF
+
+#endif
+
   $ hg merge -r 2 --tool internal:merge
   merging f
   warning: internal :merge cannot merge symlinks for f
@@ -1775,8 +1831,6 @@ internal merge cannot handle symlinks and shouldn't try:
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
-
-#endif
 
 Verify naming of temporary files and that extension is preserved:
 

@@ -15,7 +15,6 @@ from mercurial import (
     extensions,
     hg,
     localrepo,
-    scmutil,
     wireprotov1peer,
     wireprotov1server,
 )
@@ -187,8 +186,6 @@ def _filterfetchpaths(repo, paths):
     threshold = repo.ui.configint('fastannotate', 'clientfetchthreshold', 10)
     if threshold <= 0:
         return paths
-
-    master = repo.ui.config('fastannotate', 'mainbranch') or 'default'
 
     result = []
     for path in paths:

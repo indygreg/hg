@@ -117,7 +117,6 @@ from mercurial import (
     error as hgerror,
     localrepo,
     registrar,
-    util,
 )
 
 from . import (

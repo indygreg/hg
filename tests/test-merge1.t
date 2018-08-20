@@ -30,23 +30,24 @@ of the files in a commit we're updating to
 
   $ mkdir b && touch b/nonempty
   $ hg up
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  abort: Directory not empty: '$TESTTMP/t/b'
+  [255]
   $ hg ci
-  nothing changed
-  [1]
+  abort: last update was interrupted
+  (use 'hg update' to get a consistent checkout)
+  [255]
   $ hg sum
-  parent: 1:b8bb4a988f25 tip
-   commit #1
+  parent: 0:538afb845929 
+   commit #0
   branch: default
-  commit: (clean)
-  update: (current)
+  commit: 1 unknown (interrupted update)
+  update: 1 new changesets (update)
   phases: 2 draft
 
-The following line is commented out because the file doesn't exist at the moment, and some OSes error out even with `rm -f`.
-$ rm b/nonempty
+  $ rm b/nonempty
 
   $ hg up
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg sum
   parent: 1:b8bb4a988f25 tip
    commit #1

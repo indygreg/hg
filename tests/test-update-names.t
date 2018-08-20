@@ -50,7 +50,10 @@ make sure that this does not erase untracked data
   $ hg st
   ? name/file
   $ hg up 1
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  abort: Directory not empty: '$TESTTMP/r1/r2/name'
+  [255]
+  $ cat name/file
+  text
   $ cd ..
 
 #if symlink

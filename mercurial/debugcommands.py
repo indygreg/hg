@@ -556,7 +556,7 @@ def debugdata(ui, repo, file_, rev=None, **opts):
         file_, rev = None, file_
     elif rev is None:
         raise error.CommandError('debugdata', _('invalid arguments'))
-    r = cmdutil.openrevlog(repo, 'debugdata', file_, opts)
+    r = cmdutil.openstorage(repo, 'debugdata', file_, opts)
     try:
         ui.write(r.revision(r.lookup(rev), raw=True))
     except KeyError:

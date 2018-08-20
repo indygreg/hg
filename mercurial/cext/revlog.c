@@ -1095,7 +1095,7 @@ static int nt_delete_node(nodetree *self, const char *node)
 
 static int nt_init(nodetree *self, indexObject *index, unsigned capacity)
 {
-	/* Initialize before argument-checking to avoid nt_dealloc() crash. */
+	/* Initialize before overflow-checking to avoid nt_dealloc() crash. */
 	self->nodes = NULL;
 
 	self->index = index;

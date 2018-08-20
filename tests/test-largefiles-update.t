@@ -611,7 +611,8 @@ the 1st commit of resuming.
   > EOF
   rebasing 1:72518492caa6 "#1"
   rebasing 4:07d6153b5c04 "#4"
-  local [dest] changed .hglf/large1 which other [source] deleted
+  file .hglf/large1 was deleted in local [dest] but was modified in other [source].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? c
 
   $ hg diff -c "tip~1" --nodates .hglf/large1 | grep '^[+-][0-9a-z]'

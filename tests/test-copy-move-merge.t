@@ -88,7 +88,8 @@ Test disabling copy tracing
   > c
   > EOF
   rebasing 2:add3f11052fa "other" (tip)
-  other [source] changed a which local [dest] deleted
+  file a was deleted in other [source] but was modified in local [dest].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? c
 
   $ cat b

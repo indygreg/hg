@@ -56,12 +56,14 @@ mergeonly = internaltool.mergeonly # just the full merge, no premerge
 fullmerge = internaltool.fullmerge # both premerge and merge
 
 _localchangedotherdeletedmsg = _(
-    "local%(l)s changed %(fd)s which other%(o)s deleted\n"
+    "file %(fd)s was deleted in local%(l)s but was modified in other%(o)s.\n"
+    "What do you want to do?\n"
     "use (c)hanged version, (d)elete, or leave (u)nresolved?"
     "$$ &Changed $$ &Delete $$ &Unresolved")
 
 _otherchangedlocaldeletedmsg = _(
-    "other%(o)s changed %(fd)s which local%(l)s deleted\n"
+    "file %(fd)s was deleted in other%(o)s but was modified in local%(l)s.\n"
+    "What do you want to do?\n"
     "use (c)hanged version, leave (d)eleted, or "
     "leave (u)nresolved?"
     "$$ &Changed $$ &Deleted $$ &Unresolved")

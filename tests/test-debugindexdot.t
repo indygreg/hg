@@ -13,6 +13,24 @@ Create a short file history including a merge.
   $ HGMERGE=true hg merge -q
   $ hg ci -m merge -d '3 0'
 
+  $ hg debugindexdot -c
+  digraph G {
+  	-1 -> 0
+  	0 -> 1
+  	0 -> 2
+  	2 -> 3
+  	1 -> 3
+  }
+
+  $ hg debugindexdot -m
+  digraph G {
+  	-1 -> 0
+  	0 -> 1
+  	0 -> 2
+  	2 -> 3
+  	1 -> 3
+  }
+
   $ hg debugindexdot a
   digraph G {
   	-1 -> 0

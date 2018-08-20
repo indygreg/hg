@@ -285,6 +285,7 @@ test-merge-force.t
 test-merge-halt.t
 test-merge-internal-tools-pattern.t
 test-merge-local.t
+test-merge-no-file-change.t
 test-merge-remove.t
 test-merge-revert.t
 test-merge-revert2.t

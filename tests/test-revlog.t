@@ -43,5 +43,10 @@ Test for CVE-2016-3630
      rev linkrev nodeid       p1           p2
        0       2 99e0332bd498 000000000000 000000000000
        1       3 6674f57a23d8 99e0332bd498 000000000000
-  $ hg debugdata a.i 1 2>&1 | egrep 'Error:.*decoded'
-  (mercurial\.\w+\.mpatch\.)?mpatchError: patch cannot be decoded (re)
+
+  >>> from mercurial import revlog, vfs
+  >>> tvfs = vfs.vfs(b'.')
+  >>> tvfs.options = {b'revlogv1': True}
+  >>> rl = revlog.revlog(tvfs, b'a.i')
+  >>> rl.revision(1)
+  mpatchError('patch cannot be decoded',)

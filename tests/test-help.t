@@ -1480,11 +1480,9 @@ Test -e / -c / -k combinations
   Commands:
   $ hg help -c commit > /dev/null
   $ hg help -e -c commit > /dev/null
-  $ hg help -e commit > /dev/null
-  abort: no such help topic: commit (no-windows !)
-  (try 'hg help --keyword commit') (no-windows !)
-  \x1b[0;31mabort: no such help topic: commit\x1b[0m (esc) (windows !)
-  \x1b[0;31m(try 'hg help --keyword commit')\x1b[0m (esc) (windows !)
+  $ hg help -e commit
+  abort: no such help topic: commit
+  (try 'hg help --keyword commit')
   [255]
 
 Test keyword search help

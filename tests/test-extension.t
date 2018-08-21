@@ -1254,11 +1254,9 @@ Broken disabled extension and command:
   > def g():
   >     pass
   > EOF
-  $ hg --config extensions.path=./path.py help foo > /dev/null
-  abort: no such help topic: foo (no-windows !)
-  (try 'hg help --keyword foo') (no-windows !)
-  \x1b[0;31mabort: no such help topic: foo\x1b[0m (esc) (windows !)
-  \x1b[0;31m(try 'hg help --keyword foo')\x1b[0m (esc) (windows !)
+  $ hg --config extensions.path=./path.py help foo
+  abort: no such help topic: foo
+  (try 'hg help --keyword foo')
   [255]
 
   $ cat > throw.py <<EOF

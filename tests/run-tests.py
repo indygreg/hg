@@ -64,6 +64,7 @@ import tempfile
 import threading
 import time
 import unittest
+import uuid
 import xml.dom.minidom as minidom
 
 try:
@@ -1070,6 +1071,8 @@ class Test(unittest.TestCase):
         env["HGENCODINGMODE"] = "strict"
         env["HGHOSTNAME"] = "test-hostname"
         env['HGIPV6'] = str(int(self._useipv6))
+        if 'HGCATAPULTSERVERPIPE' not in env:
+            env['HGCATAPULTSERVERPIPE'] = '/dev/null'
 
         extraextensions = []
         for opt in self._extraconfigopts:
@@ -1344,6 +1347,20 @@ class TTest(Test):
                 script.append(b'%s %d 0\n' % (salt, line))
             else:
                 script.append(b'echo %s %d $?\n' % (salt, line))
+        active = []
+        session = str(uuid.uuid4())
+        if PYTHON3:
+            session = session.encode('ascii')
+        def toggletrace(cmd):
+            quoted = shellquote(cmd.strip()).replace(b'\\', b'\\\\')
+            if active:
+                script.append(
+                    b'echo END %s %s >> "$HGCATAPULTSERVERPIPE"\n' % (
+                        session, active[0]))
+            script.append(
+                b'echo START %s %s >> "$HGCATAPULTSERVERPIPE"\n' % (
+                    session, quoted))
+            active[0:] = [quoted]
 
         script = []
 
@@ -1371,6 +1388,29 @@ class TTest(Test):
             script.append(b'alias hg="%s"\n' % self._hgcommand)
         if os.getenv('MSYSTEM'):
             script.append(b'alias pwd="pwd -W"\n')
+
+        if os.getenv('HGCATAPULTSERVERPIPE'):
+            # Kludge: use a while loop to keep the pipe from getting
+            # closed by our echo commands. The still-running file gets
+            # reaped at the end of the script, which causes the while
+            # loop to exit and closes the pipe. Sigh.
+            script.append(
+                b'rtendtracing() {\n'
+                b'  echo END %(session)s %(name)s >> $HGCATAPULTSERVERPIPE\n'
+                b'  rm -f "$TESTTMP/.still-running"\n'
+                b'}\n'
+                b'trap "rtendtracing" 0\n'
+                b'touch "$TESTTMP/.still-running"\n'
+                b'while [ -f "$TESTTMP/.still-running" ]; do sleep 1; done '
+                b'> $HGCATAPULTSERVERPIPE &\n'
+                b'HGCATAPULTSESSION=%(session)s ; export HGCATAPULTSESSION\n'
+                b'echo START %(session)s %(name)s >> $HGCATAPULTSERVERPIPE\n'
+                % {
+                    'name': self.name,
+                    'session': session,
+                }
+            )
+
         if self._case:
             casestr = b'#'.join(self._case)
             if isinstance(self._case, str):
@@ -1436,10 +1476,12 @@ class TTest(Test):
                 prepos = pos
                 pos = n
                 addsalt(n, False)
-                cmd = l[4:].split()
+                rawcmd = l[4:]
+                cmd = rawcmd.split()
+                toggletrace(rawcmd)
                 if len(cmd) == 2 and cmd[0] == b'cd':
                     l = b'  $ cd %s || exit 1\n' % cmd[1]
-                script.append(l[4:])
+                script.append(rawcmd)
             elif l.startswith(b'  > '): # continuations
                 after.setdefault(prepos, []).append(l)
                 script.append(l[4:])
@@ -1458,7 +1500,6 @@ class TTest(Test):
         if skipping is not None:
             after.setdefault(pos, []).append('  !!! missing #endif\n')
         addsalt(n + 1, False)
-
         return salt, script, after, expected
 
     def _processoutput(self, exitcode, output, salt, after, expected):

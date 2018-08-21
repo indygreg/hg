@@ -805,6 +805,10 @@ class httpv2peer(object):
         if name in ('bundle2',):
             return True
 
+        # Alias command-* to presence of command of that name.
+        if name.startswith('command-'):
+            return name[len('command-'):] in self._descriptor['commands']
+
         return False
 
     def requirecap(self, name, purpose):

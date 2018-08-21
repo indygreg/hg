@@ -938,7 +938,7 @@ Test list of internal help commands
                  retrieves a bundle from a repo
    debugignore   display the combined ignore pattern and information about
                  ignored files
-   debugindex    dump the contents of an index file
+   debugindex    dump index data for a storage primitive
    debugindexdot
                  dump an index DAG as a graphviz dot file
    debuginstall  test Mercurial installation
@@ -970,6 +970,8 @@ Test list of internal help commands
                  rebuild the fncache file
    debugrename   dump rename information
    debugrevlog   show data and statistics about a revlog
+   debugrevlogindex
+                 dump the contents of a revlog index
    debugrevspec  parse and apply a revision specification
    debugserve    run a server with advanced settings
    debugsetparents

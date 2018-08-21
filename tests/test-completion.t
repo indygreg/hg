@@ -111,6 +111,7 @@ Show debug commands if there are no other candidates
   debugrebuildfncache
   debugrename
   debugrevlog
+  debugrevlogindex
   debugrevspec
   debugserve
   debugsetparents
@@ -279,7 +280,7 @@ Show all commands + options
   debugfsinfo: 
   debuggetbundle: head, common, type
   debugignore: 
-  debugindex: changelog, manifest, dir, format
+  debugindex: changelog, manifest, dir, template
   debugindexdot: changelog, manifest, dir
   debuginstall: template
   debugknown: 
@@ -298,6 +299,7 @@ Show all commands + options
   debugrebuildfncache: 
   debugrename: rev
   debugrevlog: changelog, manifest, dir, dump
+  debugrevlogindex: changelog, manifest, dir, format
   debugrevspec: optimize, show-revs, show-set, show-stage, no-optimized, verify-optimized
   debugserve: sshstdio, logiofd, logiofile
   debugsetparents: 

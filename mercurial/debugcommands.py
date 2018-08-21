@@ -1108,70 +1108,41 @@ def debugignore(ui, repo, *files, **opts):
             else:
                 ui.write(_("%s is not ignored\n") % m.uipath(f))
 
-@command('debugindex', cmdutil.debugrevlogopts +
-    [('f', 'format', 0, _('revlog format'), _('FORMAT'))],
-    _('[-f FORMAT] -c|-m|FILE'),
-    optionalrepo=True)
+@command('debugindex', cmdutil.debugrevlogopts + cmdutil.formatteropts,
+         _('-c|-m|FILE'))
 def debugindex(ui, repo, file_=None, **opts):
-    """dump the contents of an index file"""
+    """dump index data for a storage primitive"""
     opts = pycompat.byteskwargs(opts)
-    r = cmdutil.openrevlog(repo, 'debugindex', file_, opts)
-    format = opts.get('format', 0)
-    if format not in (0, 1):
-        raise error.Abort(_("unknown format %d") % format)
+    store = cmdutil.openstorage(repo, 'debugindex', file_, opts)
 
     if ui.debugflag:
         shortfn = hex
     else:
         shortfn = short
 
-    # There might not be anything in r, so have a sane default
     idlen = 12
-    for i in r:
-        idlen = len(shortfn(r.node(i)))
+    for i in store:
+        idlen = len(shortfn(store.node(i)))
         break
 
-    if format == 0:
-        if ui.verbose:
-            ui.write(("   rev    offset  length linkrev"
-                     " %s %s p2\n") % ("nodeid".ljust(idlen),
-                                       "p1".ljust(idlen)))
-        else:
-            ui.write(("   rev linkrev %s %s p2\n") % (
-                "nodeid".ljust(idlen), "p1".ljust(idlen)))
-    elif format == 1:
-        if ui.verbose:
-            ui.write(("   rev flag   offset   length     size   link     p1"
-                      "     p2 %s\n") % "nodeid".rjust(idlen))
-        else:
-            ui.write(("   rev flag     size   link     p1     p2 %s\n") %
-                     "nodeid".rjust(idlen))
+    fm = ui.formatter('debugindex', opts)
+    fm.plain(b'   rev linkrev %s %s p2\n' % (
+        b'nodeid'.ljust(idlen),
+        b'p1'.ljust(idlen)))
 
-    for i in r:
-        node = r.node(i)
-        if format == 0:
-            try:
-                pp = r.parents(node)
-            except Exception:
-                pp = [nullid, nullid]
-            if ui.verbose:
-                ui.write("% 6d % 9d % 7d % 7d %s %s %s\n" % (
-                        i, r.start(i), r.length(i), r.linkrev(i),
-                        shortfn(node), shortfn(pp[0]), shortfn(pp[1])))
-            else:
-                ui.write("% 6d % 7d %s %s %s\n" % (
-                    i, r.linkrev(i), shortfn(node), shortfn(pp[0]),
-                    shortfn(pp[1])))
-        elif format == 1:
-            pr = r.parentrevs(i)
-            if ui.verbose:
-                ui.write("% 6d %04x % 8d % 8d % 8d % 6d % 6d % 6d %s\n" % (
-                        i, r.flags(i), r.start(i), r.length(i), r.rawsize(i),
-                        r.linkrev(i), pr[0], pr[1], shortfn(node)))
-            else:
-                ui.write("% 6d %04x % 8d % 6d % 6d % 6d %s\n" % (
-                    i, r.flags(i), r.rawsize(i), r.linkrev(i), pr[0], pr[1],
-                    shortfn(node)))
+    for rev in store:
+        node = store.node(rev)
+        parents = store.parents(node)
+
+        fm.startitem()
+        fm.write(b'rev', b'%6d ', rev)
+        fm.write(b'linkrev', '%7d ', store.linkrev(rev))
+        fm.write(b'node', '%s ', shortfn(node))
+        fm.write(b'p1', '%s ', shortfn(parents[0]))
+        fm.write(b'p2', '%s', shortfn(parents[1]))
+        fm.plain(b'\n')
+
+    fm.end()
 
 @command('debugindexdot', cmdutil.debugrevlogopts,
     _('-c|-m|FILE'), optionalrepo=True)
@@ -2333,6 +2304,71 @@ def debugrevlog(ui, repo, file_=None, **opts):
                      + fmt % pcfmt(nump2, numdeltas))
             ui.write(('deltas against other : ') + fmt % pcfmt(numother,
                                                              numdeltas))
+
+@command('debugrevlogindex', cmdutil.debugrevlogopts +
+    [('f', 'format', 0, _('revlog format'), _('FORMAT'))],
+    _('[-f FORMAT] -c|-m|FILE'),
+    optionalrepo=True)
+def debugrevlogindex(ui, repo, file_=None, **opts):
+    """dump the contents of a revlog index"""
+    opts = pycompat.byteskwargs(opts)
+    r = cmdutil.openrevlog(repo, 'debugrevlogindex', file_, opts)
+    format = opts.get('format', 0)
+    if format not in (0, 1):
+        raise error.Abort(_("unknown format %d") % format)
+
+    if ui.debugflag:
+        shortfn = hex
+    else:
+        shortfn = short
+
+    # There might not be anything in r, so have a sane default
+    idlen = 12
+    for i in r:
+        idlen = len(shortfn(r.node(i)))
+        break
+
+    if format == 0:
+        if ui.verbose:
+            ui.write(("   rev    offset  length linkrev"
+                     " %s %s p2\n") % ("nodeid".ljust(idlen),
+                                       "p1".ljust(idlen)))
+        else:
+            ui.write(("   rev linkrev %s %s p2\n") % (
+                "nodeid".ljust(idlen), "p1".ljust(idlen)))
+    elif format == 1:
+        if ui.verbose:
+            ui.write(("   rev flag   offset   length     size   link     p1"
+                      "     p2 %s\n") % "nodeid".rjust(idlen))
+        else:
+            ui.write(("   rev flag     size   link     p1     p2 %s\n") %
+                     "nodeid".rjust(idlen))
+
+    for i in r:
+        node = r.node(i)
+        if format == 0:
+            try:
+                pp = r.parents(node)
+            except Exception:
+                pp = [nullid, nullid]
+            if ui.verbose:
+                ui.write("% 6d % 9d % 7d % 7d %s %s %s\n" % (
+                        i, r.start(i), r.length(i), r.linkrev(i),
+                        shortfn(node), shortfn(pp[0]), shortfn(pp[1])))
+            else:
+                ui.write("% 6d % 7d %s %s %s\n" % (
+                    i, r.linkrev(i), shortfn(node), shortfn(pp[0]),
+                    shortfn(pp[1])))
+        elif format == 1:
+            pr = r.parentrevs(i)
+            if ui.verbose:
+                ui.write("% 6d %04x % 8d % 8d % 8d % 6d % 6d % 6d %s\n" % (
+                        i, r.flags(i), r.start(i), r.length(i), r.rawsize(i),
+                        r.linkrev(i), pr[0], pr[1], shortfn(node)))
+            else:
+                ui.write("% 6d %04x % 8d % 6d % 6d % 6d %s\n" % (
+                    i, r.flags(i), r.rawsize(i), r.linkrev(i), pr[0], pr[1],
+                    shortfn(node)))
 
 @command('debugrevspec',
     [('', 'optimize', None,

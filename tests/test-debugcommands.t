@@ -119,33 +119,60 @@
 #endif
 
 Test debugindex, with and without the --verbose/--debug flag
-  $ hg debugindex a
+  $ hg debugrevlogindex a
      rev linkrev nodeid       p1           p2
        0       0 b789fdd96dc2 000000000000 000000000000
 
 #if no-reposimplestore
-  $ hg --verbose debugindex a
+  $ hg --verbose debugrevlogindex a
      rev    offset  length linkrev nodeid       p1           p2
        0         0       3       0 b789fdd96dc2 000000000000 000000000000
 
-  $ hg --debug debugindex a
+  $ hg --debug debugrevlogindex a
      rev    offset  length linkrev nodeid                                   p1                                       p2
        0         0       3       0 b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000
 #endif
 
-  $ hg debugindex -f 1 a
+  $ hg debugrevlogindex -f 1 a
      rev flag     size   link     p1     p2       nodeid
        0 0000        2      0     -1     -1 b789fdd96dc2
 
 #if no-reposimplestore
-  $ hg --verbose debugindex -f 1 a
+  $ hg --verbose debugrevlogindex -f 1 a
      rev flag   offset   length     size   link     p1     p2       nodeid
        0 0000        0        3        2      0     -1     -1 b789fdd96dc2
 
-  $ hg --debug debugindex -f 1 a
+  $ hg --debug debugrevlogindex -f 1 a
      rev flag   offset   length     size   link     p1     p2                                   nodeid
        0 0000        0        3        2      0     -1     -1 b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3
 #endif
+
+  $ hg debugindex -c
+     rev linkrev nodeid       p1           p2
+       0       0 07f494440405 000000000000 000000000000
+       1       1 8cccb4b5fec2 07f494440405 000000000000
+       2       2 b1e228c512c5 8cccb4b5fec2 000000000000
+  $ hg debugindex -c --debug
+     rev linkrev nodeid                                   p1                                       p2
+       0       0 07f4944404050f47db2e5c5071e0e84e7a27bba9 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000
+       1       1 8cccb4b5fec20cafeb99dd01c26d4dee8ea4388a 07f4944404050f47db2e5c5071e0e84e7a27bba9 0000000000000000000000000000000000000000
+       2       2 b1e228c512c5d7066d70562ed839c3323a62d6d2 8cccb4b5fec20cafeb99dd01c26d4dee8ea4388a 0000000000000000000000000000000000000000
+  $ hg debugindex -m
+     rev linkrev nodeid       p1           p2
+       0       0 a0c8bcbbb45c 000000000000 000000000000
+       1       1 57faf8a737ae a0c8bcbbb45c 000000000000
+       2       2 a35b10320954 57faf8a737ae 000000000000
+  $ hg debugindex -m --debug
+     rev linkrev nodeid                                   p1                                       p2
+       0       0 a0c8bcbbb45c63b90b70ad007bf38961f64f2af0 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000
+       1       1 57faf8a737ae7faf490582941a82319ba6529dca a0c8bcbbb45c63b90b70ad007bf38961f64f2af0 0000000000000000000000000000000000000000
+       2       2 a35b103209548032201c16c7688cb2657f037a38 57faf8a737ae7faf490582941a82319ba6529dca 0000000000000000000000000000000000000000
+  $ hg debugindex a
+     rev linkrev nodeid       p1           p2
+       0       0 b789fdd96dc2 000000000000 000000000000
+  $ hg debugindex --debug a
+     rev linkrev nodeid                                   p1                                       p2
+       0       0 b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000
 
 debugdelta chain basic output
 

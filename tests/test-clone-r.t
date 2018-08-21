@@ -37,7 +37,7 @@
   $ hg mv afile anotherfile
   $ hg commit -m "0.3m"
 
-  $ hg debugindex -f 1 afile
+  $ hg debugrevlogindex -f 1 afile
      rev flag     size   link     p1     p2       nodeid
        0 0000        2      0     -1     -1 362fef284ce2
        1 0000        4      1      0     -1 125144f7e028

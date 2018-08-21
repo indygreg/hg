@@ -39,7 +39,7 @@ Test for CVE-2016-3630
   ... Joa3dYtcYYYBAQ8Qr4OqZAYRICPTSr5WKd/42rV36d+8/VmrNpv7NP1jQAXrQE4BqQUARngwVA=="""
   ... .decode("base64").decode("zlib"))
 
-  $ hg debugindex a.i
+  $ hg debugrevlogindex a.i
      rev linkrev nodeid       p1           p2
        0       2 99e0332bd498 000000000000 000000000000
        1       3 6674f57a23d8 99e0332bd498 000000000000

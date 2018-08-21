@@ -145,7 +145,7 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
   >     open(n + b"/.hg/store/00changelog.i", "wb").write(d)
   > EOF
 
-  $ hg -R limit debugindex -f1 -c
+  $ hg -R limit debugrevlogindex -f1 -c
      rev flag     size   link     p1     p2       nodeid
        0 0000       62      0      2     -1 7c31755bf9b5
        1 0000       65      1      0      2 26333235a41c
@@ -155,7 +155,7 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
         0       1        1       -1    base         63         62         63   1.01613        63         0    0.00000
         1       2        1       -1    base         66         65         66   1.01538        66         0    0.00000
 
-  $ hg -R segv debugindex -f1 -c
+  $ hg -R segv debugrevlogindex -f1 -c
      rev flag     size   link     p1     p2       nodeid
        0 0000       62      0  65536     -1 7c31755bf9b5
        1 0000       65      1      0  65536 26333235a41c

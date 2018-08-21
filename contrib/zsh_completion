@@ -471,7 +471,7 @@ _hg_cmd_add() {
 }
 
 _hg_cmd_addremove() {
-  _arguments -s -S : $_hg_global_opts $_hg_pat_opts $_hg_dryrun_opts \
+  _arguments -s -S : $_hg_global_opts $_hg_pat_opts $_hg_dryrun_opts $_hg_subrepos_opts \
   '(--similarity -s)'{-s+,--similarity=}'[guess renamed files by similarity (0<=s<=100)]:similarity' \
   '*:unknown or missing files:_hg_addremove'
 }
@@ -803,7 +803,7 @@ _hg_cmd_push() {
 }
 
 _hg_cmd_remove() {
-  _arguments -s -S : $_hg_global_opts $_hg_pat_opts $_hg_dryrun_opts \
+  _arguments -s -S : $_hg_global_opts $_hg_pat_opts $_hg_dryrun_opts $_hg_subrepos_opts \
   '(--after -A)'{-A,--after}'[record delete for missing files]' \
   '(--force -f)'{-f,--force}'[forget added files, delete modified files]' \
   '*:file:_hg_files'
@@ -870,7 +870,7 @@ _hg_cmd_rollback() {
 }
 
 _hg_cmd_serve() {
-  _arguments -s -S : $_hg_global_opts \
+  _arguments -s -S : $_hg_global_opts $_hg_subrepos_opts \
   '(--accesslog -A)'{-A+,--accesslog=}'[name of access log file to write to]:log file:_files' \
   '(--errorlog -E)'{-E+,--errorlog=}'[name of error log file to write to]:log file:_files' \
   '(--daemon -d)'{-d,--daemon}'[run server in background]' \
@@ -1046,7 +1046,7 @@ _hg_cmd_qfinish() {
 }
 
 _hg_cmd_qfold() {
-  _arguments -s -S : $_hg_global_opts $_h_commit_opts \
+  _arguments -s -S : $_hg_global_opts $_hg_commit_opts \
   '(--keep -k)'{-k,--keep}'[keep folded patch files]' \
   '(--force -f)'{-f,--force}'[overwrite any local changes]' \
   '--no-backup[do not save backup copies of files]' \
@@ -1084,7 +1084,7 @@ _hg_cmd_qimport() {
 }
 
 _hg_cmd_qnew() {
-  _arguments -s -S : $_hg_global_opts $_hg_commit_opts $_hg_date_user_opts $_hg_gitlike_opts \
+  _arguments -s -S : $_hg_global_opts $_hg_pat_opts $_hg_commit_opts $_hg_date_user_opts $_hg_gitlike_opts \
   ':patch:'
 }
 
@@ -1118,7 +1118,7 @@ _hg_cmd_qpush() {
 }
 
 _hg_cmd_qrefresh() {
-  _arguments -s -S : $_hg_global_opts $_hg_pat_opts $_hg_commit_opts $_hg_gitlike_opts \
+  _arguments -s -S : $_hg_global_opts $_hg_pat_opts $_hg_commit_opts $_hg_date_user_opts $_hg_gitlike_opts \
   '(--short -s)'{-s,--short}'[short refresh]' \
   '*:files:_hg_files'
 }
@@ -1194,7 +1194,7 @@ _hg_cmd_email() {
 
 # Rebase
 _hg_cmd_rebase() {
-  _arguments -s -S : $_hg_global_opts $_hg_commit_opts $_hg_mergetool_opts \
+  _arguments -s -S : $_hg_global_opts $_hg_commit_opts $_hg_mergetool_opts $_hg_dryrun_opts  \
   '*'{-r+,--rev=}'[rebase these revisions]:revision:_hg_revrange' \
   '(--source -s --base -b)'{-s+,--source=}'[rebase the specified changeset and descendants]:revision:_hg_labels' \
   '(--source -s --base -b)'{-b+,--base=}'[rebase everything from branching point of specified changeset]:revision:_hg_labels' \
@@ -1241,7 +1241,7 @@ _arguments -s -S : $_hg_global_opts \
 
 # Purge
 _hg_cmd_purge() {
-  _arguments -s -S : $_hg_global_opts $_hg_pat_opts $_hg_subrepos_opts \
+  _arguments -s -S : $_hg_global_opts $_hg_pat_opts \
   '(--abort-on-err -a)'{-a,--abort-on-err}'[abort if an error occurs]' \
   '--all[purge ignored files too]' \
   '(--print -p)'{-p,--print}'[print filenames instead of deleting them]' \

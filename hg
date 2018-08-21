@@ -27,15 +27,17 @@ if libdir != '@' 'LIBDIR' '@':
         libdir = os.path.abspath(libdir)
     sys.path.insert(0, libdir)
 
-# enable importing on demand to reduce startup time
-try:
-    if sys.version_info[0] < 3 or sys.version_info >= (3, 6):
-        import hgdemandimport; hgdemandimport.enable()
-except ImportError:
-    sys.stderr.write("abort: couldn't find mercurial libraries in [%s]\n" %
-                     ' '.join(sys.path))
-    sys.stderr.write("(check your install and PYTHONPATH)\n")
-    sys.exit(-1)
+from hgdemandimport import tracing
+with tracing.log('hg script'):
+    # enable importing on demand to reduce startup time
+    try:
+        if sys.version_info[0] < 3 or sys.version_info >= (3, 6):
+            import hgdemandimport; hgdemandimport.enable()
+    except ImportError:
+        sys.stderr.write("abort: couldn't find mercurial libraries in [%s]\n" %
+                         ' '.join(sys.path))
+        sys.stderr.write("(check your install and PYTHONPATH)\n")
+        sys.exit(-1)
 
-from mercurial import dispatch
-dispatch.run()
+    from mercurial import dispatch
+    dispatch.run()

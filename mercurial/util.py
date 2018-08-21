@@ -2929,7 +2929,7 @@ def timed(func):
     '''
 
     def wrapper(*args, **kwargs):
-        with timedcm() as time_stats:
+        with timedcm(pycompat.bytestr(func.__name__)) as time_stats:
             result = func(*args, **kwargs)
         stderr = procutil.stderr
         stderr.write('%s%s: %s\n' % (

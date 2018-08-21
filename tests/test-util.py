@@ -78,7 +78,7 @@ class timedtests(unittest.TestCase):
     def testtimedcmcleanexit(self):
         # timestamps 1, 4, elapsed time of 4 - 1 = 3
         with mocktimer([1, 3], _start_default):
-            with util.timedcm() as stats:
+            with util.timedcm('pass') as stats:
                 # actual context doesn't matter
                 pass
 
@@ -89,8 +89,8 @@ class timedtests(unittest.TestCase):
     def testtimedcmnested(self):
         # timestamps 1, 3, 6, 10, elapsed times of 6 - 3 = 3 and 10 - 1 = 9
         with mocktimer([1, 2, 3, 4], _start_default):
-            with util.timedcm() as outer_stats:
-                with util.timedcm() as inner_stats:
+            with util.timedcm('outer') as outer_stats:
+                with util.timedcm('inner') as inner_stats:
                     # actual context doesn't matter
                     pass
 
@@ -106,7 +106,7 @@ class timedtests(unittest.TestCase):
         # timestamps 1, 4, elapsed time of 4 - 1 = 3
         with mocktimer([1, 3], _start_default):
             try:
-                with util.timedcm() as stats:
+                with util.timedcm('exceptional') as stats:
                     raise ValueError()
             except ValueError:
                 pass

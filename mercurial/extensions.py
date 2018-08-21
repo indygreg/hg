@@ -177,7 +177,7 @@ def load(ui, name, path, log=lambda *a: None):
         return _extensions[shortname]
     log('  - loading extension: %r\n', shortname)
     _extensions[shortname] = None
-    with util.timedcm() as stats:
+    with util.timedcm('load extension %r', shortname) as stats:
         mod = _importext(name, path, bind(_reportimporterror, ui))
     log('  > %r extension loaded in %s\n', shortname, stats)
 
@@ -196,7 +196,7 @@ def load(ui, name, path, log=lambda *a: None):
     _extensions[shortname] = mod
     _order.append(shortname)
     log('    - invoking registered callbacks: %r\n', shortname)
-    with util.timedcm() as stats:
+    with util.timedcm('callbacks extension %r', shortname) as stats:
         for fn in _aftercallbacks.get(shortname, []):
             fn(loaded=True)
     log('    > callbacks completed in %s\n', stats)
@@ -243,7 +243,7 @@ def loadall(ui, whitelist=None):
     newindex = len(_order)
     log('loading %sextensions\n', 'additional ' if newindex else '')
     log('- processing %d entries\n', len(result))
-    with util.timedcm() as stats:
+    with util.timedcm('load all extensions') as stats:
         for (name, path) in result:
             if path:
                 if path[0:1] == '!':
@@ -286,7 +286,7 @@ def loadall(ui, whitelist=None):
     log('- executing uisetup hooks\n')
     for name in _order[newindex:]:
         log('  - running uisetup for %r\n', name)
-        with util.timedcm() as stats:
+        with util.timedcm('uisetup %r', name) as stats:
             if not _runuisetup(name, ui):
                 log('    - the %r extension uisetup failed\n', name)
                 broken.add(name)
@@ -297,7 +297,7 @@ def loadall(ui, whitelist=None):
         if name in broken:
             continue
         log('  - running extsetup for %r\n', name)
-        with util.timedcm() as stats:
+        with util.timedcm('extsetup %r', name) as stats:
             if not _runextsetup(name, ui):
                 log('    - the %r extension extsetup failed\n', name)
                 broken.add(name)
@@ -309,7 +309,7 @@ def loadall(ui, whitelist=None):
 
     # Call aftercallbacks that were never met.
     log('- executing remaining aftercallbacks\n')
-    with util.timedcm() as stats:
+    with util.timedcm('aftercallbacks') as stats:
         for shortname in _aftercallbacks:
             if shortname in _extensions:
                 continue
@@ -353,7 +353,7 @@ def loadall(ui, whitelist=None):
         ('templatefunc', templatefuncs, 'loadfunction'),
         ('templatekeyword', templatekw, 'loadkeyword'),
     ]
-    with util.timedcm() as stats:
+    with util.timedcm('load registration objects') as stats:
         _loadextra(ui, newindex, extraloaders)
     log('> extension registration object loading took %s\n', stats)
     log('extension loading complete\n')

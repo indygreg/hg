@@ -30,6 +30,8 @@ import __builtin__ as builtins
 import contextlib
 import sys
 
+from . import tracing
+
 contextmanager = contextlib.contextmanager
 
 _origimport = __import__
@@ -86,52 +88,55 @@ class _demandmod(object):
 
     def _load(self):
         if not self._module:
-            head, globals, locals, after, level, modrefs = self._data
-            mod = _hgextimport(_origimport, head, globals, locals, None, level)
-            if mod is self:
-                # In this case, _hgextimport() above should imply
-                # _demandimport(). Otherwise, _hgextimport() never
-                # returns _demandmod. This isn't intentional behavior,
-                # in fact. (see also issue5304 for detail)
-                #
-                # If self._module is already bound at this point, self
-                # should be already _load()-ed while _hgextimport().
-                # Otherwise, there is no way to import actual module
-                # as expected, because (re-)invoking _hgextimport()
-                # should cause same result.
-                # This is reason why _load() returns without any more
-                # setup but assumes self to be already bound.
-                mod = self._module
-                assert mod and mod is not self, "%s, %s" % (self, mod)
-                return
+            with tracing.log('demandimport %s', self._data[0]):
+                head, globals, locals, after, level, modrefs = self._data
+                mod = _hgextimport(
+                    _origimport, head, globals, locals, None, level)
+                if mod is self:
+                    # In this case, _hgextimport() above should imply
+                    # _demandimport(). Otherwise, _hgextimport() never
+                    # returns _demandmod. This isn't intentional behavior,
+                    # in fact. (see also issue5304 for detail)
+                    #
+                    # If self._module is already bound at this point, self
+                    # should be already _load()-ed while _hgextimport().
+                    # Otherwise, there is no way to import actual module
+                    # as expected, because (re-)invoking _hgextimport()
+                    # should cause same result.
+                    # This is reason why _load() returns without any more
+                    # setup but assumes self to be already bound.
+                    mod = self._module
+                    assert mod and mod is not self, "%s, %s" % (self, mod)
+                    return
 
-            # load submodules
-            def subload(mod, p):
-                h, t = p, None
-                if '.' in p:
-                    h, t = p.split('.', 1)
-                if getattr(mod, h, nothing) is nothing:
-                    setattr(mod, h, _demandmod(p, mod.__dict__, mod.__dict__,
-                                               level=1))
-                elif t:
-                    subload(getattr(mod, h), t)
+                # load submodules
+                def subload(mod, p):
+                    h, t = p, None
+                    if '.' in p:
+                        h, t = p.split('.', 1)
+                    if getattr(mod, h, nothing) is nothing:
+                        setattr(mod, h, _demandmod(
+                            p, mod.__dict__, mod.__dict__, level=1))
+                    elif t:
+                        subload(getattr(mod, h), t)
 
-            for x in after:
-                subload(mod, x)
+                for x in after:
+                    subload(mod, x)
 
-            # Replace references to this proxy instance with the actual module.
-            if locals:
-                if locals.get(head) is self:
-                    locals[head] = mod
-                elif locals.get(head + r'mod') is self:
-                    locals[head + r'mod'] = mod
+                # Replace references to this proxy instance with the
+                # actual module.
+                if locals:
+                    if locals.get(head) is self:
+                        locals[head] = mod
+                    elif locals.get(head + r'mod') is self:
+                        locals[head + r'mod'] = mod
 
-            for modname in modrefs:
-                modref = sys.modules.get(modname, None)
-                if modref and getattr(modref, head, None) is self:
-                    setattr(modref, head, mod)
+                for modname in modrefs:
+                    modref = sys.modules.get(modname, None)
+                    if modref and getattr(modref, head, None) is self:
+                        setattr(modref, head, mod)
 
-            object.__setattr__(self, r"_module", mod)
+                object.__setattr__(self, r"_module", mod)
 
     def __repr__(self):
         if self._module:

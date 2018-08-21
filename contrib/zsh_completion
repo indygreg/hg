@@ -193,21 +193,13 @@ _hg_branches() {
 
 # likely merge candidates
 _hg_mergerevs() {
-  typeset -a heads
-  local myrev
+  typeset -a heads branches
+  local revset='sort(head() and not ., -rev)'
 
-  heads=(${(f)"$(_hg_cmd heads --template '{rev}:{branch}\\n')"})
-  # exclude own revision
-  myrev=$(_hg_cmd log -r . --template '{rev}:{branch}\\n')
-  heads=(${heads:#$myrev})
-
+  heads=(${(f)"$(_hg_cmd log -r '$revset' --template '{rev}:{branch}\\n')"})
   (( $#heads )) && _describe -t heads 'heads' heads
 
-  branches=(${(f)"$(_hg_cmd heads --template '{branch}\\n')"})
-  # exclude own revision
-  myrev=$(_hg_cmd log -r . --template '{branch}\\n')
-  branches=(${branches:#$myrev})
-
+  branches=(${(S)heads/#*:/})
   (( $#branches )) && _describe -t branches 'branches' branches
 }
 

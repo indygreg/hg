@@ -172,10 +172,13 @@ another
   d
 
   $ hg merge
-  abort: $ENOENT$: $TESTTMP/mvtest/a
-  [255]
+  temporarily included 1 file(s) in the sparse checkout for merging
+  merging a and amove to amove
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
 
   $ hg up -C 4
+  cleaned up 1 temporarily added file(s) from the sparse checkout
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ hg merge

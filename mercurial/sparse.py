@@ -361,6 +361,11 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, actions):
         elif file in wctx:
             prunedactions[file] = ('r', args, msg)
 
+        if branchmerge and type == mergemod.ACTION_MERGE:
+            f1, f2, fa, move, anc = args
+            if not sparsematch(f1):
+                temporaryfiles.append(f1)
+
     if len(temporaryfiles) > 0:
         repo.ui.status(_('temporarily included %d file(s) in the sparse '
                          'checkout for merging\n') % len(temporaryfiles))

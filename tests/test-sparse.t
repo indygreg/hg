@@ -189,7 +189,7 @@ Verify rebase temporarily includes excluded files
 
   $ hg rebase -d 1 -r 2 --config extensions.rebase=
   rebasing 2:b91df4f39e75 "edit hide" (tip)
-  temporarily included 1 file(s) in the sparse checkout for merging
+  temporarily included 2 file(s) in the sparse checkout for merging
   merging hide
   warning: conflicts while merging hide! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see hg resolve, then hg rebase --continue)
@@ -224,7 +224,7 @@ Verify merge fails if merging excluded files
 
   $ hg up -q 1
   $ hg merge -r 2
-  temporarily included 1 file(s) in the sparse checkout for merging
+  temporarily included 2 file(s) in the sparse checkout for merging
   merging hide
   warning: conflicts while merging hide! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved

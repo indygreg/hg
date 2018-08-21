@@ -119,7 +119,7 @@ Introduce a conflicting .hgsparse change
 Verify conflicting merge pulls in the conflicting changes
 
   $ hg merge 1
-  temporarily included 1 file(s) in the sparse checkout for merging
+  temporarily included 2 file(s) in the sparse checkout for merging
   merging backend.sparse
   merging data.py
   warning: conflicts while merging backend.sparse! (edit, then use 'hg resolve --mark')
@@ -184,7 +184,7 @@ Verify rebase conflicts pulls in the conflicting changes
 
   $ hg rebase -d 2
   rebasing 1:a2b1de640a62 "edit profile"
-  temporarily included 1 file(s) in the sparse checkout for merging
+  temporarily included 2 file(s) in the sparse checkout for merging
   merging backend.sparse
   merging data.py
   warning: conflicts while merging backend.sparse! (edit, then use 'hg resolve --mark')

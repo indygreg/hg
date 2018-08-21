@@ -36,6 +36,7 @@ import traceback
 import warnings
 import zlib
 
+from hgdemandimport import tracing
 from .thirdparty import (
     attr,
 )
@@ -2896,7 +2897,7 @@ class timedcmstats(object):
     __str__ = encoding.strmethod(__bytes__)
 
 @contextlib.contextmanager
-def timedcm():
+def timedcm(whencefmt='unknown timedcm', *whenceargs):
     """A context manager that produces timing information for a given context.
 
     On entering a timedcmstats instance is produced.
@@ -2908,7 +2909,8 @@ def timedcm():
     timedcm._nested += 1
     timing_stats = timedcmstats(level=timedcm._nested)
     try:
-        yield timing_stats
+        with tracing.log(whencefmt, *whenceargs):
+            yield timing_stats
     finally:
         timing_stats.elapsed = timer() - timing_stats.start
         timedcm._nested -= 1

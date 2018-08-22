@@ -1091,9 +1091,10 @@ static PyObject *nt_insert_py(nodetree *self, PyObject *args)
 {
 	Py_ssize_t rev;
 	const char *node;
+	Py_ssize_t length;
 	if (!PyArg_ParseTuple(args, "n", &rev))
 		return NULL;
-	const Py_ssize_t length = index_length(self->index);
+	length = index_length(self->index);
 	if (rev < 0 || rev >= length) {
 		PyErr_SetString(PyExc_ValueError, "revlog index out of range");
 		return NULL;

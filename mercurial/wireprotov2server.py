@@ -397,6 +397,8 @@ def _capabilitiesv2(repo, proto):
         'framingmediatypes': [FRAMINGTYPE],
     }
 
+    # TODO expose available changesetdata fields.
+
     for command, entry in COMMANDS.items():
         caps['commands'][command] = {
             'args': entry.args,
@@ -473,6 +475,8 @@ def capabilitiesv2(repo, proto):
                   permission='pull')
 def changesetdata(repo, proto, noderange=None, nodes=None, fields=None):
     fields = fields or set()
+
+    # TODO look for unknown fields and abort when they can't be serviced.
 
     if noderange is None and nodes is None:
         raise error.WireprotoCommandError(
@@ -562,6 +566,9 @@ def changesetdata(repo, proto, noderange=None, nodes=None, fields=None):
         if b'revision' in fields:
             revisiondata = cl.revision(node, raw=True)
             d[b'revisionsize'] = len(revisiondata)
+
+        # TODO make it possible for extensions to wrap a function or register
+        # a handler to service custom fields.
 
         yield d
 

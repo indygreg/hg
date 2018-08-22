@@ -147,6 +147,9 @@ def _processchangesetdata(repo, tr, objs):
             for mark in cset.get(b'bookmarks', []):
                 remotebookmarks[mark] = node
 
+            # TODO add mechanism for extensions to examine records so they
+            # can siphon off custom data fields.
+
             # Some entries might only be metadata only updates.
             if b'revisionsize' not in cset:
                 continue

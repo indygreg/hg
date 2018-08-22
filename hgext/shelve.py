@@ -323,12 +323,6 @@ def _aborttransaction(repo):
     narrowspec.restorebackup(repo, narrowspecbackupname)
     repo.dirstate.restorebackup(None, dirstatebackupname)
 
-def createcmd(ui, repo, pats, opts):
-    """subcommand that creates a new shelve"""
-    with repo.wlock():
-        cmdutil.checkunfinished(repo)
-        return _docreatecmd(ui, repo, pats, opts)
-
 def getshelvename(repo, parent, opts):
     """Decide on the name this shelve is going to have"""
     def gennames():
@@ -429,6 +423,12 @@ def _includeunknownfiles(repo, pats, opts, extra):
 
 def _finishshelve(repo):
     _aborttransaction(repo)
+
+def createcmd(ui, repo, pats, opts):
+    """subcommand that creates a new shelve"""
+    with repo.wlock():
+        cmdutil.checkunfinished(repo)
+        return _docreatecmd(ui, repo, pats, opts)
 
 def _docreatecmd(ui, repo, pats, opts):
     wctx = repo[None]

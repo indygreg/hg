@@ -728,6 +728,8 @@ class httpv2executor(object):
         if not self._responsef:
             return
 
+        # TODO ^C here may not result in immediate program termination.
+
         try:
             self._responsef.result()
         finally:

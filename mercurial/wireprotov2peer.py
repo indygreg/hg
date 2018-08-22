@@ -136,6 +136,9 @@ class clienthandler(object):
         response = self._responses[frame.requestid]
 
         if action == 'responsedata':
+            # This buffers all data until end of stream is received. This
+            # is bad for performance.
+            # TODO make response data streamable
             response.b.write(meta['data'])
 
             if meta['eos']:

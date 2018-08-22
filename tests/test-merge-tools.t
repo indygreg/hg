@@ -1897,9 +1897,11 @@ checked strictly.
 (for ui.merge, ignored unintentionally)
 
   $ hg merge 9 \
+  > --config merge-tools.:other.binary=true \
   > --config ui.merge=:other
   tool :other (for pattern b) can't handle binary
   tool true can't handle binary
+  tool :other can't handle binary
   tool false can't handle binary
   no tool found to merge b
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for b? u
@@ -1918,6 +1920,7 @@ internal merge tools is checked strictly.
 (for merge-patterns)
 
   $ hg merge 9 --config merge.strict-capability-check=true \
+  > --config merge-tools.:merge-other.binary=true \
   > --config merge-patterns.b=:merge-other \
   > --config merge-patterns.re:[a-z]=:other
   tool :merge-other (for pattern b) can't handle binary
@@ -1987,6 +1990,7 @@ capability)
 
   $ hg debugpickmergetool \
   > -r 6d00b3726f6e \
+  > --config merge-tools.:merge-other.symlink=true \
   > --config merge-patterns.f=:merge-other \
   > --config merge-patterns.re:[f]=:merge-local \
   > --config merge-patterns.re:[a-z]=:other
@@ -1994,6 +1998,7 @@ capability)
 
   $ hg debugpickmergetool \
   > -r 6d00b3726f6e \
+  > --config merge-tools.:other.symlink=true \
   > --config ui.merge=:other
   f = :prompt
 
@@ -2002,6 +2007,7 @@ checked striclty)
 
   $ hg debugpickmergetool --config merge.strict-capability-check=true \
   > -r 6d00b3726f6e \
+  > --config merge-tools.:merge-other.symlink=true \
   > --config merge-patterns.f=:merge-other \
   > --config merge-patterns.re:[f]=:merge-local \
   > --config merge-patterns.re:[a-z]=:other
@@ -2011,6 +2017,12 @@ checked striclty)
   > -r 6d00b3726f6e \
   > --config ui.merge=:other
   f = :other
+
+  $ hg debugpickmergetool --config merge.strict-capability-check=true \
+  > -r 6d00b3726f6e \
+  > --config merge-tools.:merge-other.symlink=true \
+  > --config ui.merge=:merge-other
+  f = :prompt
 
 #endif
 

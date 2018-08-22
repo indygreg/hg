@@ -140,9 +140,8 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
     strictcheck = ui.configbool('merge', 'strict-capability-check')
 
     def hascapability(tool, capability, strict=False):
-        if strict and tool in internals:
-            if internals[tool].capabilities.get(capability):
-                return True
+        if tool in internals:
+            return strict and internals[tool].capabilities.get(capability)
         return _toolbool(ui, tool, capability)
 
     def supportscd(tool):

@@ -436,14 +436,6 @@ class localrepository(object):
         self.root = self.wvfs.base
         self.path = self.wvfs.join(".hg")
         self.origroot = path
-        # This is only used by context.workingctx.match in order to
-        # detect files in subrepos.
-        self.auditor = pathutil.pathauditor(
-            self.root, callback=self._checknested)
-        # This is only used by context.basectx.match in order to detect
-        # files in subrepos.
-        self.nofsauditor = pathutil.pathauditor(
-            self.root, callback=self._checknested, realfs=False, cached=True)
         self.baseui = baseui
         self.ui = baseui.copy()
         self.ui.copy = baseui.copy # prevent copying repo configuration
@@ -708,6 +700,22 @@ class localrepository(object):
 
     def _writerequirements(self):
         scmutil.writerequires(self.vfs, self.requirements)
+
+    # Don't cache auditor/nofsauditor, or you'll end up with reference cycle:
+    # self -> auditor -> self._checknested -> self
+
+    @property
+    def auditor(self):
+        # This is only used by context.workingctx.match in order to
+        # detect files in subrepos.
+        return pathutil.pathauditor(self.root, callback=self._checknested)
+
+    @property
+    def nofsauditor(self):
+        # This is only used by context.basectx.match in order to detect
+        # files in subrepos.
+        return pathutil.pathauditor(self.root, callback=self._checknested,
+                                    realfs=False, cached=True)
 
     def _checknested(self, path):
         """Determine if path is a legal nested repository."""

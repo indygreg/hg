@@ -4030,7 +4030,7 @@ def phase(ui, repo, *revs, **opts):
     # search for a unique phase argument
     targetphase = None
     for idx, name in enumerate(phases.phasenames):
-        if opts[name]:
+        if opts.get(name, False):
             if targetphase is not None:
                 raise error.Abort(_('only one phase can be specified'))
             targetphase = idx

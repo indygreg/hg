@@ -990,9 +990,21 @@ def loadinternalmerge(ui, extname, registrarobj):
 
         capabilities = sorted([k for k, v in func.capabilities.items() if v])
         if capabilities:
-            capdesc = _("(actual capabilities: %s)") % ', '.join(capabilities)
+            capdesc = "    (actual capabilities: %s)" % ', '.join(capabilities)
             func.__doc__ = (func.__doc__ +
-                            pycompat.sysstr("\n\n    %s" % capdesc))
+                            pycompat.sysstr("\n\n%s" % capdesc))
+
+    # to put i18n comments into hg.pot for automatically generated texts
+
+    # i18n: "binary" and "symlik" are keywords
+    # i18n: this text is added automatically
+    _("    (actual capabilities: binary, symlink)")
+    # i18n: "binary" is keyword
+    # i18n: this text is added automatically
+    _("    (actual capabilities: binary)")
+    # i18n: "symlink" is keyword
+    # i18n: this text is added automatically
+    _("    (actual capabilities: symlink)")
 
 # load built-in merge tools explicitly to setup internalsdoc
 loadinternalmerge(None, None, internaltool)

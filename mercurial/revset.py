@@ -1566,6 +1566,12 @@ def _phase(repo, subset, *targets):
     """helper to select all rev in <targets> phases"""
     return repo._phasecache.getrevset(repo, targets, subset)
 
+@predicate('_phase(idx)', safe=True)
+def phase(repo, subset, x):
+    l = getargs(x, 1, 1, ("_phase requires one argument"))
+    target = getinteger(l[0], ("_phase expects a number"))
+    return _phase(repo, subset, target)
+
 @predicate('draft()', safe=True)
 def draft(repo, subset, x):
     """Changeset in draft phase."""

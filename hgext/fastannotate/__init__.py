@@ -114,6 +114,7 @@ from __future__ import absolute_import
 
 from mercurial.i18n import _
 from mercurial import (
+    configitems,
     error as hgerror,
     localrepo,
     registrar,
@@ -138,7 +139,7 @@ configitem = registrar.configitem(configtable)
 
 configitem('fastannotate', 'modes', default=['fastannotate'])
 configitem('fastannotate', 'server', default=False)
-configitem('fastannotate', 'useflock', default=True)
+configitem('fastannotate', 'useflock', default=configitems.dynamicdefault)
 configitem('fastannotate', 'client', default=False)
 configitem('fastannotate', 'unfilteredrepo', default=True)
 configitem('fastannotate', 'defaultformat', default=['number'])

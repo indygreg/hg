@@ -281,6 +281,18 @@ _hg_config() {
     (( $#items )) && _describe -t config 'config item' items
 }
 
+_hg_internal_merge_tools=(
+  \\:dump \\:fail \\:forcedump \\:local \\:merge \\:merge-local \\:merge-other
+  \\:merge3 \\:other \\:prompt \\:tagmerge \\:union
+)
+
+_hg_merge_tools() {
+  typeset -a external_tools
+  _describe -t internal_tools 'internal merge tools' _hg_internal_merge_tools
+  external_tools=(${(f)"$(_hg_cmd showconfig merge-tools | cut -d . -f 2)"})
+  (( $#external_tools )) && _describe -t external_tools 'external merge tools' external_tools
+}
+
 _hg_addremove() {
   _alternative 'files:unknown files:_hg_unknown' \
     'files:missing files:_hg_missing'
@@ -416,7 +428,7 @@ _hg_diff_opts=(
   '--nodates[omit dates from diff headers]')
 
 _hg_mergetool_opts=(
-  '(--tool -t)'{-t+,--tool=}'[specify merge tool]:merge tool'
+  '(--tool -t)'{-t+,--tool=}'[specify merge tool]:merge tool:_hg_merge_tools'
 )
 
 _hg_dryrun_opts=(

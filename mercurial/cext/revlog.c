@@ -457,7 +457,7 @@ static Py_ssize_t add_roots_get_min(indexObject *self, PyObject *list,
 			Py_DECREF(iter_item);
 			if (iter_item_long < min_idx)
 				min_idx = iter_item_long;
-			phases[iter_item_long] = marker;
+			phases[iter_item_long] = (char)marker;
 		}
 		Py_DECREF(iter);
 	}
@@ -1100,7 +1100,7 @@ static PyObject *nt_insert_py(nodetree *self, PyObject *args)
 		return NULL;
 	}
 	node = index_node_existing(self->index, rev);
-	if (nt_insert(self, node, rev) == -1)
+	if (nt_insert(self, node, (int)rev) == -1)
 		return NULL;
 	Py_RETURN_NONE;
 }
@@ -1283,7 +1283,7 @@ static int index_init_nt(indexObject *self)
 		if (self->nt == NULL) {
 			return -1;
 		}
-		if (nt_init(self->nt, self, self->raw_length) == -1) {
+		if (nt_init(self->nt, self, (int)self->raw_length) == -1) {
 			nt_dealloc(self->nt);
 			self->nt = NULL;
 			return -1;

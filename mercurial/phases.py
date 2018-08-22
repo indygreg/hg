@@ -599,7 +599,7 @@ def updatephases(repo, trgetter, headsbyphase):
     # to update. This avoid creating empty transaction during no-op operation.
 
     for phase in allphases[:-1]:
-        revset = '%%ln - %s()' % phasenames[phase]
+        revset = '%%ln - _phase(%d)' % phase
         heads = [c.node() for c in repo.set(revset, headsbyphase[phase])]
         if heads:
             advanceboundary(repo, trgetter(), phase, heads)

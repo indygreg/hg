@@ -11,8 +11,8 @@ def genhsh(i):
 
 def gettemppath():
     fd, path = tempfile.mkstemp()
-    os.unlink(path)
     os.close(fd)
+    os.unlink(path)
     return path
 
 def ensure(condition):

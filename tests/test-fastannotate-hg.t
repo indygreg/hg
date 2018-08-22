@@ -594,28 +594,18 @@ annotate renamed file
 annotate missing file
 
   $ rm baz
-#if windows
   $ hg annotate -ncr "wdir()" baz
-  abort: $TESTTMP\repo\baz: The system cannot find the file specified
+  abort: $TESTTMP/repo/baz: $ENOENT$ (windows !)
+  abort: $ENOENT$: $TESTTMP/repo/baz (no-windows !)
   [255]
-#else
-  $ hg annotate -ncr "wdir()" baz
-  abort: $ENOENT$: $TESTTMP/repo/baz
-  [255]
-#endif
 
 annotate removed file
 
   $ hg rm baz
-#if windows
   $ hg annotate -ncr "wdir()" baz
-  abort: $TESTTMP\repo\baz: The system cannot find the file specified
+  abort: $TESTTMP/repo/baz: $ENOENT$ (windows !)
+  abort: $ENOENT$: $TESTTMP/repo/baz (no-windows !)
   [255]
-#else
-  $ hg annotate -ncr "wdir()" baz
-  abort: $ENOENT$: $TESTTMP/repo/baz
-  [255]
-#endif
 
 Test annotate with whitespace options
 

@@ -13,6 +13,7 @@ import ast
 import codecs
 import re as remod
 import textwrap
+import types
 
 from ..i18n import _
 from ..thirdparty import attr
@@ -64,6 +65,8 @@ def pprint(o, bprefix=False):
             pprint(k, bprefix=bprefix) for k in sorted(o)))
     elif isinstance(o, tuple):
         return '(%s)' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
+    elif isinstance(o, types.GeneratorType):
+        return 'gen[%s]' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
     else:
         return pycompat.byterepr(o)
 

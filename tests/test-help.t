@@ -1918,20 +1918,26 @@ Test dynamic list of merge tools only shows up once
          internal ":merge" is used.
       8. Otherwise, ":prompt" is used.
   
-      For historical reason, Mercurial assumes capabilities of internal merge
-      tools as below while examining rules above, regardless of actual
-      capabilities of them.
+      For historical reason, Mercurial treats merge tools as below while
+      examining rules above.
   
       step specified via  binary symlink
       ----------------------------------
-      1.   --tool         o      o
-      2.   HGMERGE        o      o
-      3.   merge-patterns o (*)  x (*)
-      4.   ui.merge       x (*)  x (*)
+      1.   --tool         o/o    o/o
+      2.   HGMERGE        o/o    o/o
+      3.   merge-patterns o/o(*) x/?(*)
+      4.   ui.merge       x/?(*) x/?(*)
+  
+      Each capability column indicates Mercurial behavior for internal/external
+      merge tools at examining each rule.
+  
+      - "o": "assume that a tool has capability"
+      - "x": "assume that a tool does not have capability"
+      - "?": "check actual capability of a tool"
   
       If "merge.strict-capability-check" configuration is true, Mercurial checks
-      capabilities of internal merge tools strictly in (*) cases above. It is
-      false by default for backward compatibility.
+      capabilities of merge tools strictly in (*) cases above (= each capability
+      column becomes "?/?"). It is false by default for backward compatibility.
   
       Note:
          After selecting a merge program, Mercurial will by default attempt to

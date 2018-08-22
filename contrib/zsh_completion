@@ -285,6 +285,11 @@ _hg_merge_tools() {
   (( $#external_tools )) && _describe -t external_tools 'external merge tools' external_tools
 }
 
+_hg_shelves() {
+  shelves=("${(f)$(_hg_cmd shelve -ql)}")
+  (( $#shelves )) && _describe -t shelves 'shelves' shelves
+}
+
 _hg_addremove() {
   _alternative 'files:unknown files:_hg_unknown' \
     'files:missing files:_hg_missing'
@@ -1257,6 +1262,50 @@ _hg_cmd_purge() {
   '--all[purge ignored files too]' \
   '(--print -p)'{-p,--print}'[print filenames instead of deleting them]' \
   '(--print0 -0)'{-0,--print0}'[end filenames with NUL, for use with xargs (implies -p/--print)]'
+}
+
+# Shelve
+_hg_cmd_shelve() {
+  local context state state_descr line ret=1
+  typeset -A opt_args
+
+  _arguments -s -S : $_hg_global_opts $_hg_pat_opts \
+  '(--addremove -A)'{-A,--addremove}'[mark new/missing files as added/removed before shelving]' \
+  '(--unknown -u)'{-u,--unknown}'[store unknown files in the shelve]' \
+  '(--name -n :)--cleanup[delete all shelved changes]' \
+  '--date=[shelve with the specified commit date]:date' \
+  '(--delete -d)'{-d,--delete}'[delete the named shelved change(s)]' \
+  '(--edit -e)'{-e,--edit}'[invoke editor on commit messages]' \
+  '(--list -l)'{-l,--list}'[list current shelves]' \
+  '(--message -m)'{-m+,--message=}'[use text as shelve message]:text' \
+  '(--name -n)'{-n+,--name=}'[use the given name for the shelved commit]:name' \
+  '(--patch -p)'{-p,--patch}'[output patches for changes]' \
+  '(--interactive -i)'{-i,--interactive}'[interactive mode, only works while creating a shelve]' \
+  '--stat[output diffstat-style summary of changes]' \
+  '*:file:->shelve_files' && ret=0
+
+  if [[ $state == 'shelve_files' ]]
+  then
+    if [[ -n ${opt_args[(I)-d|--delete|-l|--list|-p|--patch|--stat]} ]]
+    then
+      _hg_shelves && ret=0
+    else
+      typeset -a status_files
+      _hg_status mard
+      _wanted files expl 'modified, added, removed or deleted file' _multi_parts / status_files && ret=0
+    fi
+  fi
+
+  return ret
+}
+
+_hg_cmd_unshelve() {
+  _arguments -s -S : $_hg_global_opts $_hg_mergetool_opts \
+  '(--abort -a --continue -c --name -n :)'{-a,--abort}'[abort an incomplete unshelve operation]' \
+  '(--abort -a --continue -c --name -n :)'{-c,--continue}'[continue an incomplete unshelve operation]' \
+  '(--keep -k)'{-k,--keep}'[keep shelve after unshelving]' \
+  '(--name -n :)'{-n+,--name=}'[restore shelved change with given name]:shelve:_hg_shelves' \
+  ':shelve:_hg_shelves'
 }
 
 _hg "$@"

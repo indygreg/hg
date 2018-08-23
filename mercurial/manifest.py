@@ -1177,14 +1177,15 @@ class treemanifest(object):
         m1._load()
         m2._load()
         emptytree = treemanifest()
-        # OPT: Do we really need to load everything? Presumably things in lazy
-        # aren't dirty and don't need to be written.
-        self._loadalllazy()
-        m1._loadalllazy()
-        m2._loadalllazy()
+        def getnode(m, d):
+            ld = m._lazydirs.get(d)
+            if ld:
+                return ld[1]
+            return m._dirs.get(d, emptytree)._node
+
         for d, subm in self._dirs.iteritems():
-            subp1 = m1._dirs.get(d, emptytree)._node
-            subp2 = m2._dirs.get(d, emptytree)._node
+            subp1 = getnode(m1, d)
+            subp2 = getnode(m2, d)
             if subp1 == nullid:
                 subp1, subp2 = subp2, subp1
             writesubtree(subm, subp1, subp2)

@@ -136,37 +136,39 @@ class clienthandler(object):
         response = self._responses[frame.requestid]
 
         if action == 'responsedata':
-            # This buffers all data until end of stream is received. This
-            # is bad for performance.
-            # TODO make response data streamable
-            response.b.write(meta['data'])
-
-            if meta['eos']:
-                # If the command has a decoder, resolve the future to the
-                # decoded value. Otherwise resolve to the rich response object.
-                decoder = COMMAND_DECODERS.get(response.command)
-
-                # TODO consider always resolving the overall status map.
-                if decoder:
-                    objs = response.cborobjects()
-
-                    overall = next(objs)
-
-                    if overall['status'] == 'ok':
-                        self._futures[frame.requestid].set_result(decoder(objs))
-                    else:
-                        e = error.RepoError(
-                            formatrichmessage(overall['error']['message']))
-                        self._futures[frame.requestid].set_exception(e)
-                else:
-                    self._futures[frame.requestid].set_result(response)
-
-                del self._requests[frame.requestid]
-                del self._futures[frame.requestid]
-
+            self._processresponsedata(frame, meta, response)
         else:
             raise error.ProgrammingError(
                 'unhandled action from clientreactor: %s' % action)
+
+    def _processresponsedata(self, frame, meta, response):
+        # This buffers all data until end of stream is received. This
+        # is bad for performance.
+        # TODO make response data streamable
+        response.b.write(meta['data'])
+
+        if meta['eos']:
+            # If the command has a decoder, resolve the future to the
+            # decoded value. Otherwise resolve to the rich response object.
+            decoder = COMMAND_DECODERS.get(response.command)
+
+            # TODO consider always resolving the overall status map.
+            if decoder:
+                objs = response.cborobjects()
+
+                overall = next(objs)
+
+                if overall['status'] == 'ok':
+                    self._futures[frame.requestid].set_result(decoder(objs))
+                else:
+                    e = error.RepoError(
+                        formatrichmessage(overall['error']['message']))
+                    self._futures[frame.requestid].set_exception(e)
+            else:
+                self._futures[frame.requestid].set_result(response)
+
+            del self._requests[frame.requestid]
+            del self._futures[frame.requestid]
 
 def decodebranchmap(objs):
     # Response should be a single CBOR map of branch name to array of nodes.

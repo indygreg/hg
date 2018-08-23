@@ -710,6 +710,25 @@ class treemanifest(object):
         self._dirs[d] = readsubtree(path, node)
         del self._lazydirs[d]
 
+    def _loadchildrensetlazy(self, visit):
+        if not visit:
+            return None
+        if visit == 'all' or visit == 'this':
+            self._loadalllazy()
+            return None
+
+        todel = []
+        for k in visit:
+            kslash = k + '/'
+            ld = self._lazydirs.get(kslash)
+            if ld:
+                path, node, readsubtree = ld
+                self._dirs[kslash] = readsubtree(path, node)
+                todel.append(kslash)
+        for kslash in todel:
+            del self._lazydirs[kslash]
+        return visit
+
     def __len__(self):
         self._load()
         size = len(self._files)
@@ -1043,7 +1062,7 @@ class treemanifest(object):
         '''recursively generate a new manifest filtered by the match argument.
         '''
 
-        visit = match.visitdir(self._dir[:-1] or '.')
+        visit = match.visitchildrenset(self._dir[:-1] or '.')
         if visit == 'all':
             return self.copy()
         ret = treemanifest(self._dir)
@@ -1052,16 +1071,26 @@ class treemanifest(object):
 
         self._load()
         for fn in self._files:
+            # While visitchildrenset *usually* lists only subdirs, this is
+            # actually up to the matcher and may have some files in the set().
+            # If visit == 'this', we should obviously look at the files in this
+            # directory; if visit is a set, and fn is in it, we should inspect
+            # fn (but no need to inspect things not in the set).
+            if visit != 'this' and fn not in visit:
+                continue
             fullp = self._subpath(fn)
+            # visitchildrenset isn't perfect, we still need to call the regular
+            # matcher code to further filter results.
             if not match(fullp):
                 continue
             ret._files[fn] = self._files[fn]
             if fn in self._flags:
                 ret._flags[fn] = self._flags[fn]
 
-        # OPT: use visitchildrenset to avoid loading everything
-        self._loadalllazy()
+        visit = self._loadchildrensetlazy(visit)
         for dir, subm in self._dirs.iteritems():
+            if visit and dir[:-1] not in visit:
+                continue
             m = subm._matches(match)
             if not m._isempty():
                 ret._dirs[dir] = m

@@ -726,9 +726,13 @@ class treemanifest(object):
 
     def _isempty(self):
         self._load() # for consistency; already loaded by all callers
+        # See if we can skip loading everything.
+        if self._files or (self._dirs and
+                           any(not m._isempty() for m in self._dirs.values())):
+            return False
         self._loadalllazy()
-        return (not self._files and (not self._dirs or
-                all(m._isempty() for m in self._dirs.values())))
+        return (not self._dirs or
+                all(m._isempty() for m in self._dirs.values()))
 
     def __repr__(self):
         return ('<treemanifest dir=%s, node=%s, loaded=%s, dirty=%s at 0x%x>' %

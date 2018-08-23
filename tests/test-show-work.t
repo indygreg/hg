@@ -57,7 +57,6 @@ Bumping first draft changeset to public will hide its parent
   $ hg show work
   @  128c commit 2
   o  181c commit 1
-  |
   ~
 
 Multiple DAG heads will be shown
@@ -72,7 +71,6 @@ Multiple DAG heads will be shown
   | o  128c commit 2
   |/
   o  181c commit 1
-  |
   ~
 
 Even when wdir is something else
@@ -84,7 +82,6 @@ Even when wdir is something else
   | o  128c commit 2
   |/
   o  181c commit 1
-  |
   ~
 
 Draft child shows public head (multiple heads)
@@ -131,7 +128,6 @@ Branch name appears in output
   | o  128c commit 2
   |/
   o  181c commit 1
-  |
   ~
 
   $ cd ..
@@ -162,7 +158,6 @@ Bookmark name appears in output
   | o  128c (@) commit 2
   |/
   o  181c commit 1
-  |
   ~
 
   $ cd ..
@@ -185,7 +180,6 @@ Tags are rendered
   @  3758 Added tag 0.2 for changeset 6379c25b76f1
   o  6379 (0.2) commit 3
   o  a2ad Added tag 0.1 for changeset 6a75536ea0b1
-  |
   ~
 
   $ cd ..
@@ -246,7 +240,6 @@ Obsolescence information appears in labels.
   $ hg show work --color=debug
   @  [log.changeset changeset.draft changeset.unstable instability.orphan|32f3] [log.description|commit 3]
   x  [log.changeset changeset.draft changeset.obsolete|6a75] [log.description|commit 2]
-  |
   ~
 
   $ cd ..

@@ -77,10 +77,8 @@ Making a client repo
 
   $ hg show work
   o  3e14 (wat) (default/wat) added bar
-  |
   ~
   @  ec24 (default/default) Added h
-  |
   ~
 
   $ hg update "default/wat"

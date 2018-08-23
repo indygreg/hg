@@ -7,7 +7,8 @@
   > import re
   > import sys
   > if sys.platform == "win32":
-  >     import os, msvcrt
+  >     import msvcrt
+  >     import os
   >     msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
   > topics = set()
   > topicre = re.compile(br':hg:`help ([a-z0-9\-.]+)`')

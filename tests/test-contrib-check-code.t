@@ -1,14 +1,14 @@
-  $ cat > correct.py <<EOF
+  $ cat > correct.py <<NO_CHECK_EOF
   > def toto(arg1, arg2):
   >     del arg2
   >     return (5 + 6, 9)
-  > EOF
-  $ cat > wrong.py <<EOF
+  > NO_CHECK_EOF
+  $ cat > wrong.py <<NO_CHECK_EOF
   > def toto( arg1, arg2):
   >     del(arg2)
   >     return ( 5+6, 9)
-  > EOF
-  $ cat > quote.py <<EOF
+  > NO_CHECK_EOF
+  $ cat > quote.py <<NO_CHECK_EOF
   > # let's use quote in comments
   > (''' ( 4x5 )
   > but """\\''' and finally''',
@@ -16,8 +16,8 @@
   > '"""', 42+1, """and
   > ( 4-1 ) """, "( 1+1 )\" and ")
   > a, '\\\\\\\\', "\\\\\\" x-2", "c-1"
-  > EOF
-  $ cat > classstyle.py <<EOF
+  > NO_CHECK_EOF
+  $ cat > classstyle.py <<NO_CHECK_EOF
   > class newstyle_class(object):
   >     pass
   > 
@@ -29,7 +29,7 @@
   > 
   > no_class = 1:
   >     pass
-  > EOF
+  > NO_CHECK_EOF
   $ check_code="$TESTDIR"/../contrib/check-code.py
   $ "$check_code" ./wrong.py ./correct.py ./quote.py ./classstyle.py
   ./wrong.py:1:
@@ -52,11 +52,11 @@
    > class empty():
    class foo() creates old style object, use class foo(object)
   [1]
-  $ cat > python3-compat.py << EOF
+  $ cat > python3-compat.py << NO_CHECK_EOF
   > foo <> bar
   > reduce(lambda a, b: a + b, [1, 2, 3, 4])
   > dict(key=value)
-  > EOF
+  > NO_CHECK_EOF
   $ "$check_code" python3-compat.py
   python3-compat.py:1:
    > foo <> bar
@@ -69,13 +69,13 @@
    dict() is different in Py2 and 3 and is slower than {}
   [1]
 
-  $ cat > foo.c <<EOF
+  $ cat > foo.c <<NO_CHECK_EOF
   > void narf() {
   > 	strcpy(foo, bar);
   > 	// strcpy_s is okay, but this comment is not
   > 	strcpy_s(foo, bar);
   > }
-  > EOF
+  > NO_CHECK_EOF
   $ "$check_code" ./foo.c
   ./foo.c:2:
    > 	strcpy(foo, bar);
@@ -85,7 +85,7 @@
    don't use //-style comments
   [1]
 
-  $ cat > is-op.py <<EOF
+  $ cat > is-op.py <<NO_CHECK_EOF
   > # is-operator comparing number or string literal
   > x = None
   > y = x is 'foo'
@@ -96,7 +96,7 @@
   > y = x is not "foo"
   > y = x is not 5346
   > y = x is not -6
-  > EOF
+  > NO_CHECK_EOF
 
   $ "$check_code" ./is-op.py
   ./is-op.py:3:
@@ -125,21 +125,21 @@
    object comparison with literal
   [1]
 
-  $ cat > for-nolineno.py <<EOF
+  $ cat > for-nolineno.py <<NO_CHECK_EOF
   > except:
-  > EOF
+  > NO_CHECK_EOF
   $ "$check_code" for-nolineno.py --nolineno
   for-nolineno.py:0:
    > except:
    naked except clause
   [1]
 
-  $ cat > warning.t <<EOF
+  $ cat > warning.t <<NO_CHECK_EOF
   >   $ function warnonly {
   >   > }
   >   $ diff -N aaa
   >   $ function onwarn {}
-  > EOF
+  > NO_CHECK_EOF
   $ "$check_code" warning.t
   $ "$check_code" --warn warning.t
   warning.t:1:
@@ -152,20 +152,20 @@
    >   $ function onwarn {}
    warning: don't use 'function', use old style
   [1]
-  $ cat > error.t <<EOF
+  $ cat > error.t <<NO_CHECK_EOF
   >   $ [ foo == bar ]
-  > EOF
+  > NO_CHECK_EOF
   $ "$check_code" error.t
   error.t:1:
    >   $ [ foo == bar ]
    [ foo == bar ] is a bashism, use [ foo = bar ] instead
   [1]
   $ rm error.t
-  $ cat > raise-format.py <<EOF
+  $ cat > raise-format.py <<NO_CHECK_EOF
   > raise SomeException, message
   > # this next line is okay
   > raise SomeException(arg1, arg2)
-  > EOF
+  > NO_CHECK_EOF
   $ "$check_code" not-existing.py raise-format.py
   Skipping*not-existing.py* (glob)
   raise-format.py:1:
@@ -173,10 +173,10 @@
    don't use old-style two-argument raise, use Exception(message)
   [1]
 
-  $ cat <<EOF > tab.t
+  $ cat <<NO_CHECK_EOF > tab.t
   > 	indent
   >   > 	heredoc
-  > EOF
+  > NO_CHECK_EOF
   $ "$check_code" tab.t
   tab.t:1:
    > 	indent
@@ -184,7 +184,7 @@
   [1]
   $ rm tab.t
 
-  $ cat > rst.py <<EOF
+  $ cat > rst.py <<NO_CHECK_EOF
   > """problematic rst text
   > 
   > .. note::
@@ -213,7 +213,7 @@
   >     .. note::
   >         plus bad
   > """
-  > EOF
+  > NO_CHECK_EOF
   $ $check_code -w rst.py
   rst.py:3:
    > .. note::
@@ -223,7 +223,7 @@
    warning: add two newlines after '.. note::'
   [1]
 
-  $ cat > ./map-inside-gettext.py <<EOF
+  $ cat > ./map-inside-gettext.py <<NO_CHECK_EOF
   > print(_("map inside gettext %s" % v))
   > 
   > print(_("concatenating " " by " " space %s" % v))
@@ -234,7 +234,7 @@
   > 
   > print(_(
   >         "leading spaces inside of '(' %s" % v))
-  > EOF
+  > NO_CHECK_EOF
   $ "$check_code" ./map-inside-gettext.py
   ./map-inside-gettext.py:1:
    > print(_("map inside gettext %s" % v))
@@ -256,12 +256,12 @@
 web templates
 
   $ mkdir -p mercurial/templates
-  $ cat > mercurial/templates/example.tmpl <<EOF
+  $ cat > mercurial/templates/example.tmpl <<NO_CHECK_EOF
   > {desc}
   > {desc|escape}
   > {desc|firstline}
   > {desc|websub}
-  > EOF
+  > NO_CHECK_EOF
 
   $ "$check_code" --warnings mercurial/templates/example.tmpl
   mercurial/templates/example.tmpl:2:
@@ -271,7 +271,7 @@ web templates
 
 'string join across lines with no space' detection
 
-  $ cat > stringjoin.py <<EOF
+  $ cat > stringjoin.py <<NO_CHECK_EOF
   > foo = (' foo'
   >        'bar foo.'
   >        'bar foo:'
@@ -281,11 +281,11 @@ web templates
   >        'bar foo+'
   >        'bar foo-'
   >        'bar')
-  > EOF
+  > NO_CHECK_EOF
 
 'missing _() in ui message' detection
 
-  $ cat > uigettext.py <<EOF
+  $ cat > uigettext.py <<NO_CHECK_EOF
   > ui.status("% 10s %05d % -3.2f %*s %%"
   >           # this use '\\\\' instead of '\\', because the latter in
   >           # heredoc on shell becomes just '\'
@@ -294,11 +294,11 @@ web templates
   >           """
   >           '''.:*+-=
   >           ''' "%-6d \n 123456 .:*+-= foobar")
-  > EOF
+  > NO_CHECK_EOF
 
 superfluous pass
 
-  $ cat > superfluous_pass.py <<EOF
+  $ cat > superfluous_pass.py <<NO_CHECK_EOF
   > # correct examples
   > if foo:
   >     pass
@@ -326,7 +326,7 @@ superfluous pass
   >     docstring also
   >     means no pass"""
   >     pass
-  > EOF
+  > NO_CHECK_EOF
 
 (Checking multiple invalid files at once examines whether caching
 translation table for repquote() works as expected or not. All files

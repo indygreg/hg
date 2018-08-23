@@ -50,7 +50,7 @@ python hook
   >     f = open(fpath, 'w')
   >     f.close()
   >     # wait for ack - caller should delete the notify file
-  >     i = $maxwait
+  >     i = int("$maxwait")
   >     while os.path.exists(fpath) and i > 0:
   >         time.sleep(1)
   >         i -= 1

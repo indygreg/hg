@@ -133,7 +133,12 @@ class clienthandler(object):
         response = self._responses[frame.requestid]
 
         if action == 'responsedata':
-            self._processresponsedata(frame, meta, response)
+            # Any failures processing this frame should bubble up to the
+            # future tracking the request.
+            try:
+                self._processresponsedata(frame, meta, response)
+            except BaseException as e:
+                self._futures[frame.requestid].set_exception(e)
         else:
             raise error.ProgrammingError(
                 'unhandled action from clientreactor: %s' % action)

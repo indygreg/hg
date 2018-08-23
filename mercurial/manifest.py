@@ -940,7 +940,7 @@ class treemanifest(object):
 
     def filesnotin(self, m2, match=None):
         '''Set of files in this manifest that are not in the other'''
-        if match:
+        if match and not match.always():
             m1 = self.matches(match)
             m2 = m2.matches(match)
             return m1.filesnotin(m2)
@@ -1085,7 +1085,7 @@ class treemanifest(object):
         the nodeid will be None and the flags will be the empty
         string.
         '''
-        if match:
+        if match and not match.always():
             m1 = self.matches(match)
             m2 = m2.matches(match)
             return m1.diff(m2, clean=clean)

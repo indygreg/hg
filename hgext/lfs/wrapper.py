@@ -343,11 +343,18 @@ def extractpointers(repo, revs):
     """return a list of lfs pointers added by given revs"""
     repo.ui.debug('lfs: computing set of blobs to upload\n')
     pointers = {}
-    for r in revs:
-        ctx = repo[r]
-        for p in pointersfromctx(ctx).values():
-            pointers[p.oid()] = p
-    return sorted(pointers.values())
+
+    progress = repo.ui.makeprogress(_('lfs search'), _('changesets'), len(revs))
+
+    try:
+        for r in revs:
+            ctx = repo[r]
+            for p in pointersfromctx(ctx).values():
+                pointers[p.oid()] = p
+            progress.increment()
+        return sorted(pointers.values())
+    finally:
+        progress.complete()
 
 def pointerfromctx(ctx, f, removed=False):
     """return a pointer for the named file from the given changectx, or None if

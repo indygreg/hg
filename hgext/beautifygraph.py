@@ -80,6 +80,9 @@ def outputprettygraph(orig, ui, graph, *args, **kwargs):
     return orig(ui, graph, *args, **kwargs)
 
 def extsetup(ui):
+    if ui.plain('graph'):
+        return
+
     if encoding.encoding != 'UTF-8':
         ui.warn(_('beautifygraph: unsupported encoding, UTF-8 required\n'))
         return
@@ -87,9 +90,6 @@ def extsetup(ui):
     if r'A' in encoding._wide:
         ui.warn(_('beautifygraph: unsupported terminal settings, '
                   'monospace narrow text required\n'))
-        return
-
-    if ui.plain('graph'):
         return
 
     extensions.wrapfunction(graphmod, 'outputgraph', outputprettygraph)

@@ -1036,20 +1036,22 @@ class treemanifest(object):
 
     def _walk(self, match):
         '''Recursively generates matching file names for walk().'''
-        if not match.visitdir(self._dir[:-1] or '.'):
+        visit = match.visitchildrenset(self._dir[:-1] or '.')
+        if not visit:
             return
 
         # yield this dir's files and walk its submanifests
         self._load()
-        self._loadalllazy()
+        visit = self._loadchildrensetlazy(visit)
         for p in sorted(list(self._dirs) + list(self._files)):
             if p in self._files:
                 fullp = self._subpath(p)
                 if match(fullp):
                     yield fullp
             else:
-                for f in self._dirs[p]._walk(match):
-                    yield f
+                if not visit or p[:-1] in visit:
+                    for f in self._dirs[p]._walk(match):
+                        yield f
 
     def matches(self, match):
         '''generate a new manifest filtered by the match argument'''

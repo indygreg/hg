@@ -42,7 +42,6 @@ typedef struct {
  * Zero is empty
  */
 typedef struct {
-	PyObject_HEAD
 	indexObject *index;
 	nodetreenode *nodes;
 	unsigned length;     /* # nodes in use */
@@ -50,6 +49,11 @@ typedef struct {
 	int depth;           /* maximum depth of tree */
 	int splits;          /* # splits performed */
 } nodetree;
+
+typedef struct {
+	PyObject_HEAD
+	nodetree nt;
+} nodetreeObject;
 
 /*
  * This class has two behaviors.
@@ -75,7 +79,8 @@ struct indexObjectStruct {
 	PyObject *added;       /* populated on demand */
 	PyObject *headrevs;    /* cache, invalidated on changes */
 	PyObject *filteredrevs;/* filtered revs set */
-	nodetree *nt;          /* base-16 trie */
+	nodetree nt;           /* base-16 trie */
+	int ntinitialized;     /* 0 or 1 */
 	int ntrev;             /* last rev scanned */
 	int ntlookups;         /* # lookups */
 	int ntmisses;          /* # lookups that miss the cache */
@@ -333,8 +338,8 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	if (PyList_Append(self->added, obj) == -1)
 		return NULL;
 
-	if (self->nt)
-		nt_insert(self->nt, node, (int)len);
+	if (self->ntinitialized)
+		nt_insert(&self->nt, node, (int)len);
 
 	Py_CLEAR(self->headrevs);
 	Py_RETURN_NONE;
@@ -374,11 +379,11 @@ static PyObject *index_stats(indexObject *self)
 	istat(ntlookups, "node trie lookups");
 	istat(ntmisses, "node trie misses");
 	istat(ntrev, "node trie last rev scanned");
-	if (self->nt) {
-		istat(nt->capacity, "node trie capacity");
-		istat(nt->depth, "node trie depth");
-		istat(nt->length, "node trie count");
-		istat(nt->splits, "node trie splits");
+	if (self->ntinitialized) {
+		istat(nt.capacity, "node trie capacity");
+		istat(nt.depth, "node trie depth");
+		istat(nt.length, "node trie count");
+		istat(nt.splits, "node trie splits");
 	}
 
 #undef istat
@@ -1087,20 +1092,20 @@ static int nt_insert(nodetree *self, const char *node, int rev)
 	return -1;
 }
 
-static PyObject *nt_insert_py(nodetree *self, PyObject *args)
+static PyObject *ntobj_insert(nodetreeObject *self, PyObject *args)
 {
 	Py_ssize_t rev;
 	const char *node;
 	Py_ssize_t length;
 	if (!PyArg_ParseTuple(args, "n", &rev))
 		return NULL;
-	length = index_length(self->index);
+	length = index_length(self->nt.index);
 	if (rev < 0 || rev >= length) {
 		PyErr_SetString(PyExc_ValueError, "revlog index out of range");
 		return NULL;
 	}
-	node = index_node_existing(self->index, rev);
-	if (nt_insert(self, node, (int)rev) == -1)
+	node = index_node_existing(self->nt.index, rev);
+	if (nt_insert(&self->nt, node, (int)rev) == -1)
 		return NULL;
 	Py_RETURN_NONE;
 }
@@ -1117,7 +1122,6 @@ static int nt_init(nodetree *self, indexObject *index, unsigned capacity)
 	self->nodes = NULL;
 
 	self->index = index;
-	Py_INCREF(index);
 	/* The input capacity is in terms of revisions, while the field is in
 	 * terms of nodetree nodes. */
 	self->capacity = (capacity < 4 ? 4 : capacity / 2);
@@ -1138,13 +1142,14 @@ static int nt_init(nodetree *self, indexObject *index, unsigned capacity)
 
 static PyTypeObject indexType;
 
-static int nt_init_py(nodetree *self, PyObject *args)
+static int ntobj_init(nodetreeObject *self, PyObject *args)
 {
 	PyObject *index;
 	unsigned capacity;
 	if (!PyArg_ParseTuple(args, "O!I", &indexType, &index, &capacity))
 		return -1;
-	return nt_init(self, (indexObject*)index, capacity);
+	Py_INCREF(index);
+	return nt_init(&self->nt, (indexObject*)index, capacity);
 }
 
 static int nt_partialmatch(nodetree *self, const char *node,
@@ -1199,7 +1204,7 @@ static int nt_shortest(nodetree *self, const char *node)
 	return -3;
 }
 
-static PyObject *nt_shortest_py(nodetree *self, PyObject *args)
+static PyObject *ntobj_shortest(nodetreeObject *self, PyObject *args)
 {
 	PyObject *val;
 	char *node;
@@ -1210,7 +1215,7 @@ static PyObject *nt_shortest_py(nodetree *self, PyObject *args)
 	if (node_check(val, &node) == -1)
 		return NULL;
 
-	length = nt_shortest(self, node);
+	length = nt_shortest(&self->nt, node);
 	if (length == -3)
 		return NULL;
 	if (length == -2) {
@@ -1222,16 +1227,21 @@ static PyObject *nt_shortest_py(nodetree *self, PyObject *args)
 
 static void nt_dealloc(nodetree *self)
 {
-	Py_XDECREF(self->index);
 	free(self->nodes);
 	self->nodes = NULL;
+}
+
+static void ntobj_dealloc(nodetreeObject *self)
+{
+	Py_XDECREF(self->nt.index);
+	nt_dealloc(&self->nt);
 	PyObject_Del(self);
 }
 
-static PyMethodDef nt_methods[] = {
-	{"insert", (PyCFunction)nt_insert_py, METH_VARARGS,
+static PyMethodDef ntobj_methods[] = {
+	{"insert", (PyCFunction)ntobj_insert, METH_VARARGS,
 	 "insert an index entry"},
-	{"shortest", (PyCFunction)nt_shortest_py, METH_VARARGS,
+	{"shortest", (PyCFunction)ntobj_shortest, METH_VARARGS,
 	 "find length of shortest hex nodeid of a binary ID"},
 	{NULL} /* Sentinel */
 };
@@ -1241,7 +1251,7 @@ static PyTypeObject nodetreeType = {
 	"parsers.nodetree",        /* tp_name */
 	sizeof(nodetree) ,         /* tp_basicsize */
 	0,                         /* tp_itemsize */
-	(destructor)nt_dealloc,    /* tp_dealloc */
+	(destructor)ntobj_dealloc, /* tp_dealloc */
 	0,                         /* tp_print */
 	0,                         /* tp_getattr */
 	0,                         /* tp_setattr */
@@ -1264,7 +1274,7 @@ static PyTypeObject nodetreeType = {
 	0,                         /* tp_weaklistoffset */
 	0,                         /* tp_iter */
 	0,                         /* tp_iternext */
-	nt_methods,                /* tp_methods */
+	ntobj_methods,             /* tp_methods */
 	0,                         /* tp_members */
 	0,                         /* tp_getset */
 	0,                         /* tp_base */
@@ -1272,27 +1282,22 @@ static PyTypeObject nodetreeType = {
 	0,                         /* tp_descr_get */
 	0,                         /* tp_descr_set */
 	0,                         /* tp_dictoffset */
-	(initproc)nt_init_py,      /* tp_init */
+	(initproc)ntobj_init,      /* tp_init */
 	0,                         /* tp_alloc */
 };
 
 static int index_init_nt(indexObject *self)
 {
-	if (self->nt == NULL) {
-		self->nt = PyObject_New(nodetree, &nodetreeType);
-		if (self->nt == NULL) {
+	if (!self->ntinitialized) {
+		if (nt_init(&self->nt, self, (int)self->raw_length) == -1) {
+			nt_dealloc(&self->nt);
 			return -1;
 		}
-		if (nt_init(self->nt, self, (int)self->raw_length) == -1) {
-			nt_dealloc(self->nt);
-			self->nt = NULL;
+		if (nt_insert(&self->nt, nullid, -1) == -1) {
+			nt_dealloc(&self->nt);
 			return -1;
 		}
-		if (nt_insert(self->nt, nullid, -1) == -1) {
-			nt_dealloc(self->nt);
-			self->nt = NULL;
-			return -1;
-		}
+		self->ntinitialized = 1;
 		self->ntrev = (int)index_length(self);
 		self->ntlookups = 1;
 		self->ntmisses = 0;
@@ -1316,7 +1321,7 @@ static int index_find_node(indexObject *self,
 		return -3;
 
 	self->ntlookups++;
-	rev = nt_find(self->nt, node, nodelen, 0);
+	rev = nt_find(&self->nt, node, nodelen, 0);
 	if (rev >= -1)
 		return rev;
 
@@ -1335,7 +1340,7 @@ static int index_find_node(indexObject *self,
 			if (n == NULL)
 				return -3;
 			if (memcmp(node, n, nodelen > 20 ? 20 : nodelen) == 0) {
-				if (nt_insert(self->nt, n, rev) == -1)
+				if (nt_insert(&self->nt, n, rev) == -1)
 					return -3;
 				break;
 			}
@@ -1345,7 +1350,7 @@ static int index_find_node(indexObject *self,
 			const char *n = index_node_existing(self, rev);
 			if (n == NULL)
 				return -3;
-			if (nt_insert(self->nt, n, rev) == -1) {
+			if (nt_insert(&self->nt, n, rev) == -1) {
 				self->ntrev = rev + 1;
 				return -3;
 			}
@@ -1389,7 +1394,7 @@ static int index_populate_nt(indexObject *self) {
 			const char *n = index_node_existing(self, rev);
 			if (n == NULL)
 				return -1;
-			if (nt_insert(self->nt, n, rev) == -1)
+			if (nt_insert(&self->nt, n, rev) == -1)
 				return -1;
 		}
 		self->ntrev = -1;
@@ -1429,7 +1434,7 @@ static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 		return NULL;
 	if (index_populate_nt(self) == -1)
 		return NULL;
-	rev = nt_partialmatch(self->nt, node, nodelen);
+	rev = nt_partialmatch(&self->nt, node, nodelen);
 
 	switch (rev) {
 	case -4:
@@ -1464,7 +1469,7 @@ static PyObject *index_shortest(indexObject *self, PyObject *args)
 		return NULL;
 	if (index_populate_nt(self) == -1)
 		return NULL;
-	length = nt_shortest(self->nt, node);
+	length = nt_shortest(&self->nt, node);
 	if (length == -3)
 		return NULL;
 	if (length == -2) {
@@ -1886,7 +1891,7 @@ static void index_invalidate_added(indexObject *self, Py_ssize_t start)
 		PyObject *tuple = PyList_GET_ITEM(self->added, i);
 		PyObject *node = PyTuple_GET_ITEM(tuple, 7);
 
-		nt_delete_node(self->nt, PyBytes_AS_STRING(node));
+		nt_delete_node(&self->nt, PyBytes_AS_STRING(node));
 	}
 
 	if (start == 0)
@@ -1937,7 +1942,7 @@ static int index_slice_del(indexObject *self, PyObject *item)
 	}
 
 	if (start < self->length) {
-		if (self->nt) {
+		if (self->ntinitialized) {
 			Py_ssize_t i;
 
 			for (i = start + 1; i < self->length; i++) {
@@ -1945,7 +1950,7 @@ static int index_slice_del(indexObject *self, PyObject *item)
 				if (node == NULL)
 					return -1;
 
-				nt_delete_node(self->nt, node);
+				nt_delete_node(&self->nt, node);
 			}
 			if (self->added)
 				index_invalidate_added(self, 0);
@@ -1964,7 +1969,7 @@ static int index_slice_del(indexObject *self, PyObject *item)
 		goto done;
 	}
 
-	if (self->nt) {
+	if (self->ntinitialized) {
 		index_invalidate_added(self, start - self->length);
 		if (self->ntrev > start)
 			self->ntrev = (int)start;
@@ -1997,7 +2002,7 @@ static int index_assign_subscript(indexObject *self, PyObject *item,
 		return -1;
 
 	if (value == NULL)
-		return self->nt ? nt_delete_node(self->nt, node) : 0;
+		return self->ntinitialized ? nt_delete_node(&self->nt, node) : 0;
 	rev = PyInt_AsLong(value);
 	if (rev > INT_MAX || rev < 0) {
 		if (!PyErr_Occurred())
@@ -2007,7 +2012,7 @@ static int index_assign_subscript(indexObject *self, PyObject *item,
 
 	if (index_init_nt(self) == -1)
 		return -1;
-	return nt_insert(self->nt, node, (int)rev);
+	return nt_insert(&self->nt, node, (int)rev);
 }
 
 /*
@@ -2056,7 +2061,7 @@ static int index_init(indexObject *self, PyObject *args)
 	self->headrevs = NULL;
 	self->filteredrevs = Py_None;
 	Py_INCREF(Py_None);
-	self->nt = NULL;
+	self->ntinitialized = 0;
 	self->offsets = NULL;
 
 	if (!PyArg_ParseTuple(args, "OO", &data_obj, &inlined_obj))
@@ -2118,10 +2123,10 @@ static void _index_clearcaches(indexObject *self)
 		PyMem_Free((void *)self->offsets);
 		self->offsets = NULL;
 	}
-	if (self->nt != NULL) {
-		nt_dealloc(self->nt);
+	if (self->ntinitialized) {
+		nt_dealloc(&self->nt);
 	}
-	self->nt = NULL;
+	self->ntinitialized = 0;
 	Py_CLEAR(self->headrevs);
 }
 
@@ -2143,7 +2148,6 @@ static void index_dealloc(indexObject *self)
 	}
 	Py_XDECREF(self->data);
 	Py_XDECREF(self->added);
-	Py_XDECREF(self->nt);
 	PyObject_Del(self);
 }
 

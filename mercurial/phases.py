@@ -123,11 +123,22 @@ from . import (
 
 _fphasesentry = struct.Struct('>i20s')
 
-allphases = public, draft, secret = range(3)
+INTERNAL_FLAG = 64 # Phases for mercurial internal usage only
+HIDEABLE_FLAG = 32 # Phases that are hideable
+
+# record phase index
+public, draft, secret = range(3)
+internal = INTERNAL_FLAG | HIDEABLE_FLAG
+allphases = range(internal + 1)
 trackedphases = allphases[1:]
-phasenames = ['public', 'draft', 'secret']
+# record phase names
+phasenames = [None] * len(allphases)
+phasenames[:3] = ['public', 'draft', 'secret']
+phasenames[internal] = 'internal'
+# record phase property
 mutablephases = tuple(allphases[1:])
 remotehiddenphases = tuple(allphases[2:])
+localhiddenphases = tuple(p for p in allphases if p & HIDEABLE_FLAG)
 
 def _readroots(repo, phasedefaults=None):
     """Read phase roots from disk

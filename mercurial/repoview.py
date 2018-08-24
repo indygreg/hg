@@ -28,7 +28,10 @@ def hideablerevs(repo):
     branchmap (see mercurial.branchmap.subsettable), you cannot set "public"
     changesets as "hideable". Doing so would break multiple code assertions and
     lead to crashes."""
-    return obsolete.getrevs(repo, 'obsolete')
+    obsoletes = obsolete.getrevs(repo, 'obsolete')
+    internals = repo._phasecache.getrevset(repo, phases.localhiddenphases)
+    internals = frozenset(internals)
+    return obsoletes | internals
 
 def pinnedrevs(repo):
     """revisions blocking hidden changesets from being filtered

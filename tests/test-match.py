@@ -202,9 +202,25 @@ class ExactMatcherTests(unittest.TestCase):
         assert isinstance(m, matchmod.exactmatcher)
         self.assertEqual(m.visitchildrenset(b'.'), {b'dir'})
         self.assertEqual(m.visitchildrenset(b'dir'), {b'subdir'})
-        self.assertEqual(m.visitchildrenset(b'dir/subdir'), b'this')
+        self.assertEqual(m.visitchildrenset(b'dir/subdir'), {b'foo.txt'})
         self.assertEqual(m.visitchildrenset(b'dir/subdir/x'), set())
         self.assertEqual(m.visitchildrenset(b'dir/subdir/foo.txt'), set())
+        self.assertEqual(m.visitchildrenset(b'folder'), set())
+
+    def testVisitchildrensetFilesAndDirs(self):
+        m = matchmod.match(b'x', b'', patterns=[b'rootfile.txt',
+                                                b'a/file1.txt',
+                                                b'a/b/file2.txt',
+                                                # no file in a/b/c
+                                                b'a/b/c/d/file4.txt'],
+                           exact=True)
+        assert isinstance(m, matchmod.exactmatcher)
+        self.assertEqual(m.visitchildrenset(b'.'), {b'a', b'rootfile.txt'})
+        self.assertEqual(m.visitchildrenset(b'a'), {b'b', b'file1.txt'})
+        self.assertEqual(m.visitchildrenset(b'a/b'), {b'c', b'file2.txt'})
+        self.assertEqual(m.visitchildrenset(b'a/b/c'), {b'd'})
+        self.assertEqual(m.visitchildrenset(b'a/b/c/d'), {b'file4.txt'})
+        self.assertEqual(m.visitchildrenset(b'a/b/c/d/e'), set())
         self.assertEqual(m.visitchildrenset(b'folder'), set())
 
 class DifferenceMatcherTests(unittest.TestCase):

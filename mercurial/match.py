@@ -587,23 +587,24 @@ class exactmatcher(basematcher):
         return dir in self._dirs
 
     def visitchildrenset(self, dir):
-        if dir in self._dirs:
-            candidates = self._dirs - {'.'}
-            if dir != '.':
-                d = dir + '/'
-                candidates = set(c[len(d):] for c in candidates if
-                                 c.startswith(d))
-            # self._dirs includes all of the directories, recursively, so if
-            # we're attempting to match foo/bar/baz.txt, it'll have '.', 'foo',
-            # 'foo/bar' in it. Thus we can safely ignore a candidate that has a
-            # '/' in it, indicating a it's for a subdir-of-a-subdir; the
-            # immediate subdir will be in there without a slash.
-            ret = set(c for c in candidates if '/' not in c)
-            # We need to emit 'this' for foo/bar, not set(), not {'baz.txt'}.
-            if not ret:
-                return 'this'
-            return ret
-        return set()
+        if not self._fileset or dir not in self._dirs:
+            return set()
+
+        candidates = self._fileset | self._dirs - {'.'}
+        if dir != '.':
+            d = dir + '/'
+            candidates = set(c[len(d):] for c in candidates if
+                             c.startswith(d))
+        # self._dirs includes all of the directories, recursively, so if
+        # we're attempting to match foo/bar/baz.txt, it'll have '.', 'foo',
+        # 'foo/bar' in it. Thus we can safely ignore a candidate that has a
+        # '/' in it, indicating a it's for a subdir-of-a-subdir; the
+        # immediate subdir will be in there without a slash.
+        ret = {c for c in candidates if '/' not in c}
+        # We really do not expect ret to be empty, since that would imply that
+        # there's something in _dirs that didn't have a file in _fileset.
+        assert ret
+        return ret
 
     def isexact(self):
         return True

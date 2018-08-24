@@ -912,11 +912,14 @@ class dirstate(object):
                         continue
                     raise
                 for f, kind, st in entries:
-                    # If we needed to inspect any files, visitentries would have
-                    # been 'this' or 'all', and we would have set it to None
-                    # above. If we have visitentries populated here, we don't
-                    # care about any files in this directory, so no need to
-                    # check the type of `f`.
+                    # Some matchers may return files in the visitentries set,
+                    # instead of 'this', if the matcher explicitly mentions them
+                    # and is not an exactmatcher. This is acceptable; we do not
+                    # make any hard assumptions about file-or-directory below
+                    # based on the presence of `f` in visitentries. If
+                    # visitchildrenset returned a set, we can always skip the
+                    # entries *not* in the set it provided regardless of whether
+                    # they're actually a file or a directory.
                     if visitentries and f not in visitentries:
                         continue
                     if normalizefile:

@@ -346,7 +346,7 @@ class basematcher(object):
             ----------+-------------------
              False    | set()
              'all'    | 'all'
-             True     | 'this' OR non-empty set of subdirs to visit
+             True     | 'this' OR non-empty set of subdirs -or files- to visit
 
         Example:
           Assume matchers ['path:foo/bar', 'rootfilesin:qux'], we would return
@@ -357,10 +357,21 @@ class basematcher(object):
           'baz' -> set()
           'foo' -> {'bar'}
           # Ideally this would be 'all', but since the prefix nature of matchers
-          # is applied to the entire matcher, we have to downgrade to this
-          # 'this' due to the non-prefix 'rootfilesin'-kind matcher.
+          # is applied to the entire matcher, we have to downgrade this to
+          # 'this' due to the non-prefix 'rootfilesin'-kind matcher being mixed
+          # in.
           'foo/bar' -> 'this'
           'qux' -> 'this'
+
+        Important:
+          Most matchers do not know if they're representing files or
+          directories. They see ['path:dir/f'] and don't know whether 'f' is a
+          file or a directory, so visitchildrenset('dir') for most matchers will
+          return {'f'}, but if the matcher knows it's a file (like exactmatcher
+          does), it may return 'this'. Do not rely on the return being a set
+          indicating that there are no files in this dir to investigate (or
+          equivalently that if there are files to investigate in 'dir' that it
+          will always return 'this').
         '''
         return 'this'
 

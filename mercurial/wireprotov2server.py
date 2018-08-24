@@ -533,6 +533,10 @@ def changesetdata(repo, proto, noderange=None, nodes=None, fields=None):
                 b'phase': b'public' if publishing else repo[node].phasestr()
             }
 
+    nodebookmarks = {}
+    for mark, node in repo._bookmarks.items():
+        nodebookmarks.setdefault(node, set()).add(mark)
+
     # It is already topologically sorted by revision number.
     for node in outgoing:
         d = {
@@ -549,6 +553,10 @@ def changesetdata(repo, proto, noderange=None, nodes=None, fields=None):
                 ctx = repo[node]
                 d[b'phase'] = ctx.phasestr()
 
+        if b'bookmarks' in fields and node in nodebookmarks:
+            d[b'bookmarks'] = sorted(nodebookmarks[node])
+            del nodebookmarks[node]
+
         revisiondata = None
 
         if b'revision' in fields:
@@ -559,6 +567,15 @@ def changesetdata(repo, proto, noderange=None, nodes=None, fields=None):
 
         if revisiondata is not None:
             yield revisiondata
+
+    # If requested, send bookmarks from nodes that didn't have revision
+    # data sent so receiver is aware of any bookmark updates.
+    if b'bookmarks' in fields:
+        for node, marks in sorted(nodebookmarks.iteritems()):
+            yield {
+                b'node': node,
+                b'bookmarks': sorted(marks),
+            }
 
 @wireprotocommand('heads',
                   args={

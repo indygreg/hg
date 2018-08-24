@@ -110,6 +110,9 @@ fields
    (set of bytestring) Which data associated with changelog revisions to
    fetch. The following values are recognized:
 
+   bookmarks
+      Bookmarks associated with a revision.
+
    parents
       Parent revisions.
 
@@ -143,6 +146,11 @@ Each map has the following bytestring keys:
 node
    (bytestring) The node value for this revision. This is the SHA-1 hash of
    the raw revision data.
+
+bookmarks (optional)
+   (array of bytestrings) Bookmarks attached to this revision. Only present
+   if ``bookmarks`` data is being requested and the revision has bookmarks
+   attached.
 
 parents (optional)
    (array of bytestrings) The nodes representing the parent revisions of this
@@ -182,7 +190,6 @@ to reflect a phase-only update.
 TODO support different revision selection mechanisms (e.g. non-public, specific
 revisions)
 TODO support different hash "namespaces" for revisions (e.g. sha-1 versus other)
-TODO support emitting bookmarks data
 TODO support emitting obsolescence data
 TODO support filtering based on relevant paths (narrow clone)
 TODO support depth limiting

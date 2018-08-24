@@ -36,10 +36,10 @@ import traceback
 import warnings
 import zlib
 
-from hgdemandimport import tracing
 from .thirdparty import (
     attr,
 )
+from hgdemandimport import tracing
 from . import (
     encoding,
     error,
@@ -2897,7 +2897,7 @@ class timedcmstats(object):
     __str__ = encoding.strmethod(__bytes__)
 
 @contextlib.contextmanager
-def timedcm(whencefmt='unknown timedcm', *whenceargs):
+def timedcm(whencefmt, *whenceargs):
     """A context manager that produces timing information for a given context.
 
     On entering a timedcmstats instance is produced.

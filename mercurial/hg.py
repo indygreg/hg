@@ -381,31 +381,30 @@ def copystore(ui, srcrepo, destpath):
     try:
         hardlink = None
         topic = _('linking') if hardlink else _('copying')
-        progress = ui.makeprogress(topic)
-        num = 0
-        srcpublishing = srcrepo.publishing()
-        srcvfs = vfsmod.vfs(srcrepo.sharedpath)
-        dstvfs = vfsmod.vfs(destpath)
-        for f in srcrepo.store.copylist():
-            if srcpublishing and f.endswith('phaseroots'):
-                continue
-            dstbase = os.path.dirname(f)
-            if dstbase and not dstvfs.exists(dstbase):
-                dstvfs.mkdir(dstbase)
-            if srcvfs.exists(f):
-                if f.endswith('data'):
-                    # 'dstbase' may be empty (e.g. revlog format 0)
-                    lockfile = os.path.join(dstbase, "lock")
-                    # lock to avoid premature writing to the target
-                    destlock = lock.lock(dstvfs, lockfile)
-                hardlink, n = util.copyfiles(srcvfs.join(f), dstvfs.join(f),
-                                             hardlink, progress)
-                num += n
-        if hardlink:
-            ui.debug("linked %d files\n" % num)
-        else:
-            ui.debug("copied %d files\n" % num)
-        progress.complete()
+        with ui.makeprogress(topic) as progress:
+            num = 0
+            srcpublishing = srcrepo.publishing()
+            srcvfs = vfsmod.vfs(srcrepo.sharedpath)
+            dstvfs = vfsmod.vfs(destpath)
+            for f in srcrepo.store.copylist():
+                if srcpublishing and f.endswith('phaseroots'):
+                    continue
+                dstbase = os.path.dirname(f)
+                if dstbase and not dstvfs.exists(dstbase):
+                    dstvfs.mkdir(dstbase)
+                if srcvfs.exists(f):
+                    if f.endswith('data'):
+                        # 'dstbase' may be empty (e.g. revlog format 0)
+                        lockfile = os.path.join(dstbase, "lock")
+                        # lock to avoid premature writing to the target
+                        destlock = lock.lock(dstvfs, lockfile)
+                    hardlink, n = util.copyfiles(srcvfs.join(f), dstvfs.join(f),
+                                                 hardlink, progress)
+                    num += n
+            if hardlink:
+                ui.debug("linked %d files\n" % num)
+            else:
+                ui.debug("copied %d files\n" % num)
         return destlock
     except: # re-raises
         release(destlock)

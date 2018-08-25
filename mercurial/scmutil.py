@@ -1565,7 +1565,10 @@ def registersummarycallback(repo, otr, txnname=''):
             """Report statistics of phase changes for changesets pre-existing
             pull/unbundle.
             """
-            newrevs = tr.changes.get('revs', xrange(0, 0))
+            # TODO set() is only appropriate for 4.7 since revs post
+            # 45e05d39d9ce is a pycompat.membershiprange, which has O(n)
+            # membership testing.
+            newrevs = set(tr.changes.get('revs', xrange(0, 0)))
             phasetracking = tr.changes.get('phases', {})
             if not phasetracking:
                 return

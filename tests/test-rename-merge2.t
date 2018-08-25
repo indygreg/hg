@@ -692,7 +692,7 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   starting 4 threads for background file closing (?)
    a: prompt deleted/changed -> m (premerge)
   picked tool ':prompt' for a (binary False symlink False changedelete True)
-  file a was deleted in other [merge rev] but was modified in local [working copy].
+  file 'a' was deleted in other [merge rev] but was modified in local [working copy].
   What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
    b: both created -> m (premerge)
@@ -738,7 +738,7 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   starting 4 threads for background file closing (?)
    a: prompt changed/deleted -> m (premerge)
   picked tool ':prompt' for a (binary False symlink False changedelete True)
-  file a was deleted in local [working copy] but was modified in other [merge rev].
+  file 'a' was deleted in local [working copy] but was modified in other [merge rev].
   What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? u
    b: both created -> m (premerge)

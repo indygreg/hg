@@ -133,7 +133,7 @@ Full rebase all the way back from branching point:
   note: rebase of 1:1d1a643d390e created no changes to commit
   rebasing 2:ec2c14fb2984 "dev: f-dev stuff"
   rebasing 4:4b019212aaf6 "dev: merge default"
-  file f-default was deleted in other [source] but was modified in local [dest].
+  file 'f-default' was deleted in other [source] but was modified in local [dest].
   What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? c
   rebasing 6:9455ee510502 "dev: merge default"
@@ -163,7 +163,7 @@ Grafty cherry picking rebasing:
   > EOF
   rebasing 2:ec2c14fb2984 "dev: f-dev stuff"
   rebasing 4:4b019212aaf6 "dev: merge default"
-  file f-default was deleted in other [source] but was modified in local [dest].
+  file 'f-default' was deleted in other [source] but was modified in local [dest].
   What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? c
   rebasing 6:9455ee510502 "dev: merge default"

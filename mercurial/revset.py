@@ -454,6 +454,8 @@ def bookmark(repo, subset, x):
         kind, pattern, matcher = stringutil.stringmatcher(bm)
         bms = set()
         if kind == 'literal':
+            if bm == pattern:
+                pattern = repo._bookmarks.expandname(pattern)
             bmrev = repo._bookmarks.get(pattern, None)
             if not bmrev:
                 raise error.RepoLookupError(_("bookmark '%s' does not exist")

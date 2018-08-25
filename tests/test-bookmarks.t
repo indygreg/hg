@@ -151,6 +151,34 @@ bookmarks revset
   summary:     0
   
 
+"." is expanded to the active bookmark:
+
+  $ hg log -r 'bookmark(.)'
+  changeset:   1:925d80f479bb
+  bookmark:    X2
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     1
+  
+
+but "literal:." is not since "." seems not a literal bookmark:
+
+  $ hg log -r 'bookmark("literal:.")'
+  abort: bookmark '.' does not exist!
+  [255]
+
+"." should fail if there's no active bookmark:
+
+  $ hg bookmark --inactive
+  $ hg log -r 'bookmark(.)'
+  abort: no active bookmark
+  [255]
+BUG: this should be resolved to an empty set:
+  $ hg log -r 'present(bookmark(.))'
+  abort: no active bookmark
+  [255]
+
   $ hg log -r 'bookmark(unknown)'
   abort: bookmark 'unknown' does not exist!
   [255]
@@ -165,6 +193,12 @@ bookmarks revset
 
   $ hg help revsets | grep 'bookmark('
       "bookmark([name])"
+
+reactivate "X2"
+
+  $ hg update X2
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (activating bookmark X2)
 
 bookmarks X and X2 moved to rev 1, Y at rev -1
 

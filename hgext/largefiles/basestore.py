@@ -62,25 +62,24 @@ class basestore(object):
 
         at = 0
         available = self.exists(set(hash for (_filename, hash) in files))
-        progress = ui.makeprogress(_('getting largefiles'), unit=_('files'),
-                                   total=len(files))
-        for filename, hash in files:
-            progress.update(at)
-            at += 1
-            ui.note(_('getting %s:%s\n') % (filename, hash))
+        with ui.makeprogress(_('getting largefiles'), unit=_('files'),
+                             total=len(files)) as progress:
+            for filename, hash in files:
+                progress.update(at)
+                at += 1
+                ui.note(_('getting %s:%s\n') % (filename, hash))
 
-            if not available.get(hash):
-                ui.warn(_('%s: largefile %s not available from %s\n')
-                        % (filename, hash, util.hidepassword(self.url)))
-                missing.append(filename)
-                continue
+                if not available.get(hash):
+                    ui.warn(_('%s: largefile %s not available from %s\n')
+                            % (filename, hash, util.hidepassword(self.url)))
+                    missing.append(filename)
+                    continue
 
-            if self._gethash(filename, hash):
-                success.append((filename, hash))
-            else:
-                missing.append(filename)
+                if self._gethash(filename, hash):
+                    success.append((filename, hash))
+                else:
+                    missing.append(filename)
 
-        progress.complete()
         return (success, missing)
 
     def _gethash(self, filename, hash):

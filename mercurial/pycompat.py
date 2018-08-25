@@ -278,7 +278,6 @@ if ispy3:
     hasattr = _wrapattrfunc(builtins.hasattr)
     setattr = _wrapattrfunc(builtins.setattr)
     xrange = builtins.range
-    membershiprange = builtins.range
     unicode = str
 
     def open(name, mode='r', buffering=-1, encoding=None):
@@ -343,25 +342,6 @@ else:
     sysstr = identity
     strurl = identity
     bytesurl = identity
-
-    class membershiprange(object):
-        "Like xrange(a,b) but with constant-time membership test"
-        def __init__(self, a, b):
-            self._range = xrange(a, b)
-        def __getitem__(self, n):
-            return self._range[n]
-        def __hash__(self):
-            return hash(self._range)
-        def __iter__(self):
-            return iter(self._range)
-        def __len__(self):
-            return len(self._range)
-        def __reversed__(self):
-            return reversed(self._range)
-        def __contains__(self, n):
-            if not self._range:
-                return False
-            return n >= self._range[0] and n <= self._range[-1]
 
     # this can't be parsed on Python 3
     exec('def raisewithtb(exc, tb):\n'

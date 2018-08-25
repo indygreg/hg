@@ -240,7 +240,7 @@ class bmstore(object):
             if self.active:
                 return self.active
             else:
-                raise error.Abort(_("no active bookmark"))
+                raise error.RepoLookupError(_("no active bookmark"))
         return bname
 
     def checkconflict(self, mark, force=False, target=None):

@@ -172,12 +172,9 @@ but "literal:." is not since "." seems not a literal bookmark:
 
   $ hg bookmark --inactive
   $ hg log -r 'bookmark(.)'
-  abort: no active bookmark
+  abort: no active bookmark!
   [255]
-BUG: this should be resolved to an empty set:
   $ hg log -r 'present(bookmark(.))'
-  abort: no active bookmark
-  [255]
 
   $ hg log -r 'bookmark(unknown)'
   abort: bookmark 'unknown' does not exist!
@@ -263,7 +260,7 @@ rename bookmark using . with no active bookmark
   $ hg book rename-me
   $ hg book -i rename-me
   $ hg book -m . renamed
-  abort: no active bookmark
+  abort: no active bookmark!
   [255]
   $ hg up -q Y
   $ hg book -d rename-me
@@ -283,7 +280,7 @@ delete bookmark using . with no active bookmark
   $ hg book delete-me
   $ hg book -i delete-me
   $ hg book -d .
-  abort: no active bookmark
+  abort: no active bookmark!
   [255]
   $ hg up -q Y
   $ hg book -d delete-me

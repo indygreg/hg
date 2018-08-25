@@ -465,13 +465,13 @@ def getobsoleted(repo, tr):
     succsmarkers = repo.obsstore.successors.get
     public = phases.public
     addedmarkers = tr.changes.get('obsmarkers')
-    addedrevs = tr.changes['revs']
+    origrepolen = tr.changes['origrepolen']
     seenrevs = set()
     obsoleted = set()
     for mark in addedmarkers:
         node = mark[0]
         rev = torev(node)
-        if rev is None or rev in seenrevs or rev in addedrevs:
+        if rev is None or rev in seenrevs or rev >= origrepolen:
             continue
         seenrevs.add(rev)
         if phase(repo, rev) == public:

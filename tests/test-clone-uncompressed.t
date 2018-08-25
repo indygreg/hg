@@ -247,6 +247,7 @@ Clone with background file closing enabled
   sending stream_out command
   1027 files to transfer, 96.3 KB of data
   starting 4 threads for background file closing
+  updating the branch cache
   transferred 96.3 KB in * seconds (*/sec) (glob)
   query 1; heads
   sending batch command
@@ -275,6 +276,7 @@ Clone with background file closing enabled
   1030 files to transfer, 96.4 KB of data
   starting 4 threads for background file closing
   starting 4 threads for background file closing
+  updating the branch cache
   transferred 96.4 KB in * seconds (* */sec) (glob)
   bundle2-input-part: total payload size 112077
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported

@@ -545,19 +545,3 @@ class changelog(revlog.revlog):
         just to access this is costly."""
         extra = self.read(rev)[5]
         return encoding.tolocal(extra.get("branch")), 'close' in extra
-
-    def _addrevision(self, node, rawtext, transaction, *args, **kwargs):
-        # overlay over the standard revlog._addrevision to track the new
-        # revision on the transaction.
-        rev = len(self)
-        node = super(changelog, self)._addrevision(node, rawtext, transaction,
-                                                   *args, **kwargs)
-        revs = transaction.changes.get('revs')
-        if revs is not None:
-            if revs:
-                assert revs[-1] + 1 == rev
-                revs = pycompat.membershiprange(revs[0], rev + 1)
-            else:
-                revs = pycompat.membershiprange(rev, rev + 1)
-            transaction.changes['revs'] = revs
-        return node

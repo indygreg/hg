@@ -1393,7 +1393,7 @@ class localrepository(object):
                                      releasefn=releasefn,
                                      checkambigfiles=_cachedfiles,
                                      name=desc)
-        tr.changes['revs'] = pycompat.xrange(0, 0)
+        tr.changes['origrepolen'] = len(self)
         tr.changes['obsmarkers'] = set()
         tr.changes['phases'] = {}
         tr.changes['bookmarks'] = {}
@@ -1611,7 +1611,7 @@ class localrepository(object):
             # later call to `destroyed` will refresh them.
             return
 
-        if tr is None or tr.changes['revs']:
+        if tr is None or tr.changes['origrepolen'] < len(self):
             # updating the unfiltered branchmap should refresh all the others,
             self.ui.debug('updating the branch cache\n')
             branchmap.updatecache(self.filtered('served'))

@@ -1618,13 +1618,13 @@ def registersummarycallback(repo, otr, txnname=''):
         @reportsummary
         def reportnewcs(repo, tr):
             """Report the range of new revisions pulled/unbundled."""
-            newrevs = tr.changes.get('revs', pycompat.xrange(0, 0))
-            if not newrevs:
+            origrepolen = tr.changes.get('origrepolen', len(repo))
+            if origrepolen >= len(repo):
                 return
 
             # Compute the bounds of new revisions' range, excluding obsoletes.
             unfi = repo.unfiltered()
-            revs = unfi.revs('%ld and not obsolete()', newrevs)
+            revs = unfi.revs('%d: and not obsolete()', origrepolen)
             if not revs:
                 # Got only obsoletes.
                 return
@@ -1641,13 +1641,13 @@ def registersummarycallback(repo, otr, txnname=''):
             """Report statistics of phase changes for changesets pre-existing
             pull/unbundle.
             """
-            newrevs = tr.changes.get('revs', pycompat.xrange(0, 0))
+            origrepolen = tr.changes.get('origrepolen', len(repo))
             phasetracking = tr.changes.get('phases', {})
             if not phasetracking:
                 return
             published = [
                 rev for rev, (old, new) in phasetracking.iteritems()
-                if new == phases.public and rev not in newrevs
+                if new == phases.public and rev < origrepolen
             ]
             if not published:
                 return

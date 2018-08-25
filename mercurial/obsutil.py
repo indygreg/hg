@@ -465,7 +465,7 @@ def getobsoleted(repo, tr):
     succsmarkers = repo.obsstore.successors.get
     public = phases.public
     addedmarkers = tr.changes.get('obsmarkers')
-    addedrevs = tr.changes.get('revs')
+    addedrevs = tr.changes['revs']
     seenrevs = set()
     obsoleted = set()
     for mark in addedmarkers:

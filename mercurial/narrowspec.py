@@ -120,7 +120,7 @@ def load(repo):
                                                             'narrow')
     if profiles:
         raise error.Abort(_("including other spec files using '%include' is not"
-                            " suported in narrowspec"))
+                            " supported in narrowspec"))
     return includepats, excludepats
 
 def save(repo, includepats, excludepats):

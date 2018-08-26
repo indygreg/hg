@@ -4558,7 +4558,7 @@ def resolve(ui, repo, *pats, **opts):
     all, mark, unmark, show, nostatus = \
         [opts.get(o) for o in flaglist]
 
-    if (show and (mark or unmark)) or (mark and unmark):
+    if len(list(filter(None, [show, mark, unmark]))) > 1:
         raise error.Abort(_("too many options specified"))
     if pats and all:
         raise error.Abort(_("can't specify --all and patterns"))

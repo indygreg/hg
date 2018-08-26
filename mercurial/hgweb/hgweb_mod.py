@@ -439,6 +439,10 @@ class hgweb(object):
             res.status = '500 Internal Server Error'
             res.headers['Content-Type'] = ctype
             return rctx.sendtemplate('error', error=pycompat.bytestr(e))
+        except error.Abort as e:
+            res.status = '403 Forbidden'
+            res.headers['Content-Type'] = ctype
+            return rctx.sendtemplate('error', error=pycompat.bytestr(e))
         except ErrorResponse as e:
             for k, v in e.headers:
                 res.headers[k] = v

@@ -442,6 +442,18 @@ Test explicitly setting the otion to 'none'
   $ hg resolve -l
   R file1
   R file2
+Testing the --re-merge flag
+  $ hg resolve --unmark file1
+  $ hg resolve -l
+  U file1
+  R file2
+  $ hg resolve --mark --re-merge
+  abort: too many options specified
+  [255]
+  $ hg resolve --re-merge --all
+  merging file1
+  warning: conflicts while merging file1! (edit, then use 'hg resolve --mark')
+  [1]
 
   $ cd ..
 

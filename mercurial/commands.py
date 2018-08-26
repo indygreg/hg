@@ -4506,7 +4506,8 @@ def rename(ui, repo, *pats, **opts):
     ('l', 'list', None, _('list state of files needing merge')),
     ('m', 'mark', None, _('mark files as resolved')),
     ('u', 'unmark', None, _('mark files as unresolved')),
-    ('n', 'no-status', None, _('hide status prefix'))]
+    ('n', 'no-status', None, _('hide status prefix')),
+    ('', 're-merge', None, _('re-merge files'))]
     + mergetoolopts + walkopts + formatteropts,
     _('[OPTION]... [FILE]...'),
     inferrepo=True)
@@ -4523,9 +4524,9 @@ def resolve(ui, repo, *pats, **opts):
 
     The resolve command can be used in the following ways:
 
-    - :hg:`resolve [--tool TOOL] FILE...`: attempt to re-merge the specified
-      files, discarding any previous merge attempts. Re-merging is not
-      performed for files already marked as resolved. Use ``--all/-a``
+    - :hg:`resolve [--re-merge] [--tool TOOL] FILE...`: attempt to re-merge
+      the specified files, discarding any previous merge attempts. Re-merging
+      is not performed for files already marked as resolved. Use ``--all/-a``
       to select all unresolved files. ``--tool`` can be used to specify
       the merge tool used for the given files. It overrides the HGMERGE
       environment variable and your configuration files.  Previous file
@@ -4554,11 +4555,11 @@ def resolve(ui, repo, *pats, **opts):
 
     opts = pycompat.byteskwargs(opts)
     confirm = ui.configbool('commands', 'resolve.confirm')
-    flaglist = 'all mark unmark list no_status'.split()
-    all, mark, unmark, show, nostatus = \
+    flaglist = 'all mark unmark list no_status re_merge'.split()
+    all, mark, unmark, show, nostatus, remerge = \
         [opts.get(o) for o in flaglist]
 
-    if len(list(filter(None, [show, mark, unmark]))) > 1:
+    if len(list(filter(None, [show, mark, unmark, remerge]))) > 1:
         raise error.Abort(_("too many options specified"))
     if pats and all:
         raise error.Abort(_("can't specify --all and patterns"))
@@ -4752,8 +4753,11 @@ def resolve(ui, repo, *pats, **opts):
                 for f in ms:
                     if not m(f):
                         continue
-                    flags = ''.join(['-%s ' % o[0:1] for o in flaglist
-                                                   if opts.get(o)])
+                    def flag(o):
+                        if o == 're_merge':
+                            return '--re-merge '
+                        return '-%s ' % o[0:1]
+                    flags = ''.join([flag(o) for o in flaglist if opts.get(o)])
                     hint = _("(try: hg resolve %s%s)\n") % (
                              flags,
                              ' '.join(pats))

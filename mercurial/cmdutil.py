@@ -2773,7 +2773,7 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
 
     # `names` is a mapping for all elements in working copy and target revision
     # The mapping is in the form:
-    #   <asb path in repo> -> (<path from CWD>, <exactly specified by matcher?>)
+    #   <abs path in repo> -> (<path from CWD>, <exactly specified by matcher?>)
     names = {}
 
     with repo.wlock():

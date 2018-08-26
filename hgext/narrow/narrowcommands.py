@@ -286,6 +286,7 @@ def _widen(ui, repo, remote, commoninc, newincludes, newexcludes):
         # The old{in,ex}cludepats have already been set by orig()
         kwargs['includepats'] = newincludes
         kwargs['excludepats'] = newexcludes
+        kwargs['widen'] = True
     wrappedextraprepare = extensions.wrappedfunction(exchange,
         '_pullbundle2extraprepare', pullbundle2extraprepare_widen)
 

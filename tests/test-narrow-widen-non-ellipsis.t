@@ -89,6 +89,10 @@ added upstream revisions.
   comparing with ssh://user@dummy/master
   searching for changes
   no changes found
+  adding changesets
+  adding manifests
+  adding file changes
+  added 0 changesets with 0 changes to 1 files
   3 local changesets published
   $ hg tracked
   I path:inside
@@ -141,6 +145,10 @@ widen the narrow spec to include the widest file
   comparing with ssh://user@dummy/master
   searching for changes
   no changes found
+  adding changesets
+  adding manifests
+  adding file changes
+  added 0 changesets with 4 changes to 2 files
   5 local changesets published
   abort: path ends in directory separator: widest/
   [255]
@@ -247,6 +255,10 @@ make narrow clone with every third node.
   comparing with ssh://user@dummy/upstream
   searching for changes
   no changes found
+  adding changesets
+  adding manifests
+  adding file changes
+  added 0 changesets with 1 changes to 5 files
   11 local changesets published
   abort: path ends in directory separator: d1/
   [255]
@@ -274,9 +286,12 @@ Verify shouldn't claim the repo is corrupt after a widen.
   checking changesets
   checking manifests
   checking directory manifests
+  warning: orphan data file 'meta/d1/00manifest.i'
   crosschecking files in changesets and manifests
   checking files
+  warning: orphan data file 'data/d1/f.i'
   4 files, 11 changesets, 4 total revisions
+  2 warnings encountered!
 
 Widening preserves parent of local commit
 
@@ -340,6 +355,10 @@ Widening that fails can be recovered from
   comparing with ssh://user@dummy/upstream
   searching for changes
   no changes found
+  adding changesets
+  adding manifests
+  adding file changes
+  added 0 changesets with 1 changes to 2 files
   11 local changesets published
   abort: path ends in directory separator: d1/
   [255]

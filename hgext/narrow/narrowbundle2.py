@@ -50,6 +50,50 @@ def getrepocaps_narrow(orig, repo, **kwargs):
     caps[NARROWCAP] = ['v0']
     return caps
 
+def getbundlechangegrouppart_nonellipsis(bundler, repo, source, bundlecaps=None,
+                                         b2caps=None, heads=None, common=None,
+                                         **kwargs):
+    """Handling changegroup changegroup generation on the server when user
+    is widening their narrowspec"""
+
+    cgversions = b2caps.get('changegroup')
+    if cgversions:  # 3.1 and 3.2 ship with an empty value
+        cgversions = [v for v in cgversions
+                      if v in changegroup.supportedoutgoingversions(repo)]
+        if not cgversions:
+            raise ValueError(_('no common changegroup version'))
+        version = max(cgversions)
+    else:
+        raise ValueError(_("server does not advertise changegroup version,"
+                           " can't negotiate support for ellipsis nodes"))
+
+    include = sorted(filter(bool, kwargs.get(r'includepats', [])))
+    exclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
+    newmatch = narrowspec.match(repo.root, include=include, exclude=exclude)
+    oldinclude = sorted(filter(bool, kwargs.get(r'oldincludepats', [])))
+    oldexclude = sorted(filter(bool, kwargs.get(r'oldexcludepats', [])))
+    common = set(common or [nullid])
+
+    if (oldinclude != include or oldexclude != exclude):
+        common = repo.revs("::%ln", common)
+        commonnodes = set()
+        cl = repo.changelog
+        for c in common:
+            commonnodes.add(cl.node(c))
+        if commonnodes:
+            # XXX: we should only send the filelogs (and treemanifest). user
+            # already has the changelog and manifest
+            packer = changegroup.getbundler(version, repo,
+                                            filematcher=newmatch,
+                                            fullnodes=commonnodes)
+            cgdata = packer.generate(set([nullid]), list(commonnodes), False,
+                    source)
+
+            part = bundler.newpart('changegroup', data=cgdata)
+            part.addparam('version', version)
+            if 'treemanifest' in repo.requirements:
+                part.addparam('treemanifest', '1')
+
 # Serve a changegroup for a client with a narrow clone.
 def getbundlechangegrouppart_narrow(bundler, repo, source,
                                     bundlecaps=None, b2caps=None, heads=None,
@@ -254,6 +298,7 @@ def setup():
     getbundleargs = wireprototypes.GETBUNDLE_ARGUMENTS
 
     getbundleargs['narrow'] = 'boolean'
+    getbundleargs['widen'] = 'boolean'
     getbundleargs['depth'] = 'plain'
     getbundleargs['oldincludepats'] = 'csv'
     getbundleargs['oldexcludepats'] = 'csv'
@@ -271,6 +316,8 @@ def setup():
         if (kwargs.get(r'narrow', False) and
             repo.ui.configbool('experimental', 'narrowservebrokenellipses')):
             getbundlechangegrouppart_narrow(*args, **kwargs)
+        elif kwargs.get(r'widen', False) and kwargs.get(r'narrow', False):
+            getbundlechangegrouppart_nonellipsis(*args, **kwargs)
         else:
             origcgfn(*args, **kwargs)
     exchange.getbundle2partsmapping['changegroup'] = wrappedcgfn

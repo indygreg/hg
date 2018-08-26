@@ -88,7 +88,7 @@ Test disabling copy tracing
   > c
   > EOF
   rebasing 2:add3f11052fa "other" (tip)
-  file 'a' was deleted in other [source] but was modified in local [dest].
+  file 'a' was deleted in local [dest] but was modified in other [source].
   What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? c
 

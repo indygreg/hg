@@ -611,7 +611,7 @@ the 1st commit of resuming.
   > EOF
   rebasing 1:72518492caa6 "#1"
   rebasing 4:07d6153b5c04 "#4"
-  file '.hglf/large1' was deleted in local [dest] but was modified in other [source].
+  file '.hglf/large1' was deleted in other [source] but was modified in local [dest].
   What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? c
 

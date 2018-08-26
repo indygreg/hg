@@ -4559,8 +4559,13 @@ def resolve(ui, repo, *pats, **opts):
     all, mark, unmark, show, nostatus, remerge = \
         [opts.get(o) for o in flaglist]
 
-    if len(list(filter(None, [show, mark, unmark, remerge]))) > 1:
-        raise error.Abort(_("too many options specified"))
+    actioncount = len(list(filter(None, [show, mark, unmark, remerge])))
+    if actioncount > 1:
+        raise error.Abort(_("too many actions specified"))
+    elif (actioncount == 0
+          and ui.config('commands', 'resolve.explicit-re-merge')):
+        hint = _('use --mark, --unmark, --list or --re-merge')
+        raise error.Abort(_('no action specified'), hint=hint)
     if pats and all:
         raise error.Abort(_("can't specify --all and patterns"))
     if not (all or pats or show or mark or unmark):

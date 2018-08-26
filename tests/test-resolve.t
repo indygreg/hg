@@ -448,9 +448,19 @@ Testing the --re-merge flag
   U file1
   R file2
   $ hg resolve --mark --re-merge
-  abort: too many options specified
+  abort: too many actions specified
   [255]
   $ hg resolve --re-merge --all
+  merging file1
+  warning: conflicts while merging file1! (edit, then use 'hg resolve --mark')
+  [1]
+Explicit re-merge
+  $ hg resolve --unmark file1
+  $ hg resolve --config commands.resolve.explicit-re-merge=1 --all
+  abort: no action specified
+  (use --mark, --unmark, --list or --re-merge)
+  [255]
+  $ hg resolve --config commands.resolve.explicit-re-merge=1 --re-merge --all
   merging file1
   warning: conflicts while merging file1! (edit, then use 'hg resolve --mark')
   [1]

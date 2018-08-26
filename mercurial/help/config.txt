@@ -442,6 +442,11 @@ effect and style see :hg:`help color`.
     Confirm before performing action if no filename is passed.
     (default: False)
 
+``resolve.explicit-re-merge``
+    Require uses of ``hg resolve`` to specify which action it should perform,
+    instead of re-merging files by default.
+    (default: False)
+
 ``resolve.mark-check``
     Determines what level of checking :hg:`resolve --mark` will perform before
     marking files as resolved. Valid values are ``none`, ``warn``, and

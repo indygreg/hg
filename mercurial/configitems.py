@@ -193,6 +193,9 @@ coreconfigitem('commands', 'grep.all-files',
 coreconfigitem('commands', 'resolve.confirm',
     default=False,
 )
+coreconfigitem('commands', 'resolve.explicit-re-merge',
+    default=False,
+)
 coreconfigitem('commands', 'resolve.mark-check',
     default='none',
 )

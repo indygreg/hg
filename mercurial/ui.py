@@ -1052,6 +1052,7 @@ class ui(object):
             command in self.configlist('pager', 'ignore')
             or not self.configbool('ui', 'paginate')
             or not self.configbool('pager', 'attend-' + command, True)
+            or encoding.environ.get('TERM') == 'dumb'
             # TODO: if we want to allow HGPLAINEXCEPT=pager,
             # formatted() will need some adjustment.
             or not self.formatted()

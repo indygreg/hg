@@ -1231,14 +1231,15 @@ Test subrepositories inside intermediate directories
   
   f2
 
-Test accessing file that is shadowed by another repository
+Test accessing file that could be shadowed by another repository if the URL
+path were audited as a working-directory path:
 
   $ get-with-headers.py localhost:$HGPORT1 'rcoll/notrepo/f/file/tip/f3/file?style=raw'
-  403 Forbidden
+  200 Script output follows
   
-  
-  error: path 'f3/file' is inside nested repo 'f3'
-  [1]
+  f3/file
+
+Test accessing working-directory file that is shadowed by another repository
 
   $ get-with-headers.py localhost:$HGPORT1 'rcoll/notrepo/f/file/ffffffffffff/f3/file?style=raw'
   403 Forbidden

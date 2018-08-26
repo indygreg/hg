@@ -320,7 +320,8 @@ def branchentries(repo, stripecount, limit=0):
 
 def cleanpath(repo, path):
     path = path.lstrip('/')
-    return pathutil.canonpath(repo.root, '', path)
+    auditor = pathutil.pathauditor(repo.root, realfs=False)
+    return pathutil.canonpath(repo.root, '', path, auditor=auditor)
 
 def changectx(repo, req):
     changeid = "tip"

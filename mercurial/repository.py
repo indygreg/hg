@@ -988,6 +988,166 @@ class imanifestrevisionwritable(imanifestrevisionbase):
         Returns the binary node of the created revision.
         """
 
+class imanifeststorage(interfaceutil.Interface):
+    """Storage interface for manifest data."""
+
+    index = interfaceutil.Attribute(
+        """An ``ifilerevisionssequence`` instance.""")
+
+    indexfile = interfaceutil.Attribute(
+        """Path of revlog index file.
+
+        TODO this is revlog specific and should not be exposed.
+        """)
+
+    opener = interfaceutil.Attribute(
+        """VFS opener to use to access underlying files used for storage.
+
+        TODO this is revlog specific and should not be exposed.
+        """)
+
+    version = interfaceutil.Attribute(
+        """Revlog version number.
+
+        TODO this is revlog specific and should not be exposed.
+        """)
+
+    _generaldelta = interfaceutil.Attribute(
+        """Whether generaldelta storage is being used.
+
+        TODO this is revlog specific and should not be exposed.
+        """)
+
+    fulltextcache = interfaceutil.Attribute(
+        """Dict with cache of fulltexts.
+
+        TODO this doesn't feel appropriate for the storage interface.
+        """)
+
+    def __len__():
+        """Obtain the number of revisions stored for this manifest."""
+
+    def __iter__():
+        """Iterate over revision numbers for this manifest."""
+
+    def rev(node):
+        """Obtain the revision number given a binary node.
+
+        Raises ``error.LookupError`` if the node is not known.
+        """
+
+    def node(rev):
+        """Obtain the node value given a revision number.
+
+        Raises ``error.LookupError`` if the revision is not known.
+        """
+
+    def lookup(value):
+        """Attempt to resolve a value to a node.
+
+        Value can be a binary node, hex node, revision number, or a bytes
+        that can be converted to an integer.
+
+        Raises ``error.LookupError`` if a ndoe could not be resolved.
+
+        TODO this is only used by debug* commands and can probably be deleted
+        easily.
+        """
+
+    def parents(node):
+        """Returns a 2-tuple of parent nodes for a node.
+
+        Values will be ``nullid`` if the parent is empty.
+        """
+
+    def parentrevs(rev):
+        """Like parents() but operates on revision numbers."""
+
+    def linkrev(rev):
+        """Obtain the changeset revision number a revision is linked to."""
+
+    def revision(node, _df=None, raw=False):
+        """Obtain fulltext data for a node."""
+
+    def revdiff(rev1, rev2):
+        """Obtain a delta between two revision numbers.
+
+        The returned data is the result of ``bdiff.bdiff()`` on the raw
+        revision data.
+        """
+
+    def cmp(node, fulltext):
+        """Compare fulltext to another revision.
+
+        Returns True if the fulltext is different from what is stored.
+        """
+
+    def emitrevisiondeltas(requests):
+        """Produce ``irevisiondelta`` from ``irevisiondeltarequest``s.
+
+        See the documentation for ``ifiledata`` for more.
+        """
+
+    def addgroup(deltas, linkmapper, transaction, addrevisioncb=None):
+        """Process a series of deltas for storage.
+
+        See the documentation in ``ifilemutation`` for more.
+        """
+
+    def getstrippoint(minlink):
+        """Find minimum revision that must be stripped to strip a linkrev.
+
+        See the documentation in ``ifilemutation`` for more.
+        """
+
+    def strip(minlink, transaction):
+        """Remove storage of items starting at a linkrev.
+
+        See the documentation in ``ifilemutation`` for more.
+        """
+
+    def checksize():
+        """Obtain the expected sizes of backing files.
+
+        TODO this is used by verify and it should not be part of the interface.
+        """
+
+    def files():
+        """Obtain paths that are backing storage for this manifest.
+
+        TODO this is used by verify and there should probably be a better API
+        for this functionality.
+        """
+
+    def deltaparent(rev):
+        """Obtain the revision that a revision is delta'd against.
+
+        TODO delta encoding is an implementation detail of storage and should
+        not be exposed to the storage interface.
+        """
+
+    def clone(tr, dest, **kwargs):
+        """Clone this instance to another."""
+
+    def clearcaches(clear_persisted_data=False):
+        """Clear any caches associated with this instance."""
+
+    def dirlog(d):
+        """Obtain a manifest storage instance for a tree."""
+
+    def add(m, transaction, link, p1, p2, added, removed, readtree=None):
+        """Add a revision to storage.
+
+        ``m`` is an object conforming to ``imanifestdict``.
+
+        ``link`` is the linkrev revision number.
+
+        ``p1`` and ``p2`` are the parent revision numbers.
+
+        ``added`` and ``removed`` are iterables of added and removed paths,
+        respectively.
+        """
+
 class imanifestlog(interfaceutil.Interface):
     """Interface representing a collection of manifest snapshots.
 

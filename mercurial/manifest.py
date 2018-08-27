@@ -1246,7 +1246,8 @@ class manifestfulltextcache(util.lrucachedict):
             self.write()
         self._read = False
 
-class manifestrevlog(revlog.revlog):
+@interfaceutil.implementer(repository.imanifeststorage)
+class manifestrevlog(object):
     '''A revlog that stores manifest texts. This is responsible for caching the
     full-text manifest contents.
     '''
@@ -1291,10 +1292,14 @@ class manifestrevlog(revlog.revlog):
         else:
             self._dirlogcache = {'': self}
 
-        super(manifestrevlog, self).__init__(opener, indexfile,
-                                             # only root indexfile is cached
-                                             checkambig=not bool(tree),
-                                             mmaplargeindex=True)
+        self._revlog = revlog.revlog(opener, indexfile,
+                                     # only root indexfile is cached
+                                     checkambig=not bool(tree),
+                                     mmaplargeindex=True)
+
+        self.index = self._revlog.index
+        self.version = self._revlog.version
+        self._generaldelta = self._revlog._generaldelta
 
     def _setupmanifestcachehooks(self, repo):
         """Persist the manifestfulltextcache on lock release"""
@@ -1323,7 +1328,7 @@ class manifestrevlog(revlog.revlog):
         return self._fulltextcache
 
     def clearcaches(self, clear_persisted_data=False):
-        super(manifestrevlog, self).clearcaches()
+        self._revlog.clearcaches()
         self._fulltextcache.clear(clear_persisted_data=clear_persisted_data)
         self._dirlogcache = {self._tree: self}
 
@@ -1350,9 +1355,10 @@ class manifestrevlog(revlog.revlog):
                                [(x, True) for x in removed])
 
             arraytext, deltatext = m.fastdelta(self.fulltextcache[p1], work)
-            cachedelta = self.rev(p1), deltatext
+            cachedelta = self._revlog.rev(p1), deltatext
             text = util.buffer(arraytext)
-            n = self.addrevision(text, transaction, link, p1, p2, cachedelta)
+            n = self._revlog.addrevision(text, transaction, link, p1, p2,
+                                         cachedelta)
         else:
             # The first parent manifest isn't already loaded, so we'll
             # just encode a fulltext of the manifest and pass that
@@ -1366,7 +1372,7 @@ class manifestrevlog(revlog.revlog):
                 arraytext = None
             else:
                 text = m.text()
-                n = self.addrevision(text, transaction, link, p1, p2)
+                n = self._revlog.addrevision(text, transaction, link, p1, p2)
                 arraytext = bytearray(text)
 
         if arraytext is not None:
@@ -1395,11 +1401,89 @@ class manifestrevlog(revlog.revlog):
                 n = m2.node()
 
         if not n:
-            n = self.addrevision(text, transaction, link, m1.node(), m2.node())
+            n = self._revlog.addrevision(text, transaction, link, m1.node(),
+                                         m2.node())
 
         # Save nodeid so parent manifest can calculate its nodeid
         m.setnode(n)
         return n
+
+    def __len__(self):
+        return len(self._revlog)
+
+    def __iter__(self):
+        return self._revlog.__iter__()
+
+    def rev(self, node):
+        return self._revlog.rev(node)
+
+    def node(self, rev):
+        return self._revlog.node(rev)
+
+    def lookup(self, value):
+        return self._revlog.lookup(value)
+
+    def parentrevs(self, rev):
+        return self._revlog.parentrevs(rev)
+
+    def parents(self, node):
+        return self._revlog.parents(node)
+
+    def linkrev(self, rev):
+        return self._revlog.linkrev(rev)
+
+    def checksize(self):
+        return self._revlog.checksize()
+
+    def revision(self, node, _df=None, raw=False):
+        return self._revlog.revision(node, _df=_df, raw=raw)
+
+    def revdiff(self, rev1, rev2):
+        return self._revlog.revdiff(rev1, rev2)
+
+    def cmp(self, node, text):
+        return self._revlog.cmp(node, text)
+
+    def deltaparent(self, rev):
+        return self._revlog.deltaparent(rev)
+
+    def emitrevisiondeltas(self, requests):
+        return self._revlog.emitrevisiondeltas(requests)
+
+    def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None):
+        return self._revlog.addgroup(deltas, linkmapper, transaction,
+                                     addrevisioncb=addrevisioncb)
+
+    def getstrippoint(self, minlink):
+        return self._revlog.getstrippoint(minlink)
+
+    def strip(self, minlink, transaction):
+        return self._revlog.strip(minlink, transaction)
+
+    def files(self):
+        return self._revlog.files()
+
+    def clone(self, tr, destrevlog, **kwargs):
+        if not isinstance(destrevlog, manifestrevlog):
+            raise error.ProgrammingError('expected manifestrevlog to clone()')
+
+        return self._revlog.clone(tr, destrevlog._revlog, **kwargs)
+
+    @property
+    def indexfile(self):
+        return self._revlog.indexfile
+
+    @indexfile.setter
+    def indexfile(self, value):
+        self._revlog.indexfile = value
+
+    @property
+    def opener(self):
+        return self._revlog.opener
+
+    @opener.setter
+    def opener(self, value):
+        self._revlog.opener = value
 
 @interfaceutil.implementer(repository.imanifestlog)
 class manifestlog(object):

@@ -177,6 +177,7 @@ def main():
     ziverify.verifyClass(repository.imanifestrevisionwritable,
                          manifest.memtreemanifestctx)
     ziverify.verifyClass(repository.imanifestlog, manifest.manifestlog)
+    ziverify.verifyClass(repository.imanifeststorage, manifest.manifestrevlog)
 
     vfs = vfsmod.vfs(b'.')
     fl = filelog.filelog(vfs, b'dummy.i')
@@ -197,6 +198,9 @@ def main():
 
     # Conforms to imanifestdict.
     checkzobject(mctx.read())
+
+    mrl = manifest.manifestrevlog(vfs)
+    checkzobject(mrl)
 
     ziverify.verifyClass(repository.irevisiondelta,
                          revlog.revlogrevisiondelta)

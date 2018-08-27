@@ -45,30 +45,36 @@ def reescape(pat):
 
 def pprint(o, bprefix=False):
     """Pretty print an object."""
+    return b''.join(pprintgen(o, bprefix=bprefix))
+
+def pprintgen(o, bprefix=False):
+    """Pretty print an object to a generator of atoms."""
+
     if isinstance(o, bytes):
         if bprefix:
-            return "b'%s'" % escapestr(o)
-        return "'%s'" % escapestr(o)
+            yield "b'%s'" % escapestr(o)
+        else:
+            yield "'%s'" % escapestr(o)
     elif isinstance(o, bytearray):
         # codecs.escape_encode() can't handle bytearray, so escapestr fails
         # without coercion.
-        return "bytearray['%s']" % escapestr(bytes(o))
+        yield "bytearray['%s']" % escapestr(bytes(o))
     elif isinstance(o, list):
-        return '[%s]' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
+        yield '[%s]' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
     elif isinstance(o, dict):
-        return '{%s}' % (b', '.join(
+        yield '{%s}' % (b', '.join(
             '%s: %s' % (pprint(k, bprefix=bprefix),
                         pprint(v, bprefix=bprefix))
             for k, v in sorted(o.items())))
     elif isinstance(o, set):
-        return 'set([%s])' % (b', '.join(
+        yield 'set([%s])' % (b', '.join(
             pprint(k, bprefix=bprefix) for k in sorted(o)))
     elif isinstance(o, tuple):
-        return '(%s)' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
+        yield '(%s)' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
     elif isinstance(o, types.GeneratorType):
-        return 'gen[%s]' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
+        yield 'gen[%s]' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
     else:
-        return pycompat.byterepr(o)
+        yield pycompat.byterepr(o)
 
 def prettyrepr(o):
     """Pretty print a representation of a possibly-nested object"""

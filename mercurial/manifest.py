@@ -16,6 +16,8 @@ from .i18n import _
 from .node import (
     bin,
     hex,
+    nullid,
+    nullrev,
 )
 from . import (
     error,
@@ -55,12 +57,11 @@ def _parse(data):
 def _text(it):
     files = []
     lines = []
-    _hex = revlog.hex
     for f, n, fl in it:
         files.append(f)
         # if this is changed to support newlines in filenames,
         # be sure to check the templates/ dir again (especially *-raw.tmpl)
-        lines.append("%s\0%s%s\n" % (f, _hex(n), fl))
+        lines.append("%s\0%s%s\n" % (f, hex(n), fl))
 
     _checkforbidden(files)
     return ''.join(lines)
@@ -566,7 +567,7 @@ class manifestdict(object):
                 start, end = _msearch(addbuf, f, start)
                 if not todelete:
                     h, fl = self._lm[f]
-                    l = "%s\0%s%s\n" % (f, revlog.hex(h), fl)
+                    l = "%s\0%s%s\n" % (f, hex(h), fl)
                 else:
                     if start == end:
                         # item we want to delete was not found, error out
@@ -680,7 +681,7 @@ _noop = lambda s: None
 class treemanifest(object):
     def __init__(self, dir='', text=''):
         self._dir = dir
-        self._node = revlog.nullid
+        self._node = nullid
         self._loadfunc = _noop
         self._copyfunc = _noop
         self._dirty = False
@@ -718,7 +719,7 @@ class treemanifest(object):
 
     def __repr__(self):
         return ('<treemanifest dir=%s, node=%s, loaded=%s, dirty=%s at 0x%x>' %
-                (self._dir, revlog.hex(self._node),
+                (self._dir, hex(self._node),
                  bool(self._loadfunc is _noop),
                  self._dirty, id(self)))
 
@@ -1117,7 +1118,7 @@ class treemanifest(object):
         for d, subm in self._dirs.iteritems():
             subp1 = m1._dirs.get(d, emptytree)._node
             subp2 = m2._dirs.get(d, emptytree)._node
-            if subp1 == revlog.nullid:
+            if subp1 == nullid:
                 subp1, subp2 = subp2, subp1
             writesubtree(subm, subp1, subp2)
 
@@ -1557,7 +1558,7 @@ class manifestlog(object):
             else:
                 m = manifestctx(self, node)
 
-        if node != revlog.nullid:
+        if node != nullid:
             mancache = self._dirmancache.get(tree)
             if not mancache:
                 mancache = util.lrucachedict(self._cachesize)
@@ -1637,7 +1638,7 @@ class manifestctx(object):
 
     def read(self):
         if self._data is None:
-            if self._node == revlog.nullid:
+            if self._node == nullid:
                 self._data = manifestdict()
             else:
                 rl = self._revlog()
@@ -1660,7 +1661,7 @@ class manifestctx(object):
         rl = self._revlog()
         r = rl.rev(self._node)
         deltaparent = rl.deltaparent(r)
-        if deltaparent != revlog.nullrev and deltaparent in rl.parentrevs(r):
+        if deltaparent != nullrev and deltaparent in rl.parentrevs(r):
             return self.readdelta()
         return self.read()
 
@@ -1732,7 +1733,7 @@ class treemanifestctx(object):
     def read(self):
         if self._data is None:
             rl = self._revlog()
-            if self._node == revlog.nullid:
+            if self._node == nullid:
                 self._data = treemanifest()
             elif rl._treeondisk:
                 m = treemanifest(dir=self._dir)
@@ -1811,7 +1812,7 @@ class treemanifestctx(object):
         rl = self._revlog()
         r = rl.rev(self._node)
         deltaparent = rl.deltaparent(r)
-        if (deltaparent != revlog.nullrev and
+        if (deltaparent != nullrev and
             deltaparent in rl.parentrevs(r)):
             return self.readdelta(shallow=shallow)
 

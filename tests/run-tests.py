@@ -1389,7 +1389,8 @@ class TTest(Test):
         if os.getenv('MSYSTEM'):
             script.append(b'alias pwd="pwd -W"\n')
 
-        if os.getenv('HGCATAPULTSERVERPIPE'):
+        hgcatapult = os.getenv('HGCATAPULTSERVERPIPE')
+        if hgcatapult and hgcatapult != '/dev/null':
             # Kludge: use a while loop to keep the pipe from getting
             # closed by our echo commands. The still-running file gets
             # reaped at the end of the script, which causes the while

@@ -1357,10 +1357,10 @@ class TTest(Test):
                 script.append(
                     b'echo END %s %s >> "$HGCATAPULTSERVERPIPE"\n' % (
                         session, active[0]))
-            script.append(
-                b'echo START %s %s >> "$HGCATAPULTSERVERPIPE"\n' % (
-                    session, quoted))
-            active[0:] = [quoted]
+                script.append(
+                    b'echo START %s %s >> "$HGCATAPULTSERVERPIPE"\n' % (
+                        session, quoted))
+                active[0:] = [quoted]
 
         script = []
 

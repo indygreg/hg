@@ -60,19 +60,97 @@ def pprintgen(o, bprefix=False):
         # without coercion.
         yield "bytearray['%s']" % escapestr(bytes(o))
     elif isinstance(o, list):
-        yield '[%s]' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
+        if not o:
+            yield '[]'
+            return
+
+        yield '['
+
+        for i, a in enumerate(o):
+            for chunk in pprintgen(a, bprefix=bprefix):
+                yield chunk
+
+            if i + 1 < len(o):
+                yield ', '
+
+        yield ']'
     elif isinstance(o, dict):
-        yield '{%s}' % (b', '.join(
-            '%s: %s' % (pprint(k, bprefix=bprefix),
-                        pprint(v, bprefix=bprefix))
-            for k, v in sorted(o.items())))
+        if not o:
+            yield '{}'
+            return
+
+        yield '{'
+
+        for i, (k, v) in enumerate(sorted(o.items())):
+            for chunk in pprintgen(k, bprefix=bprefix):
+                yield chunk
+
+            yield ': '
+
+            for chunk in pprintgen(v, bprefix=bprefix):
+                yield chunk
+
+            if i + 1 < len(o):
+                yield ', '
+
+        yield '}'
     elif isinstance(o, set):
-        yield 'set([%s])' % (b', '.join(
-            pprint(k, bprefix=bprefix) for k in sorted(o)))
+        if not o:
+            yield 'set([])'
+            return
+
+        yield 'set(['
+
+        for i, k in enumerate(sorted(o)):
+            for chunk in pprintgen(k, bprefix=bprefix):
+                yield chunk
+
+            if i + 1 < len(o):
+                yield ', '
+
+        yield '])'
     elif isinstance(o, tuple):
-        yield '(%s)' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
+        if not o:
+            yield '()'
+            return
+
+        yield '('
+
+        for i, a in enumerate(o):
+            for chunk in pprintgen(a, bprefix=bprefix):
+                yield chunk
+
+            if i + 1 < len(o):
+                yield ', '
+
+        yield ')'
     elif isinstance(o, types.GeneratorType):
-        yield 'gen[%s]' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
+        # Special case of empty generator.
+        try:
+            nextitem = next(o)
+        except StopIteration:
+            yield 'gen[]'
+            return
+
+        yield 'gen['
+
+        last = False
+
+        while not last:
+            current = nextitem
+
+            try:
+                nextitem = next(o)
+            except StopIteration:
+                last = True
+
+            for chunk in pprintgen(current, bprefix=bprefix):
+                yield chunk
+
+            if not last:
+                yield ', '
+
+        yield ']'
     else:
         yield pycompat.byterepr(o)
 

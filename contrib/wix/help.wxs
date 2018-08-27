@@ -51,6 +51,7 @@
             <File Id="internals.requirements.txt" Name="requirements.txt" />
             <File Id="internals.revlogs.txt"      Name="revlogs.txt" />
             <File Id="internals.wireprotocol.txt" Name="wireprotocol.txt" />
+            <File Id="internals.wireprotocolrpc.txt" Name="wireprotocolrpc.txt" />
             <File Id="internals.wireprotocolv2.txt" Name="wireprotocolv2.txt" />
           </Component>
         </Directory>

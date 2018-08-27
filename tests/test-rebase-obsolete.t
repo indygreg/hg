@@ -1123,6 +1123,23 @@ consequence f (descendant of d) is left behind.
   o  0:b173517d0057 a
   
   $ hg strip -r 8:
+  $ hg log -G -r 'a'::
+  *  7:1143e9adc121 f
+  |
+  | o  6:d60ebfa0f1cb e
+  | |
+  | o  5:027ad6c5830d d'
+  | |
+  x |  4:76be324c128b d (rewritten using replace as 5:027ad6c5830d)
+  |/
+  o  3:a82ac2b38757 c
+  |
+  | o  2:630d7c95eff7 x
+  | |
+  o |  1:488e1b7e7341 b
+  |/
+  o  0:b173517d0057 a
+  
 
 If the rebase set has an obsolete (d) with a successor (d') outside the rebase
 set and none in destination, we still get the divergence warning.

@@ -193,25 +193,26 @@ class basectx(object):
         return self.rev() in obsmod.getrevs(self._repo, 'extinct')
 
     def orphan(self):
-        """True if the changeset is not obsolete but it's ancestor are"""
+        """True if the changeset is not obsolete, but its ancestor is"""
         return self.rev() in obsmod.getrevs(self._repo, 'orphan')
 
     def phasedivergent(self):
-        """True if the changeset try to be a successor of a public changeset
+        """True if the changeset tries to be a successor of a public changeset
 
-        Only non-public and non-obsolete changesets may be bumped.
+        Only non-public and non-obsolete changesets may be phase-divergent.
         """
         return self.rev() in obsmod.getrevs(self._repo, 'phasedivergent')
 
     def contentdivergent(self):
-        """Is a successors of a changeset with multiple possible successors set
+        """Is a successor of a changeset with multiple possible successor sets
 
-        Only non-public and non-obsolete changesets may be divergent.
+        Only non-public and non-obsolete changesets may be content-divergent.
         """
         return self.rev() in obsmod.getrevs(self._repo, 'contentdivergent')
 
     def isunstable(self):
-        """True if the changeset is either unstable, bumped or divergent"""
+        """True if the changeset is either orphan, phase-divergent or
+        content-divergent"""
         return self.orphan() or self.phasedivergent() or self.contentdivergent()
 
     def instabilities(self):

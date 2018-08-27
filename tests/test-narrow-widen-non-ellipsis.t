@@ -1,9 +1,12 @@
+#testcases tree flat
   $ . "$TESTDIR/narrow-library.sh"
 
+#if tree
   $ cat << EOF >> $HGRCPATH
   > [experimental]
   > treemanifest = 1
   > EOF
+#endif
 
   $ hg init master
   $ cd master
@@ -122,13 +125,13 @@ Pull down the newly added upstream revision.
   inside v2
 
   $ hg log -T "{if(ellipsis, '...')}{node|short}: {desc}\n"
-  45662f0793c7: update widest v4
-  1dd1364b566e: add outside2
+  *: update widest v4 (glob)
+  *: add outside2 (glob)
   *: update inside (glob)
-  be0600e3ccba: update widest v3
+  *: update widest v3 (glob)
   *: add wider, update widest (glob)
-  4922ea71b958: add outside
-  40e0ea6c8cd7: add widest
+  *: add outside (glob)
+  *: add widest (glob)
   *: add inside (glob)
 
 Check that widening with a newline fails
@@ -174,11 +177,11 @@ widen the narrow spec to include the widest file
 
   $ hg log -T "{if(ellipsis, '...')}{node|short}: {desc}\n"
   *: update widest v4 (glob)
-  1dd1364b566e: add outside2
+  *: add outside2 (glob)
   *: update inside (glob)
   *: update widest v3 (glob)
   *: add wider, update widest (glob)
-  4922ea71b958: add outside
+  *: add outside (glob)
   *: add widest (glob)
   *: add inside (glob)
 
@@ -229,21 +232,21 @@ make narrow clone with every third node.
   $ hg verify
   checking changesets
   checking manifests
-  checking directory manifests
+  checking directory manifests (tree !)
   crosschecking files in changesets and manifests
   checking files
   4 files, 11 changesets, 4 total revisions
   $ hg log -T "{if(ellipsis, '...')}{node|short}: {desc}\n"
-  5dcf948d1e26: add d10/f
+  *: add d10/f (glob)
   *: add d9/f (glob)
-  ed07d334af10: add d8/f
-  472749d2eed8: add d7/f
+  *: add d8/f (glob)
+  *: add d7/f (glob)
   *: add d6/f (glob)
-  47c482f555ec: add d5/f
-  3c6772db7d10: add d4/f
+  *: add d5/f (glob)
+  *: add d4/f (glob)
   *: add d3/f (glob)
-  a68ce05aaaed: add d2/f
-  5934322a52dd: add d1/f
+  *: add d2/f (glob)
+  *: add d1/f (glob)
   *: add d0/f (glob)
   $ hg tracked --addinclude d1
   comparing with ssh://user@dummy/upstream
@@ -261,15 +264,15 @@ make narrow clone with every third node.
   I path:d6
   I path:d9
   $ hg log -T "{if(ellipsis, '...')}{node|short}: {desc}\n"
-  5dcf948d1e26: add d10/f
+  *: add d10/f (glob)
   *: add d9/f (glob)
-  ed07d334af10: add d8/f
-  472749d2eed8: add d7/f
+  *: add d8/f (glob)
+  *: add d7/f (glob)
   *: add d6/f (glob)
-  47c482f555ec: add d5/f
-  3c6772db7d10: add d4/f
+  *: add d5/f (glob)
+  *: add d4/f (glob)
   *: add d3/f (glob)
-  a68ce05aaaed: add d2/f
+  *: add d2/f (glob)
   *: add d1/f (glob)
   *: add d0/f (glob)
 
@@ -278,7 +281,7 @@ Verify shouldn't claim the repo is corrupt after a widen.
   $ hg verify
   checking changesets
   checking manifests
-  checking directory manifests
+  checking directory manifests (tree !)
   crosschecking files in changesets and manifests
   checking files
   5 files, 11 changesets, 5 total revisions
@@ -290,8 +293,8 @@ Widening preserves parent of local commit
   $ cd narrow3
   $ hg log -T "{if(ellipsis, '...')}{node|short}: {desc}\n"
   *: add d2/f (glob)
-  5934322a52dd: add d1/f
-  44d97ac7c511: add d0/f
+  *: add d1/f (glob)
+  *: add d0/f (glob)
   $ hg pull -q -r 3
   $ hg co -q tip
   $ hg pull -q -r 4
@@ -309,10 +312,10 @@ Widening preserves bookmarks
   $ hg ci -m local
   $ hg bookmarks bookmark
   $ hg bookmarks
-   * bookmark                  11:42aed9c63197
+   * bookmark                  11:* (glob)
   $ hg -q tracked --addinclude d2
   $ hg bookmarks
-   * bookmark                  11:42aed9c63197
+   * bookmark                  11:* (glob)
   $ hg log -r bookmark -T '{desc}\n'
   local
 
@@ -360,7 +363,7 @@ Widening that fails can be recovered from
   1: add d1/f
   0: add d0/f
   $ hg bookmarks
-   * bookmark                  11:b7ce3df41eca
+   * bookmark                  11:* (glob)
   $ hg unbundle .hg/strip-backup/*-widen.hg
   abort: $ENOENT$: .hg/strip-backup/*-widen.hg
   [255]
@@ -378,4 +381,4 @@ Widening that fails can be recovered from
   1: add d1/f
   0: add d0/f
   $ hg bookmarks
-   * bookmark                  11:b7ce3df41eca
+   * bookmark                  11:* (glob)

@@ -1582,7 +1582,7 @@ class memmanifestctx(object):
         self._manifestlog = manifestlog
         self._manifestdict = manifestdict()
 
-    def _revlog(self):
+    def _storage(self):
         return self._manifestlog._revlog
 
     def new(self):
@@ -1597,8 +1597,8 @@ class memmanifestctx(object):
         return self._manifestdict
 
     def write(self, transaction, link, p1, p2, added, removed):
-        return self._revlog().add(self._manifestdict, transaction, link, p1, p2,
-                                  added, removed)
+        return self._storage().add(self._manifestdict, transaction, link,
+                                   p1, p2, added, removed)
 
 @interfaceutil.implementer(repository.imanifestrevisionstored)
 class manifestctx(object):
@@ -1614,11 +1614,11 @@ class manifestctx(object):
         # TODO: We eventually want p1, p2, and linkrev exposed on this class,
         # but let's add it later when something needs it and we can load it
         # lazily.
-        #self.p1, self.p2 = revlog.parents(node)
-        #rev = revlog.rev(node)
-        #self.linkrev = revlog.linkrev(rev)
+        #self.p1, self.p2 = store.parents(node)
+        #rev = store.rev(node)
+        #self.linkrev = store.linkrev(rev)
 
-    def _revlog(self):
+    def _storage(self):
         return self._manifestlog._revlog
 
     def node(self):
@@ -1634,20 +1634,21 @@ class manifestctx(object):
 
     @propertycache
     def parents(self):
-        return self._revlog().parents(self._node)
+        return self._storage().parents(self._node)
 
     def read(self):
         if self._data is None:
             if self._node == nullid:
                 self._data = manifestdict()
             else:
-                rl = self._revlog()
-                if self._node in rl._fulltextcache:
-                    text = pycompat.bytestr(rl._fulltextcache[self._node])
+                store = self._storage()
+                # TODO accessing non-public API.
+                if self._node in store._fulltextcache:
+                    text = pycompat.bytestr(store._fulltextcache[self._node])
                 else:
-                    text = rl.revision(self._node)
+                    text = store.revision(self._node)
                     arraytext = bytearray(text)
-                    rl._fulltextcache[self._node] = arraytext
+                    store._fulltextcache[self._node] = arraytext
                 self._data = manifestdict(text)
         return self._data
 
@@ -1658,10 +1659,10 @@ class manifestctx(object):
 
         If `shallow` is True, nothing changes since this is a flat manifest.
         '''
-        rl = self._revlog()
-        r = rl.rev(self._node)
-        deltaparent = rl.deltaparent(r)
-        if deltaparent != nullrev and deltaparent in rl.parentrevs(r):
+        store = self._storage()
+        r = store.rev(self._node)
+        deltaparent = store.deltaparent(r)
+        if deltaparent != nullrev and deltaparent in store.parentrevs(r):
             return self.readdelta()
         return self.read()
 
@@ -1672,9 +1673,9 @@ class manifestctx(object):
 
         Changing the value of `shallow` has no effect on flat manifests.
         '''
-        revlog = self._revlog()
-        r = revlog.rev(self._node)
-        d = mdiff.patchtext(revlog.revdiff(revlog.deltaparent(r), r))
+        store = self._storage()
+        r = store.rev(self._node)
+        d = mdiff.patchtext(store.revdiff(store.deltaparent(r), r))
         return manifestdict(d)
 
     def find(self, key):
@@ -1687,7 +1688,7 @@ class memtreemanifestctx(object):
         self._dir = dir
         self._treemanifest = treemanifest()
 
-    def _revlog(self):
+    def _storage(self):
         return self._manifestlog._revlog
 
     def new(self, dir=''):
@@ -1704,8 +1705,8 @@ class memtreemanifestctx(object):
     def write(self, transaction, link, p1, p2, added, removed):
         def readtree(dir, node):
             return self._manifestlog.get(dir, node).read()
-        return self._revlog().add(self._treemanifest, transaction, link, p1, p2,
-                                  added, removed, readtree=readtree)
+        return self._storage().add(self._treemanifest, transaction, link,
+                                   p1, p2, added, removed, readtree=readtree)
 
 @interfaceutil.implementer(repository.imanifestrevisionstored)
 class treemanifestctx(object):
@@ -1719,11 +1720,11 @@ class treemanifestctx(object):
         # TODO: Load p1/p2/linkrev lazily. They need to be lazily loaded so that
         # we can instantiate treemanifestctx objects for directories we don't
         # have on disk.
-        #self.p1, self.p2 = revlog.parents(node)
-        #rev = revlog.rev(node)
-        #self.linkrev = revlog.linkrev(rev)
+        #self.p1, self.p2 = store.parents(node)
+        #rev = store.rev(node)
+        #self.linkrev = store.linkrev(rev)
 
-    def _revlog(self):
+    def _storage(self):
         narrowmatch = self._manifestlog._narrowmatch
         if not narrowmatch.always():
             if not narrowmatch.visitdir(self._dir[:-1] or '.'):
@@ -1732,13 +1733,14 @@ class treemanifestctx(object):
 
     def read(self):
         if self._data is None:
-            rl = self._revlog()
+            store = self._storage()
             if self._node == nullid:
                 self._data = treemanifest()
-            elif rl._treeondisk:
+            # TODO accessing non-public API
+            elif store._treeondisk:
                 m = treemanifest(dir=self._dir)
                 def gettext():
-                    return rl.revision(self._node)
+                    return store.revision(self._node)
                 def readsubtree(dir, subm):
                     # Set verify to False since we need to be able to create
                     # subtrees for trees that don't exist on disk.
@@ -1747,12 +1749,12 @@ class treemanifestctx(object):
                 m.setnode(self._node)
                 self._data = m
             else:
-                if self._node in rl.fulltextcache:
-                    text = pycompat.bytestr(rl.fulltextcache[self._node])
+                if self._node in store.fulltextcache:
+                    text = pycompat.bytestr(store.fulltextcache[self._node])
                 else:
-                    text = rl.revision(self._node)
+                    text = store.revision(self._node)
                     arraytext = bytearray(text)
-                    rl.fulltextcache[self._node] = arraytext
+                    store.fulltextcache[self._node] = arraytext
                 self._data = treemanifest(dir=self._dir, text=text)
 
         return self._data
@@ -1770,7 +1772,7 @@ class treemanifestctx(object):
 
     @propertycache
     def parents(self):
-        return self._revlog().parents(self._node)
+        return self._storage().parents(self._node)
 
     def readdelta(self, shallow=False):
         '''Returns a manifest containing just the entries that are present
@@ -1783,15 +1785,15 @@ class treemanifestctx(object):
         the subdirectory will be reported among files and distinguished only by
         its 't' flag.
         '''
-        revlog = self._revlog()
+        store = self._storage()
         if shallow:
-            r = revlog.rev(self._node)
-            d = mdiff.patchtext(revlog.revdiff(revlog.deltaparent(r), r))
+            r = store.rev(self._node)
+            d = mdiff.patchtext(store.revdiff(store.deltaparent(r), r))
             return manifestdict(d)
         else:
             # Need to perform a slow delta
-            r0 = revlog.deltaparent(revlog.rev(self._node))
-            m0 = self._manifestlog.get(self._dir, revlog.node(r0)).read()
+            r0 = store.deltaparent(store.rev(self._node))
+            m0 = self._manifestlog.get(self._dir, store.node(r0)).read()
             m1 = self.read()
             md = treemanifest(dir=self._dir)
             for f, ((n0, fl0), (n1, fl1)) in m0.diff(m1).iteritems():
@@ -1809,15 +1811,15 @@ class treemanifestctx(object):
         If `shallow` is True, it only returns the entries from this manifest,
         and not any submanifests.
         '''
-        rl = self._revlog()
-        r = rl.rev(self._node)
-        deltaparent = rl.deltaparent(r)
+        store = self._storage()
+        r = store.rev(self._node)
+        deltaparent = store.deltaparent(r)
         if (deltaparent != nullrev and
-            deltaparent in rl.parentrevs(r)):
+            deltaparent in store.parentrevs(r)):
             return self.readdelta(shallow=shallow)
 
         if shallow:
-            return manifestdict(rl.revision(self._node))
+            return manifestdict(store.revision(self._node))
         else:
             return self.read()
 

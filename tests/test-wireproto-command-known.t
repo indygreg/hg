@@ -83,7 +83,9 @@ Single known node works
   received frame(size=13; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
-  response: [True]
+  response: [
+    True
+  ]
 
 Multiple nodes works
 
@@ -116,6 +118,10 @@ Multiple nodes works
   received frame(size=15; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
-  response: [True, False, True]
+  response: [
+    True,
+    False,
+    True
+  ]
 
   $ cat error.log

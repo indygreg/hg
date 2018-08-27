@@ -210,7 +210,12 @@ Request to read-only command works out of the box
   received frame(size=42; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
-  response: [{b'status': b'ok'}, b'customreadonly bytes response']
+  response: [
+    {
+      b'status': b'ok'
+    },
+    b'customreadonly bytes response'
+  ]
 
 Request to read-write command fails because server is read-only by default
 

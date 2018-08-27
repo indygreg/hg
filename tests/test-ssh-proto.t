@@ -1357,7 +1357,11 @@ Test listkeys for listing namespaces
   o>     bookmarks\t\n
   o>     namespaces\t\n
   o>     phases\t
-  response: {b'bookmarks': b'', b'namespaces': b'', b'phases': b''}
+  response: {
+    b'bookmarks': b'',
+    b'namespaces': b'',
+    b'phases': b''
+  }
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1388,7 +1392,11 @@ Test listkeys for listing namespaces
   o>     bookmarks\t\n
   o>     namespaces\t\n
   o>     phases\t
-  response: {b'bookmarks': b'', b'namespaces': b'', b'phases': b''}
+  response: {
+    b'bookmarks': b'',
+    b'namespaces': b'',
+    b'phases': b''
+  }
 
   $ cd ..
 
@@ -1495,7 +1503,9 @@ With a single bookmark set
   o> bufferedreadline() -> 3:
   o>     46\n
   o> bufferedread(46) -> 46: bookA\t68986213bd4485ea51533535e3fc9e78007a711f
-  response: {b'bookA': b'68986213bd4485ea51533535e3fc9e78007a711f'}
+  response: {
+    b'bookA': b'68986213bd4485ea51533535e3fc9e78007a711f'
+  }
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1523,7 +1533,9 @@ With a single bookmark set
   o> bufferedreadline() -> 3:
   o>     46\n
   o> bufferedread(46) -> 46: bookA\t68986213bd4485ea51533535e3fc9e78007a711f
-  response: {b'bookA': b'68986213bd4485ea51533535e3fc9e78007a711f'}
+  response: {
+    b'bookA': b'68986213bd4485ea51533535e3fc9e78007a711f'
+  }
 
 With multiple bookmarks set
 
@@ -1560,7 +1572,10 @@ With multiple bookmarks set
   o> bufferedread(93) -> 93:
   o>     bookA\t68986213bd4485ea51533535e3fc9e78007a711f\n
   o>     bookB\t1880f3755e2e52e3199e0ee5638128b08642f34d
-  response: {b'bookA': b'68986213bd4485ea51533535e3fc9e78007a711f', b'bookB': b'1880f3755e2e52e3199e0ee5638128b08642f34d'}
+  response: {
+    b'bookA': b'68986213bd4485ea51533535e3fc9e78007a711f',
+    b'bookB': b'1880f3755e2e52e3199e0ee5638128b08642f34d'
+  }
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1590,7 +1605,10 @@ With multiple bookmarks set
   o> bufferedread(93) -> 93:
   o>     bookA\t68986213bd4485ea51533535e3fc9e78007a711f\n
   o>     bookB\t1880f3755e2e52e3199e0ee5638128b08642f34d
-  response: {b'bookA': b'68986213bd4485ea51533535e3fc9e78007a711f', b'bookB': b'1880f3755e2e52e3199e0ee5638128b08642f34d'}
+  response: {
+    b'bookA': b'68986213bd4485ea51533535e3fc9e78007a711f',
+    b'bookB': b'1880f3755e2e52e3199e0ee5638128b08642f34d'
+  }
 
 Test pushkey for bookmarks
 
@@ -1719,7 +1737,9 @@ Phases on empty repo
   o> bufferedreadline() -> 3:
   o>     15\n
   o> bufferedread(15) -> 15: publishing\tTrue
-  response: {b'publishing': b'True'}
+  response: {
+    b'publishing': b'True'
+  }
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1747,7 +1767,9 @@ Phases on empty repo
   o> bufferedreadline() -> 3:
   o>     15\n
   o> bufferedread(15) -> 15: publishing\tTrue
-  response: {b'publishing': b'True'}
+  response: {
+    b'publishing': b'True'
+  }
 
 Create some commits
 
@@ -1801,7 +1823,11 @@ Two draft heads
   o>     20b8a89289d80036e6c4e87c2083e3bea1586637\t1\n
   o>     c4750011d906c18ea2f0527419cbc1a544435150\t1\n
   o>     publishing\tTrue
-  response: {b'20b8a89289d80036e6c4e87c2083e3bea1586637': b'1', b'c4750011d906c18ea2f0527419cbc1a544435150': b'1', b'publishing': b'True'}
+  response: {
+    b'20b8a89289d80036e6c4e87c2083e3bea1586637': b'1',
+    b'c4750011d906c18ea2f0527419cbc1a544435150': b'1',
+    b'publishing': b'True'
+  }
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1832,7 +1858,11 @@ Two draft heads
   o>     20b8a89289d80036e6c4e87c2083e3bea1586637\t1\n
   o>     c4750011d906c18ea2f0527419cbc1a544435150\t1\n
   o>     publishing\tTrue
-  response: {b'20b8a89289d80036e6c4e87c2083e3bea1586637': b'1', b'c4750011d906c18ea2f0527419cbc1a544435150': b'1', b'publishing': b'True'}
+  response: {
+    b'20b8a89289d80036e6c4e87c2083e3bea1586637': b'1',
+    b'c4750011d906c18ea2f0527419cbc1a544435150': b'1',
+    b'publishing': b'True'
+  }
 
 Single draft head
 
@@ -1869,7 +1899,10 @@ Single draft head
   o> bufferedread(58) -> 58:
   o>     c4750011d906c18ea2f0527419cbc1a544435150\t1\n
   o>     publishing\tTrue
-  response: {b'c4750011d906c18ea2f0527419cbc1a544435150': b'1', b'publishing': b'True'}
+  response: {
+    b'c4750011d906c18ea2f0527419cbc1a544435150': b'1',
+    b'publishing': b'True'
+  }
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1899,7 +1932,10 @@ Single draft head
   o> bufferedread(58) -> 58:
   o>     c4750011d906c18ea2f0527419cbc1a544435150\t1\n
   o>     publishing\tTrue
-  response: {b'c4750011d906c18ea2f0527419cbc1a544435150': b'1', b'publishing': b'True'}
+  response: {
+    b'c4750011d906c18ea2f0527419cbc1a544435150': b'1',
+    b'publishing': b'True'
+  }
 
 All public heads
 
@@ -1934,7 +1970,9 @@ All public heads
   o> bufferedreadline() -> 3:
   o>     15\n
   o> bufferedread(15) -> 15: publishing\tTrue
-  response: {b'publishing': b'True'}
+  response: {
+    b'publishing': b'True'
+  }
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1962,7 +2000,9 @@ All public heads
   o> bufferedreadline() -> 3:
   o>     15\n
   o> bufferedread(15) -> 15: publishing\tTrue
-  response: {b'publishing': b'True'}
+  response: {
+    b'publishing': b'True'
+  }
 
 Setting public phase via pushkey
 

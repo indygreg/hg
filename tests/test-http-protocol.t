@@ -213,7 +213,11 @@ Test listkeys for listing namespaces
   s>     bookmarks\t\n
   s>     namespaces\t\n
   s>     phases\t
-  response: {b'bookmarks': b'', b'namespaces': b'', b'phases': b''}
+  response: {
+    b'bookmarks': b'',
+    b'namespaces': b'',
+    b'phases': b''
+  }
 
 Same thing, but with "httprequest" command
 
@@ -279,7 +283,9 @@ Client with HTTPv2 enabled advertises that and gets old capabilities response fr
   s>     Content-Length: 41\r\n
   s>     \r\n
   s>     0000000000000000000000000000000000000000\n
-  response: [b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00']
+  response: [
+    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+  ]
 
   $ killdaemons.py
   $ enablehttpv2 empty
@@ -332,7 +338,9 @@ Client with HTTPv2 enabled automatically upgrades if the server supports it
   received frame(size=33; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
-  response: [b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00']
+  response: [
+    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+  ]
 
   $ killdaemons.py
 
@@ -463,7 +471,9 @@ Test with the HTTP peer
   s>     Content-Length: 41\r\n
   s>     \r\n
   s>     96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n
-  response: [b'\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL']
+  response: [
+    b'\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL'
+  ]
 
   $ killdaemons.py
 
@@ -725,4 +735,6 @@ Now test a variation where we strip the query string from the redirect URL.
   s>     Content-Length: 41\r\n
   s>     \r\n
   s>     96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n
-  response: [b'\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL']
+  response: [
+    b'\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL'
+  ]

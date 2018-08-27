@@ -1127,6 +1127,16 @@ def _bdiffworker(q, blocks, xdiff, ready, done):
         with ready:
             ready.wait()
 
+def _manifestrevision(repo, mnode):
+    ml = repo.manifestlog
+
+    if util.safehasattr(ml, 'getstorage'):
+        store = ml.getstorage(b'')
+    else:
+        store = ml._revlog
+
+    return store.revision(mnode)
+
 @command('perfbdiff', revlogopts + formatteropts + [
     ('', 'count', 1, 'number of revisions to test (when using --startrev)'),
     ('', 'alldata', False, 'test bdiffs for all associated revisions'),
@@ -1172,9 +1182,9 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
         if opts['alldata']:
             # Load revisions associated with changeset.
             ctx = repo[rev]
-            mtext = repo.manifestlog._revlog.revision(ctx.manifestnode())
+            mtext = _manifestrevision(repo, ctx.manifestnode())
             for pctx in ctx.parents():
-                pman = repo.manifestlog._revlog.revision(pctx.manifestnode())
+                pman = _manifestrevision(repo, pctx.manifestnode())
                 textpairs.append((pman, mtext))
 
             # Load filelog revisions by iterating manifest delta.
@@ -1264,9 +1274,9 @@ def perfunidiff(ui, repo, file_, rev=None, count=None, **opts):
         if opts['alldata']:
             # Load revisions associated with changeset.
             ctx = repo[rev]
-            mtext = repo.manifestlog._revlog.revision(ctx.manifestnode())
+            mtext = _manifestrevision(repo, ctx.manifestnode())
             for pctx in ctx.parents():
-                pman = repo.manifestlog._revlog.revision(pctx.manifestnode())
+                pman = _manifestrevision(repo, pctx.manifestnode())
                 textpairs.append((pman, mtext))
 
             # Load filelog revisions by iterating manifest delta.

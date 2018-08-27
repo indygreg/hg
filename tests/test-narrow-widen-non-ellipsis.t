@@ -96,6 +96,7 @@ added upstream revisions.
   3 local changesets published
   $ hg tracked
   I path:inside
+  I path:wider/f
 
 Pull down the newly added upstream revision.
 
@@ -105,20 +106,18 @@ Pull down the newly added upstream revision.
   adding changesets
   adding manifests
   adding file changes
-  added 5 changesets with 1 changes to 1 files
+  added 5 changesets with 2 changes to 2 files
   new changesets *:* (glob)
   (run 'hg update' to get a working copy)
   $ hg update -r 'desc("add wider")'
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cat wider/f
-  cat: wider/f: $ENOENT$
-  [1]
+  wider
 
   $ hg update -r 'desc("update inside")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cat wider/f
-  cat: wider/f: $ENOENT$
-  [1]
+  wider
   $ cat inside/f
   inside v2
 
@@ -148,35 +147,30 @@ widen the narrow spec to include the widest file
   adding changesets
   adding manifests
   adding file changes
-  added 0 changesets with 4 changes to 2 files
+  added 0 changesets with 4 changes to 3 files
   5 local changesets published
-  abort: path ends in directory separator: widest/
-  [255]
   $ hg tracked
   I path:inside
+  I path:wider/f
+  I path:widest
   $ hg update 'desc("add widest")'
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  2 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ cat widest/f
-  cat: widest/f: $ENOENT$
-  [1]
+  widest
   $ hg update 'desc("add wider, update widest")'
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cat wider/f
-  cat: wider/f: $ENOENT$
-  [1]
+  wider
   $ cat widest/f
-  cat: widest/f: $ENOENT$
-  [1]
+  widest v2
   $ hg update 'desc("update widest v3")'
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cat widest/f
-  cat: widest/f: $ENOENT$
-  [1]
-  $ hg update 'desc("update widest v4")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cat widest/f
-  cat: widest/f: $ENOENT$
-  [1]
+  widest v3
+  $ hg update 'desc("update widest v4")'
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cat widest/f
+  widest v4
 
   $ hg log -T "{if(ellipsis, '...')}{node|short}: {desc}\n"
   *: update widest v4 (glob)
@@ -260,10 +254,9 @@ make narrow clone with every third node.
   adding file changes
   added 0 changesets with 1 changes to 5 files
   11 local changesets published
-  abort: path ends in directory separator: d1/
-  [255]
   $ hg tracked
   I path:d0
+  I path:d1
   I path:d3
   I path:d6
   I path:d9
@@ -286,12 +279,9 @@ Verify shouldn't claim the repo is corrupt after a widen.
   checking changesets
   checking manifests
   checking directory manifests
-  warning: orphan data file 'meta/d1/00manifest.i'
   crosschecking files in changesets and manifests
   checking files
-  warning: orphan data file 'data/d1/f.i'
-  4 files, 11 changesets, 4 total revisions
-  2 warnings encountered!
+  5 files, 11 changesets, 5 total revisions
 
 Widening preserves parent of local commit
 
@@ -309,8 +299,6 @@ Widening preserves parent of local commit
   $ hg ci -m local
   created new head
   $ hg tracked -q --addinclude d0 --addinclude d9
-  abort: path ends in directory separator: d0/
-  [255]
 
 Widening preserves bookmarks
 
@@ -323,8 +311,6 @@ Widening preserves bookmarks
   $ hg bookmarks
    * bookmark                  11:42aed9c63197
   $ hg -q tracked --addinclude d2
-  abort: path ends in directory separator: d2/
-  [255]
   $ hg bookmarks
    * bookmark                  11:42aed9c63197
   $ hg log -r bookmark -T '{desc}\n'
@@ -360,8 +346,6 @@ Widening that fails can be recovered from
   adding file changes
   added 0 changesets with 1 changes to 2 files
   11 local changesets published
-  abort: path ends in directory separator: d1/
-  [255]
   $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
   11: local
   10: add d10/f

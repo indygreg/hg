@@ -307,6 +307,7 @@ def _widen(ui, repo, remote, commoninc, newincludes, newexcludes):
         with ds.parentchange():
             ds.setparents(p1, p2)
 
+        repo.setnewnarrowpats()
         actions = {k: [] for k in 'a am f g cd dc r dm dg m e k p pr'.split()}
         addgaction = actions['g'].append
 

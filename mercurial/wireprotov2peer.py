@@ -8,14 +8,14 @@
 from __future__ import absolute_import
 
 from .i18n import _
-from .thirdparty import (
-    cbor,
-)
 from . import (
     encoding,
     error,
     util,
     wireprotoframing,
+)
+from .utils import (
+    cborutil,
 )
 
 def formatrichmessage(atoms):
@@ -44,13 +44,10 @@ class commandresponse(object):
 
     def cborobjects(self):
         """Obtain decoded CBOR objects from this response."""
-        size = self.b.tell()
         self.b.seek(0)
 
-        decoder = cbor.CBORDecoder(self.b)
-
-        while self.b.tell() < size:
-            yield decoder.decode()
+        for v in cborutil.decodeall(self.b.getvalue()):
+            yield v
 
 class clienthandler(object):
     """Object to handle higher-level client activities.

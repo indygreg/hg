@@ -16,9 +16,6 @@ import struct
 import weakref
 
 from .i18n import _
-from .thirdparty import (
-    cbor,
-)
 from . import (
     bundle2,
     error,
@@ -35,6 +32,7 @@ from . import (
     wireprotov2server,
 )
 from .utils import (
+    cborutil,
     interfaceutil,
     stringutil,
 )
@@ -913,8 +911,8 @@ def performhandshake(ui, url, opener, requestbuilder):
     if advertisev2:
         if ct == 'application/mercurial-cbor':
             try:
-                info = cbor.loads(rawdata)
-            except cbor.CBORDecodeError:
+                info = cborutil.decodeall(rawdata)[0]
+            except cborutil.CBORDecodeError:
                 raise error.Abort(_('error decoding CBOR from remote server'),
                                   hint=_('try again and consider contacting '
                                          'the server operator'))

@@ -32,9 +32,6 @@ from .node import (
     nullrev,
     short,
 )
-from .thirdparty import (
-    cbor,
-)
 from . import (
     bundle2,
     changegroup,
@@ -83,6 +80,7 @@ from . import (
     wireprotov2peer,
 )
 from .utils import (
+    cborutil,
     dateutil,
     procutil,
     stringutil,
@@ -3321,7 +3319,8 @@ def debugwireproto(ui, repo, path=None, **opts):
 
             if res.headers.get('Content-Type') == 'application/mercurial-cbor':
                 ui.write(_('cbor> %s\n') %
-                         stringutil.pprint(cbor.loads(body), bprefix=True,
+                         stringutil.pprint(cborutil.decodeall(body)[0],
+                                           bprefix=True,
                                            indent=2))
 
         elif action == 'close':

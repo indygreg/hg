@@ -177,7 +177,7 @@ def tokenize(program, lookup=None, syminitletters=None, symletters=None):
                         if p: # possible consecutive -
                             yield ('symbol', p, s)
                         s += len(p)
-                        yield ('-', None, pos)
+                        yield ('-', None, s)
                         s += 1
                     if parts[-1]: # possible trailing -
                         yield ('symbol', parts[-1], s)

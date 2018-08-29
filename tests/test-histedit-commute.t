@@ -364,7 +364,7 @@ should also work if a commit message is missing
   adding manifests
   adding file changes
   added 3 changesets with 3 changes to 1 files
-  new changesets 141947992243:bd22688093b3
+  new changesets 141947992243:bd22688093b3 (3 drafts)
   (run 'hg update' to get a working copy)
   $ hg co tip
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved

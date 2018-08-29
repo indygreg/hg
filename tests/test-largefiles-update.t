@@ -456,7 +456,7 @@ Test that the internal linear merging works correctly
   adding manifests
   adding file changes
   added 3 changesets with 5 changes to 5 files
-  new changesets 9530e27857f7:d65e59e952a9
+  new changesets 9530e27857f7:d65e59e952a9 (3 drafts)
   remote turned local largefile large2 into a normal file
   keep (l)argefile or use (n)ormal file? l
   largefile large1 has a merge conflict
@@ -492,7 +492,7 @@ Test that the internal linear merging works correctly
   adding manifests
   adding file changes
   added 3 changesets with 5 changes to 5 files
-  new changesets 9530e27857f7:d65e59e952a9
+  new changesets 9530e27857f7:d65e59e952a9 (3 drafts)
   remote turned local largefile large2 into a normal file
   keep (l)argefile or use (n)ormal file? l
   largefile large1 has a merge conflict

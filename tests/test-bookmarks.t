@@ -694,7 +694,7 @@ create bundle with two heads
   adding manifests
   adding file changes
   added 2 changesets with 2 changes to 2 files (+1 heads)
-  new changesets 125c9a1d6df6:9ba5f110a0b3
+  new changesets 125c9a1d6df6:9ba5f110a0b3 (2 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
 update to active bookmark if it's not the parent

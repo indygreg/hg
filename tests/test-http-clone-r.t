@@ -9,7 +9,7 @@ creating 'remote
   adding manifests
   adding file changes
   added 9 changesets with 7 changes to 4 files (+1 heads)
-  new changesets bfaf4b5cbf01:916f1afdef90
+  new changesets bfaf4b5cbf01:916f1afdef90 (9 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg up tip
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved

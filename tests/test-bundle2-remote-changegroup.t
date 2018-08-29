@@ -106,7 +106,7 @@ Start a simple HTTP server to serve bundles
   adding manifests
   adding file changes
   added 8 changesets with 7 changes to 7 files (+2 heads)
-  new changesets cd010b8cd998:02de42196ebe
+  new changesets cd010b8cd998:02de42196ebe (8 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
   $ hg -R repo log -G

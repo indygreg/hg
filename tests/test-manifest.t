@@ -15,7 +15,7 @@ Source bundle was generated with the following script:
   adding manifests
   adding file changes
   added 2 changesets with 3 changes to 3 files
-  new changesets b73562a03cfe:5bdc995175ba
+  new changesets b73562a03cfe:5bdc995175ba (2 drafts)
   (run 'hg update' to get a working copy)
 
 The next call is expected to return nothing:

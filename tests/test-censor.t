@@ -426,7 +426,7 @@ Censored nodes can be bundled up and unbundled in another repo
   adding manifests
   adding file changes
   added 2 changesets with 2 changes to 2 files (+1 heads)
-  new changesets 075be80ac777:dcbaf17bf3a1
+  new changesets 075be80ac777:dcbaf17bf3a1 (2 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
   $ hg cat -r $REV target
   $ hg cat -r $CLEANREV target
@@ -461,7 +461,7 @@ Censored nodes can be imported on top of censored nodes, consecutively
   adding manifests
   adding file changes
   added 6 changesets with 5 changes to 2 files (+1 heads)
-  new changesets efbe78065929:683e4645fded
+  new changesets efbe78065929:683e4645fded (6 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
   $ hg update $H2
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -487,6 +487,6 @@ Can import bundle where first revision of a file is censored
   adding manifests
   adding file changes
   added 1 changesets with 2 changes to 2 files
-  new changesets e97f55b2665a
+  new changesets e97f55b2665a (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg cat -r 0 target

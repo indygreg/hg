@@ -148,7 +148,7 @@ clone it in two clients
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 842e2fac6304
+  new changesets 842e2fac6304 (1 drafts)
   updating to branch default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg clone ssh://user@dummy/server client-other
@@ -157,7 +157,7 @@ clone it in two clients
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 842e2fac6304
+  new changesets 842e2fac6304 (1 drafts)
   updating to branch default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
@@ -242,7 +242,7 @@ Both try to replace a different head
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets a9149a1428e2
+  new changesets a9149a1428e2 (1 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg -R ./client-other pull
   pulling from ssh://user@dummy/server
@@ -251,7 +251,7 @@ Both try to replace a different head
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets a9149a1428e2
+  new changesets a9149a1428e2 (1 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg -R ./client-racy pull
   pulling from ssh://user@dummy/server
@@ -260,7 +260,7 @@ Both try to replace a different head
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets 98217d5a1659
+  new changesets 98217d5a1659 (1 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
   $ hg -R server graph
@@ -364,7 +364,7 @@ Pushing a new changeset while someone creates a new branch.
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 59e76faf78bd
+  new changesets 59e76faf78bd (1 drafts)
   (run 'hg update' to get a working copy)
 
 #endif
@@ -384,7 +384,7 @@ Pushing a new changeset while someone creates a new branch.
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 59e76faf78bd
+  new changesets 59e76faf78bd (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg -R ./client-racy pull
   pulling from ssh://user@dummy/server
@@ -393,7 +393,7 @@ Pushing a new changeset while someone creates a new branch.
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 51c544a58128
+  new changesets 51c544a58128 (1 drafts)
   (run 'hg update' to get a working copy)
 
   $ hg -R server graph
@@ -522,7 +522,7 @@ Pushing two children on the same head, one is a different named branch
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets d9e379a8c432
+  new changesets d9e379a8c432 (1 drafts)
   (run 'hg update' to get a working copy)
 
 #endif
@@ -542,7 +542,7 @@ Pushing two children on the same head, one is a different named branch
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets d9e379a8c432
+  new changesets d9e379a8c432 (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg -R ./client-racy pull
   pulling from ssh://user@dummy/server
@@ -551,7 +551,7 @@ Pushing two children on the same head, one is a different named branch
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets d603e2c0cdd7
+  new changesets d603e2c0cdd7 (1 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
 
   $ hg -R server graph
@@ -693,7 +693,7 @@ Pushing two children on the same head, one is a different named branch
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets 833be552cfe6
+  new changesets 833be552cfe6 (1 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
 
 #endif
@@ -713,7 +713,7 @@ Pushing two children on the same head, one is a different named branch
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets 833be552cfe6
+  new changesets 833be552cfe6 (1 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
   $ hg -R ./client-racy pull
   pulling from ssh://user@dummy/server
@@ -722,7 +722,7 @@ Pushing two children on the same head, one is a different named branch
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets 75d69cba5402
+  new changesets 75d69cba5402 (1 drafts)
   (run 'hg heads' to see heads)
 
   $ hg -R server graph
@@ -878,7 +878,7 @@ There are multiple heads, but the racing push touch all of them
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets 89420bf00fae
+  new changesets 89420bf00fae (1 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
 
 #endif
@@ -899,7 +899,7 @@ There are multiple heads, but the racing push touch all of them
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets 89420bf00fae
+  new changesets 89420bf00fae (1 drafts)
   (run 'hg heads' to see heads)
   $ hg -R ./client-racy pull
   pulling from ssh://user@dummy/server
@@ -908,7 +908,7 @@ There are multiple heads, but the racing push touch all of them
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets b35ed749f288
+  new changesets b35ed749f288 (1 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
 
   $ hg -R server graph
@@ -1026,7 +1026,7 @@ There are multiple heads, the raced push touch all of them
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets cac2cead0ff0
+  new changesets cac2cead0ff0 (1 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
   $ hg -R ./client-other pull
   pulling from ssh://user@dummy/server
@@ -1035,7 +1035,7 @@ There are multiple heads, the raced push touch all of them
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets cac2cead0ff0
+  new changesets cac2cead0ff0 (1 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
   $ hg -R ./client-racy pull
   pulling from ssh://user@dummy/server
@@ -1044,7 +1044,7 @@ There are multiple heads, the raced push touch all of them
   adding manifests
   adding file changes
   added 1 changesets with 0 changes to 0 files
-  new changesets be705100c623
+  new changesets be705100c623 (1 drafts)
   (run 'hg update' to get a working copy)
 
   $ hg -R server graph
@@ -1169,7 +1169,7 @@ non-continuous branch are valid case, we tests for them.
   adding manifests
   adding file changes
   added 1 changesets with 0 changes to 0 files
-  new changesets 866a66e18630
+  new changesets 866a66e18630 (1 drafts)
   (run 'hg update' to get a working copy)
 
 (creates named branch on head)
@@ -1191,7 +1191,7 @@ non-continuous branch are valid case, we tests for them.
   adding manifests
   adding file changes
   added 2 changesets with 0 changes to 0 files
-  new changesets 866a66e18630:55a6f1c01b48
+  new changesets 866a66e18630:55a6f1c01b48 (2 drafts)
   (run 'hg update' to get a working copy)
   $ hg -R ./client-racy pull
   pulling from ssh://user@dummy/server
@@ -1200,7 +1200,7 @@ non-continuous branch are valid case, we tests for them.
   adding manifests
   adding file changes
   added 2 changesets with 1 changes to 1 files (+1 heads)
-  new changesets 6fd3090135df:55a6f1c01b48
+  new changesets 6fd3090135df:55a6f1c01b48 (2 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
 
   $ hg -R server graph
@@ -1349,7 +1349,7 @@ non-continuous branch are valid case, we tests for them.
   adding manifests
   adding file changes
   added 1 changesets with 0 changes to 0 files (+1 heads)
-  new changesets b0ee3d6f51bc
+  new changesets b0ee3d6f51bc (1 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
   $ hg -R ./client-other pull
   pulling from ssh://user@dummy/server
@@ -1358,7 +1358,7 @@ non-continuous branch are valid case, we tests for them.
   adding manifests
   adding file changes
   added 1 changesets with 0 changes to 0 files (+1 heads)
-  new changesets b0ee3d6f51bc
+  new changesets b0ee3d6f51bc (1 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
   $ hg -R ./client-racy pull
   pulling from ssh://user@dummy/server
@@ -1367,7 +1367,7 @@ non-continuous branch are valid case, we tests for them.
   adding manifests
   adding file changes
   added 2 changesets with 1 changes to 1 files (+1 heads)
-  new changesets d0a85b2252a9:1b58ee3f79e5
+  new changesets d0a85b2252a9:1b58ee3f79e5 (2 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
 
   $ hg -R server graph
@@ -1520,7 +1520,7 @@ raced commit push a new head obsoleting the one touched by the racing push
   adding manifests
   adding file changes
   added 2 changesets with 2 changes to 1 files (+1 heads)
-  new changesets 2efd43f7b5ba:3d57ed3c1091
+  new changesets 2efd43f7b5ba:3d57ed3c1091 (2 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
   $ hg -R ./client-other pull
   pulling from ssh://user@dummy/server
@@ -1529,7 +1529,7 @@ raced commit push a new head obsoleting the one touched by the racing push
   adding manifests
   adding file changes
   added 2 changesets with 2 changes to 1 files (+1 heads)
-  new changesets 2efd43f7b5ba:3d57ed3c1091
+  new changesets 2efd43f7b5ba:3d57ed3c1091 (2 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg -R ./client-racy pull
   pulling from ssh://user@dummy/server
@@ -1538,7 +1538,7 @@ raced commit push a new head obsoleting the one touched by the racing push
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets de7b9e2ba3f6
+  new changesets de7b9e2ba3f6 (1 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
   $ hg -R server graph
@@ -1708,7 +1708,7 @@ racing commit push a new head obsoleting the one touched by the raced push
   1 new obsolescence markers
   obsoleted 1 changesets
   1 new orphan changesets
-  new changesets 720c5163ecf6
+  new changesets 720c5163ecf6 (1 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
   $ hg -R ./client-other pull
   pulling from ssh://user@dummy/server
@@ -1720,7 +1720,7 @@ racing commit push a new head obsoleting the one touched by the raced push
   1 new obsolescence markers
   obsoleted 1 changesets
   1 new orphan changesets
-  new changesets 720c5163ecf6
+  new changesets 720c5163ecf6 (1 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
   $ hg -R ./client-racy pull
   pulling from ssh://user@dummy/server
@@ -1730,7 +1730,7 @@ racing commit push a new head obsoleting the one touched by the raced push
   adding file changes
   added 1 changesets with 0 changes to 0 files
   1 new orphan changesets
-  new changesets a98a47d8b85b
+  new changesets a98a47d8b85b (1 drafts)
   (run 'hg update' to get a working copy)
 
   $ hg -R server debugobsolete

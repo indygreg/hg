@@ -1879,7 +1879,7 @@ when we created new changesets on top of existing one
   adding manifests
   adding file changes
   added 11 changesets with 9 changes to 8 files (+4 heads)
-  new changesets 9092f1db7931:6b98ff0062dd
+  new changesets 9092f1db7931:6b98ff0062dd (6 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg up 9
   5 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -1894,7 +1894,7 @@ when we created new changesets on top of existing one
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets 311dfc6cf3bf
+  new changesets 311dfc6cf3bf (1 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
 
   $ hg graft --abort

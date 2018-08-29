@@ -341,7 +341,7 @@ Stripping and recovering changes should work
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 51cfd7b1e13b
+  new changesets 51cfd7b1e13b (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg --config extensions.strip= strip tip
   saved backup bundle to $TESTTMP/repo-mixed/.hg/strip-backup/*-backup.hg (glob)

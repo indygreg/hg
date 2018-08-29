@@ -112,7 +112,7 @@ Make sure testpullbycommithash2 has not fetched
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 33910bfe6ffe
+  new changesets 33910bfe6ffe (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg log -G -T '{desc} {phase} {bookmarks}'
   o  testpullbycommithash1 draft
@@ -163,7 +163,7 @@ Make sure phase on the client is public.
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets a79b6597f322:c70aee6da07d
+  new changesets a79b6597f322:c70aee6da07d (1 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
   $ hg log -r scratch/scratchontopofpublic -T '{phase}'
   draft (no-eol)

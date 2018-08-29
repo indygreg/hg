@@ -1634,7 +1634,22 @@ def registersummarycallback(repo, otr, txnname=''):
                 revrange = minrev
             else:
                 revrange = '%s:%s' % (minrev, maxrev)
-            repo.ui.status(_('new changesets %s\n') % revrange)
+            draft = len(repo.revs('%ld and draft()', revs))
+            secret = len(repo.revs('%ld and secret()', revs))
+            if not (draft or secret):
+                msg = _('new changesets %s\n') % revrange
+            elif draft and secret:
+                msg = _('new changesets %s (%d drafts, %d secrets)\n')
+                msg %= (revrange, draft, secret)
+            elif draft:
+                msg = _('new changesets %s (%d drafts)\n')
+                msg %= (revrange, draft)
+            elif secret:
+                msg = _('new changesets %s (%d secrets)\n')
+                msg %= (revrange, secret)
+            else:
+                raise error.ProgrammingError('entered unreachable condition')
+            repo.ui.status(msg)
 
         @reportsummary
         def reportphasechanges(repo, tr):

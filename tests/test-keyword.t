@@ -125,7 +125,7 @@ A bundle to test this was made with:
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets a2392c293916
+  new changesets a2392c293916 (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg up a2392c293916
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -263,7 +263,7 @@ Pull from bundle and trigger notify
   adding manifests
   adding file changes
   added 2 changesets with 3 changes to 3 files
-  new changesets a2392c293916:ef63ca68695b
+  new changesets a2392c293916:ef63ca68695b (2 drafts)
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"

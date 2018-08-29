@@ -55,7 +55,7 @@ import bookmark by name
   adding remote bookmark X
   updating bookmark Y
   adding remote bookmark Z
-  new changesets 4e3505fd9583
+  new changesets 4e3505fd9583 (1 drafts)
   test-hook-bookmark: X:   -> 4e3505fd95835d721066b76e75dbb8cc554d7f77
   test-hook-bookmark: Y:  0000000000000000000000000000000000000000 -> 4e3505fd95835d721066b76e75dbb8cc554d7f77
   test-hook-bookmark: Z:   -> 4e3505fd95835d721066b76e75dbb8cc554d7f77
@@ -418,7 +418,7 @@ divergent bookmarks
   divergent bookmark @ stored as @foo
   divergent bookmark X stored as X@foo
   updating bookmark Z
-  new changesets 0d2164f0ce0d
+  new changesets 0d2164f0ce0d (1 drafts)
   test-hook-bookmark: @foo:   -> 0d2164f0ce0d8f1d6f94351eba04b794909be66c
   test-hook-bookmark: X@foo:   -> 0d2164f0ce0d8f1d6f94351eba04b794909be66c
   test-hook-bookmark: Z:  4e3505fd95835d721066b76e75dbb8cc554d7f77 -> 0d2164f0ce0d8f1d6f94351eba04b794909be66c
@@ -582,7 +582,7 @@ race conditions
   adding file changes
   added 1 changesets with 1 changes to 1 files
   updating bookmark Y
-  new changesets b0a5eff05604
+  new changesets b0a5eff05604 (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg book
    * @                         1:0d2164f0ce0d
@@ -632,7 +632,7 @@ Update a bookmark right after the initial lookup -B (issue4689)
   adding file changes
   added 1 changesets with 1 changes to 1 files
   updating bookmark Y
-  new changesets 35d1ef0a8d1b
+  new changesets 35d1ef0a8d1b (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg book
      @                         1:0d2164f0ce0d
@@ -796,7 +796,7 @@ hgweb
   adding file changes
   added 5 changesets with 5 changes to 3 files (+2 heads)
   2 new obsolescence markers
-  new changesets 4e3505fd9583:c922c0139ca0
+  new changesets 4e3505fd9583:c922c0139ca0 (5 drafts)
   updating to bookmark @
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg -R cloned-bookmarks bookmarks
@@ -933,7 +933,7 @@ bookmark, not all outgoing changes:
   adding file changes
   added 5 changesets with 5 changes to 3 files (+2 heads)
   2 new obsolescence markers
-  new changesets 4e3505fd9583:c922c0139ca0
+  new changesets 4e3505fd9583:c922c0139ca0 (5 drafts)
   updating to bookmark @
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd addmarks
@@ -1225,7 +1225,7 @@ Test that pre-pushkey compat for bookmark works as expected (issue5777)
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 79513d0d7716
+  new changesets 79513d0d7716 (1 drafts)
   updating to branch default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 

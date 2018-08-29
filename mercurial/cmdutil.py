@@ -1254,6 +1254,10 @@ def copy(ui, repo, pats, opts, rename=False):
                 else:
                     ui.warn(_('%s: cannot copy - %s\n') %
                             (relsrc, encoding.strtolocal(inst.strerror)))
+                    if rename:
+                        hint = _("('hg rename --after' to record the rename)\n")
+                    else:
+                        hint = _("('hg copy --after' to record the copy)\n")
                     return True # report a failure
 
         if ui.verbose or not exact:
@@ -1370,9 +1374,6 @@ def copy(ui, repo, pats, opts, rename=False):
         for abssrc, relsrc, exact in srcs:
             if copyfile(abssrc, relsrc, targetpath(abssrc), exact):
                 errors += 1
-
-    if errors:
-        ui.warn(_('(consider using --after)\n'))
 
     return errors != 0
 

@@ -438,6 +438,34 @@ def segmentspan(revlog, revs, deltainfo=None):
         end = revlog.end(revs[-1])
     return end - revlog.start(revs[0])
 
+def _textfromdelta(fh, revlog, baserev, delta, p1, p2, flags, expectednode):
+    """build full text from a (base, delta) pair and other metadata"""
+    # special case deltas which replace entire base; no need to decode
+    # base revision. this neatly avoids censored bases, which throw when
+    # they're decoded.
+    hlen = struct.calcsize(">lll")
+    if delta[:hlen] == mdiff.replacediffheader(revlog.rawsize(baserev),
+                                               len(delta) - hlen):
+        fulltext = delta[hlen:]
+    else:
+        # deltabase is rawtext before changed by flag processors, which is
+        # equivalent to non-raw text
+        basetext = revlog.revision(baserev, _df=fh, raw=False)
+        fulltext = mdiff.patch(basetext, delta)
+
+    try:
+        res = revlog._processflags(fulltext, flags, 'read', raw=True)
+        fulltext, validatehash = res
+        if validatehash:
+            revlog.checkhash(fulltext, expectednode, p1=p1, p2=p2)
+        if flags & REVIDX_ISCENSORED:
+            raise RevlogError(_('node %s is not censored') % expectednode)
+    except CensoredNodeError:
+        # must pass the censored index flag to add censored revisions
+        if not flags & REVIDX_ISCENSORED:
+            raise
+    return fulltext
+
 @attr.s(slots=True, frozen=True)
 class _deltainfo(object):
     distance = attr.ib()
@@ -605,36 +633,13 @@ class deltacomputer(object):
 
         revlog = self.revlog
         cachedelta = revinfo.cachedelta
-        flags = revinfo.flags
-        node = revinfo.node
-
         baserev = cachedelta[0]
         delta = cachedelta[1]
-        # special case deltas which replace entire base; no need to decode
-        # base revision. this neatly avoids censored bases, which throw when
-        # they're decoded.
-        hlen = struct.calcsize(">lll")
-        if delta[:hlen] == mdiff.replacediffheader(revlog.rawsize(baserev),
-                                                   len(delta) - hlen):
-            btext[0] = delta[hlen:]
-        else:
-            # deltabase is rawtext before changed by flag processors, which is
-            # equivalent to non-raw text
-            basetext = revlog.revision(baserev, _df=fh, raw=False)
-            btext[0] = mdiff.patch(basetext, delta)
 
-        try:
-            res = revlog._processflags(btext[0], flags, 'read', raw=True)
-            btext[0], validatehash = res
-            if validatehash:
-                revlog.checkhash(btext[0], node, p1=revinfo.p1, p2=revinfo.p2)
-            if flags & REVIDX_ISCENSORED:
-                raise RevlogError(_('node %s is not censored') % node)
-        except CensoredNodeError:
-            # must pass the censored index flag to add censored revisions
-            if not flags & REVIDX_ISCENSORED:
-                raise
-        return btext[0]
+        fulltext = btext[0] = _textfromdelta(fh, revlog, baserev, delta,
+                                             revinfo.p1, revinfo.p2,
+                                             revinfo.flags, revinfo.node)
+        return fulltext
 
     def _builddeltadiff(self, base, revinfo, fh):
         revlog = self.revlog

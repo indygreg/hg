@@ -20,6 +20,9 @@ from . import (
     scmutil,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 def _findlimit(repo, a, b):
     """
@@ -366,19 +369,22 @@ def mergecopies(repo, c1, c2, base):
         return repo.dirstate.copies(), {}, {}, {}, {}
 
     copytracing = repo.ui.config('experimental', 'copytrace')
+    boolctrace = stringutil.parsebool(copytracing)
 
     # Copy trace disabling is explicitly below the node == p1 logic above
     # because the logic above is required for a simple copy to be kept across a
     # rebase.
-    if copytracing == 'off':
-        return {}, {}, {}, {}, {}
-    elif copytracing == 'heuristics':
+    if copytracing == 'heuristics':
         # Do full copytracing if only non-public revisions are involved as
         # that will be fast enough and will also cover the copies which could
         # be missed by heuristics
         if _isfullcopytraceable(repo, c1, base):
             return _fullcopytracing(repo, c1, c2, base)
         return _heuristicscopytracing(repo, c1, c2, base)
+    elif boolctrace is False:
+        # stringutil.parsebool() returns None when it is unable to parse the
+        # value, so we should rely on making sure copytracing is on such cases
+        return {}, {}, {}, {}, {}
     else:
         return _fullcopytracing(repo, c1, c2, base)
 
@@ -870,8 +876,10 @@ def duplicatecopies(repo, wctx, rev, fromrev, skiprev=None):
     copies between fromrev and rev.
     """
     exclude = {}
+    ctraceconfig = repo.ui.config('experimental', 'copytrace')
+    bctrace = stringutil.parsebool(ctraceconfig)
     if (skiprev is not None and
-        repo.ui.config('experimental', 'copytrace') != 'off'):
+        (ctraceconfig == 'heuristics' or bctrace or bctrace is None)):
         # copytrace='off' skips this line, but not the entire function because
         # the line below is O(size of the repo) during a rebase, while the rest
         # of the function is much faster (and is required for carrying copy

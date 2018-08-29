@@ -349,10 +349,7 @@ capabilities command returns expected info
   s>     0\r\n
   s>     \r\n
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  response: [
-    {
-      b'status': b'ok'
-    },
+  response: gen[
     {
       b'commands': {
         b'branchmap': {

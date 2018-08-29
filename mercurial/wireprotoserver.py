@@ -12,9 +12,6 @@ import sys
 import threading
 
 from .i18n import _
-from .thirdparty import (
-    cbor,
-)
 from . import (
     encoding,
     error,
@@ -25,6 +22,7 @@ from . import (
     wireprotov2server,
 )
 from .utils import (
+    cborutil,
     interfaceutil,
     procutil,
 )
@@ -389,7 +387,7 @@ def processcapabilitieshandshake(repo, req, res, proto):
 
     res.status = b'200 OK'
     res.headers[b'Content-Type'] = b'application/mercurial-cbor'
-    res.setbodybytes(cbor.dumps(m, canonical=True))
+    res.setbodybytes(b''.join(cborutil.streamencode(m)))
 
     return True
 

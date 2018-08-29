@@ -1207,17 +1207,17 @@ def copy(ui, repo, pats, opts, rename=False):
                     else:
                         flags = '--force'
                     if rename:
-                        hint = _('(hg rename %s to replace the file by '
+                        hint = _("('hg rename %s' to replace the file by "
                                  'recording a rename)\n') % flags
                     else:
-                        hint = _('(hg copy %s to replace the file by '
+                        hint = _("('hg copy %s' to replace the file by "
                                  'recording a copy)\n') % flags
                 else:
                     msg = _('%s: not overwriting - file exists\n')
                     if rename:
-                        hint = _('(hg rename --after to record the rename)\n')
+                        hint = _("('hg rename --after' to record the rename)\n")
                     else:
-                        hint = _('(hg copy --after to record the copy)\n')
+                        hint = _("('hg copy --after' to record the copy)\n")
                 ui.warn(msg % reltarget)
                 ui.warn(hint)
                 return

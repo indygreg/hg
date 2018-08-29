@@ -1184,7 +1184,7 @@ def copy(ui, repo, pats, opts, rename=False):
             ui.warn(_('%s: not overwriting - %s collides with %s\n') %
                     (reltarget, repo.pathto(abssrc, cwd),
                      repo.pathto(prevsrc, cwd)))
-            return
+            return True # report a failure
 
         # check for overwrites
         exists = os.path.lexists(target)
@@ -1194,7 +1194,7 @@ def copy(ui, repo, pats, opts, rename=False):
                 repo.dirstate.normalize(abstarget)):
                 if not rename:
                     ui.warn(_("%s: can't copy - same file\n") % reltarget)
-                    return
+                    return True # report a failure
                 exists = False
                 samefile = True
 
@@ -1220,7 +1220,7 @@ def copy(ui, repo, pats, opts, rename=False):
                         hint = _("('hg copy --after' to record the copy)\n")
                 ui.warn(msg % reltarget)
                 ui.warn(hint)
-                return
+                return True # report a failure
 
         if after:
             if not exists:
@@ -1230,7 +1230,7 @@ def copy(ui, repo, pats, opts, rename=False):
                 else:
                     ui.warn(_('%s: not recording copy - %s does not exist\n') %
                             (relsrc, reltarget))
-                return
+                return True # report a failure
         elif not dryrun:
             try:
                 if exists:

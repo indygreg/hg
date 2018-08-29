@@ -148,6 +148,7 @@ moving a missing file
 copy --after to a nonexistent target filename
   $ hg cp -A foo dummy
   foo: not recording copy - dummy does not exist
+  [1]
 
 dry-run; should show that foo is clean
   $ hg copy --dry-run foo bar
@@ -225,11 +226,13 @@ Trying to copy on top of an existing file fails,
   $ hg copy -A bar foo
   foo: not overwriting - file already committed
   ('hg copy --after --force' to replace the file by recording a copy)
+  [1]
 same error without the --after, so the user doesn't have to go through
 two hints:
   $ hg copy bar foo
   foo: not overwriting - file already committed
   ('hg copy --force' to replace the file by recording a copy)
+  [1]
 but it's considered modified after a copy --after --force
   $ hg copy -Af bar foo
   $ hg st -AC foo
@@ -241,5 +244,6 @@ mention --force:
   $ hg cp bar xyzzy
   xyzzy: not overwriting - file exists
   ('hg copy --after' to record the copy)
+  [1]
 
   $ cd ..

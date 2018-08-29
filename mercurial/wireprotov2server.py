@@ -9,9 +9,6 @@ from __future__ import absolute_import
 import contextlib
 
 from .i18n import _
-from .thirdparty import (
-    cbor,
-)
 from . import (
     encoding,
     error,
@@ -22,6 +19,7 @@ from . import (
     wireprototypes,
 )
 from .utils import (
+    cborutil,
     interfaceutil,
 )
 
@@ -302,8 +300,11 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
     res.status = b'200 OK'
     res.headers[b'Content-Type'] = FRAMINGTYPE
 
+    # TODO consider adding a type to represent an iterable of values to
+    # be CBOR encoded.
     if isinstance(rsp, wireprototypes.cborresponse):
-        encoded = cbor.dumps(rsp.value, canonical=True)
+        # TODO consider calling oncommandresponsereadygen().
+        encoded = b''.join(cborutil.streamencode(rsp.value))
         action, meta = reactor.oncommandresponseready(outstream,
                                                       command['requestid'],
                                                       encoded)

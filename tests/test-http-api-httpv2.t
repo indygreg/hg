@@ -517,7 +517,7 @@ Interleaved requests to "multirequest" are processed
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     33\r\n
-  s>     +\x00\x00\x03\x00\x02\x012\xa1FstatusBok\xa3Fphases@Ibookmarks@Jnamespaces@
+  s>     +\x00\x00\x03\x00\x02\x012\xa1FstatusBok\xa3Ibookmarks@Jnamespaces@Fphases@
   s>     \r\n
   s>     14\r\n
   s>     \x0c\x00\x00\x01\x00\x02\x002\xa1FstatusBok\xa0

@@ -49,7 +49,7 @@ Request for namespaces works
   s>     \r\n
   s>     33\r\n
   s>     +\x00\x00\x01\x00\x02\x012
-  s>     \xa1FstatusBok\xa3Fphases@Ibookmarks@Jnamespaces@
+  s>     \xa1FstatusBok\xa3Ibookmarks@Jnamespaces@Fphases@
   s>     \r\n
   received frame(size=43; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
@@ -86,7 +86,7 @@ Request for phases works
   s>     \r\n
   s>     50\r\n
   s>     H\x00\x00\x01\x00\x02\x012
-  s>     \xa1FstatusBok\xa2JpublishingDTrueX(be0ef73c17ade3fc89dc41701eb9fc3a91b58282A1
+  s>     \xa1FstatusBok\xa2X(be0ef73c17ade3fc89dc41701eb9fc3a91b58282A1JpublishingDTrue
   s>     \r\n
   received frame(size=72; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n

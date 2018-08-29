@@ -569,9 +569,29 @@ def isgooddeltainfo(revlog, deltainfo, revinfo):
     return True
 
 def _candidategroups(revlog, p1, p2, cachedelta):
+    """Provides group of revision to be tested as delta base
+
+    This top level function focus on emitting groups with unique and worthwhile
+    content. See _raw_candidate_groups for details about the group order.
     """
-    Provides revisions that present an interest to be diffed against,
-    grouped by level of easiness.
+    # should we try to build a delta?
+    if not (len(revlog) and revlog._storedeltachains):
+        return
+
+    tested = set([nullrev])
+    for group in _rawgroups(revlog, p1, p2, cachedelta):
+        group = tuple(r for r in group if r not in tested)
+        tested.update(group)
+        if group:
+            yield group
+
+def _rawgroups(revlog, p1, p2, cachedelta):
+    """Provides group of revision to be tested as delta base
+
+    This lower level function focus on emitting delta theorically interresting
+    without looking it any practical details.
+
+    The group order aims at providing fast or small candidates first.
     """
     gdelta = revlog._generaldelta
     curr = len(revlog)
@@ -590,29 +610,33 @@ def _candidategroups(revlog, p1, p2, cachedelta):
             yield (cachedelta[0],)
             tested.add(cachedelta[0])
 
-        if gdelta:
-            # exclude already lazy tested base if any
-            parents = [p for p in (p1, p2)
-                       if p != nullrev and p not in tested]
+    # This condition is true most of the time when processing
+    # changegroup data into a generaldelta repo. The only time it
+    # isn't true is if this is the first revision in a delta chain
+    # or if ``format.generaldelta=true`` disabled ``lazydeltabase``.
+    if cachedelta and gdelta and revlog._lazydeltabase:
+        # Assume what we received from the server is a good choice
+        # build delta will reuse the cache
+        yield (cachedelta[0],)
 
-            if not revlog._deltabothparents and len(parents) == 2:
-                parents.sort()
-                # To minimize the chance of having to build a fulltext,
-                # pick first whichever parent is closest to us (max rev)
-                yield (parents[1],)
-                # then the other one (min rev) if the first did not fit
-                yield (parents[0],)
-                tested.update(parents)
-            elif len(parents) > 0:
-                # Test all parents (1 or 2), and keep the best candidate
-                yield parents
-                tested.update(parents)
+    if gdelta:
+        # exclude already lazy tested base if any
+        parents = [p for p in (p1, p2) if p != nullrev]
 
-        if prev not in tested:
-            # other approach failed try against prev to hopefully save us a
-            # fulltext.
-            yield (prev,)
-            tested.add(prev)
+        if not revlog._deltabothparents and len(parents) == 2:
+            parents.sort()
+            # To minimize the chance of having to build a fulltext,
+            # pick first whichever parent is closest to us (max rev)
+            yield (parents[1],)
+            # then the other one (min rev) if the first did not fit
+            yield (parents[0],)
+        elif len(parents) > 0:
+            # Test all parents (1 or 2), and keep the best candidate
+            yield parents
+
+    # other approach failed try against prev to hopefully save us a
+    # fulltext.
+    yield (prev,)
 
 class deltacomputer(object):
     def __init__(self, revlog):

@@ -38,7 +38,7 @@ pushkey for a bookmark works
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
   s>     \r\n
-  s>     a\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa4CkeyA@CnewX(426bada5c67598ca65036d57d9e4b64b0c1ce7a0Cold@InamespaceIbookmarksDnameGpushkey
+  s>     a\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa4CkeyA@InamespaceIbookmarksCnewX(426bada5c67598ca65036d57d9e4b64b0c1ce7a0Cold@DnameGpushkey
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n

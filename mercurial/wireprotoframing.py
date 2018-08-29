@@ -17,7 +17,6 @@ import struct
 from .i18n import _
 from .thirdparty import (
     attr,
-    cbor,
 )
 from . import (
     encoding,
@@ -25,6 +24,7 @@ from . import (
     util,
 )
 from .utils import (
+    cborutil,
     stringutil,
 )
 
@@ -217,8 +217,8 @@ def makeframefromhumanstring(s):
             finalflags |= int(flag)
 
     if payload.startswith(b'cbor:'):
-        payload = cbor.dumps(stringutil.evalpythonliteral(payload[5:]),
-                             canonical=True)
+        payload = b''.join(cborutil.streamencode(
+            stringutil.evalpythonliteral(payload[5:])))
 
     else:
         payload = stringutil.unescapestr(payload)
@@ -289,7 +289,7 @@ def createcommandframes(stream, requestid, cmd, args, datafh=None,
     if args:
         data[b'args'] = args
 
-    data = cbor.dumps(data, canonical=True)
+    data = b''.join(cborutil.streamencode(data))
 
     offset = 0
 
@@ -347,7 +347,7 @@ def createcommandresponseframesfrombytes(stream, requestid, data,
     Returns a generator of bytearrays.
     """
     # Automatically send the overall CBOR response map.
-    overall = cbor.dumps({b'status': b'ok'}, canonical=True)
+    overall = b''.join(cborutil.streamencode({b'status': b'ok'}))
     if len(overall) > maxframesize:
         raise error.ProgrammingError('not yet implemented')
 
@@ -388,7 +388,7 @@ def createcommandresponseframesfrombytes(stream, requestid, data,
 
 def createbytesresponseframesfromgen(stream, requestid, gen,
                                      maxframesize=DEFAULT_MAX_FRAME_SIZE):
-    overall = cbor.dumps({b'status': b'ok'}, canonical=True)
+    overall = b''.join(cborutil.streamencode({b'status': b'ok'}))
 
     yield stream.makeframe(requestid=requestid,
                            typeid=FRAME_TYPE_COMMAND_RESPONSE,
@@ -429,7 +429,7 @@ def createcommanderrorresponse(stream, requestid, message, args=None):
     if args:
         m[b'error'][b'args'] = args
 
-    overall = cbor.dumps(m, canonical=True)
+    overall = b''.join(cborutil.streamencode(m))
 
     yield stream.makeframe(requestid=requestid,
                            typeid=FRAME_TYPE_COMMAND_RESPONSE,
@@ -440,10 +440,10 @@ def createerrorframe(stream, requestid, msg, errtype):
     # TODO properly handle frame size limits.
     assert len(msg) <= DEFAULT_MAX_FRAME_SIZE
 
-    payload = cbor.dumps({
+    payload = b''.join(cborutil.streamencode({
         b'type': errtype,
         b'message': [{b'msg': msg}],
-    }, canonical=True)
+    }))
 
     yield stream.makeframe(requestid=requestid,
                            typeid=FRAME_TYPE_ERROR_RESPONSE,
@@ -493,7 +493,7 @@ def createtextoutputframe(stream, requestid, atoms,
 
         atomdicts.append(atom)
 
-    payload = cbor.dumps(atomdicts, canonical=True)
+    payload = b''.join(cborutil.streamencode(atomdicts))
 
     if len(payload) > maxframesize:
         raise ValueError('cannot encode data in a single frame')
@@ -784,7 +784,7 @@ class serverreactor(object):
 
         # Decode the payloads as CBOR.
         entry['payload'].seek(0)
-        request = cbor.load(entry['payload'])
+        request = cborutil.decodeall(entry['payload'].getvalue())[0]
 
         if b'name' not in request:
             self._state = 'errored'
@@ -1158,7 +1158,7 @@ class clientreactor(object):
         del self._activerequests[request.requestid]
 
         # The payload should be a CBOR map.
-        m = cbor.loads(frame.payload)
+        m = cborutil.decodeall(frame.payload)[0]
 
         return 'error', {
             'request': request,

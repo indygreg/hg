@@ -406,7 +406,7 @@ Command frames can be reflected via debugreflect
   s>     content-length: 47\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n
-  s>     \'\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2CfooDval1Dbar1CvalDnameHcommand1
+  s>     \'\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Dbar1CvalCfooDval1DnameHcommand1
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
@@ -414,7 +414,7 @@ Command frames can be reflected via debugreflect
   s>     Content-Type: text/plain\r\n
   s>     Content-Length: 205\r\n
   s>     \r\n
-  s>     received: 1 1 1 \xa2Dargs\xa2CfooDval1Dbar1CvalDnameHcommand1\n
+  s>     received: 1 1 1 \xa2Dargs\xa2Dbar1CvalCfooDval1DnameHcommand1\n
   s>     ["runcommand", {"args": {"bar1": "val", "foo": "val1"}, "command": "command1", "data": null, "requestid": 1}]\n
   s>     received: <no frame>\n
   s>     {"action": "noop"}

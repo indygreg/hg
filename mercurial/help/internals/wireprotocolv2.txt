@@ -113,6 +113,9 @@ fields
    parents
       Parent revisions.
 
+   phase
+      The phase state of a revision.
+
    revision
       The raw, revision data for the changelog entry. The hash of this data
       will match the revision's node value.
@@ -126,7 +129,8 @@ This map has the following bytestring keys:
 
 totalitems
    (unsigned integer) Total number of changelog revisions whose data is being
-   transferred.
+   transferred. This maps to the set of revisions in the requested node
+   range, not the total number of records that follow (see below for why).
 
 Following the map header is a series of 0 or more CBOR values. If values
 are present, the first value will always be a map describing a single changeset
@@ -144,6 +148,11 @@ parents (optional)
    (array of bytestrings) The nodes representing the parent revisions of this
    revision. Only present if ``parents`` data is being requested.
 
+phase (optional)
+   (bytestring) The phase that a revision is in. Recognized values are
+   ``secret``, ``draft``, and ``public``. Only present if ``phase`` data
+   is being requested.
+
 revisionsize (optional)
    (unsigned integer) Indicates the size of raw revision data that follows this
    map. The following data contains a serialized form of the changeset data,
@@ -160,10 +169,19 @@ If nodes are requested via ``nodes``, they will be emitted in requested order.
 
 Nodes from ``nodes`` are emitted before nodes from ``noderange``.
 
+The set of changeset revisions emitted may not match the exact set of
+changesets requested. Furthermore, the set of keys present on each
+map may vary. This is to facilitate emitting changeset updates as well
+as new revisions.
+
+For example, if the request wants ``phase`` and ``revision`` data,
+the response may contain entries for each changeset in the common nodes
+set with the ``phase`` key and without the ``revision`` key in order
+to reflect a phase-only update.
+
 TODO support different revision selection mechanisms (e.g. non-public, specific
 revisions)
 TODO support different hash "namespaces" for revisions (e.g. sha-1 versus other)
-TODO support emitting phases data
 TODO support emitting bookmarks data
 TODO support emitting obsolescence data
 TODO support filtering based on relevant paths (narrow clone)

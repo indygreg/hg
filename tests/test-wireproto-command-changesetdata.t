@@ -3,6 +3,10 @@
   $ hg init server
   $ enablehttpv2 server
   $ cd server
+  $ cat >> .hg/hgrc << EOF
+  > [phases]
+  > publish = false
+  > EOF
   $ echo a0 > a
   $ echo b0 > b
 
@@ -13,6 +17,7 @@
   $ hg commit -m 'commit 1'
   $ echo b2 > b
   $ hg commit -m 'commit 2'
+  $ hg phase --public -r .
 
   $ hg -q up -r 0
   $ echo a2 > a
@@ -365,6 +370,57 @@ Parents data is transferred upon request
     }
   ]
 
+Phase data is transferred upon request
+
+  $ sendhttpv2peer << EOF
+  > command changesetdata
+  >     fields eval:[b'phase']
+  >     nodes eval:[b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd']
+  > EOF
+  creating http peer for wire protocol version 2
+  sending changesetdata command
+  s>     POST /api/exp-http-v2-0001/ro/changesetdata HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-exp-framing-0005\r\n
+  s>     content-type: application/mercurial-exp-framing-0005\r\n
+  s>     content-length: 76\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s>     D\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Ffields\x81EphaseEnodes\x81T\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddDnameMchangesetdata
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
+  s>     Transfer-Encoding: chunked\r\n
+  s>     \r\n
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
+  s>     \r\n
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     3d\r\n
+  s>     5\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x01\xa2DnodeT\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddEphaseFpublic
+  s>     \r\n
+  received frame(size=53; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
+  s>     0\r\n
+  s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  response: gen[
+    {
+      b'totalitems': 1
+    },
+    {
+      b'node': b'\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd',
+      b'phase': b'public'
+    }
+  ]
+
 Revision data is transferred upon request
 
   $ sendhttpv2peer << EOF
@@ -478,6 +534,103 @@ Multiple fields can be transferred
         b'3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:',
         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
       ],
+      b'revisionsize': 61
+    },
+    b'1b74476799ec8318045db759b1b4bcc9b839d0aa\ntest\n0 0\na\n\ncommit 3'
+  ]
+
+Base nodes have just their metadata (e.g. phase) transferred
+
+  $ sendhttpv2peer << EOF
+  > command changesetdata
+  >     fields eval:[b'phase', b'parents', b'revision']
+  >     noderange eval:[[b'\x33\x90\xef\x85\x00\x73\xfb\xc2\xf0\xdf\xff\x22\x44\x34\x2c\x8e\x92\x29\x01\x3a'], [b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd', b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11']]
+  > EOF
+  creating http peer for wire protocol version 2
+  sending changesetdata command
+  s>     POST /api/exp-http-v2-0001/ro/changesetdata HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-exp-framing-0005\r\n
+  s>     content-type: application/mercurial-exp-framing-0005\r\n
+  s>     content-length: 141\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s>     \x85\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Ffields\x83EphaseGparentsHrevisionInoderange\x82\x81T3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:\x82T\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11DnameMchangesetdata
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
+  s>     Transfer-Encoding: chunked\r\n
+  s>     \r\n
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
+  s>     \r\n
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     239\r\n
+  s>     1\x02\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x03\xa2DnodeT3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:EphaseFpublic\xa4DnodeTu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1Gparents\x82T3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00EphaseFpublicLrevisionsize\x18?X?7f144aea0ba742713887b564d57e9d12f12ff382\n
+  s>     test\n
+  s>     0 0\n
+  s>     a\n
+  s>     b\n
+  s>     \n
+  s>     commit 1\xa4DnodeT\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddGparents\x82Tu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00EphaseFpublicLrevisionsize\x18=X=37f0a2d1c28ffe4b879109a7d1bbf8f07b3c763b\n
+  s>     test\n
+  s>     0 0\n
+  s>     b\n
+  s>     \n
+  s>     commit 2\xa4DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11Gparents\x82T3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00EphaseEdraftLrevisionsize\x18=X=1b74476799ec8318045db759b1b4bcc9b839d0aa\n
+  s>     test\n
+  s>     0 0\n
+  s>     a\n
+  s>     \n
+  s>     commit 3
+  s>     \r\n
+  received frame(size=561; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
+  s>     0\r\n
+  s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  response: gen[
+    {
+      b'totalitems': 3
+    },
+    {
+      b'node': b'3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:',
+      b'phase': b'public'
+    },
+    {
+      b'node': b'u\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1',
+      b'parents': [
+        b'3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:',
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+      ],
+      b'phase': b'public',
+      b'revisionsize': 63
+    },
+    b'7f144aea0ba742713887b564d57e9d12f12ff382\ntest\n0 0\na\nb\n\ncommit 1',
+    {
+      b'node': b'\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd',
+      b'parents': [
+        b'u\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1',
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+      ],
+      b'phase': b'public',
+      b'revisionsize': 61
+    },
+    b'37f0a2d1c28ffe4b879109a7d1bbf8f07b3c763b\ntest\n0 0\nb\n\ncommit 2',
+    {
+      b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11',
+      b'parents': [
+        b'3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:',
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+      ],
+      b'phase': b'draft',
       b'revisionsize': 61
     },
     b'1b74476799ec8318045db759b1b4bcc9b839d0aa\ntest\n0 0\na\n\ncommit 3'

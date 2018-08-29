@@ -511,6 +511,7 @@ def changesetdata(repo, proto, noderange=None, nodes=None, fields=None):
             # list.
 
     seen.clear()
+    publishing = repo.publishing()
 
     if outgoing:
         repo.hook('preoutgoing', throw=True, source='serve')
@@ -518,6 +519,19 @@ def changesetdata(repo, proto, noderange=None, nodes=None, fields=None):
     yield {
         b'totalitems': len(outgoing),
     }
+
+    # The phases of nodes already transferred to the client may have changed
+    # since the client last requested data. We send phase-only records
+    # for these revisions, if requested.
+    if b'phase' in fields and noderange is not None:
+        # TODO skip nodes whose phase will be reflected by a node in the
+        # outgoing set. This is purely an optimization to reduce data
+        # size.
+        for node in noderange[0]:
+            yield {
+                b'node': node,
+                b'phase': b'public' if publishing else repo[node].phasestr()
+            }
 
     # It is already topologically sorted by revision number.
     for node in outgoing:
@@ -527,6 +541,13 @@ def changesetdata(repo, proto, noderange=None, nodes=None, fields=None):
 
         if b'parents' in fields:
             d[b'parents'] = cl.parents(node)
+
+        if b'phase' in fields:
+            if publishing:
+                d[b'phase'] = b'public'
+            else:
+                ctx = repo[node]
+                d[b'phase'] = ctx.phasestr()
 
         revisiondata = None
 

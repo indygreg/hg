@@ -43,6 +43,7 @@
           <Component Id="help.internals" Guid="$(var.help.internals.guid)" Win64='$(var.IsX64)'>
             <File Id="internals.bundle2.txt"      Name="bundle2.txt" />
             <File Id="internals.bundles.txt"      Name="bundles.txt" KeyPath="yes" />
+            <File Id="internals.cbor.txt"         Name="cbor.txt" />
             <File Id="internals.censor.txt"       Name="censor.txt" />
             <File Id="internals.changegroups.txt" Name="changegroups.txt" />
             <File Id="internals.config.txt"       Name="config.txt" />

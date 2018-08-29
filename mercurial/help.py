@@ -205,6 +205,8 @@ internalstable = sorted([
      loaddoc('bundle2', subdir='internals')),
     (['bundles'], _('Bundles'),
      loaddoc('bundles', subdir='internals')),
+    (['cbor'], _('CBOR'),
+     loaddoc('cbor', subdir='internals')),
     (['censor'], _('Censor'),
      loaddoc('censor', subdir='internals')),
     (['changegroups'], _('Changegroups'),

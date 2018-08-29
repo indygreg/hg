@@ -1010,6 +1010,7 @@ internals topic renders index of available sub-topics
   
        bundle2       Bundle2
        bundles       Bundles
+       cbor          CBOR
        censor        Censor
        changegroups  Changegroups
        config        Config Registrar
@@ -3292,6 +3293,13 @@ Sub-topic indexes rendered properly
   </a>
   </td><td>
   Bundles
+  </td></tr>
+  <tr><td>
+  <a href="/help/internals.cbor">
+  cbor
+  </a>
+  </td><td>
+  CBOR
   </td></tr>
   <tr><td>
   <a href="/help/internals.censor">

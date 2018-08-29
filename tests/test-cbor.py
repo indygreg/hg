@@ -941,6 +941,30 @@ class SansIODecoderTests(TestCase):
         decoder = cborutil.sansiodecoder()
         self.assertEqual(decoder.decode(b''), (False, 0, 0))
 
+class BufferingDecoderTests(TestCase):
+    def testsimple(self):
+        source = [
+            b'foobar',
+            b'x' * 128,
+            {b'foo': b'bar'},
+            True,
+            False,
+            None,
+            [None for i in range(128)],
+        ]
+
+        encoded = b''.join(cborutil.streamencode(source))
+
+        for step in range(1, 32):
+            decoder = cborutil.bufferingdecoder()
+            start = 0
+
+            while start < len(encoded):
+                decoder.decode(encoded[start:start + step])
+                start += step
+
+            self.assertEqual(decoder.getavailable(), [source])
+
 class DecodeallTests(TestCase):
     def testemptyinput(self):
         self.assertEqual(cborutil.decodeall(b''), [])

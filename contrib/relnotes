@@ -110,6 +110,8 @@ def main():
     fromext = subprocess.check_output(
         [
             "hg",
+            "--config",
+            "extensions.releasenotes=",
             "releasenotes",
             "-r",
             "%s::%s" % (args.startrev[0], args.stoprev[0]),

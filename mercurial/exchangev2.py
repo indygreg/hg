@@ -283,6 +283,7 @@ def _fetchmanifests(repo, tr, remote, manifestnodes):
                 b'tree': b'',
                 b'nodes': batch,
                 b'fields': {b'parents', b'revision'},
+                b'haveparents': True,
             }).result()
 
             # Chomp off header object.
@@ -374,7 +375,8 @@ def _fetchfiles(repo, tr, remote, fnodes, linkrevs):
                 fs.append((path, e.callcommand(b'filedata', {
                     b'path': path,
                     b'nodes': sorted(nodes),
-                    b'fields': {b'parents', b'revision'}
+                    b'fields': {b'parents', b'revision'},
+                    b'haveparents': True,
                 })))
 
                 locallinkrevs[path] = {

@@ -82,6 +82,7 @@ Test basic clone
       'parents',
       'revision'
     ]),
+    'haveparents': True,
     'nodes': [
       '\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&A',
       '\xa9\x88\xfbCX>\x87\x1d\x1e\xd5u\x0e\xe0t\xc6\xd8@\xbb\xbf\xc8',
@@ -100,6 +101,7 @@ Test basic clone
       'parents',
       'revision'
     ]),
+    'haveparents': True,
     'nodes': [
       '+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
       '\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc',
@@ -112,6 +114,7 @@ Test basic clone
       'parents',
       'revision'
     ]),
+    'haveparents': True,
     'nodes': [
       '\x81\x9e%\x8d1\xa5\xe1`f)\xf3e\xbb\x90*\x1b!\xeeB\x16',
       '\xb1zk\xd3g=\x9a\xb8\xce\xd5\x81\xa2\t\xf6/=\xa5\xccEx',
@@ -211,6 +214,7 @@ Cloning only a specific revision works
       'parents',
       'revision'
     ]),
+    'haveparents': True,
     'nodes': [
       '\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&A',
       '\xa9\x88\xfbCX>\x87\x1d\x1e\xd5u\x0e\xe0t\xc6\xd8@\xbb\xbf\xc8'
@@ -226,6 +230,7 @@ Cloning only a specific revision works
       'parents',
       'revision'
     ]),
+    'haveparents': True,
     'nodes': [
       '+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
       '\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc'
@@ -237,6 +242,7 @@ Cloning only a specific revision works
       'parents',
       'revision'
     ]),
+    'haveparents': True,
     'nodes': [
       '\x81\x9e%\x8d1\xa5\xe1`f)\xf3e\xbb\x90*\x1b!\xeeB\x16'
     ],
@@ -317,6 +323,7 @@ Incremental pull works
       'parents',
       'revision'
     ]),
+    'haveparents': True,
     'nodes': [
       '\xec\x80NH\x8c \x88\xc25\t\x9a\x10 u\x13\xbe\xcd\xc3\xdd\xa5',
       '\x04\\\x7f9\'\xda\x13\xe7Z\xf8\xf0\xe4\xf0HI\xe4a\xa9x\x0f',
@@ -333,6 +340,7 @@ Incremental pull works
       'parents',
       'revision'
     ]),
+    'haveparents': True,
     'nodes': [
       '+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
       '\xc2\xa2\x05\xc8\xb2\xad\xe2J\xf2`b\xe5<\xd5\xbc8\x01\xd6`\xda'
@@ -344,6 +352,7 @@ Incremental pull works
       'parents',
       'revision'
     ]),
+    'haveparents': True,
     'nodes': [
       '\x81\x9e%\x8d1\xa5\xe1`f)\xf3e\xbb\x90*\x1b!\xeeB\x16',
       '\xb1zk\xd3g=\x9a\xb8\xce\xd5\x81\xa2\t\xf6/=\xa5\xccEx',
@@ -498,6 +507,7 @@ Bookmarks are transferred on clone
       'parents',
       'revision'
     ]),
+    'haveparents': True,
     'nodes': [
       '\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&A',
       '\xa9\x88\xfbCX>\x87\x1d\x1e\xd5u\x0e\xe0t\xc6\xd8@\xbb\xbf\xc8',
@@ -516,6 +526,7 @@ Bookmarks are transferred on clone
       'parents',
       'revision'
     ]),
+    'haveparents': True,
     'nodes': [
       '+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
       '\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc',
@@ -528,6 +539,7 @@ Bookmarks are transferred on clone
       'parents',
       'revision'
     ]),
+    'haveparents': True,
     'nodes': [
       '\x81\x9e%\x8d1\xa5\xe1`f)\xf3e\xbb\x90*\x1b!\xeeB\x16',
       '\xb1zk\xd3g=\x9a\xb8\xce\xd5\x81\xa2\t\xf6/=\xa5\xccEx',

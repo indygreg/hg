@@ -213,6 +213,14 @@ fields
    revision
       The raw revision data for a file.
 
+haveparents
+   (bool) Whether the client has the parent revisions of all requested
+   nodes. If set, the server may emit revision data as deltas against
+   any parent revision. If not set, the server MUST only emit deltas for
+   revisions previously emitted by this command.
+
+   False is assumed in the absence of any value.
+
 nodes
    (array of bytestrings) File nodes whose data to retrieve.
 
@@ -349,6 +357,14 @@ fields
    revision
       The raw revision data for the manifest.
 
+haveparents
+   (bool) Whether the client has the parent revisions of all requested
+   nodes. If set, the server may emit revision data as deltas against
+   any parent revision. If not set, the server MUST only emit deltas for
+   revisions previously emitted by this command.
+
+   False is assumed in the absence of any value.
+
 nodes
    (array of bytestring) Manifest nodes whose data to retrieve.
 
@@ -361,7 +377,6 @@ TODO allow specifying revisions via alternate means (such as from changeset
 revisions or ranges)
 TODO consider recursive expansion of manifests (with path filtering for
 narrow use cases)
-TODO more control over whether to emit fulltexts or deltas
 
 The response bytestream starts with a CBOR map describing the data that
 follows. It has the following bytestring keys:

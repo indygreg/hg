@@ -415,7 +415,7 @@ def _capabilitiesv2(repo, proto):
 
     return proto.addcapabilities(repo, caps)
 
-def builddeltarequests(store, nodes):
+def builddeltarequests(store, nodes, haveparents):
     """Build a series of revision delta requests against a backend store.
 
     Returns a list of revision numbers in the order they should be sent
@@ -430,49 +430,68 @@ def builddeltarequests(store, nodes):
     revs = dagop.linearize({store.rev(n) for n in nodes}, store.parentrevs)
 
     requests = []
+    seenrevs = set()
 
     for rev in revs:
         node = store.node(rev)
-        parents = store.parents(node)
-        deltaparent = store.node(store.deltaparent(rev))
+        parentnodes = store.parents(node)
+        parentrevs = [store.rev(n) for n in parentnodes]
+        deltabaserev = store.deltaparent(rev)
+        deltabasenode = store.node(deltabaserev)
 
-        # There is a delta in storage. That means we can send the delta
-        # efficiently.
+        # The choice of whether to send a fulltext revision or a delta and
+        # what delta to send is governed by a few factors.
         #
-        # But, the delta may be against a revision the receiver doesn't
-        # have (e.g. shallow clone or when the delta isn't against a parent
-        # revision). For now, we ignore the problem of shallow clone. As
-        # long as a delta exists against a parent, we send it.
-        # TODO allow arguments to control this behavior, as the receiver
-        # may not have the base revision in some scenarios.
-        if deltaparent != nullid and deltaparent in parents:
-            basenode = deltaparent
-
-        # Else there is no delta parent in storage or the delta that is
-        # # there isn't suitable. Let's use a delta against a parent
-        # revision, if possible.
+        # To send a delta, we need to ensure the receiver is capable of
+        # decoding it. And that requires the receiver to have the base
+        # revision the delta is against.
         #
-        # There is room to check if the delta parent is in the ancestry of
-        # this node. But there isn't an API on the manifest storage object
-        # for that. So ignore this case for now.
+        # We can only guarantee the receiver has the base revision if
+        # a) we've already sent the revision as part of this group
+        # b) the receiver has indicated they already have the revision.
+        # And the mechanism for "b" is the client indicating they have
+        # parent revisions. So this means we can only send the delta if
+        # it is sent before or it is against a delta and the receiver says
+        # they have a parent.
 
-        elif parents[0] != nullid:
-            basenode = parents[0]
-        elif parents[1] != nullid:
-            basenode = parents[1]
+        # We can send storage delta if it is against a revision we've sent
+        # in this group.
+        if deltabaserev != nullrev and deltabaserev in seenrevs:
+            basenode = deltabasenode
 
-        # No potential bases to delta against. Send a full revision.
+        # We can send storage delta if it is against a parent revision and
+        # the receiver indicates they have the parents.
+        elif (deltabaserev != nullrev and deltabaserev in parentrevs
+              and haveparents):
+            basenode = deltabasenode
+
+        # Otherwise the storage delta isn't appropriate. Fall back to
+        # using another delta, if possible.
+
+        # Use p1 if we've emitted it or receiver says they have it.
+        elif parentrevs[0] != nullrev and (
+            parentrevs[0] in seenrevs or haveparents):
+            basenode = parentnodes[0]
+
+        # Use p2 if we've emitted it or receiver says they have it.
+        elif parentrevs[1] != nullrev and (
+            parentrevs[1] in seenrevs or haveparents):
+            basenode = parentnodes[1]
+
+        # Nothing appropriate to delta against. Send the full revision.
         else:
             basenode = nullid
 
         requests.append(changegroup.revisiondeltarequest(
             node=node,
-            p1node=parents[0],
-            p2node=parents[1],
+            p1node=parentnodes[0],
+            p2node=parentnodes[1],
             # Receiver deals with linknode resolution.
             linknode=nullid,
             basenode=basenode,
         ))
+
+        seenrevs.add(rev)
 
     return revs, requests
 
@@ -674,12 +693,14 @@ def getfilestore(repo, proto, path):
 
 @wireprotocommand('filedata',
                   args={
+                      'haveparents': True,
                       'nodes': [b'0123456...'],
                       'fields': [b'parents', b'revision'],
                       'path': b'foo.txt',
                   },
                   permission='pull')
-def filedata(repo, proto, nodes=None, fields=None, path=None):
+def filedata(repo, proto, haveparents=False, nodes=None, fields=None,
+             path=None):
     fields = fields or set()
 
     if nodes is None:
@@ -702,7 +723,7 @@ def filedata(repo, proto, nodes=None, fields=None, path=None):
             raise error.WireprotoCommandError('unknown file node: %s',
                                               (hex(node),))
 
-    revs, requests = builddeltarequests(store, nodes)
+    revs, requests = builddeltarequests(store, nodes, haveparents)
 
     yield {
         b'totalitems': len(revs),
@@ -804,11 +825,13 @@ def lookupv2(repo, proto, key):
 @wireprotocommand('manifestdata',
                   args={
                       'nodes': [b'0123456...'],
+                      'haveparents': True,
                       'fields': [b'parents', b'revision'],
                       'tree': b'',
                   },
                   permission='pull')
-def manifestdata(repo, proto, nodes=None, fields=None, tree=None):
+def manifestdata(repo, proto, haveparents=False, nodes=None, fields=None,
+                 tree=None):
     fields = fields or set()
 
     if nodes is None:
@@ -829,7 +852,7 @@ def manifestdata(repo, proto, nodes=None, fields=None, tree=None):
             raise error.WireprotoCommandError(
                 'unknown node: %s', (node,))
 
-    revs, requests = builddeltarequests(store, nodes)
+    revs, requests = builddeltarequests(store, nodes, haveparents)
 
     yield {
         b'totalitems': len(revs),

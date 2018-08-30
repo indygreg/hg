@@ -998,7 +998,7 @@ def loadinternalmerge(ui, extname, registrarobj):
 
     # to put i18n comments into hg.pot for automatically generated texts
 
-    # i18n: "binary" and "symlik" are keywords
+    # i18n: "binary" and "symlink" are keywords
     # i18n: this text is added automatically
     _("    (actual capabilities: binary, symlink)")
     # i18n: "binary" is keyword

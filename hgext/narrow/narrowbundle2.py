@@ -50,9 +50,9 @@ def getrepocaps_narrow(orig, repo, **kwargs):
     caps[NARROWCAP] = ['v0']
     return caps
 
-def getbundlechangegrouppart_nonellipsis(bundler, repo, source, bundlecaps=None,
-                                         b2caps=None, heads=None, common=None,
-                                         **kwargs):
+def getbundlechangegrouppart_widen(bundler, repo, source, bundlecaps=None,
+                                   b2caps=None, heads=None, common=None,
+                                   **kwargs):
     """Handling changegroup changegroup generation on the server when user
     is widening their narrowspec"""
 
@@ -317,7 +317,7 @@ def setup():
             repo.ui.configbool('experimental', 'narrowservebrokenellipses')):
             getbundlechangegrouppart_narrow(*args, **kwargs)
         elif kwargs.get(r'widen', False) and kwargs.get(r'narrow', False):
-            getbundlechangegrouppart_nonellipsis(*args, **kwargs)
+            getbundlechangegrouppart_widen(*args, **kwargs)
         else:
             origcgfn(*args, **kwargs)
     exchange.getbundle2partsmapping['changegroup'] = wrappedcgfn

@@ -54,6 +54,7 @@ Test basic clone
   sending 1 commands
   sending command changesetdata: {
     'fields': set([
+      'bookmarks',
       'parents',
       'phase',
       'revision'
@@ -74,6 +75,7 @@ Test basic clone
   add changeset cd2534766bec
   add changeset e96ae20f4188
   add changeset caa2a465451d
+  checking for updated bookmarks
   updating the branch cache
   new changesets 3390ef850073:caa2a465451d (3 drafts)
 
@@ -126,6 +128,7 @@ Cloning only a specific revision works
   sending 1 commands
   sending command changesetdata: {
     'fields': set([
+      'bookmarks',
       'parents',
       'phase',
       'revision'
@@ -142,6 +145,7 @@ Cloning only a specific revision works
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   add changeset 3390ef850073
   add changeset 4432d83626e8
+  checking for updated bookmarks
   updating the branch cache
   new changesets 3390ef850073:4432d83626e8
 
@@ -178,6 +182,7 @@ Incremental pull works
   sending 1 commands
   sending command changesetdata: {
     'fields': set([
+      'bookmarks',
       'parents',
       'phase',
       'revision'
@@ -198,6 +203,7 @@ Incremental pull works
   add changeset cd2534766bec
   add changeset e96ae20f4188
   add changeset caa2a465451d
+  checking for updated bookmarks
   updating the branch cache
   new changesets cd2534766bec:caa2a465451d (3 drafts)
   (run 'hg update' to get a working copy)
@@ -241,6 +247,7 @@ Phase-only update works
   sending 1 commands
   sending command changesetdata: {
     'fields': set([
+      'bookmarks',
       'parents',
       'phase',
       'revision'
@@ -259,6 +266,7 @@ Phase-only update works
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
   received frame(size=92; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  checking for updated bookmarks
   2 local changesets published
   (run 'hg update' to get a working copy)
 
@@ -275,3 +283,113 @@ Phase-only update works
   
 
   $ cd ..
+
+Bookmarks are transferred on clone
+
+  $ hg -R server-simple bookmark -r 3390ef850073fbc2f0dfff2244342c8e9229013a book-1
+  $ hg -R server-simple bookmark -r cd2534766bece138c7c1afdc6825302f0f62d81f book-2
+
+  $ hg --debug clone -U http://localhost:$HGPORT/ client-bookmarks
+  using http://localhost:$HGPORT/
+  sending capabilities command
+  query 1; heads
+  sending 2 commands
+  sending command heads: {}
+  sending command known: {
+    'nodes': []
+  }
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  received frame(size=43; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=1; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  sending 1 commands
+  sending command changesetdata: {
+    'fields': set([
+      'bookmarks',
+      'parents',
+      'phase',
+      'revision'
+    ]),
+    'noderange': [
+      [],
+      [
+        '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
+        '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
+      ]
+    ]
+  }
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  received frame(size=909; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  add changeset 3390ef850073
+  add changeset 4432d83626e8
+  add changeset cd2534766bec
+  add changeset e96ae20f4188
+  add changeset caa2a465451d
+  checking for updated bookmarks
+  adding remote bookmark book-1
+  adding remote bookmark book-2
+  updating the branch cache
+  new changesets 3390ef850073:caa2a465451d (1 drafts)
+
+  $ hg -R client-bookmarks bookmarks
+     book-1                    0:3390ef850073
+     book-2                    2:cd2534766bec
+
+Server-side bookmark moves are reflected during `hg pull`
+
+  $ hg -R server-simple bookmark -r cd2534766bece138c7c1afdc6825302f0f62d81f book-1
+  moving bookmark 'book-1' forward from 3390ef850073
+
+  $ hg -R client-bookmarks --debug pull
+  pulling from http://localhost:$HGPORT/
+  using http://localhost:$HGPORT/
+  sending capabilities command
+  query 1; heads
+  sending 2 commands
+  sending command heads: {}
+  sending command known: {
+    'nodes': [
+      '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f',
+      '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1'
+    ]
+  }
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  received frame(size=43; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=3; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  searching for changes
+  all remote heads known locally
+  sending 1 commands
+  sending command changesetdata: {
+    'fields': set([
+      'bookmarks',
+      'parents',
+      'phase',
+      'revision'
+    ]),
+    'noderange': [
+      [
+        '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
+        '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
+      ],
+      [
+        '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
+        '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
+      ]
+    ]
+  }
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  received frame(size=144; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  checking for updated bookmarks
+  updating bookmark book-1
+  (run 'hg update' to get a working copy)
+
+  $ hg -R client-bookmarks bookmarks
+     book-1                    2:cd2534766bec
+     book-2                    2:cd2534766bec

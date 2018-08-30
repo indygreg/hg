@@ -15,6 +15,7 @@ from .node import (
     short,
 )
 from . import (
+    bookmarks,
     mdiff,
     phases,
     pycompat,
@@ -50,6 +51,11 @@ def pull(pullop):
 
         phases.advanceboundary(repo, tr, phases.phasenames.index(phase),
                                csetres['nodesbyphase'][phase])
+
+    # Write bookmark updates.
+    bookmarks.updatefromremote(repo.ui, repo, csetres['bookmarks'],
+                               remote.url(), pullop.gettransaction,
+                               explicit=pullop.explicitbookmarks)
 
 def _pullchangesetdiscovery(repo, remote, heads, abortwhenunrelated=True):
     """Determine which changesets need to be pulled."""
@@ -91,7 +97,7 @@ def _fetchchangesets(repo, tr, remote, common, fetch, remoteheads):
     with remote.commandexecutor() as e:
         objs = e.callcommand(b'changesetdata', {
             b'noderange': [sorted(common), sorted(remoteheads)],
-            b'fields': {b'parents', b'phase', b'revision'},
+            b'fields': {b'bookmarks', b'parents', b'phase', b'revision'},
         }).result()
 
         # The context manager waits on all response data when exiting. So
@@ -124,6 +130,7 @@ def _processchangesetdata(repo, tr, objs):
         progress.increment()
 
     nodesbyphase = {phase: set() for phase in phases.phasenames}
+    remotebookmarks = {}
 
     # addgroup() expects a 7-tuple describing revisions. This normalizes
     # the wire data to that format.
@@ -136,6 +143,9 @@ def _processchangesetdata(repo, tr, objs):
 
             if b'phase' in cset:
                 nodesbyphase[cset[b'phase']].add(node)
+
+            for mark in cset.get(b'bookmarks', []):
+                remotebookmarks[mark] = node
 
             # Some entries might only be metadata only updates.
             if b'revisionsize' not in cset:
@@ -164,4 +174,5 @@ def _processchangesetdata(repo, tr, objs):
     return {
         'added': added,
         'nodesbyphase': nodesbyphase,
+        'bookmarks': remotebookmarks,
     }

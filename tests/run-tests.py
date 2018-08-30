@@ -1072,7 +1072,7 @@ class Test(unittest.TestCase):
         env["HGHOSTNAME"] = "test-hostname"
         env['HGIPV6'] = str(int(self._useipv6))
         if 'HGCATAPULTSERVERPIPE' not in env:
-            env['HGCATAPULTSERVERPIPE'] = '/dev/null'
+            env['HGCATAPULTSERVERPIPE'] = os.devnull
 
         extraextensions = []
         for opt in self._extraconfigopts:
@@ -1390,7 +1390,7 @@ class TTest(Test):
             script.append(b'alias pwd="pwd -W"\n')
 
         hgcatapult = os.getenv('HGCATAPULTSERVERPIPE')
-        if hgcatapult and hgcatapult != '/dev/null':
+        if hgcatapult and hgcatapult != os.devnull:
             # Kludge: use a while loop to keep the pipe from getting
             # closed by our echo commands. The still-running file gets
             # reaped at the end of the script, which causes the while

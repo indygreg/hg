@@ -296,7 +296,6 @@ class branchcache(dict):
             # This have been tested True on all internal usage of this function.
             # run it again in case of doubt
             # assert not (set(bheadrevs) & set(newheadrevs))
-            newheadrevs.sort()
             bheadset.update(newheadrevs)
 
             # This prunes out two kinds of heads - heads that are superseded by

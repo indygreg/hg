@@ -52,7 +52,8 @@ test changing case of path components
   $ hg ci -Am addb D/b
   $ hg mv D/b d/b
   D/b: not overwriting - file already committed
-  (hg rename --force to replace the file by recording a rename)
+  ('hg rename --force' to replace the file by recording a rename)
+  [1]
   $ hg mv D/b d/c
   $ hg st
   A D/c

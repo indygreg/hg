@@ -133,7 +133,7 @@ def encodedir(path):
 def hashdiffopts(diffopts):
     diffoptstr = str(sorted(
         (k, getattr(diffopts, k))
-        for k in mdiff.diffopts.defaults.iterkeys()
+        for k in mdiff.diffopts.defaults
     ))
     return hashlib.sha1(diffoptstr).hexdigest()[:6]
 

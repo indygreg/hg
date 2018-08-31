@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import io
 import unittest
 
 from mercurial.thirdparty import (
@@ -117,16 +116,6 @@ class BytestringTests(TestCase):
         self.assertEqual(b, [b''])
         self.assertTrue(b[0].isfirst)
         self.assertTrue(b[0].islast)
-
-    def testreadtoiter(self):
-        source = io.BytesIO(b'\x5f\x44\xaa\xbb\xcc\xdd\x43\xee\xff\x99\xff')
-
-        it = cborutil.readindefinitebytestringtoiter(source)
-        self.assertEqual(next(it), b'\xaa\xbb\xcc\xdd')
-        self.assertEqual(next(it), b'\xee\xff\x99')
-
-        with self.assertRaises(StopIteration):
-            next(it)
 
     def testdecodevariouslengths(self):
         for i in (0, 1, 22, 23, 24, 25, 254, 255, 256, 65534, 65535, 65536):

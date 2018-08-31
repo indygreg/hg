@@ -147,8 +147,8 @@ transaction: in-memory dirstate changes should be written into
   $ hg debugstate --nodates
   n 644         12 set                 c
   $ hg backout -d '6 0' -m 'to be rollback-ed soon' -r .
-  adding b
   removing c
+  adding b
   changeset 6:4bfec048029d backs out changeset 5:fac0b729a654
   $ hg rollback -q
   $ hg status -A

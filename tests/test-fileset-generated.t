@@ -187,11 +187,11 @@ Test revert
   undeleting missing_content2_missing-untracked
 
   $ hg revert 'set:deleted()'
+  forgetting content1_missing_missing-tracked
+  forgetting missing_missing_missing-tracked
   reverting content1_content1_missing-tracked
   reverting content1_content2_missing-tracked
-  forgetting content1_missing_missing-tracked
   reverting missing_content2_missing-tracked
-  forgetting missing_missing_missing-tracked
 
   $ hg revert 'set:unknown()'
 

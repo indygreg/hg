@@ -1014,8 +1014,8 @@ test import with similarity and git and strip (issue295 et al.)
     a
   R a
   $ hg revert -a
-  undeleting a
   forgetting b
+  undeleting a
   $ cat b
   mod b
   $ rm b

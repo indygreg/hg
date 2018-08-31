@@ -129,9 +129,9 @@ revert to another revision (--rev)
 ----------------------------------
 
   $ hg revert --all -r0
-  adding a
-  removing d
   forgetting z
+  removing d
+  adding a
 
 revert explicitly to parent (--rev)
 -----------------------------------
@@ -283,8 +283,8 @@ Issue332: confusing message when reverting directory
   $ echo foo > newdir/newfile
   $ hg add newdir/newfile
   $ hg revert b newdir
-  reverting b/b
   forgetting newdir/newfile
+  reverting b/b
   $ echo foobar > b/b
   $ hg revert .
   reverting b/b
@@ -368,9 +368,9 @@ copies and renames, you have no chance to survive make your time (issue3920)
   $ hg update '.^'
   1 files updated, 0 files merged, 2 files removed, 0 files unresolved
   $ hg revert -rtip -a
+  removing ignored
   adding allyour
   adding base
-  removing ignored
   $ hg status -C
   A allyour
     ignored
@@ -790,28 +790,28 @@ Test revert --all to parent content
 check revert output
 
   $ hg revert --all
-  undeleting content1_content1_content1-untracked
-  reverting content1_content1_content3-tracked
-  undeleting content1_content1_content3-untracked
-  reverting content1_content1_missing-tracked
-  undeleting content1_content1_missing-untracked
-  reverting content1_content2_content1-tracked
-  undeleting content1_content2_content1-untracked
-  undeleting content1_content2_content2-untracked
-  reverting content1_content2_content3-tracked
-  undeleting content1_content2_content3-untracked
-  reverting content1_content2_missing-tracked
-  undeleting content1_content2_missing-untracked
   forgetting content1_missing_content1-tracked
   forgetting content1_missing_content3-tracked
   forgetting content1_missing_missing-tracked
-  undeleting missing_content2_content2-untracked
-  reverting missing_content2_content3-tracked
-  undeleting missing_content2_content3-untracked
-  reverting missing_content2_missing-tracked
-  undeleting missing_content2_missing-untracked
   forgetting missing_missing_content3-tracked
   forgetting missing_missing_missing-tracked
+  reverting content1_content1_content3-tracked
+  reverting content1_content1_missing-tracked
+  reverting content1_content2_content1-tracked
+  reverting content1_content2_content3-tracked
+  reverting content1_content2_missing-tracked
+  reverting missing_content2_content3-tracked
+  reverting missing_content2_missing-tracked
+  undeleting content1_content1_content1-untracked
+  undeleting content1_content1_content3-untracked
+  undeleting content1_content1_missing-untracked
+  undeleting content1_content2_content1-untracked
+  undeleting content1_content2_content2-untracked
+  undeleting content1_content2_content3-untracked
+  undeleting content1_content2_missing-untracked
+  undeleting missing_content2_content2-untracked
+  undeleting missing_content2_content3-untracked
+  undeleting missing_content2_missing-untracked
 
 Compare resulting directory with revert target.
 
@@ -847,28 +847,28 @@ Test revert --all to "base" content
 check revert output
 
   $ hg revert --all --rev 'desc(base)'
-  undeleting content1_content1_content1-untracked
-  reverting content1_content1_content3-tracked
-  undeleting content1_content1_content3-untracked
-  reverting content1_content1_missing-tracked
-  undeleting content1_content1_missing-untracked
-  undeleting content1_content2_content1-untracked
-  reverting content1_content2_content2-tracked
-  undeleting content1_content2_content2-untracked
-  reverting content1_content2_content3-tracked
-  undeleting content1_content2_content3-untracked
-  reverting content1_content2_missing-tracked
-  undeleting content1_content2_missing-untracked
-  adding content1_missing_content1-untracked
-  reverting content1_missing_content3-tracked
-  adding content1_missing_content3-untracked
-  reverting content1_missing_missing-tracked
-  adding content1_missing_missing-untracked
+  forgetting missing_missing_content3-tracked
+  forgetting missing_missing_missing-tracked
   removing missing_content2_content2-tracked
   removing missing_content2_content3-tracked
   removing missing_content2_missing-tracked
-  forgetting missing_missing_content3-tracked
-  forgetting missing_missing_missing-tracked
+  reverting content1_content1_content3-tracked
+  reverting content1_content1_missing-tracked
+  reverting content1_content2_content2-tracked
+  reverting content1_content2_content3-tracked
+  reverting content1_content2_missing-tracked
+  reverting content1_missing_content3-tracked
+  reverting content1_missing_missing-tracked
+  adding content1_missing_content1-untracked
+  adding content1_missing_content3-untracked
+  adding content1_missing_missing-untracked
+  undeleting content1_content1_content1-untracked
+  undeleting content1_content1_content3-untracked
+  undeleting content1_content1_missing-untracked
+  undeleting content1_content2_content1-untracked
+  undeleting content1_content2_content2-untracked
+  undeleting content1_content2_content3-untracked
+  undeleting content1_content2_missing-untracked
 
 Compare resulting directory with revert target.
 
@@ -1120,8 +1120,8 @@ actual tests: reverting to something else than a merge parent
   M A
   A B
   $ hg revert --rev 1 --all
-  reverting A
   removing B
+  reverting A
   $ hg status --rev 1
 
 From the other parents
@@ -1140,8 +1140,8 @@ From the other parents
   M A
   A B
   $ hg revert --rev 1 --all
-  reverting A
   removing B
+  reverting A
   $ hg status --rev 1
 
   $ cd ..

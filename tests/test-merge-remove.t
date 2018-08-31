@@ -69,8 +69,8 @@ Reverting foo1 and bar:
 
   $ hg revert -vr . foo1 bar
   saving current version of bar as bar.orig
-  reverting bar
   saving current version of foo1 as foo1.orig
+  reverting bar
   reverting foo1
 
   $ hg debugstate --nodates

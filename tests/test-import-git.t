@@ -615,8 +615,8 @@ Renames and strip
 Prefix with strip, renames, creates etc
 
   $ hg revert -aC
-  undeleting a
   forgetting b
+  undeleting a
   $ rm b
   $ mkdir -p dir/dir2
   $ echo b > dir/dir2/b
@@ -715,10 +715,10 @@ Renames, similarity and git diff
 
   $ hg revert -aC
   forgetting dir/a
-  undeleting dir/d
-  undeleting dir/dir2/b
   forgetting dir/dir2/b2
   reverting dir/dir2/c
+  undeleting dir/d
+  undeleting dir/dir2/b
   $ rm dir/a dir/dir2/b2
   $ hg import --similarity 90 --no-commit - <<EOF
   > diff --git a/a b/b

@@ -3019,8 +3019,9 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
                                     util.copyfile(target, bakname)
                                 else:
                                     util.rename(target, bakname)
-                    if ui.verbose or not exact:
-                        ui.status(msg % rel)
+                    if opts.get('dry_run'):
+                        if ui.verbose or not exact:
+                            ui.status(msg % rel)
                 elif exact:
                     ui.warn(msg % rel)
                 break
@@ -3033,7 +3034,8 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
             prefetch(repo, [ctx.rev()],
                      matchfiles(repo,
                                 [f for sublist in oplist for f in sublist]))
-            _performrevert(repo, parents, ctx, actions, interactive, tobackup)
+            _performrevert(repo, parents, ctx, names, actions, interactive,
+                           tobackup)
 
         if targetsubs:
             # Revert the subrepos on the revert list
@@ -3045,7 +3047,7 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
                     raise error.Abort("subrepository '%s' does not exist in %s!"
                                       % (sub, short(ctx.node())))
 
-def _performrevert(repo, parents, ctx, actions, interactive=False,
+def _performrevert(repo, parents, ctx, names, actions, interactive=False,
                    tobackup=None):
     """function that actually perform all the actions computed for revert
 
@@ -3070,16 +3072,23 @@ def _performrevert(repo, parents, ctx, actions, interactive=False,
             pass
         repo.dirstate.remove(f)
 
+    def prntstatusmsg(action, f):
+        rel, exact = names[f]
+        if repo.ui.verbose or not exact:
+            repo.ui.status(actions[action][1] % rel)
+
     audit_path = pathutil.pathauditor(repo.root, cached=True)
     for f in actions['forget'][0]:
         if interactive:
             choice = repo.ui.promptchoice(
                 _("forget added file %s (Yn)?$$ &Yes $$ &No") % f)
             if choice == 0:
+                prntstatusmsg('forget', f)
                 repo.dirstate.drop(f)
             else:
                 excluded_files.append(f)
         else:
+            prntstatusmsg('forget', f)
             repo.dirstate.drop(f)
     for f in actions['remove'][0]:
         audit_path(f)
@@ -3087,13 +3096,16 @@ def _performrevert(repo, parents, ctx, actions, interactive=False,
             choice = repo.ui.promptchoice(
                 _("remove added file %s (Yn)?$$ &Yes $$ &No") % f)
             if choice == 0:
+                prntstatusmsg('remove', f)
                 doremove(f)
             else:
                 excluded_files.append(f)
         else:
+            prntstatusmsg('remove', f)
             doremove(f)
     for f in actions['drop'][0]:
         audit_path(f)
+        prntstatusmsg('drop', f)
         repo.dirstate.remove(f)
 
     normal = None
@@ -3140,14 +3152,21 @@ def _performrevert(repo, parents, ctx, actions, interactive=False,
             tobackup = set()
         # Apply changes
         fp = stringio()
+        # `fnames` keeps track of filenames for which we have initiated changes,
+        # to make sure that we print status msg only once per file.
+        fnames = set()
         for c in chunks:
-            # Create a backup file only if this hunk should be backed up
-            if ishunk(c) and c.header.filename() in tobackup:
+            if ishunk(c):
                 abs = c.header.filename()
-                target = repo.wjoin(abs)
-                bakname = scmutil.origpath(repo.ui, repo, m.rel(abs))
-                util.copyfile(target, bakname)
-                tobackup.remove(abs)
+                if abs not in fnames:
+                    fnames.add(abs)
+                    prntstatusmsg('revert', abs)
+                # Create a backup file only if this hunk should be backed up
+                if c.header.filename() in tobackup:
+                    target = repo.wjoin(abs)
+                    bakname = scmutil.origpath(repo.ui, repo, m.rel(abs))
+                    util.copyfile(target, bakname)
+                    tobackup.remove(abs)
             c.write(fp)
         dopatch = fp.tell()
         fp.seek(0)
@@ -3159,6 +3178,7 @@ def _performrevert(repo, parents, ctx, actions, interactive=False,
         del fp
     else:
         for f in actions['revert'][0]:
+            prntstatusmsg('revert', f)
             checkout(f)
             if normal:
                 normal(f)
@@ -3166,6 +3186,7 @@ def _performrevert(repo, parents, ctx, actions, interactive=False,
     for f in actions['add'][0]:
         # Don't checkout modified files, they are already created by the diff
         if f not in newlyaddedandmodifiedfiles:
+            prntstatusmsg('add', f)
             checkout(f)
             repo.dirstate.add(f)
 
@@ -3173,6 +3194,7 @@ def _performrevert(repo, parents, ctx, actions, interactive=False,
     if node == parent and p2 == nullid:
         normal = repo.dirstate.normal
     for f in actions['undelete'][0]:
+        prntstatusmsg('undelete', f)
         checkout(f)
         normal(f)
 

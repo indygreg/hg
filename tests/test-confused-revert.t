@@ -14,8 +14,8 @@ Should show a removed and b added:
   R a
 
   $ hg revert --all
-  undeleting a
   forgetting b
+  undeleting a
 
 Should show b unknown and a back to normal:
 
@@ -66,8 +66,8 @@ Revert should fail:
 Revert should be ok now:
 
   $ hg revert -r2 --all
-  undeleting a
   forgetting b
+  undeleting a
 
 Should show b unknown and a marked modified (merged):
 

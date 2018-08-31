@@ -1135,8 +1135,8 @@ Move (and then undo) a directory move with only largefiles.
   ? large.orig
 
   $ hg revert --all
-  undeleting .hglf/dir/subdir/large.bin
   forgetting .hglf/dir/subdir2/large.bin
+  undeleting .hglf/dir/subdir/large.bin
   reverting subrepo no-largefiles
 
   $ hg status -C
@@ -1214,8 +1214,8 @@ Start from scratch, and rename something other than the final path component.
   large
 
   $ hg revert --all
-  undeleting .hglf/dir/subdir/large.bin
   forgetting .hglf/dir2/subdir/large.bin
+  undeleting .hglf/dir/subdir/large.bin
   reverting subrepo no-largefiles
 
   $ hg status -C

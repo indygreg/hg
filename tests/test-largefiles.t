@@ -1513,9 +1513,9 @@ Test hg remove removes empty largefiles directories
   $ cat sub/large4
   large4-modified
   $ hg revert -a --no-backup
-  undeleting .hglf/sub2/large6
   forgetting .hglf/sub2/large8
   reverting normal3
+  undeleting .hglf/sub2/large6
   $ hg status
   ? sub/large4.orig
   ? sub/normal4.orig

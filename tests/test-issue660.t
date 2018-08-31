@@ -66,9 +66,9 @@ Revert reintroducing shadow - should fail:
 Revert all - should succeed:
 
   $ hg revert --all
-  undeleting a
   forgetting a/a
   forgetting b
+  undeleting a
   undeleting b/b
 
   $ hg st

@@ -36,6 +36,7 @@ from . import (
 )
 from .utils import (
     interfaceutil,
+    stringutil,
 )
 
 httplib = util.httplib
@@ -557,7 +558,10 @@ def sendv2request(ui, opener, requestbuilder, apiurl, permission, requests):
     else:
         url += '/%s' % requests[0][0]
 
+    ui.debug('sending %d commands\n' % len(requests))
     for command, args, f in requests:
+        ui.debug('sending command %s: %s\n' % (
+            command, stringutil.pprint(args, indent=2)))
         assert not list(handler.callcommand(command, args, f))
 
     # TODO stream this.

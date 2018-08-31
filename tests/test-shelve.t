@@ -1793,5 +1793,23 @@ putting v1 shelvedstate file in place of a created v2
 mercurial does not crash
   $ hg unshelve --continue
   unshelve of 'ashelve' complete
-  $ cd ..
 
+Unshelve without .shelve metadata:
+
+  $ hg shelve
+  shelved as default
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ rm .hg/shelved/default.shelve
+  $ echo 3 > a
+  $ hg unshelve
+  unshelving change 'default'
+  temporarily committing pending changes (restore with 'hg unshelve --abort')
+  rebasing shelved changes
+  merging a
+  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
+  [1]
+  $ cat .hg/shelved/default.shelve
+  node=82e0cb9893247d12667017593ce1e5655860f1ac
+
+  $ cd ..

@@ -765,6 +765,7 @@ def _commitworkingcopychanges(ui, repo, opts, tmpwctx):
 def _unshelverestorecommit(ui, repo, basename):
     """Recreate commit in the repository during the unshelve"""
     repo = repo.unfiltered()
+    node = None
     if shelvedfile(repo, basename, 'shelve').exists():
         node = shelvedfile(repo, basename, 'shelve').readinfo()['node']
     if node is None or node not in repo:
@@ -774,7 +775,7 @@ def _unshelverestorecommit(ui, repo, basename):
         # We might not strip the unbundled changeset, so we should keep track of
         # the unshelve node in case we need to reuse it (eg: unshelve --keep)
         if node is None:
-            info = {'node': nodemod.hex(node)}
+            info = {'node': nodemod.hex(shelvectx.node())}
             shelvedfile(repo, basename, 'shelve').writeinfo(info)
     else:
         shelvectx = repo[node]

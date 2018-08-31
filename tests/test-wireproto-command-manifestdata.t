@@ -65,14 +65,14 @@ Missing arguments is an error
   s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     45\r\n
-  s>     =\x00\x00\x01\x00\x02\x012
-  s>     \xa2Eerror\xa1GmessageX\x1enodes argument must be definedFstatusEerror
+  s>     4e\r\n
+  s>     F\x00\x00\x01\x00\x02\x012
+  s>     \xa2Eerror\xa1GmessageX\'missing required arguments: nodes, treeFstatusEerror
   s>     \r\n
-  received frame(size=61; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=70; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
-  abort: nodes argument must be defined!
+  abort: missing required arguments: nodes, tree!
   [255]
 
   $ sendhttpv2peer << EOF
@@ -97,14 +97,14 @@ Missing arguments is an error
   s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     44\r\n
-  s>     <\x00\x00\x01\x00\x02\x012
-  s>     \xa2Eerror\xa1GmessageX\x1dtree argument must be definedFstatusEerror
+  s>     47\r\n
+  s>     ?\x00\x00\x01\x00\x02\x012
+  s>     \xa2Eerror\xa1GmessageX missing required arguments: treeFstatusEerror
   s>     \r\n
-  received frame(size=60; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=63; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
-  abort: tree argument must be defined!
+  abort: missing required arguments: tree!
   [255]
 
 Unknown node is an error

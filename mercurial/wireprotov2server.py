@@ -311,6 +311,10 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
         action, meta = reactor.oncommandresponsereadyobjects(
             outstream, command['requestid'], objs)
 
+    except error.WireprotoCommandError as e:
+        action, meta = reactor.oncommanderror(
+            outstream, command['requestid'], e.message, e.messageargs)
+
     except Exception as e:
         action, meta = reactor.onservererror(
             outstream, command['requestid'],
@@ -348,13 +352,39 @@ class httpv2protocolhandler(object):
         return HTTP_WIREPROTO_V2
 
     def getargs(self, args):
+        # First look for args that were passed but aren't registered on this
+        # command.
+        extra = set(self._args) - set(args)
+        if extra:
+            raise error.WireprotoCommandError(
+                'unsupported argument to command: %s' %
+                ', '.join(sorted(extra)))
+
+        # And look for required arguments that are missing.
+        missing = {a for a in args if args[a]['required']} - set(self._args)
+
+        if missing:
+            raise error.WireprotoCommandError(
+                'missing required arguments: %s' % ', '.join(sorted(missing)))
+
+        # Now derive the arguments to pass to the command, taking into
+        # account the arguments specified by the client.
         data = {}
-        for k, typ in args.items():
-            if k == '*':
-                raise NotImplementedError('do not support * args')
-            elif k in self._args:
-                # TODO consider validating value types.
-                data[k] = self._args[k]
+        for k, meta in sorted(args.items()):
+            # This argument wasn't passed by the client.
+            if k not in self._args:
+                data[k] = meta['default']()
+                continue
+
+            v = self._args[k]
+
+            # Sets may be expressed as lists. Silently normalize.
+            if meta['type'] == 'set' and isinstance(v, list):
+                v = set(v)
+
+            # TODO consider more/stronger type validation.
+
+            data[k] = v
 
         return data
 
@@ -404,8 +434,10 @@ def _capabilitiesv2(repo, proto):
     # TODO expose available changesetdata fields.
 
     for command, entry in COMMANDS.items():
+        args = {arg: meta['example'] for arg, meta in entry.args.items()}
+
         caps['commands'][command] = {
-            'args': entry.args,
+            'args': args,
             'permissions': [entry.permission],
         }
 
@@ -500,7 +532,23 @@ def wireprotocommand(name, args=None, permission='push'):
 
     ``name`` is the name of the wire protocol command being provided.
 
-    ``args`` is a dict of argument names to example values.
+    ``args`` is a dict defining arguments accepted by the command. Keys are
+    the argument name. Values are dicts with the following keys:
+
+       ``type``
+          The argument data type. Must be one of the following string
+          literals: ``bytes``, ``int``, ``list``, ``dict``, ``set``,
+          or ``bool``.
+
+       ``default``
+          A callable returning the default value for this argument. If not
+          specified, ``None`` will be the default value.
+
+       ``required``
+          Bool indicating whether the argument is required.
+
+       ``example``
+          An example value for this argument.
 
     ``permission`` defines the permission type needed to run this command.
     Can be ``push`` or ``pull``. These roughly map to read-write and read-only,
@@ -529,6 +577,36 @@ def wireprotocommand(name, args=None, permission='push'):
         raise error.ProgrammingError('arguments for version 2 commands '
                                      'must be declared as dicts')
 
+    for arg, meta in args.items():
+        if arg == '*':
+            raise error.ProgrammingError('* argument name not allowed on '
+                                         'version 2 commands')
+
+        if not isinstance(meta, dict):
+            raise error.ProgrammingError('arguments for version 2 commands '
+                                         'must declare metadata as a dict')
+
+        if 'type' not in meta:
+            raise error.ProgrammingError('%s argument for command %s does not '
+                                         'declare type field' % (arg, name))
+
+        if meta['type'] not in ('bytes', 'int', 'list', 'dict', 'set', 'bool'):
+            raise error.ProgrammingError('%s argument for command %s has '
+                                         'illegal type: %s' % (arg, name,
+                                                               meta['type']))
+
+        if 'example' not in meta:
+            raise error.ProgrammingError('%s argument for command %s does not '
+                                         'declare example field' % (arg, name))
+
+        if 'default' in meta and meta.get('required'):
+            raise error.ProgrammingError('%s argument for command %s is marked '
+                                         'as required but has a default value' %
+                                         (arg, name))
+
+        meta.setdefault('default', lambda: None)
+        meta.setdefault('required', False)
+
     def register(func):
         if name in COMMANDS:
             raise error.ProgrammingError('%s command already registered '
@@ -550,16 +628,25 @@ def branchmapv2(repo, proto):
 def capabilitiesv2(repo, proto):
     yield _capabilitiesv2(repo, proto)
 
-@wireprotocommand('changesetdata',
-                  args={
-                      'noderange': [[b'0123456...'], [b'abcdef...']],
-                      'nodes': [b'0123456...'],
-                      'fields': {b'parents', b'revision'},
-                  },
-                  permission='pull')
-def changesetdata(repo, proto, noderange=None, nodes=None, fields=None):
-    fields = fields or set()
-
+@wireprotocommand(
+    'changesetdata',
+    args={
+        'noderange': {
+            'type': 'list',
+            'example': [[b'0123456...'], [b'abcdef...']],
+        },
+        'nodes': {
+            'type': 'list',
+            'example': [b'0123456...'],
+        },
+        'fields': {
+            'type': 'set',
+            'default': set,
+            'example': {b'parents', b'revision'},
+        },
+    },
+    permission='pull')
+def changesetdata(repo, proto, noderange, nodes, fields):
     # TODO look for unknown fields and abort when they can't be serviced.
 
     if noderange is None and nodes is None:
@@ -691,24 +778,32 @@ def getfilestore(repo, proto, path):
 
     return fl
 
-@wireprotocommand('filedata',
-                  args={
-                      'haveparents': True,
-                      'nodes': [b'0123456...'],
-                      'fields': [b'parents', b'revision'],
-                      'path': b'foo.txt',
-                  },
-                  permission='pull')
-def filedata(repo, proto, haveparents=False, nodes=None, fields=None,
-             path=None):
-    fields = fields or set()
-
-    if nodes is None:
-        raise error.WireprotoCommandError('nodes argument must be defined')
-
-    if path is None:
-        raise error.WireprotoCommandError('path argument must be defined')
-
+@wireprotocommand(
+    'filedata',
+    args={
+        'haveparents': {
+            'type': 'bool',
+            'default': lambda: False,
+            'example': True,
+        },
+        'nodes': {
+            'type': 'list',
+            'required': True,
+            'example': [b'0123456...'],
+        },
+        'fields': {
+            'type': 'set',
+            'default': set,
+            'example': {b'parents', b'revision'},
+        },
+        'path': {
+            'type': 'bytes',
+            'required': True,
+            'example': b'foo.txt',
+        }
+    },
+    permission='pull')
+def filedata(repo, proto, haveparents, nodes, fields, path):
     try:
         # Extensions may wish to access the protocol handler.
         store = getfilestore(repo, proto, path)
@@ -776,44 +871,63 @@ def filedata(repo, proto, haveparents=False, nodes=None, fields=None,
         except GeneratorExit:
             pass
 
-@wireprotocommand('heads',
-                  args={
-                      'publiconly': False,
-                  },
-                  permission='pull')
-def headsv2(repo, proto, publiconly=False):
+@wireprotocommand(
+    'heads',
+    args={
+        'publiconly': {
+            'type': 'bool',
+            'default': lambda: False,
+            'example': False,
+        },
+    },
+    permission='pull')
+def headsv2(repo, proto, publiconly):
     if publiconly:
         repo = repo.filtered('immutable')
 
     yield repo.heads()
 
-@wireprotocommand('known',
-                  args={
-                      'nodes': [b'deadbeef'],
-                  },
-                  permission='pull')
-def knownv2(repo, proto, nodes=None):
-    nodes = nodes or []
+@wireprotocommand(
+    'known',
+    args={
+        'nodes': {
+            'type': 'list',
+            'default': list,
+            'example': [b'deadbeef'],
+        },
+    },
+    permission='pull')
+def knownv2(repo, proto, nodes):
     result = b''.join(b'1' if n else b'0' for n in repo.known(nodes))
     yield result
 
-@wireprotocommand('listkeys',
-                  args={
-                      'namespace': b'ns',
-                  },
-                  permission='pull')
-def listkeysv2(repo, proto, namespace=None):
+@wireprotocommand(
+    'listkeys',
+    args={
+        'namespace': {
+            'type': 'bytes',
+            'required': True,
+            'example': b'ns',
+        },
+    },
+    permission='pull')
+def listkeysv2(repo, proto, namespace):
     keys = repo.listkeys(encoding.tolocal(namespace))
     keys = {encoding.fromlocal(k): encoding.fromlocal(v)
             for k, v in keys.iteritems()}
 
     yield keys
 
-@wireprotocommand('lookup',
-                  args={
-                      'key': b'foo',
-                  },
-                  permission='pull')
+@wireprotocommand(
+    'lookup',
+    args={
+        'key': {
+            'type': 'bytes',
+            'required': True,
+            'example': b'foo',
+        },
+    },
+    permission='pull')
 def lookupv2(repo, proto, key):
     key = encoding.tolocal(key)
 
@@ -822,26 +936,32 @@ def lookupv2(repo, proto, key):
 
     yield node
 
-@wireprotocommand('manifestdata',
-                  args={
-                      'nodes': [b'0123456...'],
-                      'haveparents': True,
-                      'fields': [b'parents', b'revision'],
-                      'tree': b'',
-                  },
-                  permission='pull')
-def manifestdata(repo, proto, haveparents=False, nodes=None, fields=None,
-                 tree=None):
-    fields = fields or set()
-
-    if nodes is None:
-        raise error.WireprotoCommandError(
-            'nodes argument must be defined')
-
-    if tree is None:
-        raise error.WireprotoCommandError(
-            'tree argument must be defined')
-
+@wireprotocommand(
+    'manifestdata',
+    args={
+        'nodes': {
+            'type': 'list',
+            'required': True,
+            'example': [b'0123456...'],
+        },
+        'haveparents': {
+            'type': 'bool',
+            'default': lambda: False,
+            'example': True,
+        },
+        'fields': {
+            'type': 'set',
+            'default': set,
+            'example': {b'parents', b'revision'},
+        },
+        'tree': {
+            'type': 'bytes',
+            'required': True,
+            'example': b'',
+        },
+    },
+    permission='pull')
+def manifestdata(repo, proto, haveparents, nodes, fields, tree):
     store = repo.manifestlog.getstorage(tree)
 
     # Validate the node is known and abort on unknown revisions.
@@ -905,14 +1025,31 @@ def manifestdata(repo, proto, haveparents=False, nodes=None, fields=None,
         except GeneratorExit:
             pass
 
-@wireprotocommand('pushkey',
-                  args={
-                      'namespace': b'ns',
-                      'key': b'key',
-                      'old': b'old',
-                      'new': b'new',
-                  },
-                  permission='push')
+@wireprotocommand(
+    'pushkey',
+    args={
+        'namespace': {
+            'type': 'bytes',
+            'required': True,
+            'example': b'ns',
+        },
+        'key': {
+            'type': 'bytes',
+            'required': True,
+            'example': b'key',
+        },
+        'old': {
+            'type': 'bytes',
+            'required': True,
+            'example': b'old',
+        },
+        'new': {
+            'type': 'bytes',
+            'required': True,
+            'example': 'new',
+        },
+    },
+    permission='push')
 def pushkeyv2(repo, proto, namespace, key, old, new):
     # TODO handle ui output redirection
     yield repo.pushkey(encoding.tolocal(namespace),

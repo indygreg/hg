@@ -28,7 +28,17 @@ def log(whencefmt, *whenceargs):
         _session = os.environ.get('HGCATAPULTSESSION', 'none')
     whence = whencefmt % whenceargs
     try:
-        _pipe.write('START %s %s\n' % (_session, whence))
+        # Both writes to the pipe are wrapped in try/except to ignore
+        # errors, as we can see mysterious errors in here if the pager
+        # is active. Presumably other conditions could trigger
+        # problems too.
+        try:
+            _pipe.write('START %s %s\n' % (_session, whence))
+        except IOError:
+            pass
         yield
     finally:
-        _pipe.write('END %s %s\n' % (_session, whence))
+        try:
+            _pipe.write('END %s %s\n' % (_session, whence))
+        except IOError:
+            pass

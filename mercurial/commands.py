@@ -4563,7 +4563,7 @@ def resolve(ui, repo, *pats, **opts):
     if actioncount > 1:
         raise error.Abort(_("too many actions specified"))
     elif (actioncount == 0
-          and ui.config('commands', 'resolve.explicit-re-merge')):
+          and ui.configbool('commands', 'resolve.explicit-re-merge')):
         hint = _('use --mark, --unmark, --list or --re-merge')
         raise error.Abort(_('no action specified'), hint=hint)
     if pats and all:

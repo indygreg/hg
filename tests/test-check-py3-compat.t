@@ -26,7 +26,8 @@
   $ testrepohg files 'set:(**.py) - grep(pygments)' \
   > -X hgdemandimport/demandimportpy2.py \
   > -X hgext/fsmonitor/pywatchman \
-  > -X mercurial/thirdparty/cbor \
+  > -X mercurial/cffi \
+  > -X mercurial/thirdparty \
   > | sed 's|\\|/|g' | xargs python3 contrib/check-py3-compat.py \
   > | sed 's/[0-9][0-9]*)$/*)/'
 

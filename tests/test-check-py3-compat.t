@@ -30,6 +30,16 @@
   > -X mercurial/thirdparty \
   > | sed 's|\\|/|g' | xargs python3 contrib/check-py3-compat.py \
   > | sed 's/[0-9][0-9]*)$/*)/'
+  hgext/convert/transport.py: error importing: <*Error> No module named 'svn.client' (error at transport.py:*) (glob) (?)
+  hgext/fastannotate/commands.py: error importing: <TypeError> Unicode-objects must be encoded before hashing (error at context.py:*)
+  hgext/fastannotate/context.py: error importing: <TypeError> Unicode-objects must be encoded before hashing (error at context.py:*)
+  hgext/fastannotate/formatter.py: error importing: <TypeError> Unicode-objects must be encoded before hashing (error at context.py:*)
+  hgext/fastannotate/protocol.py: error importing: <TypeError> Unicode-objects must be encoded before hashing (error at context.py:*)
+  hgext/fastannotate/support.py: error importing: <TypeError> Unicode-objects must be encoded before hashing (error at context.py:*)
+  hgext/infinitepush/sqlindexapi.py: error importing: <*Error> No module named 'mysql' (error at sqlindexapi.py:*) (glob) (?)
+  mercurial/scmwindows.py: error importing: <ValueError> _type_ 'v' not supported (error at win32.py:*) (no-windows !)
+  mercurial/win32.py: error importing: <ValueError> _type_ 'v' not supported (error at win32.py:*) (no-windows !)
+  mercurial/windows.py: error importing: <ModuleNotFoundError> No module named 'msvcrt' (error at windows.py:*) (no-windows !)
 
 #endif
 

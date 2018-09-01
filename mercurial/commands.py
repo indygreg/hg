@@ -3058,13 +3058,8 @@ def identify(ui, repo, source=None, rev=None,
                 numoutput = ["%d" % p.rev() for p in parents]
                 output.append("%s%s" % ('+'.join(numoutput), dirty))
 
-            fn = fm.nested('parents', tmpl='{rev}:{node|formatnode}', sep=' ')
-            for p in parents:
-                fn.startitem()
-                fn.data(rev=p.rev())
-                fn.data(node=p.hex())
-                fn.context(ctx=p)
-            fn.end()
+            fm.data(parents=fm.formatlist([fm.hexfunc(p.node())
+                                           for p in parents], name='node'))
         else:
             hexoutput = fm.hexfunc(ctx.node())
             if default or id:

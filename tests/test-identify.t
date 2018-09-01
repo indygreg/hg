@@ -51,7 +51,7 @@ with options
     "dirty": "",
     "id": "cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b",
     "node": "ffffffffffffffffffffffffffffffffffffffff",
-    "parents": [{"node": "cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b", "rev": 0}],
+    "parents": ["cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b"],
     "tags": ["tip"]
    }
   ]
@@ -63,7 +63,7 @@ test template keywords and functions which require changectx:
   $ hg id -T '{parents % "{rev} {node|shortest} {desc}\n"}'
   0 cb9a a
   $ hg id -T '{parents}\n'
-  0:cb9a9f314b8b
+  cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b
 
 test nested template: '{tags}'/'{node}' constants shouldn't override the
 default keywords, but '{id}' persists because there's no default keyword
@@ -88,7 +88,7 @@ with modifications
     "dirty": "+",
     "id": "cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b+",
     "node": "ffffffffffffffffffffffffffffffffffffffff",
-    "parents": [{"node": "cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b", "rev": 0}],
+    "parents": ["cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b"],
     "tags": ["tip"]
    }
   ]

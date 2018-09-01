@@ -57,7 +57,7 @@ Should succeed:
     "dirty": "+",
     "id": "f25cbe84d8b320e298e7703f18a25a3959518c23+2d95304fed5d89bc9d70b2a0d02f0d567469c3ab+",
     "node": "ffffffffffffffffffffffffffffffffffffffff",
-    "parents": [{"node": "f25cbe84d8b320e298e7703f18a25a3959518c23", "rev": 4}, {"node": "2d95304fed5d89bc9d70b2a0d02f0d567469c3ab", "rev": 2}],
+    "parents": ["f25cbe84d8b320e298e7703f18a25a3959518c23", "2d95304fed5d89bc9d70b2a0d02f0d567469c3ab"],
     "tags": ["tip"]
    }
   ]

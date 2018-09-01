@@ -1352,7 +1352,11 @@ class TTest(Test):
         if PYTHON3:
             session = session.encode('ascii')
         def toggletrace(cmd):
-            quoted = shellquote(cmd.strip()).replace(b'\\', b'\\\\')
+            if isinstance(cmd, str):
+                quoted = shellquote(cmd.strip())
+            else:
+                quoted = shellquote(cmd.strip().decode('utf8')).encode('utf8')
+            quoted = quoted.replace(b'\\', b'\\\\')
             if active:
                 script.append(
                     b'echo END %s %s >> "$HGCATAPULTSERVERPIPE"\n' % (

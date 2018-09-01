@@ -23,6 +23,9 @@ from mercurial import (
     scmutil,
     util,
 )
+from mercurial.utils import (
+    stringutil,
+)
 
 from . import (
     error as faerror,
@@ -131,7 +134,7 @@ def encodedir(path):
             .replace('.lock/', '.lock.hg/'))
 
 def hashdiffopts(diffopts):
-    diffoptstr = str(sorted(
+    diffoptstr = stringutil.pprint(sorted(
         (k, getattr(diffopts, k))
         for k in mdiff.diffopts.defaults
     ))

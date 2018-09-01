@@ -2983,10 +2983,6 @@ def identify(ui, repo, source=None, rev=None,
         raise error.Abort(_("there is no Mercurial repository here "
                            "(.hg not found)"))
 
-    if ui.debugflag:
-        hexfunc = hex
-    else:
-        hexfunc = short
     default = not (num or id or branch or tags or bookmarks)
     output = []
     revs = []
@@ -3010,7 +3006,7 @@ def identify(ui, repo, source=None, rev=None,
             rev = "tip"
 
         remoterev = peer.lookup(rev)
-        hexrev = hexfunc(remoterev)
+        hexrev = fm.hexfunc(remoterev)
         if default or id:
             output = [hexrev]
         fm.data(id=hexrev)
@@ -3053,7 +3049,7 @@ def identify(ui, repo, source=None, rev=None,
                 dirty = '+'
             fm.data(dirty=dirty)
 
-            hexoutput = [hexfunc(p.node()) for p in parents]
+            hexoutput = [fm.hexfunc(p.node()) for p in parents]
             if default or id:
                 output = ["%s%s" % ('+'.join(hexoutput), dirty)]
             fm.data(id="%s%s" % ('+'.join(hexoutput), dirty))
@@ -3070,7 +3066,7 @@ def identify(ui, repo, source=None, rev=None,
                 fn.context(ctx=p)
             fn.end()
         else:
-            hexoutput = hexfunc(ctx.node())
+            hexoutput = fm.hexfunc(ctx.node())
             if default or id:
                 output = [hexoutput]
             fm.data(id=hexoutput)

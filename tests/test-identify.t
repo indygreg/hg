@@ -49,7 +49,7 @@ with options
     "bookmarks": [],
     "branch": "default",
     "dirty": "",
-    "id": "cb9a9f314b8b",
+    "id": "cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b",
     "node": "ffffffffffffffffffffffffffffffffffffffff",
     "parents": [{"node": "cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b", "rev": 0}],
     "tags": ["tip"]
@@ -71,7 +71,7 @@ for '{id}' (issue5612)
 
   $ hg id -T '{tags}\n'
   tip
-  $ hg id -T '{revset("null:.") % "{rev}:{node|short} {tags} {id}\n"}'
+  $ hg id -T '{revset("null:.") % "{rev}:{node|short} {tags} {id|short}\n"}'
   -1:000000000000  cb9a9f314b8b
   0:cb9a9f314b8b tip cb9a9f314b8b
 
@@ -86,7 +86,7 @@ with modifications
     "bookmarks": [],
     "branch": "default",
     "dirty": "+",
-    "id": "cb9a9f314b8b+",
+    "id": "cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b+",
     "node": "ffffffffffffffffffffffffffffffffffffffff",
     "parents": [{"node": "cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b", "rev": 0}],
     "tags": ["tip"]

@@ -5639,7 +5639,6 @@ def tags(ui, repo, **opts):
     opts = pycompat.byteskwargs(opts)
     ui.pager('tags')
     fm = ui.formatter('tags', opts)
-    contexthint = fm.contexthint('tag rev node type')
     hexfunc = fm.hexfunc
     tagtype = ""
 
@@ -5652,8 +5651,7 @@ def tags(ui, repo, **opts):
             tagtype = 'local'
 
         fm.startitem()
-        if 'ctx' in contexthint:
-            fm.context(ctx=repo[n])
+        fm.context(repo=repo)
         fm.write('tag', '%s', t, label=label)
         fmt = " " * (30 - encoding.colwidth(t)) + ' %5d:%s'
         fm.condwrite(not ui.quiet, 'rev node', fmt,

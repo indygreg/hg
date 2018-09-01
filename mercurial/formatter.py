@@ -554,17 +554,16 @@ class templateresources(templater.resourcemapper):
         }
 
     def availablekeys(self, mapping):
-        return {k for k, g in self._gettermap.iteritems()
-                if g(self, mapping, k) is not None}
+        return {k for k in self.knownkeys()
+                if self._getsome(mapping, k) is not None}
 
     def knownkeys(self):
-        return self._knownkeys
+        return {'cache', 'ctx', 'fctx', 'repo', 'revcache', 'ui'}
 
     def lookup(self, mapping, key):
-        get = self._gettermap.get(key)
-        if not get:
+        if key not in self.knownkeys():
             return None
-        return get(self, mapping, key)
+        return self._getsome(mapping, key)
 
     def populatemap(self, context, origmapping, newmapping):
         mapping = {}
@@ -584,16 +583,6 @@ class templateresources(templater.resourcemapper):
 
     def _hasctx(self, mapping):
         return 'ctx' in mapping
-
-    _gettermap = {
-        'cache': _getsome,
-        'ctx': _getsome,
-        'fctx': _getsome,
-        'repo': _getsome,
-        'revcache': _getsome,
-        'ui': _getsome,
-    }
-    _knownkeys = set(_gettermap.keys())
 
 def formatter(ui, out, topic, opts):
     template = opts.get("template", "")

@@ -199,8 +199,13 @@ class baseformatter(object):
     def context(self, **ctxs):
         '''insert context objects to be used to render template keywords'''
         ctxs = pycompat.byteskwargs(ctxs)
-        assert all(k in {'ctx', 'fctx'} for k in ctxs)
+        assert all(k in {'repo', 'ctx', 'fctx'} for k in ctxs)
         if self._converter.storecontext:
+            # populate missing resources in fctx -> ctx -> repo order
+            if 'fctx' in ctxs and 'ctx' not in ctxs:
+                ctxs['ctx'] = ctxs['fctx'].changectx()
+            if 'ctx' in ctxs and 'repo' not in ctxs:
+                ctxs['repo'] = ctxs['ctx'].repo()
             self._item.update(ctxs)
     def datahint(self):
         '''set of field names to be referenced'''
@@ -578,27 +583,13 @@ class templateresources(templater.resourcemapper):
         return self._resmap.get(key)
 
     def _hasctx(self, mapping):
-        return 'ctx' in mapping or 'fctx' in mapping
-
-    def _getctx(self, mapping, key):
-        ctx = mapping.get('ctx')
-        if ctx is not None:
-            return ctx
-        fctx = mapping.get('fctx')
-        if fctx is not None:
-            return fctx.changectx()
-
-    def _getrepo(self, mapping, key):
-        ctx = self._getctx(mapping, 'ctx')
-        if ctx is not None:
-            return ctx.repo()
-        return self._getsome(mapping, key)
+        return 'ctx' in mapping
 
     _gettermap = {
         'cache': _getsome,
-        'ctx': _getctx,
+        'ctx': _getsome,
         'fctx': _getsome,
-        'repo': _getrepo,
+        'repo': _getsome,
         'revcache': _getsome,
         'ui': _getsome,
     }

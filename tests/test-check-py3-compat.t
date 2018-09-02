@@ -3,6 +3,7 @@
   $ . "$TESTDIR/helpers-testrepo.sh"
   $ cd "$TESTDIR"/..
 
+#if no-py3k
   $ testrepohg files 'set:(**.py)' \
   > -X hgdemandimport/demandimportpy2.py \
   > -X mercurial/thirdparty/cbor \
@@ -21,6 +22,7 @@
   contrib/python-zstandard/tests/test_module_attributes.py not using absolute_import
   contrib/python-zstandard/tests/test_train_dictionary.py not using absolute_import
   setup.py not using absolute_import
+#endif
 
 #if py3exe
   $ testrepohg files 'set:(**.py) - grep(pygments)' \

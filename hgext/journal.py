@@ -477,6 +477,8 @@ def journal(ui, repo, *args, **opts):
         name = args[0]
 
     fm = ui.formatter('journal', opts)
+    def formatnodes(nodes):
+        return fm.formatlist(map(fm.hexfunc, nodes), name='node', sep=',')
 
     if opts.get("template") != "json":
         if name is None:
@@ -491,21 +493,18 @@ def journal(ui, repo, *args, **opts):
     for count, entry in enumerate(repo.journal.filtered(name=name)):
         if count == limit:
             break
-        newhashesstr = fm.formatlist(map(fm.hexfunc, entry.newhashes),
-                                     name='node', sep=',')
-        oldhashesstr = fm.formatlist(map(fm.hexfunc, entry.oldhashes),
-                                     name='node', sep=',')
 
         fm.startitem()
-        fm.condwrite(ui.verbose, 'oldnodes', '%s -> ', oldhashesstr)
-        fm.write('newnodes', '%s', newhashesstr)
+        fm.condwrite(ui.verbose, 'oldnodes', '%s -> ',
+                     formatnodes(entry.oldhashes))
+        fm.write('newnodes', '%s', formatnodes(entry.newhashes))
         fm.condwrite(ui.verbose, 'user', ' %-8s', entry.user)
         fm.condwrite(
             opts.get('all') or name.startswith('re:'),
             'name', '  %-8s', entry.name)
 
-        timestring = fm.formatdate(entry.timestamp, '%Y-%m-%d %H:%M %1%2')
-        fm.condwrite(ui.verbose, 'date', ' %s', timestring)
+        fm.condwrite(ui.verbose, 'date', ' %s',
+                     fm.formatdate(entry.timestamp, '%Y-%m-%d %H:%M %1%2'))
         fm.write('command', '  %s\n', entry.command)
 
         if opts.get("commits"):

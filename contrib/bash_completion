@@ -206,6 +206,18 @@ _hg()
             _hg_fix_wordlist
             return
         ;;
+        --color)
+            local choices='true false yes no always auto never debug'
+            COMPREPLY=(${COMPREPLY[@]:-} $(compgen -W '$choices' -- "$cur"))
+            _hg_fix_wordlist
+            return
+        ;;
+        --pager)
+            local choices='true false yes no always auto never'
+            COMPREPLY=(${COMPREPLY[@]:-} $(compgen -W '$choices' -- "$cur"))
+            _hg_fix_wordlist
+            return
+        ;;
     esac
 
     if [ -z "$cmd" ] || [ $COMP_CWORD -eq $i ]; then

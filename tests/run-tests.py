@@ -395,11 +395,6 @@ def getparser():
         metavar="HG",
         help="test using specified hg script rather than a "
              "temporary installation")
-    # This option should be deleted once test-check-py3-compat.t and other
-    # Python 3 tests run with Python 3.
-    hgconf.add_argument("--with-python3", metavar="PYTHON3",
-        help="Python 3 interpreter (if running under Python 2)"
-             " (TEMPORARY)")
 
     reporting = parser.add_argument_group('Results Reporting')
     reporting.add_argument("-C", "--annotate", action="store_true",
@@ -533,27 +528,6 @@ def parseargs(args, parser):
         if PYTHON3:
             parser.error(
                 '--py3k-warnings can only be used on Python 2.7')
-    if options.with_python3:
-        if PYTHON3:
-            parser.error('--with-python3 cannot be used when executing with '
-                         'Python 3')
-
-        options.with_python3 = canonpath(options.with_python3)
-        # Verify Python3 executable is acceptable.
-        proc = subprocess.Popen([options.with_python3, b'--version'],
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT)
-        out, _err = proc.communicate()
-        ret = proc.wait()
-        if ret != 0:
-            parser.error('could not determine version of python 3')
-        if not out.startswith('Python '):
-            parser.error('unexpected output from python3 --version: %s' %
-                         out)
-        vers = version.LooseVersion(out[len('Python '):])
-        if vers < version.LooseVersion('3.5.0'):
-            parser.error('--with-python3 version must be 3.5.0 or greater; '
-                         'got %s' % out)
 
     if options.blacklist:
         options.blacklist = parselistfiles(options.blacklist, 'blacklist')
@@ -2610,9 +2584,6 @@ class TestRunner(object):
 
         osenvironb[b"BINDIR"] = self._bindir
         osenvironb[b"PYTHON"] = PYTHON
-
-        if self.options.with_python3:
-            osenvironb[b'PYTHON3'] = self.options.with_python3
 
         fileb = _bytespath(__file__)
         runtestdir = os.path.abspath(os.path.dirname(fileb))

@@ -497,8 +497,8 @@ def journal(ui, repo, *args, **opts):
                                      name='node', sep=',')
 
         fm.startitem()
-        fm.condwrite(ui.verbose, 'oldhashes', '%s -> ', oldhashesstr)
-        fm.write('newhashes', '%s', newhashesstr)
+        fm.condwrite(ui.verbose, 'oldnodes', '%s -> ', oldhashesstr)
+        fm.write('newnodes', '%s', newhashesstr)
         fm.condwrite(ui.verbose, 'user', ' %-8s', entry.user)
         fm.condwrite(
             opts.get('all') or name.startswith('re:'),

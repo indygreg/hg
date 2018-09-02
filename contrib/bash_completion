@@ -152,7 +152,7 @@ _hg()
 {
     local cur prev cmd cmd_index opts i aliashg
     # global options that receive an argument
-    local global_args='--cwd|-R|--repository'
+    local global_args='--cwd|-R|--repository|--color|--config|--encoding|--encodingmode|--pager'
     local hg="$1"
     local canonical=0
 

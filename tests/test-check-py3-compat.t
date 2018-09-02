@@ -24,13 +24,13 @@
   setup.py not using absolute_import
 #endif
 
-#if py3exe
+#if py3k
   $ testrepohg files 'set:(**.py) - grep(pygments)' \
   > -X hgdemandimport/demandimportpy2.py \
   > -X hgext/fsmonitor/pywatchman \
   > -X mercurial/cffi \
   > -X mercurial/thirdparty \
-  > | sed 's|\\|/|g' | xargs python3 contrib/check-py3-compat.py \
+  > | sed 's|\\|/|g' | xargs $PYTHON contrib/check-py3-compat.py \
   > | sed 's/[0-9][0-9]*)$/*)/'
   hgext/convert/transport.py: error importing: <*Error> No module named 'svn.client' (error at transport.py:*) (glob) (?)
   hgext/infinitepush/sqlindexapi.py: error importing: <*Error> No module named 'mysql' (error at sqlindexapi.py:*) (glob) (?)
@@ -40,8 +40,8 @@
 
 #endif
 
-#if py3exe py3pygments
+#if py3k pygments
   $ testrepohg files 'set:(**.py) and grep(pygments)' | sed 's|\\|/|g' \
-  > | xargs python3 contrib/check-py3-compat.py \
+  > | xargs $PYTHON contrib/check-py3-compat.py \
   > | sed 's/[0-9][0-9]*)$/*)/'
 #endif

@@ -279,13 +279,13 @@ Test that verbose, JSON, template and commit output work
    children: 
   command: up 0
    rev: 0
-   children: 
+   children: 1:1e6c11564562
   command: commit -Aqm b
    rev: 1
    children: 
   command: commit -Aqm a
    rev: 0
-   children: 
+   children: 1:1e6c11564562
 
 Test for behaviour on unexpected storage version information
 

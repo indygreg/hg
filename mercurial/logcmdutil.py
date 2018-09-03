@@ -326,6 +326,7 @@ class changesetformatter(changesetprinter):
         fm = self._fm
         fm.startitem()
 
+        fm.context(ctx=ctx)
         # TODO: maybe this should be wdirrev/wdirnode?
         rev = ctx.rev()
         if rev is None:

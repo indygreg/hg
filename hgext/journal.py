@@ -508,7 +508,11 @@ def journal(ui, repo, *args, **opts):
         fm.write('command', '  %s\n', entry.command)
 
         if opts.get("commits"):
-            displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
+            if fm.isplain():
+                displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
+            else:
+                displayer = logcmdutil.changesetformatter(
+                    ui, repo, fm.nested('changesets'), diffopts=opts)
             for hash in entry.newhashes:
                 try:
                     ctx = repo[hash]

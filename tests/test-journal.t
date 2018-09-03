@@ -231,6 +231,62 @@ Test that verbose, JSON, template and commit output work
   summary:     a
   
 
+  $ hg journal --commit -Tjson
+  [
+   {
+    "changesets": [{"bookmarks": ["bar", "baz"], "branch": "default", "date": [0, 0], "desc": "b", "node": "1e6c11564562b4ed919baca798bc4338bd299d6a", "parents": ["cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b"], "phase": "draft", "rev": 1, "tags": ["tip"], "user": "test"}],
+    "command": "up",
+    "date": [5, 0],
+    "name": ".",
+    "newnodes": ["1e6c11564562b4ed919baca798bc4338bd299d6a"],
+    "oldnodes": ["cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b"],
+    "user": "foobar"
+   },
+   {
+    "changesets": [{"bookmarks": [], "branch": "default", "date": [0, 0], "desc": "a", "node": "cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b", "parents": ["0000000000000000000000000000000000000000"], "phase": "draft", "rev": 0, "tags": [], "user": "test"}],
+    "command": "up 0",
+    "date": [2, 0],
+    "name": ".",
+    "newnodes": ["cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b"],
+    "oldnodes": ["1e6c11564562b4ed919baca798bc4338bd299d6a"],
+    "user": "foobar"
+   },
+   {
+    "changesets": [{"bookmarks": ["bar", "baz"], "branch": "default", "date": [0, 0], "desc": "b", "node": "1e6c11564562b4ed919baca798bc4338bd299d6a", "parents": ["cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b"], "phase": "draft", "rev": 1, "tags": ["tip"], "user": "test"}],
+    "command": "commit -Aqm b",
+    "date": [1, 0],
+    "name": ".",
+    "newnodes": ["1e6c11564562b4ed919baca798bc4338bd299d6a"],
+    "oldnodes": ["cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b"],
+    "user": "foobar"
+   },
+   {
+    "changesets": [{"bookmarks": [], "branch": "default", "date": [0, 0], "desc": "a", "node": "cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b", "parents": ["0000000000000000000000000000000000000000"], "phase": "draft", "rev": 0, "tags": [], "user": "test"}],
+    "command": "commit -Aqm a",
+    "date": [0, 0],
+    "name": ".",
+    "newnodes": ["cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b"],
+    "oldnodes": ["0000000000000000000000000000000000000000"],
+    "user": "foobar"
+   }
+  ]
+
+  $ hg journal --commit \
+  > -T'command: {command}\n{changesets % " rev: {rev}\n children: {children}\n"}'
+  previous locations of '.':
+  command: up
+   rev: 1
+   children: 
+  command: up 0
+   rev: 0
+   children: 
+  command: commit -Aqm b
+   rev: 1
+   children: 
+  command: commit -Aqm a
+   rev: 0
+   children: 
+
 Test for behaviour on unexpected storage version information
 
   $ printf '42\0' > .hg/namejournal

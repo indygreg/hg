@@ -70,7 +70,7 @@ def _matchpaths(repo, rev, pats, opts, aopts=facontext.defaultopts):
             yield p
 
 fastannotatecommandargs = {
-    'options': [
+    r'options': [
         ('r', 'rev', '.', _('annotate the specified revision'), _('REV')),
         ('u', 'user', None, _('list the author (long with -v)')),
         ('f', 'file', None, _('list the filename')),
@@ -88,8 +88,8 @@ fastannotatecommandargs = {
         ('', 'rebuild', None, _('rebuild cache even if it exists '
                                 '(EXPERIMENTAL)')),
     ] + commands.diffwsopts + commands.walkopts + commands.formatteropts,
-    'synopsis': _('[-r REV] [-f] [-a] [-u] [-d] [-n] [-c] [-l] FILE...'),
-    'inferrepo': True,
+    r'synopsis': _('[-r REV] [-f] [-a] [-u] [-d] [-n] [-c] [-l] FILE...'),
+    r'inferrepo': True,
 }
 
 def fastannotate(ui, repo, *pats, **opts):
@@ -197,7 +197,7 @@ def fastannotate(ui, repo, *pats, **opts):
 
 _newopts = set([])
 _knownopts = set([opt[1].replace('-', '_') for opt in
-                  (fastannotatecommandargs['options'] + commands.globalopts)])
+                  (fastannotatecommandargs[r'options'] + commands.globalopts)])
 
 def _annotatewrapper(orig, ui, repo, *pats, **opts):
     """used by wrapdefault"""

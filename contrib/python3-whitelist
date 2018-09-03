@@ -352,6 +352,7 @@ test-narrow-shallow-merges.t
 test-narrow-shallow.t
 test-narrow-strip.t
 test-narrow-update.t
+test-narrow-widen-no-ellipsis.t
 test-narrow-widen.t
 test-narrow.t
 test-nested-repo.t

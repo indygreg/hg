@@ -3,8 +3,15 @@ from __future__ import absolute_import, print_function
 import os
 import tempfile
 
-from mercurial import util
+from mercurial import (
+    pycompat,
+    util,
+)
+
 from hgext.fastannotate import error, revmap
+
+if pycompat.ispy3:
+    xrange = range
 
 def genhsh(i):
     return chr(i) + b'\0' * 19

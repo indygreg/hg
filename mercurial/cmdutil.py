@@ -3152,15 +3152,12 @@ def _performrevert(repo, parents, ctx, names, actions, interactive=False,
             tobackup = set()
         # Apply changes
         fp = stringio()
-        # `fnames` keeps track of filenames for which we have initiated changes,
-        # to make sure that we print status msg only once per file.
-        fnames = set()
+        # chunks are serialized per file, but files aren't sorted
+        for f in sorted(set(c.header.filename() for c in chunks if ishunk(c))):
+            prntstatusmsg('revert', f)
         for c in chunks:
             if ishunk(c):
                 abs = c.header.filename()
-                if abs not in fnames:
-                    fnames.add(abs)
-                    prntstatusmsg('revert', abs)
                 # Create a backup file only if this hunk should be backed up
                 if c.header.filename() in tobackup:
                     target = repo.wjoin(abs)

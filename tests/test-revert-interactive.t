@@ -112,8 +112,8 @@ Revert interactive tests
   2 hunks, 2 lines changed
   examine changes to 'folder2/h'? [Ynesfdaq?] n
   
-  reverting folder1/g
   reverting f
+  reverting folder1/g
   $ cat f
   1
   2
@@ -243,8 +243,8 @@ Test --no-backup
   2 hunks, 2 lines changed
   examine changes to 'folder2/h'? [Ynesfdaq?] n
   
-  reverting folder1/g
   reverting f
+  reverting folder1/g
   $ cat f
   1
   2

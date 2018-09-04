@@ -3,6 +3,7 @@
 
   $ cd $TESTDIR/..
   $ python3 contrib/relnotes 4.4 --stoprev 4.5
+  changeset 3398603c5621: unexpected block in release notes directive feature
   New Features
   ============
   

@@ -567,7 +567,7 @@ def files(ui, repo, *pats, **opts):
         showfiles += ([f for f in files if f not in kwfiles],
                       [f for f in status.unknown if f not in kwunknown])
     kwlabels = 'enabled deleted enabledunknown ignored ignoredunknown'.split()
-    kwstates = zip(kwlabels, 'K!kIi', showfiles)
+    kwstates = zip(kwlabels, pycompat.bytestr('K!kIi'), showfiles)
     fm = ui.formatter('kwfiles', opts)
     fmt = '%.0s%s\n'
     if opts.get('all') or ui.verbose:

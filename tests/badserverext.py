@@ -238,10 +238,10 @@ def extsetup(ui):
             self._ui = ui
             super(badserver, self).__init__(ui, *args, **kwargs)
 
-            recvbytes = self._ui.config('badserver', 'closeafterrecvbytes')
+            recvbytes = self._ui.config(b'badserver', b'closeafterrecvbytes')
             recvbytes = recvbytes.split(',')
             self.closeafterrecvbytes = [int(v) for v in recvbytes if v]
-            sendbytes = self._ui.config('badserver', 'closeaftersendbytes')
+            sendbytes = self._ui.config(b'badserver', b'closeaftersendbytes')
             sendbytes = sendbytes.split(',')
             self.closeaftersendbytes = [int(v) for v in sendbytes if v]
 
@@ -261,7 +261,7 @@ def extsetup(ui):
 
         # Called to accept() a pending socket.
         def get_request(self):
-            if self._ui.configbool('badserver', 'closebeforeaccept'):
+            if self._ui.configbool(b'badserver', b'closebeforeaccept'):
                 self.socket.close()
 
                 # Tells the server to stop processing more requests.

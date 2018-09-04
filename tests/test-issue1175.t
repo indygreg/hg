@@ -41,7 +41,7 @@ https://bz.mercurial-scm.org/1175
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 6 changesets, 4 total revisions
+  checked 6 changesets with 4 changes to 4 files
 
   $ hg export --git tip
   # HG changeset patch

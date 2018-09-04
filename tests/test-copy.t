@@ -101,7 +101,7 @@ this should show the rename information in the metadata
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 2 files
 
   $ cd ..
 

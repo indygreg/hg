@@ -195,7 +195,7 @@ Inability to verify peer certificate will result in abort
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 1 changesets, 4 total revisions
+  checked 1 changesets with 4 changes to 4 files
   $ cd test
   $ echo bar > bar
   $ hg commit -A -d '1 0' -m 2

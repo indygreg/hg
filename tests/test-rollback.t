@@ -9,7 +9,7 @@ setup repo
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
   $ hg parents
   changeset:   0:1f0dee641bb7
   tag:         tip
@@ -28,7 +28,7 @@ rollback to null revision
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  0 files, 0 changesets, 0 total revisions
+  checked 0 changesets with 0 changes to 0 files
   $ hg parents
   $ hg status
   A a
@@ -197,7 +197,7 @@ corrupt journal test
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 1 files
 
 rollback disabled by config
   $ cat >> $HGRCPATH <<EOF
@@ -436,7 +436,7 @@ An I/O error writing "rollback completed" is handled
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
 
   $ cd ..
 
@@ -461,6 +461,6 @@ of a transaction.
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 1 files
 
   $ cd ..

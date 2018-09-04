@@ -166,7 +166,7 @@ largefiles clients refuse to push largefiles repos to vanilla servers
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 2 files
   searching 1 changesets for largefiles
   verified existence of 1 revisions of 1 largefiles
   $ hg serve --config extensions.largefiles=! -R ../r6 -d -p $HGPORT --pid-file ../hg.pid
@@ -259,7 +259,7 @@ test 'verify' with remotestore:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
   searching 1 changesets for largefiles
   changeset 0:cf03e5bb9936: f1 missing
   verified existence of 1 revisions of 1 largefiles
@@ -295,7 +295,7 @@ largefiles pulled on update - a largefile corrupted on the server:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
   searching 1 changesets for largefiles
   verified contents of 1 revisions of 1 largefiles
   $ hg -R http-clone up -Cqr null
@@ -358,7 +358,7 @@ largefiles should batch verify remote calls
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 2 files
   searching 2 changesets for largefiles
   verified existence of 2 revisions of 2 largefiles
   $ tail -1 access.log
@@ -396,7 +396,7 @@ available locally.
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 3 files
   searching 3 changesets for largefiles
   verified existence of 3 revisions of 3 largefiles
   $ tail -1 access.log

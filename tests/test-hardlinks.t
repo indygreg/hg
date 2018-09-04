@@ -151,7 +151,7 @@ Push to repo r1 should break up most hardlinks in r2:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 2 files
 
   $ cd r3
   $ hg push
@@ -181,7 +181,7 @@ Push to repo r1 should break up most hardlinks in r2:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 2 files
 
 
   $ cd r1

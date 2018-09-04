@@ -1031,7 +1031,7 @@ Test cloning with --all-largefiles flag
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  10 files, 8 changesets, 24 total revisions
+  checked 8 changesets with 24 changes to 10 files
   searching 8 changesets for largefiles
   verified contents of 13 revisions of 6 largefiles
   $ hg -R a-clone1 sum
@@ -1549,7 +1549,7 @@ revert some files to an older revision
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  10 files, 10 changesets, 28 total revisions
+  checked 10 changesets with 28 changes to 10 files
   searching 1 changesets for largefiles
   verified existence of 3 revisions of 3 largefiles
 
@@ -1563,7 +1563,7 @@ and make sure that this is caught:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  10 files, 10 changesets, 28 total revisions
+  checked 10 changesets with 28 changes to 10 files
   searching 1 changesets for largefiles
   changeset 9:598410d3eb9a: sub/large4 references missing $TESTTMP/d/.hg/largefiles/e166e74c7303192238d60af5a9c4ce9bef0b7928
   verified existence of 3 revisions of 3 largefiles

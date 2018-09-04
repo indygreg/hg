@@ -14,7 +14,7 @@ Try some commands:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  0 files, 0 changesets, 0 total revisions
+  checked 0 changesets with 0 changes to 0 files
 
 Check the basic files created:
 
@@ -39,7 +39,7 @@ Poke at a clone:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  0 files, 0 changesets, 0 total revisions
+  checked 0 changesets with 0 changes to 0 files
   $ ls .hg
   00changelog.i
   hgrc

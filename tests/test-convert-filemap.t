@@ -317,7 +317,7 @@ ensure that the filemap contains duplicated slashes (issue3612)
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 5 changesets, 7 total revisions
+  checked 5 changesets with 7 changes to 4 files
 
   $ hg -R renames.repo manifest --debug
   d43feacba7a4f1f2080dde4a4b985bd8a0236d46 644   copied2

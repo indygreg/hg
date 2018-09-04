@@ -523,7 +523,7 @@ changelog and manifest would have invalid node:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 1 files
   $ hg revert --no-backup -aq
 
   $ cat >> .hg/hgrc << EOF

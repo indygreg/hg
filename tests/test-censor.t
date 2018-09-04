@@ -180,7 +180,7 @@ Repo fails verification due to censorship
   checking files
    target@1: censored file data
    target@2: censored file data
-  2 files, 5 changesets, 7 total revisions
+  checked 5 changesets with 7 changes to 2 files
   2 integrity errors encountered!
   (first damaged changeset appears to be 1)
   [1]
@@ -215,7 +215,7 @@ Repo passes verification with warnings with explicit config
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 5 changesets, 7 total revisions
+  checked 5 changesets with 7 changes to 2 files
 
 May update to revision with censored data with explicit config
 
@@ -341,7 +341,7 @@ Repo with censored nodes can be cloned and cloned nodes are censored
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 12 changesets, 13 total revisions
+  checked 12 changesets with 13 changes to 2 files
 
 Repo cloned before tainted content introduced can pull censored nodes
 
@@ -353,7 +353,7 @@ Repo cloned before tainted content introduced can pull censored nodes
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 1 changesets, 2 total revisions
+  checked 1 changesets with 2 changes to 2 files
   $ hg pull -r $H1 -r $H2
   pulling from $TESTTMP/r
   searching for changes
@@ -380,7 +380,7 @@ Repo cloned before tainted content introduced can pull censored nodes
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 12 changesets, 13 total revisions
+  checked 12 changesets with 13 changes to 2 files
 
 Censored nodes can be pushed if they censor previously unexchanged nodes
 
@@ -440,7 +440,7 @@ Censored nodes can be bundled up and unbundled in another repo
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 14 changesets, 15 total revisions
+  checked 14 changesets with 15 changes to 2 files
 
 Censored nodes can be imported on top of censored nodes, consecutively
 
@@ -472,7 +472,7 @@ Censored nodes can be imported on top of censored nodes, consecutively
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 14 changesets, 15 total revisions
+  checked 14 changesets with 15 changes to 2 files
   $ cd ../r
 
 Can import bundle where first revision of a file is censored

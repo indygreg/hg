@@ -12,7 +12,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 9 changesets, 9 total revisions
+  checked 9 changesets with 9 changes to 1 files
   $ hg serve -p $HGPORT -d --pid-file=hg.pid
   $ cat hg.pid >> $DAEMON_PIDS
   $ cd ..
@@ -370,7 +370,7 @@ test outgoing
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 14 changesets, 14 total revisions
+  checked 14 changesets with 14 changes to 1 files
   $ cd ..
   $ hg -R test-dev outgoing test
   comparing with test

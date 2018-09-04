@@ -75,7 +75,7 @@ Ensure branchcache got copied over:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 11 changesets, 11 total revisions
+  checked 11 changesets with 11 changes to 2 files
 
 Invalid dest '' must abort:
 
@@ -146,7 +146,7 @@ Ensure branchcache got copied over:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 11 changesets, 11 total revisions
+  checked 11 changesets with 11 changes to 2 files
 
 Default destination:
 
@@ -191,7 +191,7 @@ Use --pull:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 11 changesets, 11 total revisions
+  checked 11 changesets with 11 changes to 2 files
 
 Invalid dest '' with --pull must abort (issue2528):
 

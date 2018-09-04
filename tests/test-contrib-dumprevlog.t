@@ -19,7 +19,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 1 files
 
 Dumping revlog of file a to stdout:
   $ $PYTHON "$CONTRIBDIR/dumprevlog" .hg/store/data/a.i
@@ -84,7 +84,7 @@ Verify:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 1 files
 
 Compare repos:
 

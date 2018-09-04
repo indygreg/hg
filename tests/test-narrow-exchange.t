@@ -161,7 +161,7 @@ Check that the resulting history is valid in the full repo
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 8 changesets, 10 total revisions
+  checked 8 changesets with 10 changes to 3 files
 
 Can not push to wider repo if change affects paths in wider repo that are
 not also in narrower repo

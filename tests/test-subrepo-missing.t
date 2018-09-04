@@ -114,7 +114,7 @@ verify will warn if locked-in subrepo revisions are hidden or missing
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 5 changesets, 5 total revisions
+  checked 5 changesets with 5 changes to 2 files
   checking subrepo links
   subrepo 'subrepo' is hidden in revision a66de08943b6
   subrepo 'subrepo' is hidden in revision 674d05939c1e
@@ -128,7 +128,7 @@ verifying shouldn't init a new subrepo if the reference doesn't exist
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 5 changesets, 5 total revisions
+  checked 5 changesets with 5 changes to 2 files
   checking subrepo links
   0: repository $TESTTMP/repo/subrepo not found
   1: repository $TESTTMP/repo/subrepo not found

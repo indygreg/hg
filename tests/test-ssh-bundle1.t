@@ -84,7 +84,7 @@ clone remote via stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 3 changesets, 2 total revisions
+  checked 3 changesets with 2 changes to 2 files
   $ hg branches
   default                        0:1160648e36ce
   $ cd ..
@@ -128,7 +128,7 @@ verify
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 3 changesets, 2 total revisions
+  checked 3 changesets with 2 changes to 2 files
   $ cat >> .hg/hgrc <<EOF
   > [hooks]
   > changegroup = sh -c "printenv.py changegroup-in-local 0 ../dummylog"
@@ -227,7 +227,7 @@ check remote tip
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 4 changesets, 3 total revisions
+  checked 4 changesets with 3 changes to 2 files
   $ hg cat -r tip foo
   bleah
   $ echo z > z

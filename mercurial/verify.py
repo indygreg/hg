@@ -153,8 +153,8 @@ class verifier(object):
 
         totalfiles, filerevisions = self._verifyfiles(filenodes, filelinkrevs)
 
-        ui.status(_("%d files, %d changesets, %d total revisions\n") %
-                       (totalfiles, len(repo.changelog), filerevisions))
+        ui.status(_("checked %d changesets with %d changes to %d files\n") %
+                       (len(repo.changelog), filerevisions, totalfiles))
         if self.warnings:
             ui.warn(_("%d warnings encountered!\n") % self.warnings)
         if self.fncachewarned:

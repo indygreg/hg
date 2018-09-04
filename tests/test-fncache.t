@@ -41,7 +41,7 @@ Testing verify:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 3 files
 
   $ rm .hg/store/fncache
 
@@ -53,7 +53,7 @@ Testing verify:
    warning: revlog 'data/a.i' not in fncache!
    warning: revlog 'data/a.i.hg/c.i' not in fncache!
    warning: revlog 'data/a.i/b.i' not in fncache!
-  3 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 3 files
   3 warnings encountered!
   hint: run "hg debugrebuildfncache" to recover from corrupt fncache
 
@@ -70,7 +70,7 @@ Follow the hint to make sure it works
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 3 files
 
   $ cd ..
 
@@ -340,7 +340,7 @@ Clean cached versions
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
   $ cat .hg/store/fncache
   data/y.i
 

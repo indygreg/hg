@@ -141,6 +141,6 @@ Everything should be clean now:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 4 changesets, 10 total revisions
+  checked 4 changesets with 10 changes to 4 files
 
   $ cd ..

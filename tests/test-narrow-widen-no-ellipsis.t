@@ -239,7 +239,7 @@ make narrow clone with every third node.
   checking directory manifests (tree !)
   crosschecking files in changesets and manifests
   checking files
-  4 files, 11 changesets, 4 total revisions
+  checked 11 changesets with 4 changes to 4 files
   $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
   10: add d10/f
   9: add d9/f
@@ -288,7 +288,7 @@ Verify shouldn't claim the repo is corrupt after a widen.
   checking directory manifests (tree !)
   crosschecking files in changesets and manifests
   checking files
-  5 files, 11 changesets, 5 total revisions
+  checked 11 changesets with 5 changes to 5 files
 
 Widening preserves parent of local commit
 

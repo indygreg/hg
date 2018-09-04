@@ -193,7 +193,7 @@ break it
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 5 changesets, 5 total revisions
+  checked 5 changesets with 5 changes to 3 files
 
 manifest -r 0
 

@@ -33,7 +33,7 @@ Setting up test
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 9 changesets, 7 total revisions
+  checked 9 changesets with 7 changes to 4 files
   $ cd ..
   $ hg init empty
 
@@ -75,7 +75,7 @@ Verify empty
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  0 files, 0 changesets, 0 total revisions
+  checked 0 changesets with 0 changes to 0 files
 
 #if repobundlerepo
 
@@ -729,7 +729,7 @@ but, regular verify must continue to work
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 2 files
 
 #if repobundlerepo
 diff against bundle
@@ -815,7 +815,7 @@ bundle single branch
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 3 changesets, 5 total revisions
+  checked 3 changesets with 5 changes to 4 files
 #endif
 
 == Test bundling no commits

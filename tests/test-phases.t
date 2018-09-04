@@ -690,7 +690,7 @@ because repo.cancopy() is False
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  7 files, 8 changesets, 7 total revisions
+  checked 8 changesets with 7 changes to 7 files
 
   $ cd ..
 

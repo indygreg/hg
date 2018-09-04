@@ -842,7 +842,7 @@ Stat, verify and show custom expansion (firstline)
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 3 changesets, 4 total revisions
+  checked 3 changesets with 4 changes to 3 files
   $ cat a b
   expand $Id: a bb948857c743 Thu, 01 Jan 1970 00:00:02 +0000 user $
   do not process $Id:

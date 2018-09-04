@@ -138,7 +138,7 @@ union repos can be cloned ... and clones works correctly
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  6 files, 6 changesets, 11 total revisions
+  checked 6 changesets with 11 changes to 6 files
 
   $ hg -R repo3 heads --template '{rev}:{node|short}  {desc|firstline}\n'
   5:2f0d178c469c  repo2-3

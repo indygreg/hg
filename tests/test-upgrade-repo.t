@@ -406,7 +406,7 @@ verify should be happy
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 3 files
 
 old store should be backed up
 
@@ -613,7 +613,7 @@ Check upgrading a large file repository
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 2 files
   $ hg debugdata lfs.bin 0
   version https://git-lfs.github.com/spec/v1
   oid sha256:d0beab232adff5ba365880366ad30b1edb85c4c5372442b5d2fe27adc96d653f

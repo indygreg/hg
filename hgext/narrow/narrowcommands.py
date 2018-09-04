@@ -84,12 +84,12 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
         filepath = os.path.join(pycompat.getcwd(), narrowspecfile)
         ui.status(_("reading narrowspec from '%s'\n") % filepath)
         try:
-            fp = open(filepath, 'rb')
-        except IOError:
-            raise error.Abort(_("file '%s' not found") % filepath)
+            fdata = util.readfile(filepath)
+        except IOError as inst:
+            raise error.Abort(_("cannot read narrowspecs from '%s': %s") %
+                              (filepath, encoding.strtolocal(inst.strerror)))
 
-        includes, excludes, profiles = sparse.parseconfig(ui, fp.read(),
-                                                          'narrow')
+        includes, excludes, profiles = sparse.parseconfig(ui, fdata, 'narrow')
         if profiles:
             raise error.Abort(_("cannot specify other files using '%include' in"
                                 " narrowspec"))

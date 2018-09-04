@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 import errno
 import hashlib
-import os
 import shutil
 import struct
 
@@ -2267,7 +2266,7 @@ def purge(repo, matcher, ignored=False, removeemptydirs=True,
 
     def remove(removefn, path):
         try:
-            removefn(repo.wvfs.join(path))
+            removefn(path)
         except OSError:
             m = _('%s cannot be removed') % path
             if abortonerror:
@@ -2293,15 +2292,15 @@ def purge(repo, matcher, ignored=False, removeemptydirs=True,
             for f in sorted(status.unknown + status.ignored):
                 if not noop:
                     repo.ui.note(_('removing file %s\n') % f)
-                    remove(util.unlink, f)
+                    remove(repo.wvfs.unlink, f)
                 res.append(f)
 
         if removeemptydirs:
             for f in sorted(directories, reverse=True):
-                if matcher(f) and not os.listdir(repo.wvfs.join(f)):
+                if matcher(f) and not repo.wvfs.listdir(f):
                     if not noop:
                         repo.ui.note(_('removing directory %s\n') % f)
-                        remove(os.rmdir, f)
+                        remove(repo.wvfs.rmdir, f)
                     res.append(f)
 
         return res

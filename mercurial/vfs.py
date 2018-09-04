@@ -213,6 +213,10 @@ class abstractvfs(object):
         """
         return util.removedirs(self.join(path))
 
+    def rmdir(self, path=None):
+        """Remove an empty directory."""
+        return os.rmdir(self.join(path))
+
     def rmtree(self, path=None, ignore_errors=False, forcibly=False):
         """Remove a directory tree recursively
 

@@ -621,19 +621,6 @@ def _rawgroups(revlog, p1, p2, cachedelta):
     curr = len(revlog)
     prev = curr - 1
 
-    # should we try to build a delta?
-    if prev != nullrev and revlog._storedeltachains:
-        tested = set()
-        # This condition is true most of the time when processing
-        # changegroup data into a generaldelta repo. The only time it
-        # isn't true is if this is the first revision in a delta chain
-        # or if ``format.generaldelta=true`` disabled ``lazydeltabase``.
-        if cachedelta and gdelta and revlog._lazydeltabase:
-            # Assume what we received from the server is a good choice
-            # build delta will reuse the cache
-            yield (cachedelta[0],)
-            tested.add(cachedelta[0])
-
     # This condition is true most of the time when processing
     # changegroup data into a generaldelta repo. The only time it
     # isn't true is if this is the first revision in a delta chain

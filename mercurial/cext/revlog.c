@@ -1249,7 +1249,7 @@ static PyMethodDef ntobj_methods[] = {
 static PyTypeObject nodetreeType = {
 	PyVarObject_HEAD_INIT(NULL, 0) /* header */
 	"parsers.nodetree",        /* tp_name */
-	sizeof(nodetree) ,         /* tp_basicsize */
+	sizeof(nodetreeObject) ,   /* tp_basicsize */
 	0,                         /* tp_itemsize */
 	(destructor)ntobj_dealloc, /* tp_dealloc */
 	0,                         /* tp_print */

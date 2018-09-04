@@ -19,11 +19,12 @@ to serialize and deserialize data.
 
 from __future__ import absolute_import
 
-from .thirdparty import cbor
-
 from . import (
     error,
     util,
+)
+from .utils import (
+    cborutil,
 )
 
 class cmdstate(object):
@@ -62,7 +63,8 @@ class cmdstate(object):
 
         with self._repo.vfs(self.fname, 'wb', atomictemp=True) as fp:
             fp.write('%d\n' % version)
-            cbor.dump(data, fp, canonical=True)
+            for chunk in cborutil.streamencode(data):
+                fp.write(chunk)
 
     def _read(self):
         """reads the state file and returns a dictionary which contain
@@ -73,7 +75,8 @@ class cmdstate(object):
             except ValueError:
                 raise error.CorruptedState("unknown version of state file"
                                            " found")
-            return cbor.load(fp)
+
+            return cborutil.decodeall(fp.read())[0]
 
     def delete(self):
         """drop the state file if exists"""

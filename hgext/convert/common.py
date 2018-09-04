@@ -459,7 +459,7 @@ class commandline(object):
         # POSIX requires at least 4096 bytes for ARG_MAX
         argmax = 4096
         try:
-            argmax = os.sysconf("SC_ARG_MAX")
+            argmax = os.sysconf(r"SC_ARG_MAX")
         except (AttributeError, ValueError):
             pass
 

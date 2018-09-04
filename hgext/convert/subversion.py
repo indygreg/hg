@@ -1270,7 +1270,7 @@ class svn_sink(converter_sink, commandline):
         self.childmap[parent] = child
 
     def revid(self, rev):
-        return u"svn:%s@%s" % (self.uuid, rev)
+        return "svn:%s@%s" % (self.uuid, rev)
 
     def putcommit(self, files, copies, parents, commit, source, revmap, full,
                   cleanp2):

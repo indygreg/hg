@@ -88,11 +88,11 @@ add more upstream files which we will include in a wider narrow spec
 
   $ cd ..
 
-Widen the narrow spec to see the wider file. This should not get the newly
+Widen the narrow spec to see the widest file. This should not get the newly
 added upstream revisions.
 
   $ cd narrow
-  $ hg tracked --addinclude wider/f
+  $ hg tracked --addinclude widest/f
   comparing with ssh://user@dummy/master
   searching for changes
   no changes found
@@ -100,11 +100,14 @@ added upstream revisions.
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 1 changes to 1 files
+  added 3 changesets with 2 changes to 2 files
   new changesets *:* (glob)
   $ hg tracked
   I path:inside
-  I path:wider/f
+  I path:widest/f
+
+  $ cat widest/f
+  widest
 
 Pull down the newly added upstream revision.
 
@@ -114,27 +117,29 @@ Pull down the newly added upstream revision.
   adding changesets
   adding manifests
   adding file changes
-  added 4 changesets with 2 changes to 2 files
+  added 5 changesets with 4 changes to 2 files
   new changesets *:* (glob)
   (run 'hg update' to get a working copy)
   $ hg update -r 'desc("add wider")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cat wider/f
-  wider
+  $ cat widest/f
+  widest v2
 
   $ hg update -r 'desc("update inside")'
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cat wider/f
-  wider
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cat widest/f
+  widest v3
   $ cat inside/f
   inside v2
 
   $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
-  ...5: update widest v4
-  4: update inside
-  ...3: update widest v3
-  2: add wider, update widest
-  ...1: add outside
+  7: update widest v4
+  ...6: add outside2
+  5: update inside
+  4: update widest v3
+  3: add wider, update widest
+  ...2: add outside
+  1: add widest
   0: add inside
 
 Check that widening with a newline fails
@@ -144,9 +149,9 @@ Check that widening with a newline fails
   abort: newlines are not allowed in narrowspec paths
   [255]
 
-widen the narrow spec to include the widest file
+widen the narrow spec to include the wider file
 
-  $ hg tracked --addinclude widest
+  $ hg tracked --addinclude wider
   comparing with ssh://user@dummy/master
   searching for changes
   no changes found
@@ -158,8 +163,8 @@ widen the narrow spec to include the widest file
   new changesets *:* (glob)
   $ hg tracked
   I path:inside
-  I path:wider/f
-  I path:widest
+  I path:wider
+  I path:widest/f
   $ hg update 'desc("add widest")'
   2 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ cat widest/f

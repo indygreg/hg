@@ -375,9 +375,9 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
         _txnhook(ui, repo, hooktype, node, source, user, **kwargs)
 
 def _pkhook(ui, repo, hooktype, node, source, user, **kwargs):
-    if kwargs['namespace'] == 'bookmarks':
-        bookmark = kwargs['key']
-        ctx = kwargs['new']
+    if kwargs[r'namespace'] == 'bookmarks':
+        bookmark = kwargs[r'key']
+        ctx = kwargs[r'new']
         allowbookmarks = buildmatch(ui, None, user, 'acl.allow.bookmarks')
         denybookmarks = buildmatch(ui, None, user, 'acl.deny.bookmarks')
 

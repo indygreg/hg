@@ -94,6 +94,37 @@ Test basic clone
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
   received frame(size=922; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  sending 2 commands
+  sending command filedata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'nodes': [
+      '+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
+      '\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc',
+      '\xc2\xa2\x05\xc8\xb2\xad\xe2J\xf2`b\xe5<\xd5\xbc8\x01\xd6`\xda'
+    ],
+    'path': 'a'
+  }
+  sending command filedata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'nodes': [
+      '\x81\x9e%\x8d1\xa5\xe1`f)\xf3e\xbb\x90*\x1b!\xeeB\x16',
+      '\xb1zk\xd3g=\x9a\xb8\xce\xd5\x81\xa2\t\xf6/=\xa5\xccEx',
+      '\xc5\xb1\xf9\xd3n\x1c\xc18\xbf\xb6\xef\xb3\xde\xb7]\x8c\xcad\x94\xc3'
+    ],
+    'path': 'b'
+  }
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  received frame(size=389; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=389; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   new changesets 3390ef850073:caa2a465451d (3 drafts)
 
@@ -189,6 +220,34 @@ Cloning only a specific revision works
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
   received frame(size=376; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  sending 2 commands
+  sending command filedata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'nodes': [
+      '+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
+      '\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc'
+    ],
+    'path': 'a'
+  }
+  sending command filedata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'nodes': [
+      '\x81\x9e%\x8d1\xa5\xe1`f)\xf3e\xbb\x90*\x1b!\xeeB\x16'
+    ],
+    'path': 'b'
+  }
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  received frame(size=249; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=109; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   new changesets 3390ef850073:4432d83626e8
 
@@ -268,6 +327,36 @@ Incremental pull works
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
   received frame(size=559; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  sending 2 commands
+  sending command filedata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'nodes': [
+      '+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
+      '\xc2\xa2\x05\xc8\xb2\xad\xe2J\xf2`b\xe5<\xd5\xbc8\x01\xd6`\xda'
+    ],
+    'path': 'a'
+  }
+  sending command filedata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'nodes': [
+      '\x81\x9e%\x8d1\xa5\xe1`f)\xf3e\xbb\x90*\x1b!\xeeB\x16',
+      '\xb1zk\xd3g=\x9a\xb8\xce\xd5\x81\xa2\t\xf6/=\xa5\xccEx',
+      '\xc5\xb1\xf9\xd3n\x1c\xc18\xbf\xb6\xef\xb3\xde\xb7]\x8c\xcad\x94\xc3'
+    ],
+    'path': 'b'
+  }
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  received frame(size=249; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=389; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   new changesets cd2534766bec:caa2a465451d (3 drafts)
   (run 'hg update' to get a working copy)
@@ -421,6 +510,37 @@ Bookmarks are transferred on clone
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
   received frame(size=922; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  sending 2 commands
+  sending command filedata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'nodes': [
+      '+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
+      '\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc',
+      '\xc2\xa2\x05\xc8\xb2\xad\xe2J\xf2`b\xe5<\xd5\xbc8\x01\xd6`\xda'
+    ],
+    'path': 'a'
+  }
+  sending command filedata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'nodes': [
+      '\x81\x9e%\x8d1\xa5\xe1`f)\xf3e\xbb\x90*\x1b!\xeeB\x16',
+      '\xb1zk\xd3g=\x9a\xb8\xce\xd5\x81\xa2\t\xf6/=\xa5\xccEx',
+      '\xc5\xb1\xf9\xd3n\x1c\xc18\xbf\xb6\xef\xb3\xde\xb7]\x8c\xcad\x94\xc3'
+    ],
+    'path': 'b'
+  }
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  received frame(size=389; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=389; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   new changesets 3390ef850073:caa2a465451d (1 drafts)
 

@@ -621,10 +621,12 @@ def _rawgroups(revlog, p1, p2, cachedelta):
     curr = len(revlog)
     prev = curr - 1
 
-    # This condition is true most of the time when processing
-    # changegroup data into a generaldelta repo. The only time it
-    # isn't true is if this is the first revision in a delta chain
-    # or if ``format.generaldelta=true`` disabled ``lazydeltabase``.
+    # First we try to reuse a the delta contained in the bundle.
+    # (or from the source revlog)
+    #
+    # This logic only applies to general delta repositories and can be disabled
+    # through configuration. Disabling reuse of source delta is useful when
+    # we want to make sure we recomputed "optimal" deltas.
     if cachedelta and gdelta and revlog._lazydeltabase:
         # Assume what we received from the server is a good choice
         # build delta will reuse the cache

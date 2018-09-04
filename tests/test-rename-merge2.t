@@ -3,7 +3,7 @@
   $ cd t
   $ cat <<EOF > merge
   > import sys, os
-  > f = open(sys.argv[1], "wb")
+  > f = open(sys.argv[1], "w")
   > f.write("merge %s %s %s" % (sys.argv[1], sys.argv[2], sys.argv[3]))
   > f.close()
   > EOF

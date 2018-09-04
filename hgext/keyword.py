@@ -208,7 +208,7 @@ def _defaultkwmaps(ui):
 def _shrinktext(text, subfunc):
     '''Helper for keyword expansion removal in text.
     Depending on subfunc also returns number of substitutions.'''
-    return subfunc(r'$\1$', text)
+    return subfunc(br'$\1$', text)
 
 def _preselect(wstatus, changed):
     '''Retrieves modified and added files from a working directory state
@@ -250,12 +250,12 @@ class kwtemplater(object):
     @util.propertycache
     def rekw(self):
         '''Returns regex for unexpanded keywords.'''
-        return re.compile(r'\$(%s)\$' % self.escape)
+        return re.compile(br'\$(%s)\$' % self.escape)
 
     @util.propertycache
     def rekwexp(self):
         '''Returns regex for expanded keywords.'''
-        return re.compile(r'\$(%s): [^$\n\r]*? \$' % self.escape)
+        return re.compile(br'\$(%s): [^$\n\r]*? \$' % self.escape)
 
     def substitute(self, data, path, ctx, subfunc):
         '''Replaces keywords in data with expanded template.'''

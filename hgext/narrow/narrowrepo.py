@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 from . import (
     narrowdirstate,
-    narrowrevlog,
     narrowwirepeer,
 )
 
@@ -17,11 +16,6 @@ def wraprepo(repo):
     """Enables narrow clone functionality on a single local repository."""
 
     class narrowrepository(repo.__class__):
-
-        def file(self, f):
-            fl = super(narrowrepository, self).file(f)
-            narrowrevlog.makenarrowfilelog(fl, self.narrowmatch())
-            return fl
 
         def _makedirstate(self):
             dirstate = super(narrowrepository, self)._makedirstate()

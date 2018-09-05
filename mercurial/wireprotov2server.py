@@ -11,8 +11,11 @@ import contextlib
 from .i18n import _
 from .node import (
     nullid,
+    nullrev,
 )
 from . import (
+    changegroup,
+    dagop,
     discovery,
     encoding,
     error,
@@ -411,6 +414,67 @@ def _capabilitiesv2(repo, proto):
 
     return proto.addcapabilities(repo, caps)
 
+def builddeltarequests(store, nodes):
+    """Build a series of revision delta requests against a backend store.
+
+    Returns a list of revision numbers in the order they should be sent
+    and a list of ``irevisiondeltarequest`` instances to be made against
+    the backend store.
+    """
+    # We sort and send nodes in DAG order because this is optimal for
+    # storage emission.
+    # TODO we may want a better storage API here - one where we can throw
+    # a list of nodes and delta preconditions over a figurative wall and
+    # have the storage backend figure it out for us.
+    revs = dagop.linearize({store.rev(n) for n in nodes}, store.parentrevs)
+
+    requests = []
+
+    for rev in revs:
+        node = store.node(rev)
+        parents = store.parents(node)
+        deltaparent = store.node(store.deltaparent(rev))
+
+        # There is a delta in storage. That means we can send the delta
+        # efficiently.
+        #
+        # But, the delta may be against a revision the receiver doesn't
+        # have (e.g. shallow clone or when the delta isn't against a parent
+        # revision). For now, we ignore the problem of shallow clone. As
+        # long as a delta exists against a parent, we send it.
+        # TODO allow arguments to control this behavior, as the receiver
+        # may not have the base revision in some scenarios.
+        if deltaparent != nullid and deltaparent in parents:
+            basenode = deltaparent
+
+        # Else there is no delta parent in storage or the delta that is
+        # # there isn't suitable. Let's use a delta against a parent
+        # revision, if possible.
+        #
+        # There is room to check if the delta parent is in the ancestry of
+        # this node. But there isn't an API on the manifest storage object
+        # for that. So ignore this case for now.
+
+        elif parents[0] != nullid:
+            basenode = parents[0]
+        elif parents[1] != nullid:
+            basenode = parents[1]
+
+        # No potential bases to delta against. Send a full revision.
+        else:
+            basenode = nullid
+
+        requests.append(changegroup.revisiondeltarequest(
+            node=node,
+            p1node=parents[0],
+            p2node=parents[1],
+            # Receiver deals with linknode resolution.
+            linknode=nullid,
+            basenode=basenode,
+        ))
+
+    return revs, requests
+
 def wireprotocommand(name, args=None, permission='push'):
     """Decorator to declare a wire protocol command.
 
@@ -629,6 +693,87 @@ def lookupv2(repo, proto, key):
     node = repo.lookup(key)
 
     yield node
+
+@wireprotocommand('manifestdata',
+                  args={
+                      'nodes': [b'0123456...'],
+                      'fields': [b'parents', b'revision'],
+                      'tree': b'',
+                  },
+                  permission='pull')
+def manifestdata(repo, proto, nodes=None, fields=None, tree=None):
+    fields = fields or set()
+
+    if nodes is None:
+        raise error.WireprotoCommandError(
+            'nodes argument must be defined')
+
+    if tree is None:
+        raise error.WireprotoCommandError(
+            'tree argument must be defined')
+
+    store = repo.manifestlog.getstorage(tree)
+
+    # Validate the node is known and abort on unknown revisions.
+    for node in nodes:
+        try:
+            store.rev(node)
+        except error.LookupError:
+            raise error.WireprotoCommandError(
+                'unknown node: %s', (node,))
+
+    revs, requests = builddeltarequests(store, nodes)
+
+    yield {
+        b'totalitems': len(revs),
+    }
+
+    if b'revision' in fields:
+        deltas = store.emitrevisiondeltas(requests)
+    else:
+        deltas = None
+
+    for rev in revs:
+        node = store.node(rev)
+
+        if deltas is not None:
+            delta = next(deltas)
+        else:
+            delta = None
+
+        d = {
+            b'node': node,
+        }
+
+        if b'parents' in fields:
+            d[b'parents'] = store.parents(node)
+
+        if b'revision' in fields:
+            assert delta is not None
+            assert delta.flags == 0
+            assert d[b'node'] == delta.node
+
+            if delta.revision is not None:
+                revisiondata = delta.revision
+                d[b'revisionsize'] = len(revisiondata)
+            else:
+                d[b'deltabasenode'] = delta.basenode
+                revisiondata = delta.delta
+                d[b'deltasize'] = len(revisiondata)
+        else:
+            revisiondata = None
+
+        yield d
+
+        if revisiondata is not None:
+            yield revisiondata
+
+    if deltas is not None:
+        try:
+            next(deltas)
+            raise error.ProgrammingError('should not have more deltas')
+        except GeneratorExit:
+            pass
 
 @wireprotocommand('pushkey',
                   args={

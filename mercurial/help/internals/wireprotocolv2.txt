@@ -258,6 +258,80 @@ key
 
 On success, returns a bytestring containing the resolved node.
 
+manifestdata
+------------
+
+Obtain various data related to manifests (which are lists of files in
+a revision).
+
+The command accepts the following arguments:
+
+fields
+   (set of bytestring) Which data associated with manifests to fetch.
+   The following values are recognized:
+
+   parents
+      Parent nodes for the manifest.
+
+   revision
+      The raw revision data for the manifest.
+
+nodes
+   (array of bytestring) Manifest nodes whose data to retrieve.
+
+tree
+   (bytestring) Path to manifest to retrieve. The empty bytestring represents
+   the root manifest. All other values represent directories/trees within
+   the repository.
+
+TODO allow specifying revisions via alternate means (such as from changeset
+revisions or ranges)
+TODO consider recursive expansion of manifests (with path filtering for
+narrow use cases)
+TODO more control over whether to emit fulltexts or deltas
+
+The response bytestream starts with a CBOR map describing the data that
+follows. It has the following bytestring keys:
+
+totalitems
+   (unsigned integer) Total number of manifest revisions whose data is
+   being returned.
+
+Following the header map is a series of 0 or more CBOR values. The first
+value is always a map describing a manifest revision. If this map has the
+``deltasize`` or ``revisionsize`` keys, a bytestring containing the delta
+or revision, respectively, will immediately follow the map. Otherwise
+the next value will be a map describing the next manifest revision.
+
+Each map has the following bytestring keys:
+
+node
+   (bytestring) The node of the manifest revision whose data is represented.
+
+deltabasenode
+   (bytestring) The node that the delta representation of this revision is
+   computed against. Only present if the ``revision`` field is requested and
+   a delta is being emitted.
+
+deltasize
+   (unsigned integer) The size of the delta data that follows this map.
+   Only present if the ``revision`` field is requested and a delta is
+   being emitted.
+
+parents
+   (array of bytestring) The nodes of the parents of this manifest revision.
+   Only present if the ``parents`` field is requested.
+
+revisionsize
+   (unsigned integer) The size of the fulltext revision data that follows
+   this map. Only present if the ``revision`` field is requested and a fulltext
+   revision is being emitted.
+
+When ``revision`` data is requested, the server chooses to emit either fulltext
+revision data or a delta. What the server decides can be inferred by looking
+for the presence of the ``deltasize`` or ``revisionsize`` keys in the map.
+Servers MUST NOT define both keys.
+
 pushkey
 -------
 

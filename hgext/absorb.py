@@ -917,7 +917,7 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
                       'be analysed\n')
                     % limit)
     if not stack:
-        raise error.Abort(_('no changeset to change'))
+        raise error.Abort(_('no mutable changeset to change'))
     if targetctx is None: # default to working copy
         targetctx = repo[None]
     if pats is None:

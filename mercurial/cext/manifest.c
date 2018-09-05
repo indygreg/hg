@@ -725,7 +725,7 @@ static lazymanifest *lazymanifest_filtercopy(
 	copy->maxlines = self->maxlines;
 	copy->numlines = 0;
 	copy->pydata = self->pydata;
-	Py_INCREF(self->pydata);
+	Py_INCREF(copy->pydata);
 	for (i = 0; i < self->numlines; i++) {
 		PyObject *arglist = NULL, *result = NULL;
 		arglist = Py_BuildValue(PY23("(s)", "(y)"),
@@ -739,7 +739,7 @@ static lazymanifest *lazymanifest_filtercopy(
 		 * through and give up */
 		if (!result) {
 			free(copy->lines);
-			Py_DECREF(self->pydata);
+			Py_DECREF(copy->pydata);
 			return NULL;
 		}
 		if (PyObject_IsTrue(result)) {

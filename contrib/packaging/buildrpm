@@ -50,8 +50,6 @@ fi
 
 gethgversion
 
-# TODO: handle distance/node set, and type set
-
 if [ -z "$type" ] ; then
    release=1
 else

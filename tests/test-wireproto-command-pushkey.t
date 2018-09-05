@@ -46,13 +46,22 @@ pushkey for a bookmark works
   s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     14\r\n
-  s>     \x0c\x00\x00\x01\x00\x02\x012
-  s>     \xa1FstatusBok\xf5
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
   s>     \r\n
-  received frame(size=12; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     9\r\n
+  s>     \x01\x00\x00\x01\x00\x02\x001
+  s>     \xf5
+  s>     \r\n
+  received frame(size=1; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
   s>     0\r\n
   s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: True
 
   $ sendhttpv2peer << EOF
@@ -77,13 +86,22 @@ pushkey for a bookmark works
   s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     40\r\n
-  s>     8\x00\x00\x01\x00\x02\x012
-  s>     \xa1FstatusBok\xa1A@X(426bada5c67598ca65036d57d9e4b64b0c1ce7a0
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
   s>     \r\n
-  received frame(size=56; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     35\r\n
+  s>     -\x00\x00\x01\x00\x02\x001
+  s>     \xa1A@X(426bada5c67598ca65036d57d9e4b64b0c1ce7a0
+  s>     \r\n
+  received frame(size=45; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
   s>     0\r\n
   s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: {
     b'@': b'426bada5c67598ca65036d57d9e4b64b0c1ce7a0'
   }

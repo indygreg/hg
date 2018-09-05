@@ -43,13 +43,22 @@ No arguments returns something reasonable
   s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     14\r\n
-  s>     \x0c\x00\x00\x01\x00\x02\x012
-  s>     \xa1FstatusBok@
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
   s>     \r\n
-  received frame(size=12; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     9\r\n
+  s>     \x01\x00\x00\x01\x00\x02\x001
+  s>     @
+  s>     \r\n
+  received frame(size=1; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
   s>     0\r\n
   s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: []
 
 Single known node works
@@ -76,13 +85,22 @@ Single known node works
   s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     15\r\n
-  s>     \r\x00\x00\x01\x00\x02\x012
-  s>     \xa1FstatusBokA1
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
   s>     \r\n
-  received frame(size=13; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     a\r\n
+  s>     \x02\x00\x00\x01\x00\x02\x001
+  s>     A1
+  s>     \r\n
+  received frame(size=2; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
   s>     0\r\n
   s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: [
     True
   ]
@@ -111,13 +129,22 @@ Multiple nodes works
   s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     17\r\n
-  s>     \x0f\x00\x00\x01\x00\x02\x012
-  s>     \xa1FstatusBokC101
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
   s>     \r\n
-  received frame(size=15; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     c\r\n
+  s>     \x04\x00\x00\x01\x00\x02\x001
+  s>     C101
+  s>     \r\n
+  received frame(size=4; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
   s>     0\r\n
   s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: [
     True,
     False,

@@ -59,14 +59,23 @@ No arguments returns something reasonable
   s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     83\r\n
-  s>     {\x00\x00\x01\x00\x02\x012
-  s>     \xa1FstatusBok\xa3Gbranch1\x81T\xb5\xfa\xac\xdf\xd2c7h\xcb1R3l\xc0\x953\x81&f\x88Gbranch2\x81T"Aa\xc7X\x9a\xa4\x8f\xa8:H\xfe\xff^\x95\xb5j\xe3\'\xfcGdefault\x82T&\x80Z\xba\x1e`\n
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
+  s>     \r\n
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     78\r\n
+  s>     p\x00\x00\x01\x00\x02\x001
+  s>     \xa3Gbranch1\x81T\xb5\xfa\xac\xdf\xd2c7h\xcb1R3l\xc0\x953\x81&f\x88Gbranch2\x81T"Aa\xc7X\x9a\xa4\x8f\xa8:H\xfe\xff^\x95\xb5j\xe3\'\xfcGdefault\x82T&\x80Z\xba\x1e`\n
   s>     \x82\xe96a\x14\x9f#\x13\x86j"\x1a{T\xbe\x0e\xf7<\x17\xad\xe3\xfc\x89\xdcAp\x1e\xb9\xfc:\x91\xb5\x82\x82
   s>     \r\n
-  received frame(size=123; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=112; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
   s>     0\r\n
   s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: {
     b'branch1': [
       b'\xb5\xfa\xac\xdf\xd2c7h\xcb1R3l\xc0\x953\x81&f\x88'

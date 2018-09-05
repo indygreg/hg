@@ -331,13 +331,22 @@ Client with HTTPv2 enabled automatically upgrades if the server supports it
   s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     29\r\n
-  s>     !\x00\x00\x01\x00\x02\x012
-  s>     \xa1FstatusBok\x81T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
   s>     \r\n
-  received frame(size=33; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     1e\r\n
+  s>     \x16\x00\x00\x01\x00\x02\x001
+  s>     \x81T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
+  s>     \r\n
+  received frame(size=22; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
   s>     0\r\n
   s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: [
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
   ]

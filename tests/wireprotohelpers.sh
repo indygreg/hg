@@ -26,7 +26,7 @@ def customreadonlyv1(repo, proto):
 
 @wireprotov2server.wireprotocommand(b'customreadonly', permission=b'pull')
 def customreadonlyv2(repo, proto):
-    return wireprototypes.cborresponse(b'customreadonly bytes response')
+    yield b'customreadonly bytes response'
 
 @wireprotov1server.wireprotocommand(b'customreadwrite', permission=b'push')
 def customreadwrite(repo, proto):
@@ -34,7 +34,7 @@ def customreadwrite(repo, proto):
 
 @wireprotov2server.wireprotocommand(b'customreadwrite', permission=b'push')
 def customreadwritev2(repo, proto):
-    return wireprototypes.cborresponse(b'customreadwrite bytes response')
+    yield b'customreadwrite bytes response'
 EOF
 
 cat >> $HGRCPATH << EOF

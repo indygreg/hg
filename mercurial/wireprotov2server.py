@@ -19,7 +19,6 @@ from . import (
     wireprototypes,
 )
 from .utils import (
-    cborutil,
     interfaceutil,
 )
 
@@ -295,31 +294,19 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
             res.setbodybytes(_('command in frame must match command in URL'))
             return True
 
-    rsp = dispatch(repo, proto, command['command'])
-
     res.status = b'200 OK'
     res.headers[b'Content-Type'] = FRAMINGTYPE
 
-    # TODO consider adding a type to represent an iterable of values to
-    # be CBOR encoded.
-    if isinstance(rsp, wireprototypes.cborresponse):
-        # TODO consider calling oncommandresponsereadygen().
-        encoded = b''.join(cborutil.streamencode(rsp.value))
-        action, meta = reactor.oncommandresponseready(outstream,
-                                                      command['requestid'],
-                                                      encoded)
-    elif isinstance(rsp, wireprototypes.v2streamingresponse):
-        action, meta = reactor.oncommandresponsereadygen(outstream,
-                                                         command['requestid'],
-                                                         rsp.gen)
-    elif isinstance(rsp, wireprototypes.v2errorresponse):
-        action, meta = reactor.oncommanderror(outstream,
-                                              command['requestid'],
-                                              rsp.message,
-                                              rsp.args)
-    else:
+    try:
+        objs = dispatch(repo, proto, command['command'])
+
+        action, meta = reactor.oncommandresponsereadyobjects(
+            outstream, command['requestid'], objs)
+
+    except Exception as e:
         action, meta = reactor.onservererror(
-            _('unhandled response type from wire proto command'))
+            outstream, command['requestid'],
+            _('exception when invoking command: %s') % e)
 
     if action == 'sendframes':
         res.setbodygen(meta['framegen'])
@@ -430,6 +417,12 @@ def wireprotocommand(name, args=None, permission='push'):
     respectively. Default is to assume command requires ``push`` permissions
     because otherwise commands not declaring their permissions could modify
     a repository that is supposed to be read-only.
+
+    Wire protocol commands are generators of objects to be serialized and
+    sent to the client.
+
+    If a command raises an uncaught exception, this will be translated into
+    a command error.
     """
     transports = {k for k, v in wireprototypes.TRANSPORTS.items()
                   if v['version'] == 2}
@@ -460,16 +453,12 @@ def wireprotocommand(name, args=None, permission='push'):
 
 @wireprotocommand('branchmap', permission='pull')
 def branchmapv2(repo, proto):
-    branchmap = {encoding.fromlocal(k): v
-                 for k, v in repo.branchmap().iteritems()}
-
-    return wireprototypes.cborresponse(branchmap)
+    yield {encoding.fromlocal(k): v
+           for k, v in repo.branchmap().iteritems()}
 
 @wireprotocommand('capabilities', permission='pull')
 def capabilitiesv2(repo, proto):
-    caps = _capabilitiesv2(repo, proto)
-
-    return wireprototypes.cborresponse(caps)
+    yield _capabilitiesv2(repo, proto)
 
 @wireprotocommand('heads',
                   args={
@@ -480,7 +469,7 @@ def headsv2(repo, proto, publiconly=False):
     if publiconly:
         repo = repo.filtered('immutable')
 
-    return wireprototypes.cborresponse(repo.heads())
+    yield repo.heads()
 
 @wireprotocommand('known',
                   args={
@@ -490,7 +479,7 @@ def headsv2(repo, proto, publiconly=False):
 def knownv2(repo, proto, nodes=None):
     nodes = nodes or []
     result = b''.join(b'1' if n else b'0' for n in repo.known(nodes))
-    return wireprototypes.cborresponse(result)
+    yield result
 
 @wireprotocommand('listkeys',
                   args={
@@ -502,7 +491,7 @@ def listkeysv2(repo, proto, namespace=None):
     keys = {encoding.fromlocal(k): encoding.fromlocal(v)
             for k, v in keys.iteritems()}
 
-    return wireprototypes.cborresponse(keys)
+    yield keys
 
 @wireprotocommand('lookup',
                   args={
@@ -515,7 +504,7 @@ def lookupv2(repo, proto, key):
     # TODO handle exception.
     node = repo.lookup(key)
 
-    return wireprototypes.cborresponse(node)
+    yield node
 
 @wireprotocommand('pushkey',
                   args={
@@ -527,9 +516,7 @@ def lookupv2(repo, proto, key):
                   permission='push')
 def pushkeyv2(repo, proto, namespace, key, old, new):
     # TODO handle ui output redirection
-    r = repo.pushkey(encoding.tolocal(namespace),
-                     encoding.tolocal(key),
-                     encoding.tolocal(old),
-                     encoding.tolocal(new))
-
-    return wireprototypes.cborresponse(r)
+    yield repo.pushkey(encoding.tolocal(namespace),
+                       encoding.tolocal(key),
+                       encoding.tolocal(old),
+                       encoding.tolocal(new))

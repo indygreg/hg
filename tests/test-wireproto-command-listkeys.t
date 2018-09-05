@@ -47,13 +47,22 @@ Request for namespaces works
   s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     33\r\n
-  s>     +\x00\x00\x01\x00\x02\x012
-  s>     \xa1FstatusBok\xa3Ibookmarks@Jnamespaces@Fphases@
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
   s>     \r\n
-  received frame(size=43; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     28\r\n
+  s>      \x00\x00\x01\x00\x02\x001
+  s>     \xa3Ibookmarks@Jnamespaces@Fphases@
+  s>     \r\n
+  received frame(size=32; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
   s>     0\r\n
   s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: {
     b'bookmarks': b'',
     b'namespaces': b'',
@@ -84,13 +93,22 @@ Request for phases works
   s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     50\r\n
-  s>     H\x00\x00\x01\x00\x02\x012
-  s>     \xa1FstatusBok\xa2X(be0ef73c17ade3fc89dc41701eb9fc3a91b58282A1JpublishingDTrue
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
   s>     \r\n
-  received frame(size=72; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     45\r\n
+  s>     =\x00\x00\x01\x00\x02\x001
+  s>     \xa2X(be0ef73c17ade3fc89dc41701eb9fc3a91b58282A1JpublishingDTrue
+  s>     \r\n
+  received frame(size=61; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
   s>     0\r\n
   s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: {
     b'be0ef73c17ade3fc89dc41701eb9fc3a91b58282': b'1',
     b'publishing': b'True'
@@ -120,13 +138,22 @@ Request for bookmarks works
   s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     40\r\n
-  s>     8\x00\x00\x01\x00\x02\x012
-  s>     \xa1FstatusBok\xa1A@X(26805aba1e600a82e93661149f2313866a221a7b
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
   s>     \r\n
-  received frame(size=56; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     35\r\n
+  s>     -\x00\x00\x01\x00\x02\x001
+  s>     \xa1A@X(26805aba1e600a82e93661149f2313866a221a7b
+  s>     \r\n
+  received frame(size=45; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
   s>     0\r\n
   s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: {
     b'@': b'26805aba1e600a82e93661149f2313866a221a7b'
   }

@@ -308,3 +308,14 @@ class PeerTransportError(Abort):
 class InMemoryMergeConflictsError(Exception):
     """Exception raised when merge conflicts arose during an in-memory merge."""
     __bytes__ = _tobytes
+
+class WireprotoCommandError(Exception):
+    """Represents an error during execution of a wire protocol command.
+
+    Should only be thrown by wire protocol version 2 commands.
+
+    The error is a formatter string and an optional iterable of arguments.
+    """
+    def __init__(self, message, args=None):
+        self.message = message
+        self.messageargs = args

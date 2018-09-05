@@ -333,13 +333,22 @@ capabilities command returns expected info
   s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     1d7\r\n
-  s>     \xcf\x01\x00\x01\x00\x02\x012
-  s>     \xa1FstatusBok\xa4Hcommands\xa7Ibranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xf4Kpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\x81HdeadbeefKpermissions\x81DpullHlistkeys\xa2Dargs\xa1InamespaceBnsKpermissions\x81DpullFlookup\xa2Dargs\xa1CkeyCfooKpermissions\x81DpullGpushkey\xa2Dargs\xa4CkeyCkeyInamespaceBnsCnewCnewColdColdKpermissions\x81DpushKcompression\x81\xa1DnameDzlibQframingmediatypes\x81X&application/mercurial-exp-framing-0005Nrawrepoformats\x82LgeneraldeltaHrevlogv1
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
   s>     \r\n
-  received frame(size=463; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     1cc\r\n
+  s>     \xc4\x01\x00\x01\x00\x02\x001
+  s>     \xa4Hcommands\xa7Ibranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xf4Kpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\x81HdeadbeefKpermissions\x81DpullHlistkeys\xa2Dargs\xa1InamespaceBnsKpermissions\x81DpullFlookup\xa2Dargs\xa1CkeyCfooKpermissions\x81DpullGpushkey\xa2Dargs\xa4CkeyCkeyInamespaceBnsCnewCnewColdColdKpermissions\x81DpushKcompression\x81\xa1DnameDzlibQframingmediatypes\x81X&application/mercurial-exp-framing-0005Nrawrepoformats\x82LgeneraldeltaHrevlogv1
+  s>     \r\n
+  received frame(size=452; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
   s>     0\r\n
   s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: [
     {
       b'status': b'ok'

@@ -124,6 +124,8 @@ class clienthandler(object):
             else:
                 raise e
 
+            return
+
         if frame.requestid not in self._requests:
             raise error.ProgrammingError(
                 'received frame for unknown request; this is either a bug in '

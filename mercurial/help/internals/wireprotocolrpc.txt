@@ -514,3 +514,6 @@ error (optional)
    message
       (array of maps) A message describing the error. The message uses the
       same format as those in the ``Human Output Side-Channel`` frame.
+
+TODO formalize when error frames can be seen and how errors can be
+recognized midway through a command response.

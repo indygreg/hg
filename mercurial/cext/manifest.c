@@ -731,16 +731,14 @@ static lazymanifest *lazymanifest_filtercopy(
 		arglist = Py_BuildValue(PY23("(s)", "(y)"),
 					self->lines[i].start);
 		if (!arglist) {
-			return NULL;
+			goto bail;
 		}
 		result = PyObject_CallObject(matchfn, arglist);
 		Py_DECREF(arglist);
 		/* if the callback raised an exception, just let it
 		 * through and give up */
 		if (!result) {
-			free(copy->lines);
-			Py_DECREF(copy->pydata);
-			return NULL;
+			goto bail;
 		}
 		if (PyObject_IsTrue(result)) {
 			assert(!(self->lines[i].from_malloc));
@@ -752,6 +750,7 @@ static lazymanifest *lazymanifest_filtercopy(
 	return copy;
 nomem:
 	PyErr_NoMemory();
+bail:
 	Py_XDECREF(copy);
 	return NULL;
 }

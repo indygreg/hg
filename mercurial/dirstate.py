@@ -1392,9 +1392,9 @@ class dirstatemap(object):
 
             l = len(st)
             if l == 40:
-                self._parents = st[:20], st[20:40]
+                self._parents = (st[:20], st[20:40])
             elif l == 0:
-                self._parents = [nullid, nullid]
+                self._parents = (nullid, nullid)
             else:
                 raise error.Abort(_('working directory state appears '
                                     'damaged!'))

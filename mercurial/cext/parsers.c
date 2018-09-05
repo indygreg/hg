@@ -382,12 +382,12 @@ static PyObject *pack_dirstate(PyObject *self, PyObject *args)
 	char *p, *s;
 	int now;
 
-	if (!PyArg_ParseTuple(args, "O!O!Oi:pack_dirstate", &PyDict_Type, &map,
-	                      &PyDict_Type, &copymap, &pl, &now))
+	if (!PyArg_ParseTuple(args, "O!O!O!i:pack_dirstate", &PyDict_Type, &map,
+	                      &PyDict_Type, &copymap, &PyTuple_Type, &pl, &now))
 		return NULL;
 
-	if (!PySequence_Check(pl) || PySequence_Size(pl) != 2) {
-		PyErr_SetString(PyExc_TypeError, "expected 2-element sequence");
+	if (PyTuple_Size(pl) != 2) {
+		PyErr_SetString(PyExc_TypeError, "expected 2-element tuple");
 		return NULL;
 	}
 
@@ -416,14 +416,14 @@ static PyObject *pack_dirstate(PyObject *self, PyObject *args)
 
 	p = PyBytes_AS_STRING(packobj);
 
-	pn = PySequence_ITEM(pl, 0);
+	pn = PyTuple_GET_ITEM(pl, 0);
 	if (PyBytes_AsStringAndSize(pn, &s, &l) == -1 || l != 20) {
 		PyErr_SetString(PyExc_TypeError, "expected a 20-byte hash");
 		goto bail;
 	}
 	memcpy(p, s, l);
 	p += 20;
-	pn = PySequence_ITEM(pl, 1);
+	pn = PyTuple_GET_ITEM(pl, 1);
 	if (PyBytes_AsStringAndSize(pn, &s, &l) == -1 || l != 20) {
 		PyErr_SetString(PyExc_TypeError, "expected a 20-byte hash");
 		goto bail;
@@ -713,7 +713,7 @@ void dirs_module_init(PyObject *mod);
 void manifest_module_init(PyObject *mod);
 void revlog_module_init(PyObject *mod);
 
-static const int version = 5;
+static const int version = 10;
 
 static void module_init(PyObject *mod)
 {

@@ -77,7 +77,7 @@ static PyObject *b85encode(PyObject *self, PyObject *args)
 
 static PyObject *b85decode(PyObject *self, PyObject *args)
 {
-	PyObject *out;
+	PyObject *out = NULL;
 	const char *text;
 	char *dst;
 	Py_ssize_t len, i, j, olen, cap;
@@ -104,27 +104,33 @@ static PyObject *b85decode(PyObject *self, PyObject *args)
 			cap = 4;
 		for (j = 0; j < cap; i++, j++) {
 			c = b85dec[(int)*text++] - 1;
-			if (c < 0)
-				return PyErr_Format(
+			if (c < 0) {
+				PyErr_Format(
 				    PyExc_ValueError,
 				    "bad base85 character at position %d",
 				    (int)i);
+				goto bail;
+			}
 			acc = acc * 85 + c;
 		}
 		if (i++ < len) {
 			c = b85dec[(int)*text++] - 1;
-			if (c < 0)
-				return PyErr_Format(
+			if (c < 0) {
+				PyErr_Format(
 				    PyExc_ValueError,
 				    "bad base85 character at position %d",
 				    (int)i);
+				goto bail;
+			}
 			/* overflow detection: 0xffffffff == "|NsC0",
 			 * "|NsC" == 0x03030303 */
-			if (acc > 0x03030303 || (acc *= 85) > 0xffffffff - c)
-				return PyErr_Format(
+			if (acc > 0x03030303 || (acc *= 85) > 0xffffffff - c) {
+				PyErr_Format(
 				    PyExc_ValueError,
 				    "bad base85 sequence at position %d",
 				    (int)i);
+				goto bail;
+			}
 			acc += c;
 		}
 
@@ -141,6 +147,9 @@ static PyObject *b85decode(PyObject *self, PyObject *args)
 	}
 
 	return out;
+bail:
+	Py_XDECREF(out);
+	return NULL;
 }
 
 static char base85_doc[] = "Base85 Data Encoding";

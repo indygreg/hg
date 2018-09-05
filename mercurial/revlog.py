@@ -115,6 +115,22 @@ _flagprocessors = {
     REVIDX_ISCENSORED: None,
 }
 
+# Flag processors for REVIDX_ELLIPSIS.
+def ellipsisreadprocessor(rl, text):
+    return text, False
+
+def ellipsiswriteprocessor(rl, text):
+    return text, False
+
+def ellipsisrawprocessor(rl, text):
+    return False
+
+ellipsisprocessor = (
+    ellipsisreadprocessor,
+    ellipsiswriteprocessor,
+    ellipsisrawprocessor,
+)
+
 _mdre = re.compile('\1\n')
 def parsemeta(text):
     """return (metadatadict, metadatasize)"""

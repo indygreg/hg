@@ -11,17 +11,7 @@ from mercurial import (
    revlog,
 )
 
-def readtransform(self, text):
-    return text, False
-
-def writetransform(self, text):
-    return text, False
-
-def rawtransform(self, text):
-    return False
-
-revlog.addflagprocessor(revlog.REVIDX_ELLIPSIS,
-                        (readtransform, writetransform, rawtransform))
+revlog.addflagprocessor(revlog.REVIDX_ELLIPSIS, revlog.ellipsisprocessor)
 
 def setup():
     # We just wanted to add the flag processor, which is done at module

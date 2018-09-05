@@ -219,6 +219,7 @@ test-histedit-templates.t
 test-http-branchmap.t
 test-http-bundle1.t
 test-http-clone-r.t
+test-http-permissions.t
 test-http.t
 test-hybridencode.py
 test-identify.t
@@ -351,6 +352,7 @@ test-narrow-rebase.t
 test-narrow-shallow-merges.t
 test-narrow-shallow.t
 test-narrow-strip.t
+test-narrow-trackedcmd.t
 test-narrow-update.t
 test-narrow-widen-no-ellipsis.t
 test-narrow-widen.t
@@ -457,6 +459,7 @@ test-removeemptydirs.t
 test-rename-after-merge.t
 test-rename-dir-merge.t
 test-rename-merge1.t
+test-rename-merge2.t
 test-rename.t
 test-repair-strip.t
 test-repo-compengines.t

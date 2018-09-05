@@ -59,7 +59,7 @@ else
 fi
 
 if [ -n "$distance" ] ; then
-    release=$release+$distance_$node
+    release=$release+${distance}_${node}
 fi
 
 if [ "$PYTHONVER" ]; then

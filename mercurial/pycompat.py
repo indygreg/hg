@@ -120,6 +120,8 @@ if ispy3:
     rawinput = input
     getargspec = inspect.getfullargspec
 
+    long = int
+
     # TODO: .buffer might not exist if std streams were replaced; we'll need
     # a silly wrapper to make a bytes stream backed by a unicode one.
     stdin = sys.stdin.buffer
@@ -384,6 +386,7 @@ else:
     ospardir = os.pardir
     ossep = os.sep
     osaltsep = os.altsep
+    long = long
     stdin = sys.stdin
     stdout = sys.stdout
     stderr = sys.stderr

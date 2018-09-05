@@ -10,6 +10,8 @@ from __future__ import absolute_import
 import struct
 import sys
 
+from .. import pycompat
+
 # Very short very of RFC 7049...
 #
 # Each item begins with a byte. The 3 high bits of that byte denote the
@@ -190,6 +192,7 @@ def streamencodenone(v):
 STREAM_ENCODERS = {
     bytes: streamencodebytestring,
     int: streamencodeint,
+    pycompat.long: streamencodeint,
     list: streamencodearray,
     tuple: streamencodearray,
     dict: streamencodemap,

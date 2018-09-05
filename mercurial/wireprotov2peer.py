@@ -27,7 +27,7 @@ def formatrichmessage(atoms):
         msg = _(atom[b'msg'])
 
         if b'args' in atom:
-            msg = msg % atom[b'args']
+            msg = msg % tuple(atom[b'args'])
 
         chunks.append(msg)
 
@@ -163,8 +163,10 @@ class clienthandler(object):
                 if overall['status'] == 'ok':
                     self._futures[frame.requestid].set_result(decoder(objs))
                 else:
-                    e = error.RepoError(
-                        formatrichmessage(overall['error']['message']))
+                    atoms = [{'msg': overall['error']['message']}]
+                    if 'args' in overall['error']:
+                        atoms[0]['args'] = overall['error']['args']
+                    e = error.RepoError(formatrichmessage(atoms))
                     self._futures[frame.requestid].set_exception(e)
             else:
                 self._futures[frame.requestid].set_result(response)

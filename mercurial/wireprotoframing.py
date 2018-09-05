@@ -419,6 +419,8 @@ def createbytesresponseframesfromgen(stream, requestid, gen,
                            payload=b'')
 
 def createcommanderrorresponse(stream, requestid, message, args=None):
+    # TODO should this be using a list of {'msg': ..., 'args': {}} so atom
+    # formatting works consistently?
     m = {
         b'status': b'error',
         b'error': {

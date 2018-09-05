@@ -196,6 +196,79 @@ TODO support depth limiting
 TODO support hgtagsfnodes cache / tags data
 TODO support branch heads cache
 
+filedata
+--------
+
+Obtain various data related to an individual tracked file.
+
+The command accepts the following arguments:
+
+fields
+   (set of bytestring) Which data associated with a file to fetch.
+   The following values are recognized:
+
+   parents
+      Parent nodes for the revision.
+
+   revision
+      The raw revision data for a file.
+
+nodes
+   (array of bytestrings) File nodes whose data to retrieve.
+
+path
+   (bytestring) Path of the tracked file whose data to retrieve.
+
+TODO allow specifying revisions via alternate means (such as from
+changeset revisions or ranges)
+
+The response bytestream starts with a CBOR map describing the data that
+follows. It has the following bytestream keys:
+
+totalitems
+   (unsigned integer) Total number of file revisions whose data is
+   being returned.
+
+Following the header map is a series of 0 or more CBOR values. The first
+value is always a map describing a file revision. If this map has the
+``deltasize`` or ``revisionsize`` keys, a bytestring containing the delta
+or revision, respectively, will immediately follow the map. Otherwise
+the next value will be a map describing the next file revision.
+
+Each map has the following bytestring keys:
+
+node
+   (bytestring) The node of the file revision whose data is represented.
+
+deltabasenode
+   (bytestring) Node of the file revision the following delta is against.
+
+   Only present if the ``revision`` field is requested and delta data
+   follows this map.
+
+deltasize
+   (unsigned integer) The size of the delta data that follows this map.
+
+   Only present if the ``revision`` field is requested and delta data
+   follows this map.
+
+parents
+   (array of bytestring) The nodes of the parents of this file revision.
+
+   Only present if the ``parents`` field is requested.
+
+revisionsize
+   (unsigned integer) The size of the fulltext revision data that follows
+   this map.
+
+   Only present if the ``revision`` field is requested and fulltext revision
+   data follows this map.
+
+When ``revision`` data is requested, the server chooses to emit either fulltext
+revision data or a delta. What the server decides can be inferred by looking
+for the presence of the ``deltasize`` or ``revisionsize`` keys in the map.
+Servers MUST NOT define both keys.
+
 heads
 -----
 

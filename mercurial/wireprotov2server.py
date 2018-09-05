@@ -10,6 +10,7 @@ import contextlib
 
 from .i18n import _
 from .node import (
+    hex,
     nullid,
     nullrev,
 )
@@ -647,6 +648,112 @@ def changesetdata(repo, proto, noderange=None, nodes=None, fields=None):
                 b'node': node,
                 b'bookmarks': sorted(marks),
             }
+
+class FileAccessError(Exception):
+    """Represents an error accessing a specific file."""
+
+    def __init__(self, path, msg, args):
+        self.path = path
+        self.msg = msg
+        self.args = args
+
+def getfilestore(repo, proto, path):
+    """Obtain a file storage object for use with wire protocol.
+
+    Exists as a standalone function so extensions can monkeypatch to add
+    access control.
+    """
+    # This seems to work even if the file doesn't exist. So catch
+    # "empty" files and return an error.
+    fl = repo.file(path)
+
+    if not len(fl):
+        raise FileAccessError(path, 'unknown file: %s', (path,))
+
+    return fl
+
+@wireprotocommand('filedata',
+                  args={
+                      'nodes': [b'0123456...'],
+                      'fields': [b'parents', b'revision'],
+                      'path': b'foo.txt',
+                  },
+                  permission='pull')
+def filedata(repo, proto, nodes=None, fields=None, path=None):
+    fields = fields or set()
+
+    if nodes is None:
+        raise error.WireprotoCommandError('nodes argument must be defined')
+
+    if path is None:
+        raise error.WireprotoCommandError('path argument must be defined')
+
+    try:
+        # Extensions may wish to access the protocol handler.
+        store = getfilestore(repo, proto, path)
+    except FileAccessError as e:
+        raise error.WireprotoCommandError(e.msg, e.args)
+
+    # Validate requested nodes.
+    for node in nodes:
+        try:
+            store.rev(node)
+        except error.LookupError:
+            raise error.WireprotoCommandError('unknown file node: %s',
+                                              (hex(node),))
+
+    revs, requests = builddeltarequests(store, nodes)
+
+    yield {
+        b'totalitems': len(revs),
+    }
+
+    if b'revision' in fields:
+        deltas = store.emitrevisiondeltas(requests)
+    else:
+        deltas = None
+
+    for rev in revs:
+        node = store.node(rev)
+
+        if deltas is not None:
+            delta = next(deltas)
+        else:
+            delta = None
+
+        d = {
+            b'node': node,
+        }
+
+        if b'parents' in fields:
+            d[b'parents'] = store.parents(node)
+
+        if b'revision' in fields:
+            assert delta is not None
+            assert delta.flags == 0
+            assert d[b'node'] == delta.node
+
+            if delta.revision is not None:
+                revisiondata = delta.revision
+                d[b'revisionsize'] = len(revisiondata)
+            else:
+                d[b'deltabasenode'] = delta.basenode
+                revisiondata = delta.delta
+                d[b'deltasize'] = len(revisiondata)
+        else:
+            revisiondata = None
+
+        yield d
+
+        if revisiondata is not None:
+            yield revisiondata
+
+    if deltas is not None:
+        try:
+            next(deltas)
+            raise error.ProgrammingError('should not have more deltas')
+        except GeneratorExit:
+            pass
 
 @wireprotocommand('heads',
                   args={

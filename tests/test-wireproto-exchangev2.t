@@ -76,6 +76,24 @@ Test basic clone
   add changeset e96ae20f4188
   add changeset caa2a465451d
   checking for updated bookmarks
+  sending 1 commands
+  sending command manifestdata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'nodes': [
+      '\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&A',
+      '\xa9\x88\xfbCX>\x87\x1d\x1e\xd5u\x0e\xe0t\xc6\xd8@\xbb\xbf\xc8',
+      '\xec\x80NH\x8c \x88\xc25\t\x9a\x10 u\x13\xbe\xcd\xc3\xdd\xa5',
+      '\x04\\\x7f9\'\xda\x13\xe7Z\xf8\xf0\xe4\xf0HI\xe4a\xa9x\x0f',
+      '7\x9c\xb0\xc2\xe6d\\y\xdd\xc5\x9a\x1dG\'\xa9\xfb\x83\n\xeb&'
+    ],
+    'tree': ''
+  }
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  received frame(size=922; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   new changesets 3390ef850073:caa2a465451d (3 drafts)
 
@@ -100,6 +118,16 @@ All changesets should have been transferred
   |/
   o  0 3390ef850073fbc2f0dfff2244342c8e9229013a public
   
+
+All manifests should have been transferred
+
+  $ hg -R client-simple debugindex -m
+     rev linkrev nodeid       p1           p2
+       0       0 992f4779029a 000000000000 000000000000
+       1       1 a988fb43583e 992f4779029a 000000000000
+       2       2 ec804e488c20 a988fb43583e 000000000000
+       3       3 045c7f3927da 992f4779029a 000000000000
+       4       4 379cb0c2e664 045c7f3927da 000000000000
 
 Cloning only a specific revision works
 
@@ -146,6 +174,21 @@ Cloning only a specific revision works
   add changeset 3390ef850073
   add changeset 4432d83626e8
   checking for updated bookmarks
+  sending 1 commands
+  sending command manifestdata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'nodes': [
+      '\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&A',
+      '\xa9\x88\xfbCX>\x87\x1d\x1e\xd5u\x0e\xe0t\xc6\xd8@\xbb\xbf\xc8'
+    ],
+    'tree': ''
+  }
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  received frame(size=376; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   new changesets 3390ef850073:4432d83626e8
 
@@ -156,6 +199,11 @@ Cloning only a specific revision works
   |
   o  0 3390ef850073fbc2f0dfff2244342c8e9229013a public
   
+
+  $ hg debugindex -m
+     rev linkrev nodeid       p1           p2
+       0       0 992f4779029a 000000000000 000000000000
+       1       1 a988fb43583e 992f4779029a 000000000000
 
 Incremental pull works
 
@@ -204,6 +252,22 @@ Incremental pull works
   add changeset e96ae20f4188
   add changeset caa2a465451d
   checking for updated bookmarks
+  sending 1 commands
+  sending command manifestdata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'nodes': [
+      '\xec\x80NH\x8c \x88\xc25\t\x9a\x10 u\x13\xbe\xcd\xc3\xdd\xa5',
+      '\x04\\\x7f9\'\xda\x13\xe7Z\xf8\xf0\xe4\xf0HI\xe4a\xa9x\x0f',
+      '7\x9c\xb0\xc2\xe6d\\y\xdd\xc5\x9a\x1dG\'\xa9\xfb\x83\n\xeb&'
+    ],
+    'tree': ''
+  }
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  received frame(size=559; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   new changesets cd2534766bec:caa2a465451d (3 drafts)
   (run 'hg update' to get a working copy)
@@ -219,6 +283,14 @@ Incremental pull works
   |/
   o  0 3390ef850073fbc2f0dfff2244342c8e9229013a public
   
+
+  $ hg debugindex -m
+     rev linkrev nodeid       p1           p2
+       0       0 992f4779029a 000000000000 000000000000
+       1       1 a988fb43583e 992f4779029a 000000000000
+       2       2 ec804e488c20 a988fb43583e 000000000000
+       3       3 045c7f3927da 992f4779029a 000000000000
+       4       4 379cb0c2e664 045c7f3927da 000000000000
 
 Phase-only update works
 
@@ -331,6 +403,24 @@ Bookmarks are transferred on clone
   checking for updated bookmarks
   adding remote bookmark book-1
   adding remote bookmark book-2
+  sending 1 commands
+  sending command manifestdata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'nodes': [
+      '\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&A',
+      '\xa9\x88\xfbCX>\x87\x1d\x1e\xd5u\x0e\xe0t\xc6\xd8@\xbb\xbf\xc8',
+      '\xec\x80NH\x8c \x88\xc25\t\x9a\x10 u\x13\xbe\xcd\xc3\xdd\xa5',
+      '\x04\\\x7f9\'\xda\x13\xe7Z\xf8\xf0\xe4\xf0HI\xe4a\xa9x\x0f',
+      '7\x9c\xb0\xc2\xe6d\\y\xdd\xc5\x9a\x1dG\'\xa9\xfb\x83\n\xeb&'
+    ],
+    'tree': ''
+  }
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  received frame(size=922; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   new changesets 3390ef850073:caa2a465451d (1 drafts)
 

@@ -16,6 +16,7 @@ from .node import (
 )
 from . import (
     bookmarks,
+    error,
     mdiff,
     phases,
     pycompat,
@@ -56,6 +57,8 @@ def pull(pullop):
     bookmarks.updatefromremote(repo.ui, repo, csetres['bookmarks'],
                                remote.url(), pullop.gettransaction,
                                explicit=pullop.explicitbookmarks)
+
+    _fetchmanifests(repo, tr, remote, csetres['manifestnodes'])
 
 def _pullchangesetdiscovery(repo, remote, heads, abortwhenunrelated=True):
     """Determine which changesets need to be pulled."""
@@ -121,6 +124,8 @@ def _processchangesetdata(repo, tr, objs):
                                     unit=_('chunks'),
                                     total=meta.get(b'totalitems'))
 
+    manifestnodes = {}
+
     def linkrev(node):
         repo.ui.debug('add changeset %s\n' % short(node))
         # Linkrev for changelog is always self.
@@ -128,6 +133,12 @@ def _processchangesetdata(repo, tr, objs):
 
     def onchangeset(cl, node):
         progress.increment()
+
+        revision = cl.changelogrevision(node)
+
+        # We need to preserve the mapping of changelog revision to node
+        # so we can set the linkrev accordingly when manifests are added.
+        manifestnodes[cl.rev(node)] = revision.manifest
 
     nodesbyphase = {phase: set() for phase in phases.phasenames}
     remotebookmarks = {}
@@ -178,4 +189,106 @@ def _processchangesetdata(repo, tr, objs):
         'added': added,
         'nodesbyphase': nodesbyphase,
         'bookmarks': remotebookmarks,
+        'manifestnodes': manifestnodes,
+    }
+
+def _fetchmanifests(repo, tr, remote, manifestnodes):
+    rootmanifest = repo.manifestlog.getstorage(b'')
+
+    # Some manifests can be shared between changesets. Filter out revisions
+    # we already know about.
+    fetchnodes = []
+    linkrevs = {}
+    seen = set()
+
+    for clrev, node in sorted(manifestnodes.iteritems()):
+        if node in seen:
+            continue
+
+        try:
+            rootmanifest.rev(node)
+        except error.LookupError:
+            fetchnodes.append(node)
+            linkrevs[node] = clrev
+
+        seen.add(node)
+
+    # TODO handle tree manifests
+
+    # addgroup() expects 7-tuple describing revisions. This normalizes
+    # the wire data to that format.
+    def iterrevisions(objs, progress):
+        for manifest in objs:
+            node = manifest[b'node']
+
+            if b'deltasize' in manifest:
+                basenode = manifest[b'deltabasenode']
+                delta = next(objs)
+            elif b'revisionsize' in manifest:
+                basenode = nullid
+                revision = next(objs)
+                delta = mdiff.trivialdiffheader(len(revision)) + revision
+            else:
+                continue
+
+            yield (
+                node,
+                manifest[b'parents'][0],
+                manifest[b'parents'][1],
+                # The value passed in is passed to the lookup function passed
+                # to addgroup(). We already have a map of manifest node to
+                # changelog revision number. So we just pass in the
+                # manifest node here and use linkrevs.__getitem__ as the
+                # resolution function.
+                node,
+                basenode,
+                delta,
+                # Flags not yet supported.
+                0
+            )
+
+            progress.increment()
+
+    progress = repo.ui.makeprogress(_('manifests'), unit=_('chunks'),
+                                    total=len(fetchnodes))
+
+    # Fetch manifests 10,000 per command.
+    # TODO have server advertise preferences?
+    # TODO make size configurable on client?
+    batchsize = 10000
+
+    # We send commands 1 at a time to the remote. This is not the most
+    # efficient because we incur a round trip at the end of each batch.
+    # However, the existing frame-based reactor keeps consuming server
+    # data in the background. And this results in response data buffering
+    # in memory. This can consume gigabytes of memory.
+    # TODO send multiple commands in a request once background buffering
+    # issues are resolved.
+
+    added = []
+
+    for i in pycompat.xrange(0, len(fetchnodes), batchsize):
+        batch = [node for node in fetchnodes[i:i + batchsize]]
+        if not batch:
+            continue
+
+        with remote.commandexecutor() as e:
+            objs = e.callcommand(b'manifestdata', {
+                b'tree': b'',
+                b'nodes': batch,
+                b'fields': {b'parents', b'revision'},
+            }).result()
+
+            # Chomp off header object.
+            next(objs)
+
+            added.extend(rootmanifest.addgroup(
+                iterrevisions(objs, progress),
+                linkrevs.__getitem__,
+                weakref.proxy(tr)))
+
+    progress.complete()
+
+    return {
+        'added': added,
     }

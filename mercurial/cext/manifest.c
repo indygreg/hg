@@ -42,7 +42,8 @@ typedef struct {
 /* get the length of the path for a line */
 static size_t pathlen(line *l)
 {
-	return strlen(l->start);
+	const char *end = memchr(l->start, '\0', l->len);
+	return (end) ? (size_t)(end - l->start) : l->len;
 }
 
 /* get the node value of a single line */

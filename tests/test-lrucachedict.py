@@ -133,6 +133,22 @@ class testlrucachedict(unittest.TestCase):
         for key in ('a', 'b', 'c', 'd'):
             self.assertEqual(d[key], 'v%s' % key)
 
+        d = util.lrucachedict(4, maxcost=42)
+        d.insert('a', 'va', cost=5)
+        d.insert('b', 'vb', cost=4)
+        d.insert('c', 'vc', cost=3)
+        dc = d.copy()
+        self.assertEqual(dc.maxcost, 42)
+        self.assertEqual(len(dc), 3)
+
+        # Max cost can be lowered as part of copy.
+        dc = d.copy(maxcost=10)
+        self.assertEqual(dc.maxcost, 10)
+        self.assertEqual(len(dc), 2)
+        self.assertEqual(dc.totalcost, 7)
+        self.assertIn('b', dc)
+        self.assertIn('c', dc)
+
     def testcopydecreasecapacity(self):
         d = util.lrucachedict(5)
         d.insert('a', 'va', cost=4)
@@ -216,6 +232,94 @@ class testlrucachedict(unittest.TestCase):
 
         d['a'] = 'va'
         self.assertEqual(d.popoldest(), ('b', 'vb'))
+
+    def testmaxcost(self):
+        # Item cost is zero by default.
+        d = util.lrucachedict(6, maxcost=10)
+        d['a'] = 'va'
+        d['b'] = 'vb'
+        d['c'] = 'vc'
+        d['d'] = 'vd'
+        self.assertEqual(len(d), 4)
+        self.assertEqual(d.totalcost, 0)
+
+        d.clear()
+
+        # Insertion to exact cost threshold works without eviction.
+        d.insert('a', 'va', cost=6)
+        d.insert('b', 'vb', cost=4)
+
+        self.assertEqual(len(d), 2)
+        self.assertEqual(d['a'], 'va')
+        self.assertEqual(d['b'], 'vb')
+
+        # Inserting a new element with 0 cost works.
+        d['c'] = 'vc'
+        self.assertEqual(len(d), 3)
+
+        # Inserting a new element with cost putting us above high
+        # water mark evicts oldest single item.
+        d.insert('d', 'vd', cost=1)
+        self.assertEqual(len(d), 3)
+        self.assertEqual(d.totalcost, 5)
+        self.assertNotIn('a', d)
+        for key in ('b', 'c', 'd'):
+            self.assertEqual(d[key], 'v%s' % key)
+
+        # Inserting a new element with enough room for just itself
+        # evicts all items before.
+        d.insert('e', 've', cost=10)
+        self.assertEqual(len(d), 1)
+        self.assertEqual(d.totalcost, 10)
+        self.assertIn('e', d)
+
+        # Inserting a new element with cost greater than threshold
+        # still retains that item.
+        d.insert('f', 'vf', cost=11)
+        self.assertEqual(len(d), 1)
+        self.assertEqual(d.totalcost, 11)
+        self.assertIn('f', d)
+
+        # Inserting a new element will evict the last item since it is
+        # too large.
+        d['g'] = 'vg'
+        self.assertEqual(len(d), 1)
+        self.assertEqual(d.totalcost, 0)
+        self.assertIn('g', d)
+
+        d.clear()
+
+        d.insert('a', 'va', cost=7)
+        d.insert('b', 'vb', cost=3)
+        self.assertEqual(len(d), 2)
+
+        # Replacing a value with smaller cost won't result in eviction.
+        d.insert('b', 'vb2', cost=2)
+        self.assertEqual(len(d), 2)
+
+        # Replacing a value with a higher cost will evict when threshold
+        # exceeded.
+        d.insert('b', 'vb3', cost=4)
+        self.assertEqual(len(d), 1)
+        self.assertNotIn('a', d)
+
+    def testmaxcostcomplex(self):
+        d = util.lrucachedict(100, maxcost=100)
+        d.insert('a', 'va', cost=9)
+        d.insert('b', 'vb', cost=21)
+        d.insert('c', 'vc', cost=7)
+        d.insert('d', 'vc', cost=50)
+        self.assertEqual(d.totalcost, 87)
+
+        # Inserting new element should free multiple elements so we hit
+        # low water mark.
+        d.insert('e', 'vd', cost=25)
+        self.assertEqual(len(d), 3)
+        self.assertNotIn('a', d)
+        self.assertNotIn('b', d)
+        self.assertIn('c', d)
+        self.assertIn('d', d)
+        self.assertIn('e', d)
 
 if __name__ == '__main__':
     silenttestrunner.main(__name__)

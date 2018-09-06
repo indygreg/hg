@@ -1240,8 +1240,14 @@ class lrucachedict(object):
     Items in the cache can be inserted with an optional "cost" value. This is
     simply an integer that is specified by the caller. The cache can be queried
     for the total cost of all items presently in the cache.
+
+    The cache can also define a maximum cost. If a cache insertion would
+    cause the total cost of the cache to go beyond the maximum cost limit,
+    nodes will be evicted to make room for the new code. This can be used
+    to e.g. set a max memory limit and associate an estimated bytes size
+    cost to each item in the cache. By default, no maximum cost is enforced.
     """
-    def __init__(self, max):
+    def __init__(self, max, maxcost=0):
         self._cache = {}
 
         self._head = head = _lrucachenode()
@@ -1250,6 +1256,7 @@ class lrucachedict(object):
         self._size = 1
         self.capacity = max
         self.totalcost = 0
+        self.maxcost = maxcost
 
     def __len__(self):
         return len(self._cache)
@@ -1279,6 +1286,10 @@ class lrucachedict(object):
             node.cost = cost
             self.totalcost += cost
             self._movetohead(node)
+
+            if self.maxcost:
+                self._enforcecostlimit()
+
             return
 
         if self._size < self.capacity:
@@ -1300,6 +1311,9 @@ class lrucachedict(object):
         # And mark it as newest entry. No need to adjust order since it
         # is already self._head.prev.
         self._head = node
+
+        if self.maxcost:
+            self._enforcecostlimit()
 
     def __setitem__(self, k, v):
         self.insert(k, v)
@@ -1331,7 +1345,7 @@ class lrucachedict(object):
 
         self._cache.clear()
 
-    def copy(self, capacity=None):
+    def copy(self, capacity=None, maxcost=0):
         """Create a new cache as a copy of the current one.
 
         By default, the new cache has the same capacity as the existing one.
@@ -1343,7 +1357,8 @@ class lrucachedict(object):
         """
 
         capacity = capacity or self.capacity
-        result = lrucachedict(capacity)
+        maxcost = maxcost or self.maxcost
+        result = lrucachedict(capacity, maxcost=maxcost)
 
         # We copy entries by iterating in oldest-to-newest order so the copy
         # has the correct ordering.
@@ -1444,6 +1459,13 @@ class lrucachedict(object):
         head.prev = node
         self._size += 1
         return node
+
+    def _enforcecostlimit(self):
+        # This should run after an insertion. It should only be called if total
+        # cost limits are being enforced.
+        # The most recently inserted node is never evicted.
+        while len(self) > 1 and self.totalcost > self.maxcost:
+            self.popoldest()
 
 def lrucachefunc(func):
     '''cache most recent results of function calls'''

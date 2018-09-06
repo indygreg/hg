@@ -1869,17 +1869,22 @@ def perfloadmarkers(ui, repo):
     fm.end()
 
 @command(b'perflrucachedict', formatteropts +
-    [(b'', b'size', 4, b'size of cache'),
+    [(b'', b'costlimit', 0, b'maximum total cost of items in cache'),
+     (b'', b'mincost', 0, b'smallest cost of items in cache'),
+     (b'', b'maxcost', 100, b'maximum cost of items in cache'),
+     (b'', b'size', 4, b'size of cache'),
      (b'', b'gets', 10000, b'number of key lookups'),
      (b'', b'sets', 10000, b'number of key sets'),
      (b'', b'mixed', 10000, b'number of mixed mode operations'),
      (b'', b'mixedgetfreq', 50, b'frequency of get vs set ops in mixed mode')],
     norepo=True)
-def perflrucache(ui, size=4, gets=10000, sets=10000, mixed=10000,
-                 mixedgetfreq=50, **opts):
+def perflrucache(ui, mincost=0, maxcost=100, costlimit=0, size=4,
+                 gets=10000, sets=10000, mixed=10000, mixedgetfreq=50, **opts):
     def doinit():
         for i in xrange(10000):
             util.lrucachedict(size)
+
+    costrange = list(range(mincost, maxcost + 1))
 
     values = []
     for i in xrange(size):
@@ -1899,15 +1904,33 @@ def perflrucache(ui, size=4, gets=10000, sets=10000, mixed=10000,
             value = d[key]
             value # silence pyflakes warning
 
+    def dogetscost():
+        d = util.lrucachedict(size, maxcost=costlimit)
+        for i, v in enumerate(values):
+            d.insert(v, v, cost=costs[i])
+        for key in getseq:
+            try:
+                value = d[key]
+                value # silence pyflakes warning
+            except KeyError:
+                pass
+
     # Set mode tests insertion speed with cache eviction.
     setseq = []
+    costs = []
     for i in xrange(sets):
         setseq.append(random.randint(0, sys.maxint))
+        costs.append(random.choice(costrange))
 
     def doinserts():
         d = util.lrucachedict(size)
         for v in setseq:
             d.insert(v, v)
+
+    def doinsertscost():
+        d = util.lrucachedict(size, maxcost=costlimit)
+        for i, v in enumerate(setseq):
+            d.insert(v, v, cost=costs[i])
 
     def dosets():
         d = util.lrucachedict(size)
@@ -1923,12 +1946,14 @@ def perflrucache(ui, size=4, gets=10000, sets=10000, mixed=10000,
         else:
             op = 1
 
-        mixedops.append((op, random.randint(0, size * 2)))
+        mixedops.append((op,
+                         random.randint(0, size * 2),
+                         random.choice(costrange)))
 
     def domixed():
         d = util.lrucachedict(size)
 
-        for op, v in mixedops:
+        for op, v, cost in mixedops:
             if op == 0:
                 try:
                     d[v]
@@ -1937,13 +1962,35 @@ def perflrucache(ui, size=4, gets=10000, sets=10000, mixed=10000,
             else:
                 d[v] = v
 
+    def domixedcost():
+        d = util.lrucachedict(size, maxcost=costlimit)
+
+        for op, v, cost in mixedops:
+            if op == 0:
+                try:
+                    d[v]
+                except KeyError:
+                    pass
+            else:
+                d.insert(v, v, cost=cost)
+
     benches = [
         (doinit, b'init'),
-        (dogets, b'gets'),
-        (doinserts, b'inserts'),
-        (dosets, b'sets'),
-        (domixed, b'mixed')
     ]
+
+    if costlimit:
+        benches.extend([
+            (dogetscost, b'gets w/ cost limit'),
+            (doinsertscost, b'inserts w/ cost limit'),
+            (domixedcost, b'mixed w/ cost limit'),
+        ])
+    else:
+        benches.extend([
+            (dogets, b'gets'),
+            (doinserts, b'inserts'),
+            (dosets, b'sets'),
+            (domixed, b'mixed')
+        ])
 
     for fn, title in benches:
         timer, fm = gettimer(ui, opts)

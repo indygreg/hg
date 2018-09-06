@@ -284,13 +284,15 @@ def loadall(ui, whitelist=None):
 
     broken = set()
     log('- executing uisetup hooks\n')
-    for name in _order[newindex:]:
-        log('  - running uisetup for %r\n', name)
-        with util.timedcm('uisetup %r', name) as stats:
-            if not _runuisetup(name, ui):
-                log('    - the %r extension uisetup failed\n', name)
-                broken.add(name)
-        log('  > uisetup for %r took %s\n', name, stats)
+    with util.timedcm('all uisetup') as alluisetupstats:
+        for name in _order[newindex:]:
+            log('  - running uisetup for %r\n', name)
+            with util.timedcm('uisetup %r', name) as stats:
+                if not _runuisetup(name, ui):
+                    log('    - the %r extension uisetup failed\n', name)
+                    broken.add(name)
+            log('  > uisetup for %r took %s\n', name, stats)
+    log('> all uisetup took %s\n', alluisetupstats)
 
     log('- executing extsetup hooks\n')
     for name in _order[newindex:]:

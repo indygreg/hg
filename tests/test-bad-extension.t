@@ -111,6 +111,7 @@ show traceback for ImportError of hgext.name if devel.debug.extensions is set
   debug.extensions:   > uisetup for 'gpg' took * (glob)
   debug.extensions:   - running uisetup for 'baddocext'
   debug.extensions:   > uisetup for 'baddocext' took * (glob)
+  debug.extensions: > all uisetup took * (glob)
   debug.extensions: - executing extsetup hooks
   debug.extensions:   - running extsetup for 'gpg'
   debug.extensions:   > extsetup for 'gpg' took * (glob)

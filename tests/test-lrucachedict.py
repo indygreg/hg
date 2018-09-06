@@ -118,5 +118,59 @@ class testlrucachedict(unittest.TestCase):
         for key in ('a', 'b', 'c', 'd'):
             self.assertEqual(d[key], 'v%s' % key)
 
+    def testcopydecreasecapacity(self):
+        d = util.lrucachedict(5)
+        d['a'] = 'va'
+        d['b'] = 'vb'
+        d['c'] = 'vc'
+        d['d'] = 'vd'
+
+        dc = d.copy(2)
+        for key in ('a', 'b'):
+            self.assertNotIn(key, dc)
+        for key in ('c', 'd'):
+            self.assertIn(key, dc)
+            self.assertEqual(dc[key], 'v%s' % key)
+
+        dc['e'] = 've'
+        self.assertNotIn('c', dc)
+        for key in ('d', 'e'):
+            self.assertIn(key, dc)
+            self.assertEqual(dc[key], 'v%s' % key)
+
+        # Original should remain unchanged.
+        for key in ('a', 'b', 'c', 'd'):
+            self.assertIn(key, d)
+            self.assertEqual(d[key], 'v%s' % key)
+
+    def testcopyincreasecapacity(self):
+        d = util.lrucachedict(5)
+        d['a'] = 'va'
+        d['b'] = 'vb'
+        d['c'] = 'vc'
+        d['d'] = 'vd'
+
+        dc = d.copy(6)
+        for key in ('a', 'b', 'c', 'd'):
+            self.assertIn(key, dc)
+            self.assertEqual(dc[key], 'v%s' % key)
+
+        dc['e'] = 've'
+        dc['f'] = 'vf'
+        for key in ('a', 'b', 'c', 'd', 'e', 'f'):
+            self.assertIn(key, dc)
+            self.assertEqual(dc[key], 'v%s' % key)
+
+        dc['g'] = 'vg'
+        self.assertNotIn('a', dc)
+        for key in ('b', 'c', 'd', 'e', 'f', 'g'):
+            self.assertIn(key, dc)
+            self.assertEqual(dc[key], 'v%s' % key)
+
+        # Original should remain unchanged.
+        for key in ('a', 'b', 'c', 'd'):
+            self.assertIn(key, d)
+            self.assertEqual(d[key], 'v%s' % key)
+
 if __name__ == '__main__':
     silenttestrunner.main(__name__)

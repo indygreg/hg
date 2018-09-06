@@ -1311,8 +1311,19 @@ class lrucachedict(object):
 
         self._cache.clear()
 
-    def copy(self):
-        result = lrucachedict(self.capacity)
+    def copy(self, capacity=None):
+        """Create a new cache as a copy of the current one.
+
+        By default, the new cache has the same capacity as the existing one.
+        But, the cache capacity can be changed as part of performing the
+        copy.
+
+        Items in the copy have an insertion/access order matching this
+        instance.
+        """
+
+        capacity = capacity or self.capacity
+        result = lrucachedict(capacity)
 
         # We copy entries by iterating in oldest-to-newest order so the copy
         # has the correct ordering.
@@ -1322,6 +1333,8 @@ class lrucachedict(object):
         while n.key is _notset and n is not self._head:
             n = n.prev
 
+        # We could potentially skip the first N items when decreasing capacity.
+        # But let's keep it simple unless it is a performance problem.
         for i in range(len(self._cache)):
             result[n.key] = n.value
             n = n.prev

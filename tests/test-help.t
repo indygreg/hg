@@ -1017,6 +1017,8 @@ internals topic renders index of available sub-topics
        requirements  Repository Requirements
        revlogs       Revision Logs
        wireprotocol  Wire Protocol
+       wireprotocolv2
+                     Wire Protocol Version 2
 
 sub-topics can be accessed
 
@@ -3342,6 +3344,13 @@ Sub-topic indexes rendered properly
   </a>
   </td><td>
   Wire Protocol
+  </td></tr>
+  <tr><td>
+  <a href="/help/internals.wireprotocolv2">
+  wireprotocolv2
+  </a>
+  </td><td>
+  Wire Protocol Version 2
   </td></tr>
   
   

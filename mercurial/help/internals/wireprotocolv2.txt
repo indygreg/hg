@@ -1,6 +1,3 @@
-Wire Protocol Version 2
-=======================
-
 **Experimental and under active development**
 
 This section documents the wire protocol commands exposed to transports

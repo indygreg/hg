@@ -87,6 +87,7 @@ Test extension setup timings
   reposetup called for a
   ui == repo.ui
   debug.extensions:   > reposetup for 'foobar' took * (glob)
+  debug.extensions: > all reposetup took * (glob)
   Foo
 
   $ cd ..

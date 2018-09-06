@@ -170,13 +170,15 @@ def _peerorrepo(ui, path, create=False, presetupfuncs=None,
     for f in presetupfuncs or []:
         f(ui, obj)
     log('- executing reposetup hooks\n')
-    for name, module in extensions.extensions(ui):
-        log('  - running reposetup for %s\n' % (name,))
-        hook = getattr(module, 'reposetup', None)
-        if hook:
-            with util.timedcm('reposetup %r', name) as stats:
-                hook(ui, obj)
-            log('  > reposetup for %r took %s\n', name, stats)
+    with util.timedcm('all reposetup') as allreposetupstats:
+        for name, module in extensions.extensions(ui):
+            log('  - running reposetup for %s\n' % (name,))
+            hook = getattr(module, 'reposetup', None)
+            if hook:
+                with util.timedcm('reposetup %r', name) as stats:
+                    hook(ui, obj)
+                log('  > reposetup for %r took %s\n', name, stats)
+    log('> all reposetup took %s\n', allreposetupstats)
     if not obj.local():
         for f in wirepeersetupfuncs:
             f(ui, obj)

@@ -1464,8 +1464,23 @@ class lrucachedict(object):
         # This should run after an insertion. It should only be called if total
         # cost limits are being enforced.
         # The most recently inserted node is never evicted.
+        if len(self) <= 1 or self.totalcost <= self.maxcost:
+            return
+
+        # This is logically equivalent to calling popoldest() until we
+        # free up enough cost. We don't do that since popoldest() needs
+        # to walk the linked list and doing this in a loop would be
+        # quadratic. So we find the first non-empty node and then
+        # walk nodes until we free up enough capacity.
+        n = self._head.prev
+        while n.key is _notset:
+            n = n.prev
+
         while len(self) > 1 and self.totalcost > self.maxcost:
-            self.popoldest()
+            del self._cache[n.key]
+            self.totalcost -= n.cost
+            n.markempty()
+            n = n.prev
 
 def lrucachefunc(func):
     '''cache most recent results of function calls'''

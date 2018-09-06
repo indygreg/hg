@@ -1,77 +1,105 @@
 from __future__ import absolute_import, print_function
 
+import unittest
+
+import silenttestrunner
+
 from mercurial import (
     util,
 )
 
-def printifpresent(d, xs, name='d'):
-    for x in xs:
-        present = x in d
-        print("'%s' in %s: %s" % (x, name, present))
-        if present:
-            print("%s['%s']: %s" % (name, x, d[x]))
+class testlrucachedict(unittest.TestCase):
+    def testsimple(self):
+        d = util.lrucachedict(4)
+        d['a'] = 'va'
+        d['b'] = 'vb'
+        d['c'] = 'vc'
+        d['d'] = 'vd'
 
-def test_lrucachedict():
-    d = util.lrucachedict(4)
-    d['a'] = 'va'
-    d['b'] = 'vb'
-    d['c'] = 'vc'
-    d['d'] = 'vd'
+        self.assertEqual(d['a'], 'va')
+        self.assertEqual(d['b'], 'vb')
+        self.assertEqual(d['c'], 'vc')
+        self.assertEqual(d['d'], 'vd')
 
-    # all of these should be present
-    printifpresent(d, ['a', 'b', 'c', 'd'])
+        # 'a' should be dropped because it was least recently used.
+        d['e'] = 've'
+        self.assertNotIn('a', d)
 
-    # 'a' should be dropped because it was least recently used
-    d['e'] = 've'
-    printifpresent(d, ['a', 'b', 'c', 'd', 'e'])
+        self.assertIsNone(d.get('a'))
 
-    assert d.get('a') is None
-    assert d.get('e') == 've'
+        self.assertEqual(d['b'], 'vb')
+        self.assertEqual(d['c'], 'vc')
+        self.assertEqual(d['d'], 'vd')
+        self.assertEqual(d['e'], 've')
 
-    # touch entries in some order (get or set).
-    d['e']
-    d['c'] = 'vc2'
-    d['d']
-    d['b'] = 'vb2'
+        # Touch entries in some order (both get and set).
+        d['e']
+        d['c'] = 'vc2'
+        d['d']
+        d['b'] = 'vb2'
 
-    # 'e' should be dropped now
-    d['f'] = 'vf'
-    printifpresent(d, ['b', 'c', 'd', 'e', 'f'])
+        # 'e' should be dropped now
+        d['f'] = 'vf'
+        self.assertNotIn('e', d)
+        self.assertEqual(d['b'], 'vb2')
+        self.assertEqual(d['c'], 'vc2')
+        self.assertEqual(d['d'], 'vd')
+        self.assertEqual(d['f'], 'vf')
 
-    d.clear()
-    printifpresent(d, ['b', 'c', 'd', 'e', 'f'])
+        d.clear()
+        for key in ('a', 'b', 'c', 'd', 'e', 'f'):
+            self.assertNotIn(key, d)
 
-    # Now test dicts that aren't full.
-    d = util.lrucachedict(4)
-    d['a'] = 1
-    d['b'] = 2
-    d['a']
-    d['b']
-    printifpresent(d, ['a', 'b'])
+    def testunfull(self):
+        d = util.lrucachedict(4)
+        d['a'] = 1
+        d['b'] = 2
+        d['a']
+        d['b']
 
-    # test copy method
-    d = util.lrucachedict(4)
-    d['a'] = 'va3'
-    d['b'] = 'vb3'
-    d['c'] = 'vc3'
-    d['d'] = 'vd3'
+        for key in ('a', 'b'):
+            self.assertIn(key, d)
 
-    dc = d.copy()
+    def testcopypartial(self):
+        d = util.lrucachedict(4)
+        d['a'] = 'va'
+        d['b'] = 'vb'
 
-    # all of these should be present
-    print("\nAll of these should be present:")
-    printifpresent(dc, ['a', 'b', 'c', 'd'], 'dc')
+        dc = d.copy()
 
-    # 'a' should be dropped because it was least recently used
-    print("\nAll of these except 'a' should be present:")
-    dc['e'] = 've3'
-    printifpresent(dc, ['a', 'b', 'c', 'd', 'e'], 'dc')
+        self.assertEqual(len(dc), 2)
+        # TODO this fails
+        return
+        for key in ('a', 'b'):
+            self.assertIn(key, dc)
+            self.assertEqual(dc[key], 'v%s' % key)
 
-    # contents and order of original dict should remain unchanged
-    print("\nThese should be in reverse alphabetical order and read 'v?3':")
-    dc['b'] = 'vb3_new'
-    for k in list(iter(d)):
-        print("d['%s']: %s" % (k, d[k]))
+    def testcopyfull(self):
+        d = util.lrucachedict(4)
+        d['a'] = 'va'
+        d['b'] = 'vb'
+        d['c'] = 'vc'
+        d['d'] = 'vd'
+
+        dc = d.copy()
+
+        for key in ('a', 'b', 'c', 'd'):
+            self.assertIn(key, dc)
+            self.assertEqual(dc[key], 'v%s' % key)
+
+        # 'a' should be dropped because it was least recently used.
+        dc['e'] = 've'
+        self.assertNotIn('a', dc)
+        for key in ('b', 'c', 'd', 'e'):
+            self.assertIn(key, dc)
+            self.assertEqual(dc[key], 'v%s' % key)
+
+        # Contents and order of original dict should remain unchanged.
+        dc['b'] = 'vb_new'
+
+        self.assertEqual(list(iter(d)), ['d', 'c', 'b', 'a'])
+        for key in ('a', 'b', 'c', 'd'):
+            self.assertEqual(d[key], 'v%s' % key)
 
 if __name__ == '__main__':
-    test_lrucachedict()
+    silenttestrunner.main(__name__)

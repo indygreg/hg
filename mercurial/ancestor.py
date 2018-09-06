@@ -7,7 +7,6 @@
 
 from __future__ import absolute_import
 
-import collections
 import heapq
 
 from .node import nullrev
@@ -305,14 +304,15 @@ class lazyancestors(object):
         """Generate the ancestors of _initrevs in reverse topological order.
 
         If inclusive is False, yield a sequence of revision numbers starting
-        with the parents of each revision in revs, i.e., each revision is *not*
-        considered an ancestor of itself.  Results are in breadth-first order:
-        parents of each rev in revs, then parents of those, etc.
+        with the parents of each revision in revs, i.e., each revision is
+        *not* considered an ancestor of itself. Results are emitted in reverse
+        revision number order. That order is also topological: a child is
+        always emitted before its parent.
 
         If inclusive is True, yield all the revs first (ignoring stoprev),
-        then yield all the ancestors of revs as when inclusive is False.
-        If an element in revs is an ancestor of a different rev it is not
-        yielded again."""
+        then yield all the ancestors of revs as when inclusive is False. If an
+        element in revs is an ancestor of a different rev it is not yielded
+        again."""
         seen = set()
         revs = self._initrevs
         if self._inclusive:
@@ -322,17 +322,27 @@ class lazyancestors(object):
 
         parentrevs = self._parentrevs
         stoprev = self._stoprev
-        visit = collections.deque(revs)
-
+        visit = []
+        heapq.heapify(visit)
+        schedule = heapq.heappush
+        nextitem = heapq.heappop
         see = seen.add
-        schedule = visit.append
+        see(nullrev)
+
+        for r in revs:
+            for parent in parentrevs(r):
+                if parent not in seen:
+                    schedule(visit, -parent)
+                    see(parent)
 
         while visit:
-            for parent in parentrevs(visit.popleft()):
-                if parent >= stoprev and parent not in seen:
-                    schedule(parent)
-                    see(parent)
-                    yield parent
+            current = -nextitem(visit)
+            if current >= stoprev:
+                yield current
+                for parent in parentrevs(current):
+                    if parent not in seen:
+                        schedule(visit, -parent)
+                        see(parent)
 
     def __contains__(self, target):
         """Test whether target is an ancestor of self._initrevs."""

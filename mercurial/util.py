@@ -1341,6 +1341,28 @@ class lrucachedict(object):
 
         return result
 
+    def popoldest(self):
+        """Remove the oldest item from the cache.
+
+        Returns the (key, value) describing the removed cache entry.
+        """
+        if not self._cache:
+            return
+
+        # Walk the linked list backwards starting at tail node until we hit
+        # a non-empty node.
+        n = self._head.prev
+        while n.key is _notset:
+            n = n.prev
+
+        key, value = n.key, n.value
+
+        # And remove it from the cache and mark it as empty.
+        del self._cache[n.key]
+        n.markempty()
+
+        return key, value
+
     def _movetohead(self, node):
         """Mark a node as the newest, making it the new head.
 

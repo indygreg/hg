@@ -172,5 +172,30 @@ class testlrucachedict(unittest.TestCase):
             self.assertIn(key, d)
             self.assertEqual(d[key], 'v%s' % key)
 
+    def testpopoldest(self):
+        d = util.lrucachedict(4)
+        d['a'] = 'va'
+        d['b'] = 'vb'
+
+        self.assertEqual(len(d), 2)
+        self.assertEqual(d.popoldest(), ('a', 'va'))
+        self.assertEqual(len(d), 1)
+        self.assertEqual(d.popoldest(), ('b', 'vb'))
+        self.assertEqual(len(d), 0)
+        self.assertIsNone(d.popoldest())
+
+        d['a'] = 'va'
+        d['b'] = 'vb'
+        d['c'] = 'vc'
+        d['d'] = 'vd'
+
+        self.assertEqual(d.popoldest(), ('a', 'va'))
+        self.assertEqual(len(d), 3)
+        for key in ('b', 'c', 'd'):
+            self.assertEqual(d[key], 'v%s' % key)
+
+        d['a'] = 'va'
+        self.assertEqual(d.popoldest(), ('b', 'vb'))
+
 if __name__ == '__main__':
     silenttestrunner.main(__name__)

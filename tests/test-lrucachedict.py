@@ -11,6 +11,7 @@ from mercurial import (
 class testlrucachedict(unittest.TestCase):
     def testsimple(self):
         d = util.lrucachedict(4)
+        self.assertEqual(d.capacity, 4)
         d['a'] = 'va'
         d['b'] = 'vb'
         d['c'] = 'vc'

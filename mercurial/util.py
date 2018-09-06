@@ -1241,7 +1241,7 @@ class lrucachedict(object):
         head.prev = head
         head.next = head
         self._size = 1
-        self._capacity = max
+        self.capacity = max
 
     def __len__(self):
         return len(self._cache)
@@ -1269,7 +1269,7 @@ class lrucachedict(object):
             self._movetohead(node)
             return
 
-        if self._size < self._capacity:
+        if self._size < self.capacity:
             node = self._addcapacity()
         else:
             # Grab the last/oldest item.
@@ -1312,7 +1312,7 @@ class lrucachedict(object):
         self._cache.clear()
 
     def copy(self):
-        result = lrucachedict(self._capacity)
+        result = lrucachedict(self.capacity)
 
         # We copy entries by iterating in oldest-to-newest order so the copy
         # has the correct ordering.

@@ -1313,11 +1313,19 @@ class lrucachedict(object):
 
     def copy(self):
         result = lrucachedict(self._capacity)
+
+        # We copy entries by iterating in oldest-to-newest order so the copy
+        # has the correct ordering.
+
+        # Find the first non-empty entry.
         n = self._head.prev
-        # Iterate in oldest-to-newest order, so the copy has the right ordering
+        while n.key is _notset and n is not self._head:
+            n = n.prev
+
         for i in range(len(self._cache)):
             result[n.key] = n.value
             n = n.prev
+
         return result
 
     def _movetohead(self, node):

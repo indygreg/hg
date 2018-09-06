@@ -68,11 +68,27 @@ class testlrucachedict(unittest.TestCase):
         dc = d.copy()
 
         self.assertEqual(len(dc), 2)
-        # TODO this fails
-        return
         for key in ('a', 'b'):
             self.assertIn(key, dc)
             self.assertEqual(dc[key], 'v%s' % key)
+
+        self.assertEqual(len(d), 2)
+        for key in ('a', 'b'):
+            self.assertIn(key, d)
+            self.assertEqual(d[key], 'v%s' % key)
+
+        d['c'] = 'vc'
+        del d['b']
+        dc = d.copy()
+        self.assertEqual(len(dc), 2)
+        for key in ('a', 'c'):
+            self.assertIn(key, dc)
+            self.assertEqual(dc[key], 'v%s' % key)
+
+    def testcopyempty(self):
+        d = util.lrucachedict(4)
+        dc = d.copy()
+        self.assertEqual(len(dc), 0)
 
     def testcopyfull(self):
         d = util.lrucachedict(4)

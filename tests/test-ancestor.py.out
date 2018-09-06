@@ -9,10 +9,10 @@ membership: [1, 0]
 iteration:  [1, 0]
 % lazy ancestor set for [11, 13], stoprev = 0, inclusive = True
 membership: [11, 13, 7, 8, 3, 4, 1, 0]
-iteration:  [11, 13, 8, 7, 4, 3, 2, 1, 0]
+iteration:  [13, 11, 8, 7, 4, 3, 2, 1, 0]
 % lazy ancestor set for [11, 13], stoprev = 6, inclusive = False
 membership: [7, 8]
 iteration:  [8, 7]
 % lazy ancestor set for [11, 13], stoprev = 6, inclusive = True
 membership: [11, 13, 7, 8]
-iteration:  [11, 13, 8, 7]
+iteration:  [13, 11, 8, 7]

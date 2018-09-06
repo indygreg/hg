@@ -309,31 +309,30 @@ class lazyancestors(object):
         revision number order. That order is also topological: a child is
         always emitted before its parent.
 
-        If inclusive is True, yield all the revs first (ignoring stoprev),
-        then yield all the ancestors of revs as when inclusive is False. If an
-        element in revs is an ancestor of a different rev it is not yielded
-        again."""
+        If inclusive is True, the source revisions are also yielded. The
+        reverse revision number order is still enforced."""
         seen = set()
         revs = self._initrevs
-        if self._inclusive:
-            for rev in revs:
-                yield rev
-            seen.update(revs)
 
         parentrevs = self._parentrevs
         stoprev = self._stoprev
-        visit = []
-        heapq.heapify(visit)
         schedule = heapq.heappush
         nextitem = heapq.heappop
         see = seen.add
         see(nullrev)
 
-        for r in revs:
-            for parent in parentrevs(r):
-                if parent not in seen:
-                    schedule(visit, -parent)
-                    see(parent)
+        if self._inclusive:
+            visit = [-r for r in revs]
+            seen.update(revs)
+            heapq.heapify(visit)
+        else:
+            visit = []
+            heapq.heapify(visit)
+            for r in revs:
+                for parent in parentrevs(r):
+                    if parent not in seen:
+                        schedule(visit, -parent)
+                        see(parent)
 
         while visit:
             current = -nextitem(visit)

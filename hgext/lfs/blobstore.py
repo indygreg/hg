@@ -168,6 +168,20 @@ class local(object):
 
         self._linktousercache(oid)
 
+    def linkfromusercache(self, oid):
+        """Link blobs found in the user cache into this store.
+
+        The server module needs to do this when it lets the client know not to
+        upload the blob, to ensure it is always available in this store.
+        Normally this is done implicitly when the client reads or writes the
+        blob, but that doesn't happen when the server tells the client that it
+        already has the blob.
+        """
+        if (not isinstance(self.cachevfs, nullvfs)
+            and not self.vfs.exists(oid)):
+            self.ui.note(_('lfs: found %s in the usercache\n') % oid)
+            lfutil.link(self.cachevfs.join(oid), self.vfs.join(oid))
+
     def _linktousercache(self, oid):
         # XXX: should we verify the content of the cache, and hardlink back to
         # the local store on success, but truncate, write and link on failure?

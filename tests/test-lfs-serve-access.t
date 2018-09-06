@@ -150,6 +150,33 @@ Blob URIs are correct when --prefix is used
   $LOCALIP - - [$LOGDATE$] "POST /subdir/mount/point/.git/info/lfs/objects/batch HTTP/1.1" 200 - (glob)
   $LOCALIP - - [$LOGDATE$] "GET /subdir/mount/point/.hg/lfs/objects/f03217a32529a28a42d03b1244fe09b6e0f9fd06d7b966d4d50567be2abe6c0e HTTP/1.1" 200 - (glob)
 
+Blobs that already exist in the usercache are linked into the repo store, even
+though the client doesn't send the blob.
+
+  $ hg init server2
+  $ hg --config "lfs.usercache=$TESTTMP/servercache" -R server2 serve -d \
+  >    -p $HGPORT --pid-file=hg.pid \
+  >    -A $TESTTMP/access.log -E $TESTTMP/errors.log
+  $ cat hg.pid >> $DAEMON_PIDS
+
+  $ hg --config "lfs.usercache=$TESTTMP/servercache" -R cloned2 --debug \
+  >    push http://localhost:$HGPORT | grep '^[{} ]'
+  {
+    "objects": [
+      {
+        "oid": "f03217a32529a28a42d03b1244fe09b6e0f9fd06d7b966d4d50567be2abe6c0e"
+        "size": 20
+      }
+    ]
+    "transfer": "basic"
+  }
+  $ find server2/.hg/store/lfs/objects | sort
+  server2/.hg/store/lfs/objects
+  server2/.hg/store/lfs/objects/f0
+  server2/.hg/store/lfs/objects/f0/3217a32529a28a42d03b1244fe09b6e0f9fd06d7b966d4d50567be2abe6c0e
+  $ $PYTHON $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
+  $ cat $TESTTMP/errors.log
+
   $ cat >> $TESTTMP/lfsstoreerror.py <<EOF
   > import errno
   > from hgext.lfs import blobstore

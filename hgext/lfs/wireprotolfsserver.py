@@ -204,6 +204,10 @@ def _batchresponseobjects(req, objects, action, store):
         # verified as the file is streamed to the caller.
         try:
             verifies = store.verify(oid)
+            if verifies and action == 'upload':
+                # The client will skip this upload, but make sure it remains
+                # available locally.
+                store.linkfromusercache(oid)
         except IOError as inst:
             if inst.errno != errno.ENOENT:
                 _logexception(req)

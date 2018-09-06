@@ -992,7 +992,8 @@ def _dispatch(req):
 def _runcommand(ui, options, cmd, cmdfunc):
     """Run a command function, possibly with profiling enabled."""
     try:
-        return cmdfunc()
+        with tracing.log("Running %s command" % cmd):
+            return cmdfunc()
     except error.SignatureError:
         raise error.CommandError(cmd, _('invalid arguments'))
 

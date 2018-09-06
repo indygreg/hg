@@ -63,6 +63,7 @@ Test extension setup timings
   debug.extensions: - executing extsetup hooks
   debug.extensions:   - running extsetup for 'foobar'
   debug.extensions:   > extsetup for 'foobar' took * (glob)
+  debug.extensions: > all extsetup took * (glob)
   debug.extensions: - executing remaining aftercallbacks
   debug.extensions: > remaining aftercallbacks completed in * (glob)
   debug.extensions: - loading extension registration objects
@@ -75,6 +76,7 @@ Test extension setup timings
   debug.extensions: - executing uisetup hooks
   debug.extensions: > all uisetup took * (glob)
   debug.extensions: - executing extsetup hooks
+  debug.extensions: > all extsetup took * (glob)
   debug.extensions: - executing remaining aftercallbacks
   debug.extensions: > remaining aftercallbacks completed in * (glob)
   debug.extensions: - loading extension registration objects

@@ -117,6 +117,7 @@ show traceback for ImportError of hgext.name if devel.debug.extensions is set
   debug.extensions:   > extsetup for 'gpg' took * (glob)
   debug.extensions:   - running extsetup for 'baddocext'
   debug.extensions:   > extsetup for 'baddocext' took * (glob)
+  debug.extensions: > all extsetup took * (glob)
   debug.extensions: - executing remaining aftercallbacks
   debug.extensions: > remaining aftercallbacks completed in * (glob)
   debug.extensions: - loading extension registration objects

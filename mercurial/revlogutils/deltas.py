@@ -616,9 +616,10 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
 def _findsnapshots(revlog, cache, start_rev):
     """find snapshot from start_rev to tip"""
     deltaparent = revlog.deltaparent
+    issnapshot = revlog.issnapshot
     for rev in revlog.revs(start_rev):
-        if deltaparent(rev) == nullrev:
-            cache[nullrev].append(rev)
+        if issnapshot(rev):
+            cache[deltaparent(rev)].append(rev)
 
 def _rawgroups(revlog, p1, p2, cachedelta):
     """Provides group of revision to be tested as delta base
@@ -673,11 +674,35 @@ def _rawgroups(revlog, p1, p2, cachedelta):
                 if not revlog.issnapshot(s):
                     break
                 parents_snaps[idx].add(s)
+        snapfloor = min(parents_snaps[0]) + 1
+        _findsnapshots(revlog, snapshots, snapfloor)
         # Test them as possible intermediate snapshot base
         # We test them from highest to lowest level. High level one are more
         # likely to result in small delta
+        floor = None
         for idx, snaps in sorted(parents_snaps.items(), reverse=True):
+            siblings = set()
+            for s in snaps:
+                siblings.update(snapshots[s])
+            # Before considering making a new intermediate snapshot, we check
+            # if an existing snapshot, children of base we consider, would be
+            # suitable.
+            #
+            # It give a change to reuse a delta chain "unrelated" to the
+            # current revision instead of starting our own. Without such
+            # re-use, topological branches would keep reopening new chains.
+            # Creating more and more snapshot as the repository grow.
+
+            if floor is not None:
+                # We only do this for siblings created after the one in our
+                # parent's delta chain. Those created before has less chances
+                # to be valid base since our ancestors had to create a new
+                # snapshot.
+                siblings = [r for r in siblings if floor < r]
+            yield tuple(sorted(siblings))
+            # then test the base from our parent's delta chain.
             yield tuple(sorted(snaps))
+            floor = min(snaps)
         # No suitable base found in the parent chain, search if any full
         # snapshots emitted since parent's base would be a suitable base for an
         # intermediate snapshot.
@@ -686,8 +711,6 @@ def _rawgroups(revlog, p1, p2, cachedelta):
         # revisions instead of starting our own. Without such re-use,
         # topological branches would keep reopening new full chains. Creating
         # more and more snapshot as the repository grow.
-        snapfloor = min(parents_snaps[0]) + 1
-        _findsnapshots(revlog, snapshots, snapfloor)
         yield tuple(snapshots[nullrev])
 
     # other approach failed try against prev to hopefully save us a

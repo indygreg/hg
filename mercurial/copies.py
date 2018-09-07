@@ -163,9 +163,17 @@ def _committedforwardcopies(a, b, match):
     """Like _forwardcopies(), but b.rev() cannot be None (working copy)"""
     # files might have to be traced back to the fctx parent of the last
     # one-side-only changeset, but not further back than that
-    limit = _findlimit(a._repo, a.rev(), b.rev())
+    repo = a._repo
+    debug = repo.ui.debugflag and repo.ui.configbool('devel', 'debug.copies')
+    dbg = repo.ui.debug
+    if debug:
+        dbg('debug.copies:    looking into rename from %s to %s\n'
+            % (a, b))
+    limit = _findlimit(repo, a.rev(), b.rev())
     if limit is None:
         limit = -1
+    if debug:
+        dbg('debug.copies:      search limit: %d\n' % limit)
     am = a.manifest()
 
     # find where new files came from
@@ -186,11 +194,20 @@ def _committedforwardcopies(a, b, match):
     missing = _computeforwardmissing(a, b, match=forwardmissingmatch)
 
     ancestrycontext = a._repo.changelog.ancestors([b.rev()], inclusive=True)
+
+    if debug:
+        dbg('debug.copies:      missing file to search: %d\n' % len(missing))
+
     for f in missing:
+        if debug:
+            dbg('debug.copies:        tracing file: %s\n' % f)
         fctx = b[f]
         fctx._ancestrycontext = ancestrycontext
+
         ofctx = _tracefile(fctx, am, limit)
         if ofctx:
+            if debug:
+                dbg('debug.copies:          rename of: %s\n' % ofctx._path)
             cm[f] = ofctx.path()
     return cm
 
@@ -226,13 +243,24 @@ def _backwardrenames(a, b):
 
 def pathcopies(x, y, match=None):
     """find {dst@y: src@x} copy mapping for directed compare"""
+    repo = x._repo
+    debug = repo.ui.debugflag and repo.ui.configbool('devel', 'debug.copies')
+    if debug:
+        repo.ui.debug('debug.copies: searching copies from %s to %s\n'
+                      % (x, y))
     if x == y or not x or not y:
         return {}
     a = y.ancestor(x)
     if a == x:
+        if debug:
+            repo.ui.debug('debug.copies: search mode: forward\n')
         return _forwardcopies(x, y, match=match)
     if a == y:
+        if debug:
+            repo.ui.debug('debug.copies: search mode: backward\n')
         return _backwardrenames(x, y)
+    if debug:
+        repo.ui.debug('debug.copies: search mode: combined\n')
     return _chain(x, y, _backwardrenames(x, a),
                   _forwardcopies(a, y, match=match))
 

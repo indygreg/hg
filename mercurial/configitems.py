@@ -377,6 +377,9 @@ coreconfigitem('devel', 'user.obsmarker',
 coreconfigitem('devel', 'warn-config-unknown',
     default=None,
 )
+coreconfigitem('devel', 'debug.copies',
+    default=False,
+)
 coreconfigitem('devel', 'debug.extensions',
     default=False,
 )

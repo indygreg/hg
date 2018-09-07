@@ -630,6 +630,19 @@ def _findsnapshots(revlog, cache, start_rev):
 
 def _refinedgroups(revlog, p1, p2, cachedelta):
     good = None
+    # First we try to reuse a the delta contained in the bundle.
+    # (or from the source revlog)
+    #
+    # This logic only applies to general delta repositories and can be disabled
+    # through configuration. Disabling reuse source delta is useful when
+    # we want to make sure we recomputed "optimal" deltas.
+    if cachedelta and revlog._generaldelta and revlog._lazydeltabase:
+        # Assume what we received from the server is a good choice
+        # build delta will reuse the cache
+        good = yield (cachedelta[0],)
+        if good is not None:
+            yield None
+            return
     for candidates in _rawgroups(revlog, p1, p2, cachedelta):
         good = yield candidates
         if good is not None:
@@ -650,17 +663,6 @@ def _rawgroups(revlog, p1, p2, cachedelta):
     curr = len(revlog)
     prev = curr - 1
     deltachain = lambda rev: revlog._deltachain(rev)[0]
-
-    # First we try to reuse a the delta contained in the bundle.
-    # (or from the source revlog)
-    #
-    # This logic only applies to general delta repositories and can be disabled
-    # through configuration. Disabling reuse of source delta is useful when
-    # we want to make sure we recomputed "optimal" deltas.
-    if cachedelta and gdelta and revlog._lazydeltabase:
-        # Assume what we received from the server is a good choice
-        # build delta will reuse the cache
-        yield (cachedelta[0],)
 
     if gdelta:
         # exclude already lazy tested base if any

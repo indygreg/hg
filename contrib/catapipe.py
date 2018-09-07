@@ -45,7 +45,8 @@ def main():
     parser.add_argument('pipe', type=str, nargs=1,
                         help='Path of named pipe to create and listen on.')
     parser.add_argument('output', default='trace.json', type=str, nargs='?',
-                        help='Path of named pipe to create and listen on.')
+                        help='Path of json file to create where the traces '
+                             'will be stored.')
     parser.add_argument('--debug', default=False, action='store_true',
                         help='Print useful debug messages')
     args = parser.parse_args()

@@ -311,7 +311,7 @@ class lazyancestors(object):
 
         If inclusive is True, the source revisions are also yielded. The
         reverse revision number order is still enforced."""
-        seen = set()
+        seen = {nullrev}
         revs = self._initrevs
 
         parentrevs = self._parentrevs
@@ -319,7 +319,6 @@ class lazyancestors(object):
         schedule = heapq.heappush
         nextitem = heapq.heappop
         see = seen.add
-        see(nullrev)
 
         if self._inclusive:
             visit = [-r for r in revs]

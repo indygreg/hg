@@ -241,3 +241,6 @@ indexentry = '\{
   "lastchange": {lastchange|json},
   "labels": {labels|json}
   }'
+error = '\{
+  "error": {error|utf8|json}
+  }'

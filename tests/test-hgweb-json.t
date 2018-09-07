@@ -2183,6 +2183,16 @@ help/{topic} shows an individual help topic
     "topic": "phases"
   }
 
+Error page shouldn't crash
+
+  $ request json-changeset/deadbeef
+  404 Not Found
+  
+  {
+    "error": "unknown revision 'deadbeef'"
+  }
+  [1]
+
 Commit message with Japanese Kanji 'Noh', which ends with '\x5c'
 
   $ echo foo >> da/foo

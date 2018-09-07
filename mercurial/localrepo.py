@@ -70,6 +70,10 @@ from .utils import (
     stringutil,
 )
 
+from .revlogutils import (
+    constants as revlogconst,
+)
+
 release = lockmod.release
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -658,10 +662,6 @@ class localrepository(object):
         chunkcachesize = self.ui.configint('format', 'chunkcachesize')
         if chunkcachesize is not None:
             self.svfs.options['chunkcachesize'] = chunkcachesize
-        # experimental config: format.maxchainlen
-        maxchainlen = self.ui.configint('format', 'maxchainlen')
-        if maxchainlen is not None:
-            self.svfs.options['maxchainlen'] = maxchainlen
         # experimental config: format.manifestcachesize
         manifestcachesize = self.ui.configint('format', 'manifestcachesize')
         if manifestcachesize is not None:
@@ -689,6 +689,13 @@ class localrepository(object):
         self.svfs.options['sparse-revlog'] = sparserevlog
         if sparserevlog:
             self.svfs.options['generaldelta'] = True
+        maxchainlen = None
+        if sparserevlog:
+            maxchainlen = revlogconst.SPARSE_REVLOG_MAX_CHAIN_LENGTH
+        # experimental config: format.maxchainlen
+        maxchainlen = self.ui.configint('format', 'maxchainlen', maxchainlen)
+        if maxchainlen is not None:
+            self.svfs.options['maxchainlen'] = maxchainlen
 
         for r in self.requirements:
             if r.startswith('exp-compression-'):

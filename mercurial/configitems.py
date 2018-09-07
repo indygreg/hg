@@ -665,7 +665,7 @@ coreconfigitem('format', 'manifestcachesize',
     default=None,
 )
 coreconfigitem('format', 'maxchainlen',
-    default=None,
+    default=dynamicdefault,
 )
 coreconfigitem('format', 'obsstore-version',
     default=None,

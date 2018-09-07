@@ -585,7 +585,7 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
     deltas_limit = textlen * LIMIT_DELTA2TEXT
 
     tested = set([nullrev])
-    for temptative in _rawgroups(revlog, p1, p2, cachedelta):
+    for temptative in _refinedgroups(revlog, p1, p2, cachedelta):
         group = []
         for rev in temptative:
             # skip over empty delta (no need to include them in a chain)
@@ -620,6 +620,13 @@ def _findsnapshots(revlog, cache, start_rev):
     for rev in revlog.revs(start_rev):
         if issnapshot(rev):
             cache[deltaparent(rev)].append(rev)
+
+def _refinedgroups(revlog, p1, p2, cachedelta):
+    good = None
+    for candidates in _rawgroups(revlog, p1, p2, cachedelta):
+        good = yield candidates
+        if good is not None:
+            break
 
 def _rawgroups(revlog, p1, p2, cachedelta):
     """Provides group of revision to be tested as delta base

@@ -204,11 +204,16 @@ def _committedforwardcopies(a, b, match):
         fctx = b[f]
         fctx._ancestrycontext = ancestrycontext
 
+        if debug:
+            start = util.timer()
         ofctx = _tracefile(fctx, am, limit)
         if ofctx:
             if debug:
                 dbg('debug.copies:          rename of: %s\n' % ofctx._path)
             cm[f] = ofctx.path()
+        if debug:
+            dbg('debug.copies:          time: %s seconds\n'
+                % (util.timer() - start))
     return cm
 
 def _forwardcopies(a, b, match=None):

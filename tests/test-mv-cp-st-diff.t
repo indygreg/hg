@@ -1676,6 +1676,7 @@ Check debug output for copy tracing
   debug.copies:      missing file to search: 1
   debug.copies:        tracing file: renamed
   debug.copies:          rename of: f
+  debug.copies:          time: * seconds (glob)
   A renamed
     f
   R f

@@ -618,8 +618,10 @@ def _rawgroups(revlog, p1, p2, cachedelta):
     The group order aims at providing fast or small candidates first.
     """
     gdelta = revlog._generaldelta
+    sparse = revlog._sparserevlog
     curr = len(revlog)
     prev = curr - 1
+    deltachain = lambda rev: revlog._deltachain(rev)[0]
 
     # First we try to reuse a the delta contained in the bundle.
     # (or from the source revlog)
@@ -646,6 +648,14 @@ def _rawgroups(revlog, p1, p2, cachedelta):
         elif len(parents) > 0:
             # Test all parents (1 or 2), and keep the best candidate
             yield parents
+
+    if sparse and parents:
+        # See if we can use an existing snapshot in the parent chains to use as
+        # a base for a new intermediate-snapshot
+        bases = []
+        for p in parents:
+            bases.append(deltachain(p)[0])
+        yield tuple(sorted(bases))
 
     # other approach failed try against prev to hopefully save us a
     # fulltext.

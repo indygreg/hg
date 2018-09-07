@@ -77,7 +77,7 @@ repeatedly while some of it changes rarely.
   
 
   $ f -s .hg/store/data/*.d
-  .hg/store/data/_s_p_a_r_s_e-_r_e_v_l_o_g-_t_e_s_t-_f_i_l_e.d: size=74365490
+  .hg/store/data/_s_p_a_r_s_e-_r_e_v_l_o_g-_t_e_s_t-_f_i_l_e.d: size=72315280
   $ hg debugrevlog *
   format : 1
   flags  : generaldelta
@@ -89,33 +89,36 @@ repeatedly while some of it changes rarely.
       empty     :        0 ( 0.00%)
                      text  :        0 (100.00%)
                      delta :        0 (100.00%)
-      snapshot  :      101 ( 2.02%)
-        lvl-0   :            101 ( 2.02%)
-      deltas    :     4900 (97.98%)
-  revision size : 74365490
-      snapshot  : 20307865 (27.31%)
-        lvl-0   :       20307865 (27.31%)
-      deltas    : 54057625 (72.69%)
+      snapshot  :      145 ( 2.90%)
+        lvl-0   :             15 ( 0.30%)
+        lvl-1   :            130 ( 2.60%)
+      deltas    :     4856 (97.10%)
+  revision size : 72315280
+      snapshot  : 18481085 (25.56%)
+        lvl-0   :        3016019 ( 4.17%)
+        lvl-1   :       15465066 (21.39%)
+      deltas    : 53834195 (74.44%)
   
   chunks        :     5001
       0x78 (x)  :     5001 (100.00%)
-  chunks size   : 74365490
-      0x78 (x)  : 74365490 (100.00%)
+  chunks size   : 72315280
+      0x78 (x)  : 72315280 (100.00%)
   
-  avg chain length  :       23
+  avg chain length  :       18
   max chain length  :       45
-  max chain reach   : 11039464
+  max chain reach   : 32095083
   compression ratio :       23
   
   uncompressed data size (min/max/avg) : 346468 / 346472 / 346471
-  full revision size (min/max/avg)     : 200927 / 201202 / 201067
-  inter-snapshot size (min/max/avg)    : 0 / 0 / 0
-  delta size (min/max/avg)             : 10649 / 103898 / 11032
+  full revision size (min/max/avg)     : 200990 / 201151 / 201067
+  inter-snapshot size (min/max/avg)    : 37202 / 173034 / 118962
+      level-1   (min/max/avg)          : 37202 / 173034 / 118962
+  delta size (min/max/avg)             : 10649 / 104791 / 11086
   
-  deltas against prev  : 4231 (86.35%)
-      where prev = p1  : 4172     (98.61%)
+  deltas against prev  : 4185 (86.18%)
+      where prev = p1  : 4139     (98.90%)
       where prev = p2  :    0     ( 0.00%)
-      other            :   59     ( 1.39%)
-  deltas against p1    :  651 (13.29%)
-  deltas against p2    :   18 ( 0.37%)
+      other            :   46     ( 1.10%)
+  deltas against p1    :  647 (13.32%)
+  deltas against p2    :   24 ( 0.49%)
   deltas against other :    0 ( 0.00%)

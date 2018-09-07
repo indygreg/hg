@@ -50,8 +50,6 @@ fi
 
 gethgversion
 
-# TODO: handle distance/node set, and type set
-
 if [ -z "$type" ] ; then
    release=1
 else
@@ -59,7 +57,7 @@ else
 fi
 
 if [ -n "$distance" ] ; then
-    release=$release+$distance_$node
+    release=$release+${distance}_${node}
 fi
 
 if [ "$PYTHONVER" ]; then

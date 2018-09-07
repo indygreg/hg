@@ -77,7 +77,7 @@ repeatedly while some of it changes rarely.
   
 
   $ f -s .hg/store/data/*.d
-  .hg/store/data/_s_p_a_r_s_e-_r_e_v_l_o_g-_t_e_s_t-_f_i_l_e.d: size=67810463
+  .hg/store/data/_s_p_a_r_s_e-_r_e_v_l_o_g-_t_e_s_t-_f_i_l_e.d: size=63812493
   $ hg debugrevlog *
   format : 1
   flags  : generaldelta
@@ -89,39 +89,45 @@ repeatedly while some of it changes rarely.
       empty     :        0 ( 0.00%)
                      text  :        0 (100.00%)
                      delta :        0 (100.00%)
-      snapshot  :      126 ( 2.52%)
+      snapshot  :      179 ( 3.58%)
         lvl-0   :              4 ( 0.08%)
-        lvl-1   :            120 ( 2.40%)
-        lvl-2   :              2 ( 0.04%)
-      deltas    :     4875 (97.48%)
-  revision size : 67810463
-      snapshot  : 14373347 (21.20%)
-        lvl-0   :         804235 ( 1.19%)
-        lvl-1   :       13535903 (19.96%)
-        lvl-2   :          33209 ( 0.05%)
-      deltas    : 53437116 (78.80%)
+        lvl-1   :             49 ( 0.98%)
+        lvl-2   :             56 ( 1.12%)
+        lvl-3   :             63 ( 1.26%)
+        lvl-4   :              7 ( 0.14%)
+      deltas    :     4822 (96.42%)
+  revision size : 63812493
+      snapshot  : 10745878 (16.84%)
+        lvl-0   :         804204 ( 1.26%)
+        lvl-1   :        4986508 ( 7.81%)
+        lvl-2   :        2858810 ( 4.48%)
+        lvl-3   :        1958906 ( 3.07%)
+        lvl-4   :         137450 ( 0.22%)
+      deltas    : 53066615 (83.16%)
   
   chunks        :     5001
       0x78 (x)  :     5001 (100.00%)
-  chunks size   : 67810463
-      0x78 (x)  : 67810463 (100.00%)
+  chunks size   : 63812493
+      0x78 (x)  : 63812493 (100.00%)
   
-  avg chain length  :       18
+  avg chain length  :       17
   max chain length  :       45
-  max chain reach   : 25808240
-  compression ratio :       25
+  max chain reach   : 27506743
+  compression ratio :       27
   
   uncompressed data size (min/max/avg) : 346468 / 346472 / 346471
-  full revision size (min/max/avg)     : 201014 / 201116 / 201058
-  inter-snapshot size (min/max/avg)    : 11623 / 173150 / 111222
-      level-1   (min/max/avg)          : 11623 / 173150 / 112799
-      level-2   (min/max/avg)          : 14151 / 19058 / 16604
-  delta size (min/max/avg)             : 10649 / 101790 / 10961
+  full revision size (min/max/avg)     : 201007 / 201077 / 201051
+  inter-snapshot size (min/max/avg)    : 13223 / 172097 / 56809
+      level-1   (min/max/avg)          : 13223 / 172097 / 101765
+      level-2   (min/max/avg)          : 28558 / 85237 / 51050
+      level-3   (min/max/avg)          : 14647 / 41752 / 31093
+      level-4   (min/max/avg)          : 18596 / 20760 / 19635
+  delta size (min/max/avg)             : 10649 / 104791 / 11005
   
-  deltas against prev  : 4207 (86.30%)
-      where prev = p1  : 4164     (98.98%)
+  deltas against prev  : 4171 (86.50%)
+      where prev = p1  : 4127     (98.95%)
       where prev = p2  :    0     ( 0.00%)
-      other            :   43     ( 1.02%)
-  deltas against p1    :  653 (13.39%)
-  deltas against p2    :   15 ( 0.31%)
+      other            :   44     ( 1.05%)
+  deltas against p1    :  633 (13.13%)
+  deltas against p2    :   18 ( 0.37%)
   deltas against other :    0 ( 0.00%)

@@ -661,12 +661,23 @@ def _rawgroups(revlog, p1, p2, cachedelta):
             yield parents
 
     if sparse and parents:
+        snapshots = collections.defaultdict(list) # map: base-rev: snapshot-rev
         # See if we can use an existing snapshot in the parent chains to use as
         # a base for a new intermediate-snapshot
-        bases = []
+        #
+        # search for snapshot in parents delta chain
+        # map: snapshot-level: snapshot-rev
+        parents_snaps = collections.defaultdict(set)
         for p in parents:
-            bases.append(deltachain(p)[0])
-        yield tuple(sorted(bases))
+            for idx, s in enumerate(deltachain(p)):
+                if not revlog.issnapshot(s):
+                    break
+                parents_snaps[idx].add(s)
+        # Test them as possible intermediate snapshot base
+        # We test them from highest to lowest level. High level one are more
+        # likely to result in small delta
+        for idx, snaps in sorted(parents_snaps.items(), reverse=True):
+            yield tuple(sorted(snaps))
         # No suitable base found in the parent chain, search if any full
         # snapshots emitted since parent's base would be a suitable base for an
         # intermediate snapshot.
@@ -675,8 +686,7 @@ def _rawgroups(revlog, p1, p2, cachedelta):
         # revisions instead of starting our own. Without such re-use,
         # topological branches would keep reopening new full chains. Creating
         # more and more snapshot as the repository grow.
-        snapfloor = min(bases) + 1
-        snapshots = collections.defaultdict(list)
+        snapfloor = min(parents_snaps[0]) + 1
         _findsnapshots(revlog, snapshots, snapfloor)
         yield tuple(snapshots[nullrev])
 

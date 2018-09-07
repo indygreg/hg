@@ -719,6 +719,36 @@ def _rawgroups(revlog, p1, p2, cachedelta):
                 parents_snaps[idx].add(s)
         snapfloor = min(parents_snaps[0]) + 1
         _findsnapshots(revlog, snapshots, snapfloor)
+        # search for the highest "unrelated" revision
+        #
+        # Adding snapshots used by "unrelated" revision increase the odd we
+        # reuse an independant, yet better snapshot chain.
+        #
+        # XXX instead of building a set of revisions, we could lazily enumerate
+        # over the chains. That would be more efficient, however we stick to
+        # simple code for now.
+        all_revs = set()
+        for chain in candidate_chains:
+            all_revs.update(chain)
+        other = None
+        for r in revlog.revs(prev, snapfloor):
+            if r not in all_revs:
+                other = r
+                break
+        if other is not None:
+            # To avoid unfair competition, we won't use unrelated intermediate
+            # snapshot that are deeper than the ones from the parent delta
+            # chain.
+            max_depth = max(parents_snaps.keys())
+            chain = deltachain(other)
+            for idx, s in enumerate(chain):
+                if s < snapfloor:
+                    continue
+                if max_depth < idx:
+                    break
+                if not revlog.issnapshot(s):
+                    break
+                parents_snaps[idx].add(s)
         # Test them as possible intermediate snapshot base
         # We test them from highest to lowest level. High level one are more
         # likely to result in small delta
@@ -756,9 +786,10 @@ def _rawgroups(revlog, p1, p2, cachedelta):
         # more and more snapshot as the repository grow.
         yield tuple(snapshots[nullrev])
 
-    # other approach failed try against prev to hopefully save us a
-    # fulltext.
-    yield (prev,)
+    if not sparse:
+        # other approach failed try against prev to hopefully save us a
+        # fulltext.
+        yield (prev,)
 
 class deltacomputer(object):
     def __init__(self, revlog):

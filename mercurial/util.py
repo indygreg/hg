@@ -1472,11 +1472,21 @@ class lrucachedict(object):
         # to walk the linked list and doing this in a loop would be
         # quadratic. So we find the first non-empty node and then
         # walk nodes until we free up enough capacity.
+        #
+        # If we only removed the minimum number of nodes to free enough
+        # cost at insert time, chances are high that the next insert would
+        # also require pruning. This would effectively constitute quadratic
+        # behavior for insert-heavy workloads. To mitigate this, we set a
+        # target cost that is a percentage of the max cost. This will tend
+        # to free more nodes when the high water mark is reached, which
+        # lowers the chances of needing to prune on the subsequent insert.
+        targetcost = int(self.maxcost * 0.75)
+
         n = self._head.prev
         while n.key is _notset:
             n = n.prev
 
-        while len(self) > 1 and self.totalcost > self.maxcost:
+        while len(self) > 1 and self.totalcost > targetcost:
             del self._cache[n.key]
             self.totalcost -= n.cost
             n.markempty()

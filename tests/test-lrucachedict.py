@@ -314,10 +314,10 @@ class testlrucachedict(unittest.TestCase):
         # Inserting new element should free multiple elements so we hit
         # low water mark.
         d.insert('e', 'vd', cost=25)
-        self.assertEqual(len(d), 3)
+        self.assertEqual(len(d), 2)
         self.assertNotIn('a', d)
         self.assertNotIn('b', d)
-        self.assertIn('c', d)
+        self.assertNotIn('c', d)
         self.assertIn('d', d)
         self.assertIn('e', d)
 

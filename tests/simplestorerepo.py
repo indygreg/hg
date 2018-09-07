@@ -712,9 +712,9 @@ def reposetup(ui, repo):
 def featuresetup(ui, supported):
     supported.add(REQUIREMENT)
 
-def newreporequirements(orig, repo):
+def newreporequirements(orig, ui):
     """Modifies default requirements for new repos to use the simple store."""
-    requirements = orig(repo)
+    requirements = orig(ui)
 
     # These requirements are only used to affect creation of the store
     # object. We have our own store. So we can remove them.

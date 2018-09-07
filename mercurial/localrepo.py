@@ -476,7 +476,7 @@ class localrepository(object):
 
         if not self.vfs.isdir():
             if create:
-                self.requirements = newreporequirements(self)
+                self.requirements = newreporequirements(self.ui)
 
                 if not self.wvfs.exists():
                     self.wvfs.makedirs()
@@ -2402,13 +2402,12 @@ def instance(ui, path, create, intents=None):
 def islocal(path):
     return True
 
-def newreporequirements(repo):
+def newreporequirements(ui):
     """Determine the set of requirements for a new local repository.
 
     Extensions can wrap this function to specify custom requirements for
     new repositories.
     """
-    ui = repo.ui
     requirements = {'revlogv1'}
     if ui.configbool('format', 'usestore'):
         requirements.add('store')
@@ -2444,7 +2443,7 @@ def newreporequirements(repo):
         requirements.discard('generaldelta')
         requirements.add(REVLOGV2_REQUIREMENT)
     # experimental config: format.internal-phase
-    if repo.ui.configbool('format', 'internal-phase'):
+    if ui.configbool('format', 'internal-phase'):
         requirements.add('internal-phase')
 
     return requirements

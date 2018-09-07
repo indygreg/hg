@@ -198,8 +198,8 @@ class requirementformatvariant(formatvariant):
     _requirement = None
 
     @staticmethod
-    def _newreporequirements(repo):
-        return localrepo.newreporequirements(repo)
+    def _newreporequirements(ui):
+        return localrepo.newreporequirements(ui)
 
     @classmethod
     def fromrepo(cls, repo):
@@ -209,7 +209,7 @@ class requirementformatvariant(formatvariant):
     @classmethod
     def fromconfig(cls, repo):
         assert cls._requirement is not None
-        return cls._requirement in cls._newreporequirements(repo)
+        return cls._requirement in cls._newreporequirements(repo.ui)
 
 @registerformatvariant
 class fncache(requirementformatvariant):
@@ -751,7 +751,7 @@ def upgraderepo(ui, repo, run=False, optimize=None):
 
     # FUTURE there is potentially a need to control the wanted requirements via
     # command arguments or via an extension hook point.
-    newreqs = localrepo.newreporequirements(repo)
+    newreqs = localrepo.newreporequirements(repo.ui)
     newreqs.update(preservedrequirements(repo))
 
     noremovereqs = (repo.requirements - newreqs -

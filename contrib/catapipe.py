@@ -29,9 +29,9 @@ understand.
 from __future__ import absolute_import, print_function
 
 import argparse
-import datetime
 import json
 import os
+import timeit
 
 _TYPEMAP = {
     'START': 'B',
@@ -39,6 +39,10 @@ _TYPEMAP = {
 }
 
 _threadmap = {}
+
+# Timeit already contains the whole logic about which timer to use based on
+# Python version and OS
+timer = timeit.default_timer
 
 def main():
     parser = argparse.ArgumentParser()
@@ -55,12 +59,12 @@ def main():
     try:
         with open(fn) as f, open(args.output, 'w') as out:
             out.write('[\n')
-            start = datetime.datetime.now()
+            start = timer()
             while True:
                 ev = f.readline().strip()
                 if not ev:
                     continue
-                now = datetime.datetime.now()
+                now = timer()
                 if args.debug:
                     print(ev)
                 verb, session, label = ev.split(' ', 2)

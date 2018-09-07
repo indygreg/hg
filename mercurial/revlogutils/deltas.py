@@ -711,8 +711,9 @@ def _rawgroups(revlog, p1, p2, cachedelta):
         # search for snapshot in parents delta chain
         # map: snapshot-level: snapshot-rev
         parents_snaps = collections.defaultdict(set)
-        for p in parents:
-            for idx, s in enumerate(deltachain(p)):
+        candidate_chains = [deltachain(p) for p in parents]
+        for chain in candidate_chains:
+            for idx, s in enumerate(chain):
                 if not revlog.issnapshot(s):
                     break
                 parents_snaps[idx].add(s)

@@ -122,6 +122,8 @@ show traceback for ImportError of hgext.name if devel.debug.extensions is set
   debug.extensions: > remaining aftercallbacks completed in * (glob)
   debug.extensions: - loading extension registration objects
   debug.extensions: > extension registration object loading took * (glob)
+  debug.extensions: > extension baddocext take a total of * to load (glob)
+  debug.extensions: > extension gpg take a total of * to load (glob)
   debug.extensions: extension loading complete
 #endif
 

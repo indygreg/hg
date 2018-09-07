@@ -68,6 +68,7 @@ Test extension setup timings
   debug.extensions: > remaining aftercallbacks completed in * (glob)
   debug.extensions: - loading extension registration objects
   debug.extensions: > extension registration object loading took * (glob)
+  debug.extensions: > extension foobar take a total of * to load (glob)
   debug.extensions: extension loading complete
   debug.extensions: loading additional extensions
   debug.extensions: - processing 1 entries

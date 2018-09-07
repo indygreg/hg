@@ -166,7 +166,7 @@ def _validatetables(ui, mod):
             _rejectunicode(t, o._table)
     _validatecmdtable(ui, getattr(mod, 'cmdtable', {}))
 
-def load(ui, name, path, log=lambda *a: None):
+def load(ui, name, path, log=lambda *a: None, loadingtime=None):
     if name.startswith('hgext.') or name.startswith('hgext/'):
         shortname = name[6:]
     else:
@@ -180,6 +180,8 @@ def load(ui, name, path, log=lambda *a: None):
     with util.timedcm('load extension %r', shortname) as stats:
         mod = _importext(name, path, bind(_reportimporterror, ui))
     log('  > %r extension loaded in %s\n', shortname, stats)
+    if loadingtime is not None:
+        loadingtime[shortname] += stats.elapsed
 
     # Before we do anything with the extension, check against minimum stated
     # compatibility. This gives extension authors a mechanism to have their
@@ -237,6 +239,7 @@ def loadall(ui, whitelist=None):
             msg % values, label='debug.extensions')
     else:
         log = lambda *a, **kw: None
+    loadingtime = collections.defaultdict(int)
     result = ui.configitems("extensions")
     if whitelist is not None:
         result = [(k, v) for (k, v) in result if k in whitelist]
@@ -252,7 +255,7 @@ def loadall(ui, whitelist=None):
                     _disabledextensions[name] = path[1:]
                     continue
             try:
-                load(ui, name, path, log)
+                load(ui, name, path, log, loadingtime)
             except Exception as inst:
                 msg = stringutil.forcebytestr(inst)
                 if path:
@@ -292,6 +295,7 @@ def loadall(ui, whitelist=None):
                     log('    - the %r extension uisetup failed\n', name)
                     broken.add(name)
             log('  > uisetup for %r took %s\n', name, stats)
+            loadingtime[name] += stats.elapsed
     log('> all uisetup took %s\n', alluisetupstats)
 
     log('- executing extsetup hooks\n')
@@ -305,6 +309,7 @@ def loadall(ui, whitelist=None):
                     log('    - the %r extension extsetup failed\n', name)
                     broken.add(name)
             log('  > extsetup for %r took %s\n', name, stats)
+            loadingtime[name] += stats.elapsed
     log('> all extsetup took %s\n', allextetupstats)
 
     for name in broken:
@@ -360,6 +365,12 @@ def loadall(ui, whitelist=None):
     with util.timedcm('load registration objects') as stats:
         _loadextra(ui, newindex, extraloaders)
     log('> extension registration object loading took %s\n', stats)
+
+    # Report per extension loading time (except reposetup)
+    for name in sorted(loadingtime):
+        extension_msg = '> extension %s take a total of %s to load\n'
+        log(extension_msg, name, util.timecount(loadingtime[name]))
+
     log('extension loading complete\n')
 
 def _loadextra(ui, newindex, extraloaders):

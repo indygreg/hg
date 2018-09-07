@@ -658,6 +658,19 @@ def _refinedgroups(revlog, p1, p2, cachedelta):
             if base == nullrev:
                 break
             good = yield (base,)
+        # refine snapshot up
+        #
+        # XXX the _findsnapshots call can be expensive and is "duplicated" with
+        # the one done in `_rawgroups`. Once we start working on performance,
+        # we should make the two logics share this computation.
+        snapshots = collections.defaultdict(list)
+        _findsnapshots(revlog, snapshots, good + 1)
+        previous = None
+        while good != previous:
+            previous = good
+            children = tuple(sorted(c for c in snapshots[good]))
+            good = yield children
+
     # we have found nothing
     yield None
 

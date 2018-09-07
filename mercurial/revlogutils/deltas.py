@@ -647,6 +647,17 @@ def _refinedgroups(revlog, p1, p2, cachedelta):
         good = yield candidates
         if good is not None:
             break
+
+    # if we have a refinable value, try to refine it
+    if good is not None and good not in (p1, p2) and revlog.issnapshot(good):
+        # refine snapshot down
+        previous = None
+        while previous != good:
+            previous = good
+            base = revlog.deltaparent(good)
+            if base == nullrev:
+                break
+            good = yield (base,)
     # we have found nothing
     yield None
 

@@ -67,6 +67,18 @@ class testlrucachedict(unittest.TestCase):
         for key in ('a', 'b'):
             self.assertIn(key, d)
 
+    def testget(self):
+        d = util.lrucachedict(4)
+        d['a'] = 'va'
+        d['b'] = 'vb'
+        d['c'] = 'vc'
+
+        self.assertIsNone(d.get('missing'))
+        self.assertEqual(list(d), ['c', 'b', 'a'])
+
+        self.assertEqual(d.get('a'), 'va')
+        self.assertEqual(list(d), ['a', 'c', 'b'])
+
     def testcopypartial(self):
         d = util.lrucachedict(4)
         d.insert('a', 'va', cost=4)

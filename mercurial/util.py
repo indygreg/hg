@@ -1332,7 +1332,7 @@ class lrucachedict(object):
 
     def get(self, k, default=None):
         try:
-            return self._cache[k].value
+            return self.__getitem__(k)
         except KeyError:
             return default
 

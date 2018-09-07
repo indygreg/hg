@@ -1209,7 +1209,7 @@ class _lrucachenode(object):
     Holds a reference to nodes on either side as well as a key-value
     pair for the dictionary entry.
     """
-    __slots__ = (u'next', u'prev', u'key', u'value')
+    __slots__ = (u'next', u'prev', u'key', u'value', u'cost')
 
     def __init__(self):
         self.next = None
@@ -1217,10 +1217,13 @@ class _lrucachenode(object):
 
         self.key = _notset
         self.value = None
+        self.cost = 0
 
     def markempty(self):
         """Mark the node as emptied."""
         self.key = _notset
+        self.value = None
+        self.cost = 0
 
 class lrucachedict(object):
     """Dict that caches most recent accesses and sets.
@@ -1233,6 +1236,10 @@ class lrucachedict(object):
     we recycle head.prev and make it the new head. Cache accesses result in
     the node being moved to before the existing head and being marked as the
     new head node.
+
+    Items in the cache can be inserted with an optional "cost" value. This is
+    simply an integer that is specified by the caller. The cache can be queried
+    for the total cost of all items presently in the cache.
     """
     def __init__(self, max):
         self._cache = {}
@@ -1242,6 +1249,7 @@ class lrucachedict(object):
         head.next = head
         self._size = 1
         self.capacity = max
+        self.totalcost = 0
 
     def __len__(self):
         return len(self._cache)
@@ -1261,11 +1269,15 @@ class lrucachedict(object):
         self._movetohead(node)
         return node.value
 
-    def __setitem__(self, k, v):
+    def insert(self, k, v, cost=0):
+        """Insert a new item in the cache with optional cost value."""
         node = self._cache.get(k)
         # Replace existing value and mark as newest.
         if node is not None:
+            self.totalcost -= node.cost
             node.value = v
+            node.cost = cost
+            self.totalcost += cost
             self._movetohead(node)
             return
 
@@ -1277,17 +1289,24 @@ class lrucachedict(object):
 
         # At capacity. Kill the old entry.
         if node.key is not _notset:
+            self.totalcost -= node.cost
             del self._cache[node.key]
 
         node.key = k
         node.value = v
+        node.cost = cost
+        self.totalcost += cost
         self._cache[k] = node
         # And mark it as newest entry. No need to adjust order since it
         # is already self._head.prev.
         self._head = node
 
+    def __setitem__(self, k, v):
+        self.insert(k, v)
+
     def __delitem__(self, k):
         node = self._cache.pop(k)
+        self.totalcost -= node.cost
         node.markempty()
 
         # Temporarily mark as newest item before re-adjusting head to make
@@ -1306,6 +1325,7 @@ class lrucachedict(object):
     def clear(self):
         n = self._head
         while n.key is not _notset:
+            self.totalcost -= n.cost
             n.markempty()
             n = n.next
 
@@ -1336,7 +1356,7 @@ class lrucachedict(object):
         # We could potentially skip the first N items when decreasing capacity.
         # But let's keep it simple unless it is a performance problem.
         for i in range(len(self._cache)):
-            result[n.key] = n.value
+            result.insert(n.key, n.value, cost=n.cost)
             n = n.prev
 
         return result
@@ -1359,6 +1379,7 @@ class lrucachedict(object):
 
         # And remove it from the cache and mark it as empty.
         del self._cache[n.key]
+        self.totalcost -= n.cost
         n.markempty()
 
         return key, value

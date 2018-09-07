@@ -1904,6 +1904,11 @@ def perflrucache(ui, size=4, gets=10000, sets=10000, mixed=10000,
     for i in xrange(sets):
         setseq.append(random.randint(0, sys.maxint))
 
+    def doinserts():
+        d = util.lrucachedict(size)
+        for v in setseq:
+            d.insert(v, v)
+
     def dosets():
         d = util.lrucachedict(size)
         for v in setseq:
@@ -1935,6 +1940,7 @@ def perflrucache(ui, size=4, gets=10000, sets=10000, mixed=10000,
     benches = [
         (doinit, b'init'),
         (dogets, b'gets'),
+        (doinserts, b'inserts'),
         (dosets, b'sets'),
         (domixed, b'mixed')
     ]

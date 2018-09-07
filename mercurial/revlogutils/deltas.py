@@ -589,7 +589,7 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
     tested = set([nullrev])
     candidates = _refinedgroups(revlog, p1, p2, cachedelta)
     while True:
-        temptative = next(candidates)
+        temptative = candidates.send(good)
         if temptative is None:
             break
         group = []
@@ -618,8 +618,6 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
             #      impacting performances. Some bounding or slicing mecanism
             #      would help to reduce this impact.
             good = yield tuple(group)
-        if good is not None:
-            break
     yield None
 
 def _findsnapshots(revlog, cache, start_rev):

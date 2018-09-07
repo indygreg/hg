@@ -9,6 +9,7 @@
 
 from __future__ import absolute_import
 
+import collections
 import heapq
 import struct
 
@@ -607,7 +608,17 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
                 continue
             group.append(rev)
         if group:
+            # XXX: in the sparse revlog case, group can become large,
+            #      impacting performances. Some bounding or slicing mecanism
+            #      would help to reduce this impact.
             yield tuple(group)
+
+def _findsnapshots(revlog, cache, start_rev):
+    """find snapshot from start_rev to tip"""
+    deltaparent = revlog.deltaparent
+    for rev in revlog.revs(start_rev):
+        if deltaparent(rev) == nullrev:
+            cache[nullrev].append(rev)
 
 def _rawgroups(revlog, p1, p2, cachedelta):
     """Provides group of revision to be tested as delta base
@@ -656,6 +667,18 @@ def _rawgroups(revlog, p1, p2, cachedelta):
         for p in parents:
             bases.append(deltachain(p)[0])
         yield tuple(sorted(bases))
+        # No suitable base found in the parent chain, search if any full
+        # snapshots emitted since parent's base would be a suitable base for an
+        # intermediate snapshot.
+        #
+        # It give a chance to reuse a delta chain unrelated to the current
+        # revisions instead of starting our own. Without such re-use,
+        # topological branches would keep reopening new full chains. Creating
+        # more and more snapshot as the repository grow.
+        snapfloor = min(bases) + 1
+        snapshots = collections.defaultdict(list)
+        _findsnapshots(revlog, snapshots, snapfloor)
+        yield tuple(snapshots[nullrev])
 
     # other approach failed try against prev to hopefully save us a
     # fulltext.

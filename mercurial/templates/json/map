@@ -1,4 +1,6 @@
+default = 'shortlog'
 mimetype = 'application/json'
+
 filerevision = '\{
   "node": {node|json},
   "path": {file|json},

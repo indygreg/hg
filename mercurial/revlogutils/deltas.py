@@ -577,6 +577,7 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
     """
     # should we try to build a delta?
     if not (len(revlog) and revlog._storedeltachains):
+        yield None
         return
 
     deltalength = revlog.length
@@ -612,6 +613,7 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
             #      impacting performances. Some bounding or slicing mecanism
             #      would help to reduce this impact.
             yield tuple(group)
+    yield None
 
 def _findsnapshots(revlog, cache, start_rev):
     """find snapshot from start_rev to tip"""
@@ -842,7 +844,8 @@ class deltacomputer(object):
         p1r, p2r = revlog.rev(p1), revlog.rev(p2)
         groups = _candidategroups(self.revlog, revinfo.textlen,
                                              p1r, p2r, cachedelta)
-        for candidaterevs in groups:
+        candidaterevs = next(groups)
+        while candidaterevs is not None:
             nominateddeltas = []
             for candidaterev in candidaterevs:
                 candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
@@ -851,6 +854,7 @@ class deltacomputer(object):
             if nominateddeltas:
                 deltainfo = min(nominateddeltas, key=lambda x: x.deltalen)
                 break
+            candidaterevs = next(groups)
 
         if deltainfo is None:
             deltainfo = self._fullsnapshotinfo(fh, revinfo)

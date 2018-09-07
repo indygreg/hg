@@ -582,6 +582,7 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
 
     deltalength = revlog.length
     deltaparent = revlog.deltaparent
+    good = None
 
     deltas_limit = textlen * LIMIT_DELTA2TEXT
 
@@ -612,7 +613,9 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
             # XXX: in the sparse revlog case, group can become large,
             #      impacting performances. Some bounding or slicing mecanism
             #      would help to reduce this impact.
-            yield tuple(group)
+            good = yield tuple(group)
+        if good is not None:
+            break
     yield None
 
 def _findsnapshots(revlog, cache, start_rev):
@@ -847,14 +850,20 @@ class deltacomputer(object):
         candidaterevs = next(groups)
         while candidaterevs is not None:
             nominateddeltas = []
+            if deltainfo is not None:
+                # if we already found a good delta,
+                # challenge it against refined candidates
+                nominateddeltas.append(deltainfo)
             for candidaterev in candidaterevs:
                 candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
                 if isgooddeltainfo(self.revlog, candidatedelta, revinfo):
                     nominateddeltas.append(candidatedelta)
             if nominateddeltas:
                 deltainfo = min(nominateddeltas, key=lambda x: x.deltalen)
-                break
-            candidaterevs = next(groups)
+            if deltainfo is not None:
+                candidaterevs = groups.send(deltainfo.base)
+            else:
+                candidaterevs = next(groups)
 
         if deltainfo is None:
             deltainfo = self._fullsnapshotinfo(fh, revinfo)

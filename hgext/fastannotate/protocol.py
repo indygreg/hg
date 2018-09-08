@@ -14,7 +14,6 @@ from mercurial import (
     error,
     extensions,
     hg,
-    localrepo,
     util,
     wireprotov1peer,
     wireprotov1server,
@@ -221,7 +220,7 @@ def localreposetup(ui, repo):
 
 def clientreposetup(ui, repo):
     _registerwireprotocommand()
-    if isinstance(repo, localrepo.localrepository):
+    if repo.local():
         localreposetup(ui, repo)
     # TODO: this mutates global state, but only if at least one repo
     # has the extension enabled. This is probably bad for hgweb.

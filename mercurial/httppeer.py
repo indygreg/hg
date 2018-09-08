@@ -401,8 +401,8 @@ def parsev1commandresponse(ui, baseurl, requrl, qs, resp, compressible,
     elif version_info == (0, 2):
         # application/mercurial-0.2 always identifies the compression
         # engine in the payload header.
-        elen = struct.unpack('B', resp.read(1))[0]
-        ename = resp.read(elen)
+        elen = struct.unpack('B', util.readexactly(resp, 1))[0]
+        ename = util.readexactly(resp, elen)
         engine = util.compengines.forwiretype(ename)
 
         resp = engine.decompressorreader(resp)

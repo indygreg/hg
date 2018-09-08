@@ -464,6 +464,26 @@ TODO this output is terrible
 
   $ rm -f error.log
 
+Server stops before it sends transfer encoding
+
+  $ hg serve --config badserver.closeaftersendbytes=959 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ cat hg.pid > $DAEMON_PIDS
+
+  $ hg clone http://localhost:$HGPORT/ clone
+  requesting all changes
+  abort: stream ended unexpectedly (got 0 bytes, expected 1)
+  [255]
+
+  $ killdaemons.py $DAEMON_PIDS
+
+  $ tail -4 error.log
+  write(41 from 41) -> (25) Content-Type: application/mercurial-0.2\r\n
+  write(25 from 28) -> (0) Transfer-Encoding: chunke
+  write limit reached; closing socket
+  write(36) -> HTTP/1.1 500 Internal Server Error\r\n
+
+  $ rm -f error.log
+
 Server sends empty HTTP body for getbundle
 
   $ hg serve --config badserver.closeaftersendbytes=964 -p $HGPORT -d --pid-file=hg.pid -E error.log

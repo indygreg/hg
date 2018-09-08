@@ -308,18 +308,11 @@ class lazyancestors(object):
         self._stoprev = stoprev
         self._inclusive = inclusive
 
-        # Initialize data structures for __contains__.
-        # For __contains__, we use a heap rather than a deque because
-        # (a) it minimizes the number of parentrevs calls made
-        # (b) it makes the loop termination condition obvious
-        # Python's heap is a min-heap. Multiply all values by -1 to convert it
-        # into a max-heap.
-        self._containsvisit = [-rev for rev in revs]
-        heapq.heapify(self._containsvisit)
-        if inclusive:
-            self._containsseen = set(revs)
-        else:
-            self._containsseen = set()
+        self._containsseen = set()
+        self._containsiter = _lazyancestorsiter(self._parentrevs,
+                                                self._initrevs,
+                                                self._stoprev,
+                                                self._inclusive)
 
     def __nonzero__(self):
         """False if the set is empty, True otherwise."""
@@ -348,35 +341,29 @@ class lazyancestors(object):
 
     def __contains__(self, target):
         """Test whether target is an ancestor of self._initrevs."""
-        # Trying to do both __iter__ and __contains__ using the same visit
-        # heap and seen set is complex enough that it slows down both. Keep
-        # them separate.
         seen = self._containsseen
         if target in seen:
             return True
+        iter = self._containsiter
+        if iter is None:
+            # Iterator exhausted
+            return False
         # Only integer target is valid, but some callers expect 'None in self'
         # to be False. So we explicitly allow it.
         if target is None:
             return False
 
-        parentrevs = self._parentrevs
-        visit = self._containsvisit
-        stoprev = self._stoprev
-        heappop = heapq.heappop
-        heappush = heapq.heappush
         see = seen.add
-
-        targetseen = False
-
-        while visit and -visit[0] > target and not targetseen:
-            for parent in parentrevs(-heappop(visit)):
-                if parent < stoprev or parent in seen:
-                    continue
-                # We need to make sure we push all parents into the heap so
-                # that we leave it in a consistent state for future calls.
-                heappush(visit, -parent)
-                see(parent)
-                if parent == target:
-                    targetseen = True
-
-        return targetseen
+        try:
+            while True:
+                rev = next(iter)
+                see(rev)
+                if rev == target:
+                    return True
+                if rev < target:
+                    return False
+        except StopIteration:
+            # Set to None to indicate fast-path can be used next time, and to
+            # free up memory.
+            self._containsiter = None
+            return False

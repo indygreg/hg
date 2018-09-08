@@ -1,3 +1,5 @@
+#require no-windows
+
 Dummy extension simulating unsafe long running command
   $ cat > sleepext.py <<EOF
   > import itertools

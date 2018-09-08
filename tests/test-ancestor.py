@@ -215,6 +215,11 @@ def test_lazyancestors():
     s = genlazyancestors([11, 13], stoprev=6, inclusive=True)
     printlazyancestors(s, [11, 13, 7, 9, 8, 3, 6, 4, 1, -1, 0])
 
+    # Test with stoprev >= min(initrevs)
+    s = genlazyancestors([11, 13], stoprev=11, inclusive=True)
+    printlazyancestors(s, [11, 13, 7, 9, 8, 3, 6, 4, 1, -1, 0])
+    s = genlazyancestors([11, 13], stoprev=12, inclusive=True)
+    printlazyancestors(s, [11, 13, 7, 9, 8, 3, 6, 4, 1, -1, 0])
 
 # The C gca algorithm requires a real repo. These are textual descriptions of
 # DAGs that have been known to be problematic, and, optionally, known pairs

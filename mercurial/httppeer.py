@@ -84,9 +84,10 @@ def _wraphttpresponse(resp):
             except httplib.IncompleteRead as e:
                 # e.expected is an integer if length known or None otherwise.
                 if e.expected:
+                    got = len(e.partial)
+                    total = e.expected + got
                     msg = _('HTTP request error (incomplete response; '
-                            'expected %d bytes got %d)') % (e.expected,
-                                                           len(e.partial))
+                            'expected %d bytes got %d)') % (total, got)
                 else:
                     msg = _('HTTP request error (incomplete response)')
 

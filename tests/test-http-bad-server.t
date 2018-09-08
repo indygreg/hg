@@ -275,7 +275,7 @@ Server sends an incomplete capabilities response body
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
-  abort: HTTP request error (incomplete response; expected 416 bytes got 20)
+  abort: HTTP request error (incomplete response; expected 436 bytes got 20)
   (this may be an intermittent network failure; if the error persists, consider contacting the network or server operator)
   [255]
 
@@ -600,7 +600,7 @@ Server sends partial bundle2 header magic
 
   $ hg clone http://localhost:$HGPORT/ clone
   requesting all changes
-  abort: HTTP request error (incomplete response; expected 1 bytes got 3)
+  abort: HTTP request error (incomplete response; expected 4 bytes got 3)
   (this may be an intermittent network failure; if the error persists, consider contacting the network or server operator)
   [255]
 
@@ -624,7 +624,7 @@ Server sends incomplete bundle2 stream params length
 
   $ hg clone http://localhost:$HGPORT/ clone
   requesting all changes
-  abort: HTTP request error (incomplete response; expected 1 bytes got 3)
+  abort: HTTP request error (incomplete response; expected 4 bytes got 3)
   (this may be an intermittent network failure; if the error persists, consider contacting the network or server operator)
   [255]
 
@@ -733,7 +733,7 @@ Server stops after bundle2 part payload chunk size
   adding changesets
   transaction abort!
   rollback completed
-  abort: HTTP request error (incomplete response; expected 459 bytes got 7)
+  abort: HTTP request error (incomplete response; expected 466 bytes got 7)
   (this may be an intermittent network failure; if the error persists, consider contacting the network or server operator)
   [255]
 
@@ -799,7 +799,7 @@ Server stops sending after 0 length payload chunk size
   added 1 changesets with 1 changes to 1 files
   transaction abort!
   rollback completed
-  abort: HTTP request error (incomplete response; expected 23 bytes got 9)
+  abort: HTTP request error (incomplete response; expected 32 bytes got 9)
   (this may be an intermittent network failure; if the error persists, consider contacting the network or server operator)
   [255]
 

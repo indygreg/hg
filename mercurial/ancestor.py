@@ -273,7 +273,7 @@ class lazyancestors(object):
 
         Result does not include the null revision."""
         self._parentrevs = pfunc
-        self._initrevs = revs
+        self._initrevs = revs = [r for r in revs if r >= stoprev]
         self._stoprev = stoprev
         self._inclusive = inclusive
 

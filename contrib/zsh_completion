@@ -422,7 +422,9 @@ _hg_gitlike_opts=(
 _hg_diff_opts=(
   $_hg_gitlike_opts
   '(--text -a)'{-a,--text}'[treat all files as text]'
-  '--nodates[omit dates from diff headers]')
+  '--binary[generate binary diffs in git mode (default)]'
+  '--nodates[omit dates from diff headers]'
+)
 
 _hg_mergetool_opts=(
   '(--tool -t)'{-t+,--tool=}'[specify merge tool]:merge tool:_hg_merge_tools'
@@ -511,8 +513,8 @@ _hg_cmd_archive() {
 _hg_cmd_backout() {
   _arguments -s -S : $_hg_global_opts $_hg_mergetool_opts $_hg_pat_opts \
     '--merge[merge with old dirstate parent after backout]' \
+    '--no-commit[do not commit]' \
     '(--date -d)'{-d+,--date=}'[record the specified date as commit date]:date' \
-    '--parent[parent to choose when backing out merge]' \
     '(--user -u)'{-u+,--user=}'[record the specified user as committer]:user' \
     '(--rev -r 1)'{-r+,--rev=}'[revision to backout]:revision:_hg_labels' \
     '(--message -m)'{-m+,--message=}'[use <text> as commit message]:text' \
@@ -612,7 +614,6 @@ _hg_cmd_diff() {
   '--noprefix[omit a/ and b/ prefixes from filenames]' \
   '(--show-function -p)'{-p,--show-function}'[show which function each change is in]' \
   '(--change -c)'{-c+,--change=}'[change made by revision]:revision:_hg_labels' \
-  '(--text -a)'{-a,--text}'[treat all files as text]' \
   '--reverse[produce a diff that undoes the changes]' \
   '(--unified -U)'{-U+,--unified=}'[number of lines of context to show]:count' \
   '--stat[output diffstat-style summary of changes]' \
@@ -634,6 +635,7 @@ _hg_cmd_diff() {
 
 _hg_cmd_export() {
   _arguments -s -S : $_hg_global_opts $_hg_diff_opts \
+  '(--bookmark -B)'{-B+,--bookmark=}'[export changes only reachable by given bookmark]:bookmark:_hg_bookmarks' \
   '(--output -o)'{-o+,--output=}'[print output to file with formatted name]:format string' \
   '--switch-parent[diff against the second parent]' \
   '*'{-r+,--rev=}'[revisions to export]:revision:_hg_labels' \
@@ -661,13 +663,16 @@ _hg_cmd_graft() {
   '(--continue -c --abort -a)'{-a,--abort}'[abort interrupted graft]' \
   '(--edit -e)'{-e,--edit}'[invoke editor on commit messages]' \
   '--log[append graft info to log message]' \
+  "--no-commit[don't commit, just apply the changes in working directory]" \
+  '(--force -f)'{-f,--force}'[force graft]' \
   '*:revision:_hg_labels'
 }
 
 _hg_cmd_grep() {
   _arguments -s -S : $_hg_global_opts $_hg_pat_opts \
   '(--print0 -0)'{-0,--print0}'[end fields with NUL]' \
-  '--all[print all revisions with matches]' \
+  '--diff[print all revisions when the term was introduced or removed]' \
+  '(--text -a)'{-a,--text}'[treat all files as text]' \
   '(--follow -f)'{-f,--follow}'[follow changeset history, or file history across copies and renames]' \
   '(--ignore-case -i)'{-i,--ignore-case}'[ignore case when matching]' \
   '(--files-with-matches -l)'{-l,--files-with-matches}'[print only filenames and revisions that match]' \
@@ -691,6 +696,7 @@ _hg_cmd_help() {
   '(--extension -e)'{-e,--extension}'[show only help for extensions]' \
   '(--command -c)'{-c,--command}'[show only help for commands]' \
   '(--keyword -k)'{-k,--keyword}'[show topics matching keyword]' \
+  '*'{-s+,--system=}'[show help for specific platform(s)]:platform:(windows vms plan9 unix)' \
   '*:mercurial help topic:_hg_help_topics'
 }
 
@@ -707,11 +713,11 @@ _hg_cmd_identify() {
 _hg_cmd_import() {
   _arguments -s -S : $_hg_global_opts $_hg_commit_opts \
   '(--strip -p)'{-p+,--strip=}'[directory strip option for patch (default: 1)]:count' \
-  '(--force -f)'{-f,--force}'[skip check for outstanding uncommitted changes]' \
   '--bypass[apply patch without touching the working directory]' \
   '--no-commit[do not commit, just update the working directory]' \
   '--partial[commit even if some hunks fail]' \
   '--exact[abort if patch would apply lossily]' \
+  '--prefix=[apply patch to subdirectory]:directory:_files -/' \
   '--import-branch[use any branch information in patch (implied by --exact)]' \
   '(--date -d)'{-d+,--date=}'[record the specified date as commit date]:date' \
   '(--user -u)'{-u+,--user=}'[record the specified user as committer]:user' \
@@ -744,11 +750,11 @@ _hg_cmd_locate() {
 
 _hg_cmd_log() {
   _arguments -s -S : $_hg_log_opts $_hg_pat_opts \
-  '(--follow --follow-first -f)'{-f,--follow}'[follow changeset history, or file history across copies and renames]' \
-  '(-f --follow)--follow-first[only follow the first parent of merge changesets]' \
+  '(--follow -f)'{-f,--follow}'[follow changeset history, or file history across copies and renames]' \
   '(--copies -C)'{-C,--copies}'[show copied files]' \
   '*'{-k+,--keyword=}'[search for a keyword]:keyword' \
   '*'{-r+,--rev=}'[show the specified revision or revset]:revision:_hg_revrange' \
+  '--removed[include revisions where files were removed]' \
   '(--only-merges -m)'{-m,--only-merges}'[show only merges]' \
   '*'{-P+,--prune=}'[do not display revision or any of its ancestors]:revision:_hg_labels' \
   '*'{-b+,--branch=}'[show changesets within the given named branch]:branch:_hg_branches' \
@@ -766,9 +772,9 @@ _hg_cmd_manifest() {
 
 _hg_cmd_merge() {
   _arguments -s -S : $_hg_global_opts $_hg_mergetool_opts \
-  '(--force -f)'{-f,--force}'[force a merge with outstanding changes]' \
   '(--rev -r 1)'{-r+,--rev=}'[revision to merge]:revision:_hg_mergerevs' \
   '(--preview -P)'{-P,--preview}'[review revisions to merge (no merge is performed)]' \
+  '(- :)--abort[abort the ongoing merge]' \
   ':revision:_hg_mergerevs'
 }
 
@@ -1073,6 +1079,7 @@ _hg_cmd_qgoto() {
   _arguments -s -S : $_hg_global_opts \
   '(--force -f)'{-f,--force}'[overwrite any local changes]' \
   '--keep-changes[tolerate non-conflicting local changes]' \
+  '--no-backup[do not save backup copies of files]' \
   ':patch:_hg_qseries'
 }
 
@@ -1185,6 +1192,7 @@ _hg_cmd_email() {
   '--body[send patches as inline message text (default)]' \
   '(--outgoing -o)'{-o,--outgoing}'[send changes not found in the target repository]' \
   '(--bundle -b)'{-b,--bundle}'[send changes not in target as a binary bundle]' \
+  '(--bookmark -B)'{-B+,--bookmark=}'[send changes only reachable by given bookmark]:bookmark:_hg_bookmarks' \
   '--bundlename=[name of the bundle attachment file (default: bundle)]:name' \
   '*'{-r+,--rev=}'[a revision to send]:revision:_hg_revrange' \
   '--force[run even when remote repository is unrelated (with -b/--bundle)]' \
@@ -1194,6 +1202,7 @@ _hg_cmd_email() {
   '(--attach -a --inline -i)'{-i,--inline}'[send patches as inline attachments]' \
   '*--bcc=[email addresses of blind carbon copy recipients]:email' \
   '*'{-c+,--cc=}'[email addresses of copy recipients]:email' \
+  '--confirm[ask for confirmation before sending]' \
   '(--diffstat -d)'{-d,--diffstat}'[add diffstat output to messages]' \
   '--date=[use the given date as the sending date]:date' \
   '--desc=[use the given file as the series description]:files:_files' \
@@ -1260,6 +1269,8 @@ _hg_cmd_purge() {
   _arguments -s -S : $_hg_global_opts $_hg_pat_opts \
   '(--abort-on-err -a)'{-a,--abort-on-err}'[abort if an error occurs]' \
   '--all[purge ignored files too]' \
+  '--dirs[purge empty directories]' \
+  '--files[purge files]' \
   '(--print -p)'{-p,--print}'[print filenames instead of deleting them]' \
   '(--print0 -0)'{-0,--print0}'[end filenames with NUL, for use with xargs (implies -p/--print)]'
 }

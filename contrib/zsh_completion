@@ -384,7 +384,7 @@ _hg_global_opts=(
     '--cwd=[change working directory]:new working directory:_files -/'
     '(--noninteractive -y)'{-y,--noninteractive}'[do not prompt, automatically pick the first choice for all prompts]'
     '(--verbose -v)'{-v,--verbose}'[enable additional output]'
-    '*--config[set/override config option]:defined config items:_hg_config'
+    '*--config=[set/override config option]:defined config items:_hg_config'
     '(--quiet -q)'{-q,--quiet}'[suppress output]'
     '(--help -h)'{-h,--help}'[display help and exit]'
     '--debug[enable debugging output]'
@@ -401,8 +401,8 @@ _hg_global_opts=(
 )
 
 _hg_pat_opts=(
-  '*'{-I+,--include=}'[include names matching the given patterns]:dir:_files -W $(_hg_cmd root) -/'
-  '*'{-X+,--exclude=}'[exclude names matching the given patterns]:dir:_files -W $(_hg_cmd root) -/')
+  '*'{-I+,--include=}'[include names matching the given patterns]:pattern:_files -W $(_hg_cmd root) -/'
+  '*'{-X+,--exclude=}'[exclude names matching the given patterns]:pattern:_files -W $(_hg_cmd root) -/')
 
 _hg_clone_opts=(
   $_hg_remote_opts
@@ -439,7 +439,7 @@ _hg_ignore_space_opts=(
 )
 
 _hg_template_opts=(
-  '--template[display with template]:template'
+  '(--template -T)'{-T+,--template=}'[display with template]:template'
 )
 
 _hg_log_opts=(
@@ -558,7 +558,7 @@ _hg_cmd_bundle() {
   '(2)*--base[a base changeset assumed to be available at the destination]:revision:_hg_labels' \
   '*'{-b+,--branch=}'[a specific branch you would like to bundle]:branch:_hg_branches' \
   '*'{-r+,--rev=}'[a changeset intended to be added to the destination]:revision:_hg_labels' \
-  '--all[bundle all changesets in the repository]' \
+  '(--all -a)'{-a,--all}'[bundle all changesets in the repository]' \
   '--type[bundle compression type to use (default: bzip2)]:bundle type' \
   ':output file:_files' \
   ':destination repository:_files -/'
@@ -567,7 +567,7 @@ _hg_cmd_bundle() {
 _hg_cmd_cat() {
   _arguments -s -S : $_hg_global_opts $_hg_pat_opts \
   '(--output -o)'{-o+,--output=}'[print output to file with formatted name]:format string' \
-  '(--rev -r)'{-r+,--rev=}'[revision]:revision:_hg_labels' \
+  '(--rev -r)'{-r+,--rev=}'[print the given revision]:revision:_hg_labels' \
   '--decode[apply any matching decode filter]' \
   '*:file:_hg_files'
 }
@@ -575,7 +575,7 @@ _hg_cmd_cat() {
 _hg_cmd_clone() {
   _arguments -s -S : $_hg_global_opts $_hg_clone_opts \
   '*'{-r+,--rev=}'[do not clone everything, but include this changeset and its ancestors]:revision' \
-  '(--updaterev -u)'{-u+,--updaterev=}'[revision, tag or branch to check out]:revision' \
+  '(--updaterev -u)'{-u+,--updaterev=}'[revision, tag, or branch to check out]:revision' \
   '*'{-b+,--branch=}"[do not clone everything, but include this branch's changesets and their ancestors]:branch" \
   ':source repository:_hg_remote' \
   ':destination:_hg_clone_dest'
@@ -642,7 +642,7 @@ _hg_cmd_export() {
 
 _hg_cmd_files() {
   _arguments -s -S : $_hg_global_opts $_hg_pat_opts $_hg_subrepos_opts \
-  '(--rev -r)'{-r+,--rev=}'[search the repository as it is in REV]:revision:_hg_labels' \
+  '(--rev -r)'{-r+,--rev=}'[search the repository as it is in revision]:revision:_hg_labels' \
   '(--print0 -0)'{-0,--print0}'[end filenames with NUL, for use with xargs]' \
   '*:file:_hg_files'
 }
@@ -666,15 +666,15 @@ _hg_cmd_graft() {
 
 _hg_cmd_grep() {
   _arguments -s -S : $_hg_global_opts $_hg_pat_opts \
-  '(--print0 -0)'{-0,--print0}'[end filenames with NUL]' \
+  '(--print0 -0)'{-0,--print0}'[end fields with NUL]' \
   '--all[print all revisions with matches]' \
-  '(--follow -f)'{-f,--follow}'[follow changeset or file history]' \
+  '(--follow -f)'{-f,--follow}'[follow changeset history, or file history across copies and renames]' \
   '(--ignore-case -i)'{-i,--ignore-case}'[ignore case when matching]' \
-  '(--files-with-matches -l)'{-l,--files-with-matches}'[print only filenames and revs that match]' \
+  '(--files-with-matches -l)'{-l,--files-with-matches}'[print only filenames and revisions that match]' \
   '(--line-number -n)'{-n,--line-number}'[print matching line numbers]' \
-  '*'{-r+,--rev=}'[search in given revision range]:revision:_hg_revrange' \
-  '(--user -u)'{-u,--user}'[print user who committed change]' \
-  '(--date -d)'{-d,--date}'[print date of a changeset]' \
+  '*'{-r+,--rev=}'[only search files changed within revision range]:revision:_hg_revrange' \
+  '(--user -u)'{-u,--user}'[list the author (long with -v)]' \
+  '(--date -d)'{-d,--date}'[list the date (short with -q)]' \
   '1:search pattern:' \
   '*:files:_hg_files'
 }
@@ -683,7 +683,7 @@ _hg_cmd_heads() {
   _arguments -s -S : $_hg_global_opts $_hg_template_opts \
   '(--topo -t)'{-t,--topo}'[show topological heads only]' \
   '(--closed -c)'{-c,--closed}'[show normal and closed branch heads]' \
-  '(--rev -r)'{-r+,--rev=}'[show only heads which are descendants of rev]:revision:_hg_labels'
+  '(--rev -r)'{-r+,--rev=}'[show only heads which are descendants of revision]:revision:_hg_labels'
 }
 
 _hg_cmd_help() {
@@ -696,7 +696,7 @@ _hg_cmd_help() {
 
 _hg_cmd_identify() {
   _arguments -s -S : $_hg_global_opts $_hg_remote_opts \
-  '(--rev -r)'{-r+,--rev=}'[identify the specified rev]:revision:_hg_labels' \
+  '(--rev -r)'{-r+,--rev=}'[identify the specified revision]:revision:_hg_labels' \
   '(--num -n)'{-n,--num}'[show local revision number]' \
   '(--id -i)'{-i,--id}'[show global revision id]' \
   '(--branch -b)'{-b,--branch}'[show branch]' \
@@ -722,21 +722,21 @@ _hg_cmd_import() {
 _hg_cmd_incoming() {
   _arguments -s -S : $_hg_log_opts $_hg_branch_bmark_opts $_hg_remote_opts \
                      $_hg_subrepos_opts \
-  '(--force -f)'{-f,--force}'[run even when the remote repository is unrelated]' \
+  '(--force -f)'{-f,--force}'[run even if remote repository is unrelated]' \
   '*'{-r+,--rev=}'[a remote changeset intended to be added]:revision:_hg_labels' \
   '(--newest-first -n)'{-n,--newest-first}'[show newest record first]' \
-  '--bundle[file to store the bundles into]:bundle file:_files' \
+  '--bundle=[file to store the bundles into]:bundle file:_files' \
   ':source:_hg_remote'
 }
 
 _hg_cmd_init() {
   _arguments -s -S : $_hg_global_opts $_hg_remote_opts \
-  ':dir:_files -/'
+  ':directory:_files -/'
 }
 
 _hg_cmd_locate() {
   _arguments -s -S : $_hg_global_opts $_hg_pat_opts \
-  '(--rev -r)'{-r+,--rev=}'[search repository as it stood at revision]:revision:_hg_labels' \
+  '(--rev -r)'{-r+,--rev=}'[search the repository as it is in revision]:revision:_hg_labels' \
   '(--print0 -0)'{-0,--print0}'[end filenames with NUL, for use with xargs]' \
   '(--fullpath -f)'{-f,--fullpath}'[print complete paths from the filesystem root]' \
   '*:search pattern:_hg_files'
@@ -744,7 +744,7 @@ _hg_cmd_locate() {
 
 _hg_cmd_log() {
   _arguments -s -S : $_hg_log_opts $_hg_pat_opts \
-  '(--follow --follow-first -f)'{-f,--follow}'[follow changeset or history]' \
+  '(--follow --follow-first -f)'{-f,--follow}'[follow changeset history, or file history across copies and renames]' \
   '(-f --follow)--follow-first[only follow the first parent of merge changesets]' \
   '(--copies -C)'{-C,--copies}'[show copied files]' \
   '*'{-k+,--keyword=}'[search for a keyword]:keyword' \
@@ -783,7 +783,7 @@ _hg_cmd_outgoing() {
 
 _hg_cmd_parents() {
   _arguments -s -S : $_hg_global_opts $_hg_template_opts \
-  '(--rev -r)'{-r+,--rev=}'[show parents of the specified rev]:revision:_hg_labels' \
+  '(--rev -r)'{-r+,--rev=}'[show parents of the specified revision]:revision:_hg_labels' \
   ':last modified file:_hg_files'
 }
 
@@ -859,7 +859,7 @@ _hg_cmd_revert() {
 
   _arguments -s -S : $_hg_global_opts $_hg_pat_opts $_hg_dryrun_opts \
   '(--all -a :)'{-a,--all}'[revert all changes when no arguments given]' \
-  '(--rev -r)'{-r+,--rev=}'[revision to revert to]:revision:_hg_labels' \
+  '(--rev -r)'{-r+,--rev=}'[revert to the specified revision]:revision:_hg_labels' \
   '(--no-backup -C)'{-C,--no-backup}'[do not save backup copies of files]' \
   '(--date -d)'{-d+,--date=}'[tipmost revision matching date]:date' \
   '(--interactive -i)'{-i,--interactive}'[interactively select the changes]' \
@@ -923,7 +923,7 @@ _hg_cmd_status() {
   '(--deleted -d)'{-d,--deleted}'[show only deleted (but tracked) files]' \
   '(--clean -c)'{-c,--clean}'[show only files without changes]' \
   '(--unknown -u)'{-u,--unknown}'[show only unknown (not tracked) files]' \
-  '(--ignored -i)'{-i,--ignored}'[show ignored files]' \
+  '(--ignored -i)'{-i,--ignored}'[show only ignored files]' \
   '(--no-status -n)'{-n,--no-status}'[hide status prefix]' \
   '(--copies -C)'{-C,--copies}'[show source of copied files]' \
   '(--print0 -0)'{-0,--print0}'[end filenames with NUL, for use with xargs]' \
@@ -957,7 +957,7 @@ _hg_cmd_tip() {
 
 _hg_cmd_unbundle() {
   _arguments -s -S : $_hg_global_opts \
-  '(--update -u)'{-u,--update}'[update to new tip if changesets were unbundled]' \
+  '(--update -u)'{-u,--update}'[update to new branch head if changesets were unbundled]' \
   '*:files:_files'
 }
 
@@ -1091,8 +1091,8 @@ _hg_cmd_qheader() {
 
 _hg_cmd_qimport() {
   _arguments -s -S : $_hg_global_opts $_hg_gitlike_opts \
-  '(--existing -e)'{-e,--existing}'[import file in patch dir]' \
-  '(--name -n 2)'{-n+,--name}'[patch file name]:name' \
+  '(--existing -e)'{-e,--existing}'[import file in patch directory]' \
+  '(--name -n 2)'{-n+,--name=}'[name of patch file]:name' \
   '(--force -f)'{-f,--force}'[overwrite existing files]' \
   '*'{-r+,--rev=}'[place existing revisions under mq control]:revision:_hg_revrange' \
   '(--push -P)'{-P,--push}'[qpush after importing]' \
@@ -1111,7 +1111,7 @@ _hg_cmd_qnext() {
 _hg_cmd_qpop() {
   _arguments -s -S : $_hg_global_opts \
   '(--all -a :)'{-a,--all}'[pop all patches]' \
-  '(--force -f)'{-f,--force}'[forget any local changes]' \
+  '(--force -f)'{-f,--force}'[forget any local changes to patched files]' \
   '--keep-changes[tolerate non-conflicting local changes]' \
   '--no-backup[do not save backup copies of files]' \
   ':patch:_hg_qapplied'
@@ -1125,7 +1125,7 @@ _hg_cmd_qpush() {
   _arguments -s -S : $_hg_global_opts \
   '(--all -a :)'{-a,--all}'[apply all patches]' \
   '(--list -l)'{-l,--list}'[list patch name in commit text]' \
-  '(--force -f)'{-f,--force}'[apply if the patch has rejects]' \
+  '(--force -f)'{-f,--force}'[apply on top of local changes]' \
   '(--exact -e)'{-e,--exact}'[apply the target patch to its recorded parent]' \
   '--move[reorder patch series and apply only the patch]' \
   '--keep-changes[tolerate non-conflicting local changes]' \
@@ -1135,7 +1135,7 @@ _hg_cmd_qpush() {
 
 _hg_cmd_qrefresh() {
   _arguments -s -S : $_hg_global_opts $_hg_pat_opts $_hg_commit_opts $_hg_date_user_opts $_hg_gitlike_opts \
-  '(--short -s)'{-s,--short}'[short refresh]' \
+  '(--short -s)'{-s,--short}'[refresh only files already in the patch and specified files]' \
   '*:files:_hg_files'
 }
 
@@ -1150,7 +1150,7 @@ _hg_cmd_qselect() {
   '(--none -n :)'{-n,--none}'[disable all guards]' \
   '(--series -s :)'{-s,--series}'[list all guards in series file]' \
   '--pop[pop to before first guarded applied patch]' \
-  '--reapply[pop and reapply patches]' \
+  '--reapply[pop, then reapply patches]' \
   '*:guards:_hg_qguards'
 }
 
@@ -1171,10 +1171,10 @@ _hg_cmd_qtop() {
 _hg_cmd_strip() {
   _arguments -s -S : $_hg_global_opts \
   '(--force -f)'{-f,--force}'[force removal of changesets, discard uncommitted changes (no backup)]' \
-  '--no-backup[no backups]' \
+  '--no-backup[do not save backup bundle]' \
   '(--keep -k)'{-k,--keep}'[do not modify working directory during strip]' \
-  '*'{-B+,--bookmark=}'[remove revs only reachable from given bookmark]:bookmark:_hg_bookmarks' \
-  '*'{-r+,--rev=}'[revision]:revision:_hg_labels' \
+  '*'{-B+,--bookmark=}'[remove revisions only reachable from given bookmark]:bookmark:_hg_bookmarks' \
+  '*'{-r+,--rev=}'[strip specified revision]:revision:_hg_labels' \
   '*:revision:_hg_labels'
 }
 
@@ -1185,8 +1185,8 @@ _hg_cmd_email() {
   '--body[send patches as inline message text (default)]' \
   '(--outgoing -o)'{-o,--outgoing}'[send changes not found in the target repository]' \
   '(--bundle -b)'{-b,--bundle}'[send changes not in target as a binary bundle]' \
-  '--bundlename[name of the bundle attachment file (default: bundle)]:' \
-  '*'{-r+,--rev=}'[search in given revision range]:revision:_hg_revrange' \
+  '--bundlename=[name of the bundle attachment file (default: bundle)]:name' \
+  '*'{-r+,--rev=}'[a revision to send]:revision:_hg_revrange' \
   '--force[run even when remote repository is unrelated (with -b/--bundle)]' \
   '*--base=[a base changeset to specify instead of a destination (with -b/--bundle)]:revision:_hg_labels' \
   '--intro[send an introduction email for a single patch]' \
@@ -1243,7 +1243,7 @@ _hg_cmd_convert() {
 _arguments -s -S : $_hg_global_opts \
   '(--source-type -s)'{-s+,--source-type=}'[source repository type]:type:(hg cvs darcs git svn mtn gnuarch bzr p4)' \
   '(--dest-type -d)'{-d+,--dest-type=}'[destination repository type]:type:(hg svn)' \
-  '*'{-r+,--rev=}'[import up to target revision]:revision' \
+  '*'{-r+,--rev=}'[import up to source revision]:revision' \
   '(--authormap -A)'{-A+,--authormap=}'[remap usernames using this file]:file:_files' \
   '--filemap=[remap file names using contents of file]:file:_files' \
   '--full[apply filemap changes by converting all files again]' \

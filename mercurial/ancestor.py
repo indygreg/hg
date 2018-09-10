@@ -281,12 +281,13 @@ def _lazyancestorsiter(parentrevs, initrevs, stoprev, inclusive):
 
     while visit:
         current = -nextitem(visit)
-        if current >= stoprev:
-            yield current
-            for parent in parentrevs(current):
-                if parent not in seen:
-                    schedule(visit, -parent)
-                    see(parent)
+        if current < stoprev:
+            break
+        yield current
+        for parent in parentrevs(current):
+            if parent not in seen:
+                schedule(visit, -parent)
+                see(parent)
 
 class lazyancestors(object):
     def __init__(self, pfunc, revs, stoprev=0, inclusive=False):

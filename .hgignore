@@ -19,6 +19,7 @@ syntax: glob
 *.zip
 \#*\#
 .\#*
+tests/artifacts/cache/big-file-churn.hg
 tests/.coverage*
 tests/.testtimes*
 tests/.hypothesis

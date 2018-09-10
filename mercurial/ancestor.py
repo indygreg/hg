@@ -259,6 +259,37 @@ class incrementalmissingancestors(object):
         missing.reverse()
         return missing
 
+# Extracted from lazyancestors.__iter__ to avoid a reference cycle
+def _lazyancestorsiter(parentrevs, initrevs, stoprev, inclusive):
+    seen = {nullrev}
+    revs = initrevs
+
+    schedule = heapq.heappush
+    nextitem = heapq.heappop
+    see = seen.add
+
+    if inclusive:
+        visit = [-r for r in revs]
+        seen.update(revs)
+        heapq.heapify(visit)
+    else:
+        visit = []
+        heapq.heapify(visit)
+        for r in revs:
+            for parent in parentrevs(r):
+                if parent not in seen:
+                    schedule(visit, -parent)
+                    see(parent)
+
+    while visit:
+        current = -nextitem(visit)
+        if current >= stoprev:
+            yield current
+            for parent in parentrevs(current):
+                if parent not in seen:
+                    schedule(visit, -parent)
+                    see(parent)
+
 class lazyancestors(object):
     def __init__(self, pfunc, revs, stoprev=0, inclusive=False):
         """Create a new object generating ancestors for the given revs. Does
@@ -311,36 +342,9 @@ class lazyancestors(object):
 
         If inclusive is True, the source revisions are also yielded. The
         reverse revision number order is still enforced."""
-        seen = {nullrev}
-        revs = self._initrevs
-
-        parentrevs = self._parentrevs
-        stoprev = self._stoprev
-        schedule = heapq.heappush
-        nextitem = heapq.heappop
-        see = seen.add
-
-        if self._inclusive:
-            visit = [-r for r in revs]
-            seen.update(revs)
-            heapq.heapify(visit)
-        else:
-            visit = []
-            heapq.heapify(visit)
-            for r in revs:
-                for parent in parentrevs(r):
-                    if parent not in seen:
-                        schedule(visit, -parent)
-                        see(parent)
-
-        while visit:
-            current = -nextitem(visit)
-            if current >= stoprev:
-                yield current
-                for parent in parentrevs(current):
-                    if parent not in seen:
-                        schedule(visit, -parent)
-                        see(parent)
+        for rev in _lazyancestorsiter(self._parentrevs, self._initrevs,
+                                      self._stoprev, self._inclusive):
+            yield rev
 
     def __contains__(self, target):
         """Test whether target is an ancestor of self._initrevs."""

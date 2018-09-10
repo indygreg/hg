@@ -264,6 +264,7 @@ def _lazyancestorsiter(parentrevs, initrevs, stoprev, inclusive):
     seen = {nullrev}
     heappush = heapq.heappush
     heappop = heapq.heappop
+    heapreplace = heapq.heapreplace
     see = seen.add
 
     if inclusive:
@@ -294,8 +295,7 @@ def _lazyancestorsiter(parentrevs, initrevs, stoprev, inclusive):
             if current - p1 == 1:
                 visit[0] = -p1
             else:
-                heappop(visit)
-                heappush(visit, -p1)
+                heapreplace(visit, -p1)
             see(p1)
         else:
             heappop(visit)

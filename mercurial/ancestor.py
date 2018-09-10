@@ -274,20 +274,26 @@ def _lazyancestorsiter(parentrevs, initrevs, stoprev, inclusive):
         visit = []
         heapq.heapify(visit)
         for r in initrevs:
-            for parent in parentrevs(r):
-                if parent not in seen:
-                    schedule(visit, -parent)
-                    see(parent)
+            p1, p2 = parentrevs(r)
+            if p1 not in seen:
+                schedule(visit, -p1)
+                see(p1)
+            if p2 not in seen:
+                schedule(visit, -p2)
+                see(p2)
 
     while visit:
         current = -nextitem(visit)
         if current < stoprev:
             break
         yield current
-        for parent in parentrevs(current):
-            if parent not in seen:
-                schedule(visit, -parent)
-                see(parent)
+        p1, p2 = parentrevs(current)
+        if p1 not in seen:
+            schedule(visit, -p1)
+            see(p1)
+        if p2 not in seen:
+            schedule(visit, -p2)
+            see(p2)
 
 class lazyancestors(object):
     def __init__(self, pfunc, revs, stoprev=0, inclusive=False):

@@ -180,14 +180,17 @@ def pullbundle2extraprepare(orig, pullop, kwargs):
     kwargs['oldexcludepats'] = exclude
     kwargs['includepats'] = include
     kwargs['excludepats'] = exclude
-    kwargs['known'] = [node.hex(ctx.node()) for ctx in
-                       repo.set('::%ln', pullop.common)
-                       if ctx.node() != node.nullid]
-    if not kwargs['known']:
-        # Mercurial serialized an empty list as '' and deserializes it as
-        # [''], so delete it instead to avoid handling the empty string on the
-        # server.
-        del kwargs['known']
+    # calculate known nodes only in ellipses cases because in non-ellipses cases
+    # we have all the nodes
+    if narrowbundle2.ELLIPSESCAP in pullop.remote.capabilities():
+        kwargs['known'] = [node.hex(ctx.node()) for ctx in
+                           repo.set('::%ln', pullop.common)
+                           if ctx.node() != node.nullid]
+        if not kwargs['known']:
+            # Mercurial serializes an empty list as '' and deserializes it as
+            # [''], so delete it instead to avoid handling the empty string on
+            # the server.
+            del kwargs['known']
 
 extensions.wrapfunction(exchange,'_pullbundle2extraprepare',
                         pullbundle2extraprepare)

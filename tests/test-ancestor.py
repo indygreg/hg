@@ -221,6 +221,10 @@ def test_lazyancestors():
     s = genlazyancestors([11, 13], stoprev=12, inclusive=True)
     printlazyancestors(s, [11, 13, 7, 9, 8, 3, 6, 4, 1, -1, 0])
 
+    # Contiguous chains: 5->4, 2->1 (where 1 is in seen set), 1->0
+    s = genlazyancestors([10, 1], inclusive=True)
+    printlazyancestors(s, [2, 10, 4, 5, -1, 0, 1])
+
 # The C gca algorithm requires a real repo. These are textual descriptions of
 # DAGs that have been known to be problematic, and, optionally, known pairs
 # of revisions and their expected ancestor list.

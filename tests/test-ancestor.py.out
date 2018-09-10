@@ -22,3 +22,6 @@ iteration:  [13, 11]
 % lazy ancestor set for [11, 13], stoprev = 12, inclusive = True
 membership: [13]
 iteration:  [13]
+% lazy ancestor set for [10, 1], stoprev = 0, inclusive = True
+membership: [2, 10, 4, 5, 0, 1]
+iteration:  [10, 5, 4, 2, 1, 0]

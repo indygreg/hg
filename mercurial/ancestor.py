@@ -283,14 +283,22 @@ def _lazyancestorsiter(parentrevs, initrevs, stoprev, inclusive):
                 see(p2)
 
     while visit:
-        current = -nextitem(visit)
+        current = -visit[0]
         if current < stoprev:
             break
         yield current
+        # optimize out heapq operation if p1 is known to be the next highest
+        # revision, which is quite common in linear history.
         p1, p2 = parentrevs(current)
         if p1 not in seen:
-            schedule(visit, -p1)
+            if current - p1 == 1:
+                visit[0] = -p1
+            else:
+                nextitem(visit)
+                schedule(visit, -p1)
             see(p1)
+        else:
+            nextitem(visit)
         if p2 not in seen:
             schedule(visit, -p2)
             see(p2)

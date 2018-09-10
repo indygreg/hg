@@ -832,9 +832,18 @@ class deltacomputer(object):
 
     def _builddeltainfo(self, revinfo, base, fh):
         # can we use the cached delta?
-        if revinfo.cachedelta and revinfo.cachedelta[0] == base:
-            delta = revinfo.cachedelta[1]
-        else:
+        delta = None
+        if revinfo.cachedelta:
+            cachebase, cachediff = revinfo.cachedelta
+            #check if the diff still apply
+            currentbase = cachebase
+            while (currentbase != nullrev
+                    and currentbase != base
+                    and self.revlog.length(currentbase) == 0):
+                currentbase = self.revlog.deltaparent(currentbase)
+            if currentbase == base:
+                delta = revinfo.cachedelta[1]
+        if delta is None:
             delta = self._builddeltadiff(base, revinfo, fh)
         revlog = self.revlog
         header, data = revlog.compress(delta)

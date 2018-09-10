@@ -348,9 +348,8 @@ class lazyancestors(object):
 
         If inclusive is True, the source revisions are also yielded. The
         reverse revision number order is still enforced."""
-        for rev in _lazyancestorsiter(self._parentrevs, self._initrevs,
-                                      self._stoprev, self._inclusive):
-            yield rev
+        return _lazyancestorsiter(self._parentrevs, self._initrevs,
+                                  self._stoprev, self._inclusive)
 
     def __contains__(self, target):
         """Test whether target is an ancestor of self._initrevs."""

@@ -33,6 +33,7 @@ Verify that narrow is advertised in the bundle2 capabilities:
   $ echo hello | hg -R . serve --stdio | \
   >   $PYTHON unquote.py | grep narrow
   narrow=v0
+  rev-branch-cache changegroupsubset getbundle known lookup narrow protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
 
   $ cd ..
 

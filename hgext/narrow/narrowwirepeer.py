@@ -14,7 +14,10 @@ from mercurial import (
     hg,
     narrowspec,
     node,
+    wireprotov1server,
 )
+
+from . import narrowbundle2
 
 def uisetup():
     def peersetup(ui, peer):
@@ -37,6 +40,16 @@ def uisetup():
                 return narrowspec.parseserverpatterns(new_narrowspec)
         peer.__class__ = expandingpeer
     hg.wirepeersetupfuncs.append(peersetup)
+
+    extensions.wrapfunction(wireprotov1server, '_capabilities', addnarrowcap)
+
+def addnarrowcap(orig, repo, proto):
+    """add the narrow capability to the server"""
+    caps = orig(repo, proto)
+    caps.append(narrowbundle2.NARROWCAP)
+    if repo.ui.configbool('experimental', 'narrowservebrokenellipses'):
+        caps.append(narrowbundle2.ELLIPSESCAP)
+    return caps
 
 def reposetup(repo):
     def wirereposetup(ui, peer):

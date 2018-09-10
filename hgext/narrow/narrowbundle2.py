@@ -32,6 +32,7 @@ from mercurial.utils import (
 )
 
 NARROWCAP = 'narrow'
+ELLIPSESCAP = 'ellipses'
 _NARROWACL_SECTION = 'narrowhgacl'
 _CHANGESPECPART = NARROWCAP + ':changespec'
 _SPECPART = NARROWCAP + ':spec'

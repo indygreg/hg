@@ -66,7 +66,6 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps clone command, so 'hg clone' first wraps localrepo.clone()."""
     opts = pycompat.byteskwargs(opts)
     wrappedextraprepare = util.nullcontextmanager()
-    opts_narrow = opts['narrow']
     narrowspecfile = opts['narrowspec']
 
     if narrowspecfile:
@@ -87,11 +86,11 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
         narrowspec.validatepatterns(excludes)
 
         # narrowspec is passed so we should assume that user wants narrow clone
-        opts_narrow = True
+        opts['narrow'] = True
         opts['include'].extend(includes)
         opts['exclude'].extend(excludes)
 
-    if opts_narrow:
+    if opts['narrow']:
         def pullbundle2extraprepare_widen(orig, pullop, kwargs):
             # Create narrow spec patterns from clone flags
             includepats = narrowspec.parsepatterns(opts['include'])
@@ -114,7 +113,7 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
             '_pullbundle2extraprepare', pullbundle2extraprepare_widen)
 
     def pullnarrow(orig, repo, *args, **kwargs):
-        if opts_narrow:
+        if opts['narrow']:
             repo.requirements.add(repository.NARROW_REQUIREMENT)
             repo._writerequirements()
 

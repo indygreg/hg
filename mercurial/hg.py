@@ -9,7 +9,6 @@
 from __future__ import absolute_import
 
 import errno
-import functools
 import hashlib
 import os
 import shutil
@@ -164,8 +163,8 @@ def _peerorrepo(ui, path, create=False, presetupfuncs=None,
     obj = _peerlookup(path).instance(ui, path, create, intents=intents)
     ui = getattr(obj, "ui", ui)
     if ui.configbool('devel', 'debug.extensions'):
-        log = functools.partial(
-            ui.debug, 'debug.extensions: ', label='debug.extensions')
+        log = lambda msg, *values: ui.debug('debug.extensions: ',
+            msg % values, label='debug.extensions')
     else:
         log = lambda *a, **kw: None
     for f in presetupfuncs or []:
@@ -175,7 +174,9 @@ def _peerorrepo(ui, path, create=False, presetupfuncs=None,
         log('  - running reposetup for %s\n' % (name,))
         hook = getattr(module, 'reposetup', None)
         if hook:
-            hook(ui, obj)
+            with util.timedcm('reposetup %r', name) as stats:
+                hook(ui, obj)
+            log('  > reposetup for %r took %s\n', name, stats)
     if not obj.local():
         for f in wirepeersetupfuncs:
             f(ui, obj)

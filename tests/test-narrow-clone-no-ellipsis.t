@@ -130,7 +130,7 @@ Testing the --narrowspec flag to clone
   > %include foo
   > [include]
   > path:dir/tests/
-  > path:file:dir/src/f12
+  > path:dir/src/f12
   > EOF
 
   $ hg clone ssh://user@dummy/master specfile --narrowspec narrowspecs
@@ -141,7 +141,7 @@ Testing the --narrowspec flag to clone
   $ cat > narrowspecs <<EOF
   > [include]
   > path:dir/tests/
-  > path:file:dir/src/f12
+  > path:dir/src/f12
   > EOF
 
   $ hg clone ssh://user@dummy/master specfile --narrowspec narrowspecs
@@ -150,12 +150,12 @@ Testing the --narrowspec flag to clone
   adding changesets
   adding manifests
   adding file changes
-  added 40 changesets with 20 changes to 20 files
+  added 40 changesets with 21 changes to 21 files
   new changesets 681085829a73:26ce255d5b5d
   updating to branch default
-  20 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  21 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd specfile
   $ hg tracked
+  I path:dir/src/f12
   I path:dir/tests
-  I path:file:dir/src/f12
   $ cd ..

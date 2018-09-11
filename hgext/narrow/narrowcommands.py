@@ -71,7 +71,15 @@ def expandpull(pullop, includepats, excludepats):
         includepats, excludepats, heads)
     pullop.repo.ui.debug('Expanded narrowspec to inc=%s, exc=%s\n' % (
         includepats, excludepats))
-    return set(includepats), set(excludepats)
+
+    includepats = set(includepats)
+    excludepats = set(excludepats)
+
+    # Nefarious remote could supply unsafe patterns. Validate them.
+    narrowspec.validatepatterns(includepats)
+    narrowspec.validatepatterns(excludepats)
+
+    return includepats, excludepats
 
 def clonenarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps clone command, so 'hg clone' first wraps localrepo.clone()."""

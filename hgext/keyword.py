@@ -439,7 +439,7 @@ def demo(ui, repo, *args, **opts):
         baseui = ui
     else:
         baseui = repo.baseui
-    repo = localrepo.localrepository(baseui, tmpdir, True)
+    repo = localrepo.instance(baseui, tmpdir, create=True)
     ui.setconfig('keyword', fn, '', 'keyword')
     svn = ui.configbool('keywordset', 'svn')
     # explicitly set keywordset for demo output

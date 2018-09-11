@@ -426,7 +426,13 @@ class localrepository(object):
         'bisect.state',
     }
 
-    def __init__(self, baseui, path, create=False, intents=None):
+    def __init__(self, baseui, path, intents=None):
+        """Create a new local repository instance.
+
+        Most callers should use ``hg.repository()`` or ``localrepo.instance()``
+        for obtaining a new repository object.
+        """
+
         self.requirements = set()
         self.filtername = None
         # wvfs: rooted at the repository root, used to access the working copy
@@ -475,31 +481,12 @@ class localrepository(object):
                 self.supported.add('exp-compression-%s' % name)
 
         if not self.vfs.isdir():
-            if create:
-                self.requirements = newreporequirements(self.ui)
-
-                if not self.wvfs.exists():
-                    self.wvfs.makedirs()
-                self.vfs.makedir(notindexed=True)
-
-                if 'store' in self.requirements:
-                    self.vfs.mkdir("store")
-
-                    # create an invalid changelog
-                    self.vfs.append(
-                        "00changelog.i",
-                        '\0\0\0\2' # represents revlogv2
-                        ' dummy changelog to prevent using the old repo layout'
-                    )
-            else:
-                try:
-                    self.vfs.stat()
-                except OSError as inst:
-                    if inst.errno != errno.ENOENT:
-                        raise
-                raise error.RepoError(_("repository %s not found") % path)
-        elif create:
-            raise error.RepoError(_("repository %s already exists") % path)
+            try:
+                self.vfs.stat()
+            except OSError as inst:
+                if inst.errno != errno.ENOENT:
+                    raise
+            raise error.RepoError(_("repository %s not found") % path)
         else:
             try:
                 self.requirements = scmutil.readrequires(
@@ -546,8 +533,6 @@ class localrepository(object):
             else: # standard vfs
                 self.svfs.audit = self._getsvfsward(self.svfs.audit)
         self._applyopenerreqs()
-        if create:
-            self._writerequirements()
 
         self._dirstatevalidatewarned = False
 
@@ -2396,8 +2381,15 @@ def undoname(fn):
     return os.path.join(base, name.replace('journal', 'undo', 1))
 
 def instance(ui, path, create, intents=None):
-    return localrepository(ui, util.urllocalpath(path), create,
-                           intents=intents)
+    if create:
+        vfs = vfsmod.vfs(path, expandpath=True, realpath=True)
+
+        if vfs.exists('.hg'):
+            raise error.RepoError(_('repository %s already exists') % path)
+
+        createrepository(ui, vfs)
+
+    return localrepository(ui, util.urllocalpath(path), intents=intents)
 
 def islocal(path):
     return True
@@ -2447,3 +2439,34 @@ def newreporequirements(ui):
         requirements.add('internal-phase')
 
     return requirements
+
+def createrepository(ui, wdirvfs):
+    """Create a new repository in a vfs.
+
+    ``wdirvfs`` is a vfs instance pointing at the working directory.
+    ``requirements`` is a set of requirements for the new repository.
+    """
+    requirements = newreporequirements(ui)
+
+    if not wdirvfs.exists():
+        wdirvfs.makedirs()
+
+    hgvfs = vfsmod.vfs(wdirvfs.join(b'.hg'))
+    hgvfs.makedir(notindexed=True)
+
+    if b'store' in requirements:
+        hgvfs.mkdir(b'store')
+
+        # We create an invalid changelog outside the store so very old
+        # Mercurial versions (which didn't know about the requirements
+        # file) encounter an error on reading the changelog. This
+        # effectively locks out old clients and prevents them from
+        # mucking with a repo in an unknown format.
+        #
+        # The revlog header has version 2, which won't be recognized by
+        # such old clients.
+        hgvfs.append(b'00changelog.i',
+                     b'\0\0\0\2 dummy changelog to prevent using the old repo '
+                     b'layout')
+
+    scmutil.writerequires(hgvfs, requirements)

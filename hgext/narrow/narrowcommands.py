@@ -32,7 +32,7 @@ from mercurial import (
 )
 
 from . import (
-    narrowbundle2,
+    narrowwirepeer,
 )
 
 table = {}
@@ -171,7 +171,7 @@ def pullbundle2extraprepare(orig, pullop, kwargs):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return orig(pullop, kwargs)
 
-    if narrowbundle2.NARROWCAP not in pullop.remote.capabilities():
+    if narrowwirepeer.NARROWCAP not in pullop.remote.capabilities():
         raise error.Abort(_("server doesn't support narrow clones"))
     orig(pullop, kwargs)
     kwargs['narrow'] = True
@@ -182,7 +182,7 @@ def pullbundle2extraprepare(orig, pullop, kwargs):
     kwargs['excludepats'] = exclude
     # calculate known nodes only in ellipses cases because in non-ellipses cases
     # we have all the nodes
-    if narrowbundle2.ELLIPSESCAP in pullop.remote.capabilities():
+    if narrowwirepeer.ELLIPSESCAP in pullop.remote.capabilities():
         kwargs['known'] = [node.hex(ctx.node()) for ctx in
                            repo.set('::%ln', pullop.common)
                            if ctx.node() != node.nullid]

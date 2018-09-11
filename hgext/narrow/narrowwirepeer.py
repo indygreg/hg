@@ -17,7 +17,8 @@ from mercurial import (
     wireprotov1server,
 )
 
-from . import narrowbundle2
+NARROWCAP = 'narrow'
+ELLIPSESCAP = 'ellipses'
 
 def uisetup():
     def peersetup(ui, peer):
@@ -46,9 +47,9 @@ def uisetup():
 def addnarrowcap(orig, repo, proto):
     """add the narrow capability to the server"""
     caps = orig(repo, proto)
-    caps.append(narrowbundle2.NARROWCAP)
+    caps.append(NARROWCAP)
     if repo.ui.configbool('experimental', 'narrowservebrokenellipses'):
-        caps.append(narrowbundle2.ELLIPSESCAP)
+        caps.append(ELLIPSESCAP)
     return caps
 
 def reposetup(repo):

@@ -262,20 +262,18 @@ class incrementalmissingancestors(object):
 # Extracted from lazyancestors.__iter__ to avoid a reference cycle
 def _lazyancestorsiter(parentrevs, initrevs, stoprev, inclusive):
     seen = {nullrev}
-    revs = initrevs
-
     schedule = heapq.heappush
     nextitem = heapq.heappop
     see = seen.add
 
     if inclusive:
-        visit = [-r for r in revs]
-        seen.update(revs)
+        visit = [-r for r in initrevs]
+        seen.update(initrevs)
         heapq.heapify(visit)
     else:
         visit = []
         heapq.heapify(visit)
-        for r in revs:
+        for r in initrevs:
             for parent in parentrevs(r):
                 if parent not in seen:
                     schedule(visit, -parent)

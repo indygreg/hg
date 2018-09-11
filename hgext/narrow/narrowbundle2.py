@@ -195,6 +195,9 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
 def _handlechangespec_2(op, inpart):
     includepats = set(inpart.params.get(_SPECPART_INCLUDE, '').splitlines())
     excludepats = set(inpart.params.get(_SPECPART_EXCLUDE, '').splitlines())
+    narrowspec.validatepatterns(includepats)
+    narrowspec.validatepatterns(excludepats)
+
     if not repository.NARROW_REQUIREMENT in op.repo.requirements:
         op.repo.requirements.add(repository.NARROW_REQUIREMENT)
         op.repo._writerequirements()

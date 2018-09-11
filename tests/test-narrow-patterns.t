@@ -427,3 +427,15 @@ clone a narrow portion of the master, such that we can widen it later
   |
   o  0 2a4f0c3b67da... root
   
+
+Illegal patterns are rejected
+
+  $ hg tracked --addinclude glob:**
+  abort: invalid prefix on narrow pattern: glob:**
+  (narrow patterns must begin with one of the following: path:, rootfilesin:)
+  [255]
+
+  $ hg tracked --addexclude set:ignored
+  abort: invalid prefix on narrow pattern: set:ignored
+  (narrow patterns must begin with one of the following: path:, rootfilesin:)
+  [255]

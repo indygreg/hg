@@ -16,6 +16,20 @@
   $ for x in `$TESTDIR/seq.py 20`; do echo $x > "t$x"; hg add "t$x"; hg commit -m "Commit test $x"; done
   $ cd ../../..
 
+Only path: and rootfilesin: pattern prefixes are allowed
+
+  $ hg clone --narrow ssh://user@dummy/master badnarrow --noupdate --include 'glob:**'
+  requesting all changes
+  abort: invalid prefix on narrow pattern: glob:**
+  (narrow patterns must begin with one of the following: path:, rootfilesin:)
+  [255]
+
+  $ hg clone --narrow ssh://user@dummy/master badnarrow --noupdate --exclude 'set:ignored'
+  requesting all changes
+  abort: invalid prefix on narrow pattern: set:ignored
+  (narrow patterns must begin with one of the following: path:, rootfilesin:)
+  [255]
+
 narrow clone a file, f10
 
   $ hg clone --narrow ssh://user@dummy/master narrow --noupdate --include "dir/src/f10"
@@ -254,3 +268,17 @@ Testing the --narrowspec flag to clone
   I path:dir/tests
   I path:file:dir/src/f12
   $ cd ..
+
+Narrow spec with invalid patterns is rejected
+
+  $ cat > narrowspecs <<EOF
+  > [include]
+  > glob:**
+  > EOF
+
+  $ hg clone ssh://user@dummy/master badspecfile --narrowspec narrowspecs
+  reading narrowspec from '$TESTTMP/narrowspecs'
+  requesting all changes
+  abort: invalid prefix on narrow pattern: glob:**
+  (narrow patterns must begin with one of the following: path:, rootfilesin:)
+  [255]

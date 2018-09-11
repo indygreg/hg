@@ -20,6 +20,15 @@ from . import (
 
 FILENAME = 'narrowspec'
 
+# Pattern prefixes that are allowed in narrow patterns. This list MUST
+# only contain patterns that are fast and safe to evaluate. Keep in mind
+# that patterns are supplied by clients and executed on remote servers
+# as part of wire protocol commands.
+VALID_PREFIXES = (
+    b'path:',
+    b'rootfilesin:',
+)
+
 def parseserverpatterns(text):
     """Parses the narrowspec format that's returned by the server."""
     includepats = set()
@@ -82,8 +91,42 @@ def normalizepattern(pattern, defaultkind='path'):
     return '%s:%s' % normalizesplitpattern(kind, pat)
 
 def parsepatterns(pats):
-    """Parses a list of patterns into a typed pattern set."""
-    return set(normalizepattern(p) for p in pats)
+    """Parses an iterable of patterns into a typed pattern set.
+
+    Patterns are assumed to be ``path:`` if no prefix is present.
+    For safety and performance reasons, only some prefixes are allowed.
+    See ``validatepatterns()``.
+
+    This function should be used on patterns that come from the user to
+    normalize and validate them to the internal data structure used for
+    representing patterns.
+    """
+    res = {normalizepattern(orig) for orig in pats}
+    validatepatterns(res)
+    return res
+
+def validatepatterns(pats):
+    """Validate that patterns are in the expected data structure and format.
+
+    And that is a set of normalized patterns beginning with ``path:`` or
+    ``rootfilesin:``.
+
+    This function should be used to validate internal data structures
+    and patterns that are loaded from sources that use the internal,
+    prefixed pattern representation (but can't necessarily be fully trusted).
+    """
+    if not isinstance(pats, set):
+        raise error.ProgrammingError('narrow patterns should be a set; '
+                                     'got %r' % pats)
+
+    for pat in pats:
+        if not pat.startswith(VALID_PREFIXES):
+            # Use a Mercurial exception because this can happen due to user
+            # bugs (e.g. manually updating spec file).
+            raise error.Abort(_('invalid prefix on narrow pattern: %s') % pat,
+                              hint=_('narrow patterns must begin with one of '
+                                     'the following: %s') %
+                                   ', '.join(VALID_PREFIXES))
 
 def format(includes, excludes):
     output = '[include]\n'

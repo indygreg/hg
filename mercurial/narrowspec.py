@@ -164,9 +164,15 @@ def load(repo):
     if profiles:
         raise error.Abort(_("including other spec files using '%include' is not"
                             " supported in narrowspec"))
+
+    validatepatterns(includepats)
+    validatepatterns(excludepats)
+
     return includepats, excludepats
 
 def save(repo, includepats, excludepats):
+    validatepatterns(includepats)
+    validatepatterns(excludepats)
     spec = format(includepats, excludepats)
     repo.svfs.write(FILENAME, spec)
 

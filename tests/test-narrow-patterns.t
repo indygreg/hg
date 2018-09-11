@@ -439,3 +439,31 @@ Illegal patterns are rejected
   abort: invalid prefix on narrow pattern: set:ignored
   (narrow patterns must begin with one of the following: path:, rootfilesin:)
   [255]
+
+  $ cat .hg/store/narrowspec
+  [include]
+  path:dir1
+  path:dir1/dirA
+  [exclude]
+
+  $ cat > .hg/store/narrowspec << EOF
+  > [include]
+  > glob:**
+  > EOF
+
+  $ hg tracked
+  abort: invalid prefix on narrow pattern: glob:**
+  (narrow patterns must begin with one of the following: path:, rootfilesin:)
+  [255]
+
+  $ cat > .hg/store/narrowspec << EOF
+  > [include]
+  > path:.
+  > [exclude]
+  > set:ignored
+  > EOF
+
+  $ hg tracked
+  abort: invalid prefix on narrow pattern: set:ignored
+  (narrow patterns must begin with one of the following: path:, rootfilesin:)
+  [255]

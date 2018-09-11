@@ -28,10 +28,3 @@ format.
 
 narrowrepo.setnarrowpats() or narrowspec.save() need to make sure
 they're holding the wlock.
-
-Implement a simple version of the expandnarrow wireproto command for
-core. Having configurable shorthands for narrowspecs has been useful
-at Google (and sparse has a similar feature from Facebook), so it
-probably makes sense to implement the feature in core. (Google's
-handler is entirely custom to Google, with a custom format related to
-bazel's build language, so it's not in the narrowhg distribution.)

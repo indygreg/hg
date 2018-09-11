@@ -7,13 +7,9 @@
 
 from __future__ import absolute_import
 
-from mercurial.i18n import _
 from mercurial import (
-    error,
     extensions,
     hg,
-    narrowspec,
-    node,
     wireprotov1server,
 )
 
@@ -21,27 +17,6 @@ NARROWCAP = 'exp-narrow-1'
 ELLIPSESCAP = 'exp-ellipses-1'
 
 def uisetup():
-    def peersetup(ui, peer):
-        # We must set up the expansion before reposetup below, since it's used
-        # at clone time before we have a repo.
-        class expandingpeer(peer.__class__):
-            def expandnarrow(self, narrow_include, narrow_exclude, nodes):
-                ui.status(_("expanding narrowspec\n"))
-                if not self.capable('exp-expandnarrow'):
-                    raise error.Abort(
-                        'peer does not support expanding narrowspecs')
-
-                hex_nodes = (node.hex(n) for n in nodes)
-                new_narrowspec = self._call(
-                    'expandnarrow',
-                    includepats=','.join(narrow_include),
-                    excludepats=','.join(narrow_exclude),
-                    nodes=','.join(hex_nodes))
-
-                return narrowspec.parseserverpatterns(new_narrowspec)
-        peer.__class__ = expandingpeer
-    hg.wirepeersetupfuncs.append(peersetup)
-
     extensions.wrapfunction(wireprotov1server, '_capabilities', addnarrowcap)
 
 def addnarrowcap(orig, repo, proto):

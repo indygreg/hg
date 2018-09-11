@@ -146,9 +146,6 @@ def match(root, include=None, exclude=None):
     return matchmod.match(root, '', [], include=include or [],
                           exclude=exclude or [])
 
-def needsexpansion(includes):
-    return [i for i in includes if i.startswith('include:')]
-
 def load(repo):
     try:
         spec = repo.svfs.read(FILENAME)

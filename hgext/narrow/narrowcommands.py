@@ -62,25 +62,6 @@ def setup():
 
     extensions.wrapcommand(commands.table, 'archive', archivenarrowcmd)
 
-def expandpull(pullop, includepats, excludepats):
-    if not narrowspec.needsexpansion(includepats):
-        return includepats, excludepats
-
-    heads = pullop.heads or pullop.rheads
-    includepats, excludepats = pullop.remote.expandnarrow(
-        includepats, excludepats, heads)
-    pullop.repo.ui.debug('Expanded narrowspec to inc=%s, exc=%s\n' % (
-        includepats, excludepats))
-
-    includepats = set(includepats)
-    excludepats = set(excludepats)
-
-    # Nefarious remote could supply unsafe patterns. Validate them.
-    narrowspec.validatepatterns(includepats)
-    narrowspec.validatepatterns(excludepats)
-
-    return includepats, excludepats
-
 def clonenarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps clone command, so 'hg clone' first wraps localrepo.clone()."""
     opts = pycompat.byteskwargs(opts)
@@ -115,10 +96,6 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
             # Create narrow spec patterns from clone flags
             includepats = narrowspec.parsepatterns(opts['include'])
             excludepats = narrowspec.parsepatterns(opts['exclude'])
-
-            # If necessary, ask the server to expand the narrowspec.
-            includepats, excludepats = expandpull(
-                pullop, includepats, excludepats)
 
             if not includepats and excludepats:
                 # If nothing was included, we assume the user meant to include
@@ -292,10 +269,6 @@ def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
 def _widen(ui, repo, remote, commoninc, newincludes, newexcludes):
     newmatch = narrowspec.match(repo.root, newincludes, newexcludes)
 
-    # TODO(martinvonz): Get expansion working with widening/narrowing.
-    if narrowspec.needsexpansion(newincludes):
-        raise error.Abort('Expansion not yet supported on pull')
-
     def pullbundle2extraprepare_widen(orig, pullop, kwargs):
         orig(pullop, kwargs)
         # The old{in,ex}cludepats have already been set by orig()
@@ -401,9 +374,6 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
                                 "is not supported in narrowspec"))
         opts['addinclude'].extend(includepats)
         opts['addexclude'].extend(excludepats)
-
-    if narrowspec.needsexpansion(opts['addinclude'] + opts['addexclude']):
-        raise error.Abort('Expansion not yet supported on widen/narrow')
 
     addedincludes = narrowspec.parsepatterns(opts['addinclude'])
     removedincludes = narrowspec.parsepatterns(opts['removeinclude'])

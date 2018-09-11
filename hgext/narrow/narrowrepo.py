@@ -8,6 +8,7 @@
 from __future__ import absolute_import
 
 from . import (
+    narrowbundle2,
     narrowdirstate,
     narrowrevlog,
 )
@@ -25,5 +26,11 @@ def wraprepo(repo):
         def _makedirstate(self):
             dirstate = super(narrowrepository, self)._makedirstate()
             return narrowdirstate.wrapdirstate(self, dirstate)
+
+        def peer(self):
+            peer = super(narrowrepository, self).peer()
+            peer._caps.add(narrowbundle2.NARROWCAP)
+            peer._caps.add(narrowbundle2.ELLIPSESCAP)
+            return peer
 
     repo.__class__ = narrowrepository

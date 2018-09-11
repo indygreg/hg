@@ -17,8 +17,8 @@ from mercurial import (
     wireprotov1server,
 )
 
-NARROWCAP = 'narrow'
-ELLIPSESCAP = 'ellipses'
+NARROWCAP = 'exp-narrow-1'
+ELLIPSESCAP = 'exp-ellipses-1'
 
 def uisetup():
     def peersetup(ui, peer):

@@ -102,6 +102,9 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
             raise error.Abort(_("cannot specify other files using '%include' in"
                                 " narrowspec"))
 
+        narrowspec.validatepatterns(includes)
+        narrowspec.validatepatterns(excludes)
+
         # narrowspec is passed so we should assume that user wants narrow clone
         opts_narrow = True
         opts['include'].extend(includes)

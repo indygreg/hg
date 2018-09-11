@@ -239,7 +239,7 @@ Testing the --narrowspec flag to clone
   > %include foo
   > [include]
   > path:dir/tests/
-  > dir/src/f12
+  > path:file:dir/src/f12
   > EOF
 
   $ hg clone ssh://user@dummy/master specfile --narrowspec narrowspecs
@@ -250,7 +250,7 @@ Testing the --narrowspec flag to clone
   $ cat > narrowspecs <<EOF
   > [include]
   > path:dir/tests/
-  > file:dir/src/f12
+  > path:file:dir/src/f12
   > EOF
 
   $ hg clone ssh://user@dummy/master specfile --narrowspec narrowspecs
@@ -278,7 +278,6 @@ Narrow spec with invalid patterns is rejected
 
   $ hg clone ssh://user@dummy/master badspecfile --narrowspec narrowspecs
   reading narrowspec from '$TESTTMP/narrowspecs'
-  requesting all changes
   abort: invalid prefix on narrow pattern: glob:**
   (narrow patterns must begin with one of the following: path:, rootfilesin:)
   [255]

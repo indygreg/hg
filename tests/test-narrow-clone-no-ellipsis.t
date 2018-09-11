@@ -130,7 +130,7 @@ Testing the --narrowspec flag to clone
   > %include foo
   > [include]
   > path:dir/tests/
-  > file:dir/src/f12
+  > path:file:dir/src/f12
   > EOF
 
   $ hg clone ssh://user@dummy/master specfile --narrowspec narrowspecs
@@ -141,7 +141,7 @@ Testing the --narrowspec flag to clone
   $ cat > narrowspecs <<EOF
   > [include]
   > path:dir/tests/
-  > file:dir/src/f12
+  > path:file:dir/src/f12
   > EOF
 
   $ hg clone ssh://user@dummy/master specfile --narrowspec narrowspecs

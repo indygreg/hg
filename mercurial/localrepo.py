@@ -2440,6 +2440,9 @@ def newreporequirements(ui, createopts=None):
     if ui.configbool('format', 'internal-phase'):
         requirements.add('internal-phase')
 
+    if createopts.get('narrowfiles'):
+        requirements.add(repository.NARROW_REQUIREMENT)
+
     return requirements
 
 def filterknowncreateopts(ui, createopts):
@@ -2456,7 +2459,9 @@ def filterknowncreateopts(ui, createopts):
     Extensions can wrap this function to filter out creation options
     they know how to handle.
     """
-    return dict(createopts)
+    known = {'narrowfiles'}
+
+    return {k: v for k, v in createopts.items() if k not in known}
 
 def createrepository(ui, wdirvfs, createopts=None):
     """Create a new repository in a vfs.

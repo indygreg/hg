@@ -39,7 +39,7 @@ Serving them both using hgweb
 
 Clone main from hgweb
 
-  $ hg clone "http://localhost:$HGPORT/main" cloned
+  $ hg clone "http://user:pass@localhost:$HGPORT/main" cloned
   requesting all changes
   adding changesets
   adding manifests
@@ -47,7 +47,7 @@ Clone main from hgweb
   added 1 changesets with 3 changes to 3 files
   new changesets fdfeeb3e979e
   updating to branch default
-  cloning subrepo sub from http://localhost:$HGPORT/sub
+  cloning subrepo sub from http://user@localhost:$HGPORT/sub
   requesting all changes
   adding changesets
   adding manifests
@@ -60,21 +60,28 @@ Ensure that subrepos pay attention to default:pushurl
 
   $ cat > cloned/.hg/hgrc << EOF
   > [paths]
-  > default:pushurl = http://localhost:$HGPORT/main
+  > default:pushurl = http://user:pass@localhost:$HGPORT/main
   > EOF
 
   $ hg -R cloned out -S --config paths.default=bogus://invalid
-  comparing with http://localhost:$HGPORT/main
+  comparing with http://user:***@localhost:$HGPORT/main
   searching for changes
   no changes found
-  comparing with http://localhost:$HGPORT/sub
+  comparing with http://user:***@localhost:$HGPORT/sub
   searching for changes
   no changes found
   [1]
 
+TODO: Figure out why, if the password is left out of the default:pushurl URL,
+this says "no changes made to subrepo sub since last push".  It looks like from
+the original clone command above, the password is getting stripped off, not
+just masked out, and that would make the hashed URL different.
+
   $ hg -R cloned push --config paths.default=bogus://invalid
-  pushing to http://localhost:$HGPORT/main
-  no changes made to subrepo sub since last push to http://localhost:$HGPORT/sub
+  pushing to http://user:***@localhost:$HGPORT/main
+  pushing subrepo sub to http://user:***@localhost:$HGPORT/sub
+  searching for changes
+  no changes found
   searching for changes
   no changes found
   abort: HTTP Error 403: ssl required

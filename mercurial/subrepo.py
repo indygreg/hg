@@ -655,7 +655,7 @@ class hgsubrepo(abstractsubrepo):
                     shareopts = {}
 
                 self.ui.status(_('cloning subrepo %s from %s\n')
-                               % (subrelpath(self), srcurl))
+                               % (subrelpath(self), util.hidepassword(srcurl)))
                 other, cloned = hg.clone(self._repo._subparent.baseui, {},
                                          other, self._repo.root,
                                          update=False, shareopts=shareopts)
@@ -664,7 +664,7 @@ class hgsubrepo(abstractsubrepo):
             self._cachestorehash(srcurl)
         else:
             self.ui.status(_('pulling subrepo %s from %s\n')
-                           % (subrelpath(self), srcurl))
+                           % (subrelpath(self), util.hidepassword(srcurl)))
             cleansub = self.storeclean(srcurl)
             exchange.pull(self._repo, other)
             if cleansub:
@@ -735,10 +735,10 @@ class hgsubrepo(abstractsubrepo):
             if self.storeclean(dsturl):
                 self.ui.status(
                     _('no changes made to subrepo %s since last push to %s\n')
-                    % (subrelpath(self), dsturl))
+                    % (subrelpath(self), util.hidepassword(dsturl)))
                 return None
         self.ui.status(_('pushing subrepo %s to %s\n') %
-            (subrelpath(self), dsturl))
+            (subrelpath(self), util.hidepassword(dsturl)))
         other = hg.peer(self._repo, {'ssh': ssh}, dsturl)
         res = exchange.push(self._repo, other, force, newbranch=newbranch)
 

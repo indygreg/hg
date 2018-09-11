@@ -112,16 +112,7 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
         wrappedextraprepare = extensions.wrappedfunction(exchange,
             '_pullbundle2extraprepare', pullbundle2extraprepare_widen)
 
-    def pullnarrow(orig, repo, *args, **kwargs):
-        if opts['narrow']:
-            repo.requirements.add(repository.NARROW_REQUIREMENT)
-            repo._writerequirements()
-
-        return orig(repo, *args, **kwargs)
-
-    wrappedpull = extensions.wrappedfunction(exchange, 'pull', pullnarrow)
-
-    with wrappedextraprepare, wrappedpull:
+    with wrappedextraprepare:
         return orig(ui, repo, *args, **pycompat.strkwargs(opts))
 
 def pullnarrowcmd(orig, ui, repo, *args, **opts):

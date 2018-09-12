@@ -430,6 +430,12 @@ def makelocalrepository(baseui, path, intents=None):
     else:
         extensions.loadall(ui)
 
+    supportedrequirements = gathersupportedrequirements(ui)
+    ensurerequirementsrecognized(requirements, supportedrequirements)
+
+    # At this point, we know we should be capable of opening the repository.
+    # Now get on with doing that.
+
     return localrepository(
         baseui=baseui,
         ui=ui,
@@ -437,7 +443,56 @@ def makelocalrepository(baseui, path, intents=None):
         wdirvfs=wdirvfs,
         hgvfs=hgvfs,
         requirements=requirements,
+        supportedrequirements=supportedrequirements,
         intents=intents)
+
+def gathersupportedrequirements(ui):
+    """Determine the complete set of recognized requirements."""
+    # Start with all requirements supported by this file.
+    supported = set(localrepository._basesupported)
+
+    # Execute ``featuresetupfuncs`` entries if they belong to an extension
+    # relevant to this ui instance.
+    modules = {m.__name__ for n, m in extensions.extensions(ui)}
+
+    for fn in featuresetupfuncs:
+        if fn.__module__ in modules:
+            fn(ui, supported)
+
+    # Add derived requirements from registered compression engines.
+    for name in util.compengines:
+        engine = util.compengines[name]
+        if engine.revlogheader():
+            supported.add(b'exp-compression-%s' % name)
+
+    return supported
+
+def ensurerequirementsrecognized(requirements, supported):
+    """Validate that a set of local requirements is recognized.
+
+    Receives a set of requirements. Raises an ``error.RepoError`` if there
+    exists any requirement in that set that currently loaded code doesn't
+    recognize.
+
+    Returns a set of supported requirements.
+    """
+    missing = set()
+
+    for requirement in requirements:
+        if requirement in supported:
+            continue
+
+        if not requirement or not requirement[0:1].isalnum():
+            raise error.RequirementError(_(b'.hg/requires file is corrupt'))
+
+        missing.add(requirement)
+
+    if missing:
+        raise error.RequirementError(
+            _(b'repository requires features unknown to this Mercurial: %s') %
+            b' '.join(sorted(missing)),
+            hint=_(b'see https://mercurial-scm.org/wiki/MissingRequirement '
+                   b'for more information'))
 
 @interfaceutil.implementer(repository.completelocalrepository)
 class localrepository(object):
@@ -490,7 +545,7 @@ class localrepository(object):
     }
 
     def __init__(self, baseui, ui, origroot, wdirvfs, hgvfs, requirements,
-                 intents=None):
+                 supportedrequirements, intents=None):
         """Create a new local repository instance.
 
         Most callers should use ``hg.repository()``, ``localrepo.instance()``,
@@ -517,6 +572,10 @@ class localrepository(object):
         requirements
            ``set`` of bytestrings representing repository opening requirements.
 
+        supportedrequirements
+           ``set`` of bytestrings representing repository requirements that we
+           know how to open. May be a supetset of ``requirements``.
+
         intents
            ``set`` of system strings indicating what this repo will be used
            for.
@@ -530,6 +589,8 @@ class localrepository(object):
         # vfs rooted at .hg/. Used to access most non-store paths.
         self.vfs = hgvfs
         self.path = hgvfs.base
+        self.requirements = requirements
+        self.supported = supportedrequirements
 
         self.filtername = None
         # svfs: usually rooted at .hg/store, used to access repository history
@@ -545,40 +606,7 @@ class localrepository(object):
         # This list it to be filled by extension during repo setup
         self._phasedefaults = []
 
-        if featuresetupfuncs:
-            self.supported = set(self._basesupported) # use private copy
-            extmods = set(m.__name__ for n, m
-                          in extensions.extensions(self.ui))
-            for setupfunc in featuresetupfuncs:
-                if setupfunc.__module__ in extmods:
-                    setupfunc(self.ui, self.supported)
-        else:
-            self.supported = self._basesupported
         color.setup(self.ui)
-
-        # Add compression engines.
-        for name in util.compengines:
-            engine = util.compengines[name]
-            if engine.revlogheader():
-                self.supported.add('exp-compression-%s' % name)
-
-        # Validate that all seen repository requirements are supported.
-        missingrequirements = []
-        for r in requirements:
-            if r not in self.supported:
-                if not r or not r[0:1].isalnum():
-                    raise error.RequirementError(
-                        _(".hg/requires file is corrupt"))
-                missingrequirements.append(r)
-        missingrequirements.sort()
-        if missingrequirements:
-            raise error.RequirementError(
-                _("repository requires features unknown to this Mercurial: %s")
-                % " ".join(missingrequirements),
-                hint=_("see https://mercurial-scm.org/wiki/MissingRequirement"
-                       " for more information"))
-
-        self.requirements = requirements
 
         cachepath = self.vfs.join('cache')
         self.sharedpath = self.path

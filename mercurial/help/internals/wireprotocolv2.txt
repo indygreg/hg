@@ -87,6 +87,90 @@ rawrepoformats
    requirements can be used to determine whether a client can read a
    *raw* copy of file data available.
 
+changesetdata
+-------------
+
+Obtain various data related to changesets.
+
+The command accepts the following arguments:
+
+noderange
+   (array of arrays of bytestrings) An array of 2 elements, each being an
+   array of node bytestrings. The first array denotes the changelog revisions
+   that are already known to the client. The second array denotes the changelog
+   revision DAG heads to fetch. The argument essentially defines a DAG range
+   bounded by root and head nodes to fetch.
+
+   The roots array may be empty. The heads array must be defined.
+
+nodes
+   (array of bytestrings) Changelog revisions to request explicitly.
+
+fields
+   (set of bytestring) Which data associated with changelog revisions to
+   fetch. The following values are recognized:
+
+   parents
+      Parent revisions.
+
+   revision
+      The raw, revision data for the changelog entry. The hash of this data
+      will match the revision's node value.
+
+The server resolves the set of revisions relevant to the request by taking
+the union of the ``noderange`` and ``nodes`` arguments. At least one of these
+arguments must be defined.
+
+The response bytestream starts with a CBOR map describing the data that follows.
+This map has the following bytestring keys:
+
+totalitems
+   (unsigned integer) Total number of changelog revisions whose data is being
+   transferred.
+
+Following the map header is a series of 0 or more CBOR values. If values
+are present, the first value will always be a map describing a single changeset
+revision. If revision data is requested, the raw revision data (encoded as
+a CBOR bytestring) will follow the map describing it. Otherwise, another CBOR
+map describing the next changeset revision will occur.
+
+Each map has the following bytestring keys:
+
+node
+   (bytestring) The node value for this revision. This is the SHA-1 hash of
+   the raw revision data.
+
+parents (optional)
+   (array of bytestrings) The nodes representing the parent revisions of this
+   revision. Only present if ``parents`` data is being requested.
+
+revisionsize (optional)
+   (unsigned integer) Indicates the size of raw revision data that follows this
+   map. The following data contains a serialized form of the changeset data,
+   including the author, date, commit message, set of changed files, manifest
+   node, and other metadata.
+
+   Only present if ``revision`` data was requested and the data follows this
+   map.
+
+If nodes are requested via ``noderange``, they will be emitted in DAG order,
+parents always before children.
+
+If nodes are requested via ``nodes``, they will be emitted in requested order.
+
+Nodes from ``nodes`` are emitted before nodes from ``noderange``.
+
+TODO support different revision selection mechanisms (e.g. non-public, specific
+revisions)
+TODO support different hash "namespaces" for revisions (e.g. sha-1 versus other)
+TODO support emitting phases data
+TODO support emitting bookmarks data
+TODO support emitting obsolescence data
+TODO support filtering based on relevant paths (narrow clone)
+TODO support depth limiting
+TODO support hgtagsfnodes cache / tags data
+TODO support branch heads cache
+
 heads
 -----
 

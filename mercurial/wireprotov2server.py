@@ -9,7 +9,11 @@ from __future__ import absolute_import
 import contextlib
 
 from .i18n import _
+from .node import (
+    nullid,
+)
 from . import (
+    discovery,
     encoding,
     error,
     pycompat,
@@ -459,6 +463,81 @@ def branchmapv2(repo, proto):
 @wireprotocommand('capabilities', permission='pull')
 def capabilitiesv2(repo, proto):
     yield _capabilitiesv2(repo, proto)
+
+@wireprotocommand('changesetdata',
+                  args={
+                      'noderange': [[b'0123456...'], [b'abcdef...']],
+                      'nodes': [b'0123456...'],
+                      'fields': {b'parents', b'revision'},
+                  },
+                  permission='pull')
+def changesetdata(repo, proto, noderange=None, nodes=None, fields=None):
+    fields = fields or set()
+
+    if noderange is None and nodes is None:
+        raise error.WireprotoCommandError(
+            'noderange or nodes must be defined')
+
+    if noderange is not None:
+        if len(noderange) != 2:
+            raise error.WireprotoCommandError(
+                'noderange must consist of 2 elements')
+
+        if not noderange[1]:
+            raise error.WireprotoCommandError(
+                'heads in noderange request cannot be empty')
+
+    cl = repo.changelog
+    hasnode = cl.hasnode
+
+    seen = set()
+    outgoing = []
+
+    if nodes is not None:
+        outgoing.extend(n for n in nodes if hasnode(n))
+        seen |= set(outgoing)
+
+    if noderange is not None:
+        if noderange[0]:
+            common = [n for n in noderange[0] if hasnode(n)]
+        else:
+            common = [nullid]
+
+        for n in discovery.outgoing(repo, common, noderange[1]).missing:
+            if n not in seen:
+                outgoing.append(n)
+            # Don't need to add to seen here because this is the final
+            # source of nodes and there should be no duplicates in this
+            # list.
+
+    seen.clear()
+
+    if outgoing:
+        repo.hook('preoutgoing', throw=True, source='serve')
+
+    yield {
+        b'totalitems': len(outgoing),
+    }
+
+    # It is already topologically sorted by revision number.
+    for node in outgoing:
+        d = {
+            b'node': node,
+        }
+
+        if b'parents' in fields:
+            d[b'parents'] = cl.parents(node)
+
+        revisiondata = None
+
+        if b'revision' in fields:
+            revisiondata = cl.revision(node, raw=True)
+            d[b'revisionsize'] = len(revisiondata)
+
+        yield d
+
+        if revisiondata is not None:
+            yield revisiondata
 
 @wireprotocommand('heads',
                   args={

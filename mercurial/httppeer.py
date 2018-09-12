@@ -802,8 +802,7 @@ class httpv2peer(object):
             return True
 
         # Other concepts.
-        # TODO remove exchangev2 once we have a command implemented.
-        if name in ('bundle2', 'exchangev2'):
+        if name in ('bundle2'):
             return True
 
         # Alias command-* to presence of command of that name.

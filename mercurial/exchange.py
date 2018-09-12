@@ -1508,7 +1508,7 @@ def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
     pullop.trmanager = transactionmanager(repo, 'pull', remote.url())
     with repo.wlock(), repo.lock(), pullop.trmanager:
         # Use the modern wire protocol, if available.
-        if remote.capable('exchangev2'):
+        if remote.capable('command-changesetdata'):
             exchangev2.pull(pullop)
         else:
             # This should ideally be in _pullbundle2(). However, it needs to run

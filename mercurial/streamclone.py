@@ -114,6 +114,8 @@ def maybeperformlegacystreamclone(pullop):
     A legacy stream clone will not be performed if a bundle2 stream clone is
     supported.
     """
+    from . import localrepo
+
     supported, requirements = canperformstreamclone(pullop)
 
     if not supported:
@@ -166,7 +168,8 @@ def maybeperformlegacystreamclone(pullop):
         # requirements from the streamed-in repository
         repo.requirements = requirements | (
                 repo.requirements - repo.supportedformats)
-        repo._applyopenerreqs()
+        repo.svfs.options = localrepo.resolvestorevfsoptions(
+            repo.ui, repo.requirements)
         repo._writerequirements()
 
         if rbranchmap:
@@ -624,6 +627,8 @@ def consumev2(repo, fp, filecount, filesize):
         progress.complete()
 
 def applybundlev2(repo, fp, filecount, filesize, requirements):
+    from . import localrepo
+
     missingreqs = [r for r in requirements if r not in repo.supported]
     if missingreqs:
         raise error.Abort(_('unable to apply stream clone: '
@@ -637,5 +642,6 @@ def applybundlev2(repo, fp, filecount, filesize, requirements):
     # requirements from the streamed-in repository
     repo.requirements = set(requirements) | (
             repo.requirements - repo.supportedformats)
-    repo._applyopenerreqs()
+    repo.svfs.options = localrepo.resolvestorevfsoptions(
+        repo.ui, repo.requirements)
     repo._writerequirements()

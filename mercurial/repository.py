@@ -1234,12 +1234,6 @@ class completelocalrepository(interfaceutil.Interface):
         This is actually a class attribute and is shared among all instances.
         """)
 
-    openerreqs = interfaceutil.Attribute(
-        """Set of requirements that are passed to the opener.
-
-        This is actually a class attribute and is shared among all instances.
-        """)
-
     supported = interfaceutil.Attribute(
         """Set of requirements that this repo is capable of opening.""")
 

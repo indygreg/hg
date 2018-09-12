@@ -1779,6 +1779,8 @@ def handlechangegroup(op, inpart):
     This is a very early implementation that will massive rework before being
     inflicted to any end-user.
     """
+    from . import localrepo
+
     tr = op.gettransaction()
     unpackerversion = inpart.params.get('version', '01')
     # We should raise an appropriate exception here
@@ -1795,7 +1797,8 @@ def handlechangegroup(op, inpart):
                 "bundle contains tree manifests, but local repo is "
                 "non-empty and does not use tree manifests"))
         op.repo.requirements.add('treemanifest')
-        op.repo._applyopenerreqs()
+        op.repo.svfs.options = localrepo.resolvestorevfsoptions(
+            op.repo.ui, op.repo.requirements)
         op.repo._writerequirements()
     extrakwargs = {}
     targetphase = inpart.params.get('targetphase')

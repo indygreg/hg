@@ -481,8 +481,10 @@ def makelocalrepository(baseui, path, intents=None):
     # of them.
     store = makestore(requirements, storebasepath,
                       lambda base: vfsmod.vfs(base, cacheaudited=True))
-
     hgvfs.createmode = store.createmode
+
+    storevfs = store.vfs
+    storevfs.options = resolvestorevfsoptions(ui, requirements)
 
     # The cache vfs is used to manage cache files.
     cachevfs = vfsmod.vfs(cachepath, cacheaudited=True)
@@ -578,6 +580,92 @@ def makestore(requirements, path, vfstype):
 
     return storemod.basicstore(path, vfstype)
 
+def resolvestorevfsoptions(ui, requirements):
+    """Resolve the options to pass to the store vfs opener.
+
+    The returned dict is used to influence behavior of the storage layer.
+    """
+    options = {}
+
+    if b'treemanifest' in requirements:
+        options[b'treemanifest'] = True
+
+    # experimental config: format.manifestcachesize
+    manifestcachesize = ui.configint(b'format', b'manifestcachesize')
+    if manifestcachesize is not None:
+        options[b'manifestcachesize'] = manifestcachesize
+
+    # In the absence of another requirement superseding a revlog-related
+    # requirement, we have to assume the repo is using revlog version 0.
+    # This revlog format is super old and we don't bother trying to parse
+    # opener options for it because those options wouldn't do anything
+    # meaningful on such old repos.
+    if b'revlogv1' in requirements or REVLOGV2_REQUIREMENT in requirements:
+        options.update(resolverevlogstorevfsoptions(ui, requirements))
+
+    return options
+
+def resolverevlogstorevfsoptions(ui, requirements):
+    """Resolve opener options specific to revlogs."""
+
+    options = {}
+
+    if b'revlogv1' in requirements:
+        options[b'revlogv1'] = True
+    if REVLOGV2_REQUIREMENT in requirements:
+        options[b'revlogv2'] = True
+
+    if b'generaldelta' in requirements:
+        options[b'generaldelta'] = True
+
+    # experimental config: format.chunkcachesize
+    chunkcachesize = ui.configint(b'format', b'chunkcachesize')
+    if chunkcachesize is not None:
+        options[b'chunkcachesize'] = chunkcachesize
+
+    deltabothparents = ui.configbool(b'storage',
+                                     b'revlog.optimize-delta-parent-choice')
+    options[b'deltabothparents'] = deltabothparents
+
+    options[b'lazydeltabase'] = not scmutil.gddeltaconfig(ui)
+
+    chainspan = ui.configbytes(b'experimental', b'maxdeltachainspan')
+    if 0 <= chainspan:
+        options[b'maxdeltachainspan'] = chainspan
+
+    mmapindexthreshold = ui.configbytes(b'experimental',
+                                        b'mmapindexthreshold')
+    if mmapindexthreshold is not None:
+        options[b'mmapindexthreshold'] = mmapindexthreshold
+
+    withsparseread = ui.configbool(b'experimental', b'sparse-read')
+    srdensitythres = float(ui.config(b'experimental',
+                                     b'sparse-read.density-threshold'))
+    srmingapsize = ui.configbytes(b'experimental',
+                                  b'sparse-read.min-gap-size')
+    options[b'with-sparse-read'] = withsparseread
+    options[b'sparse-read-density-threshold'] = srdensitythres
+    options[b'sparse-read-min-gap-size'] = srmingapsize
+
+    sparserevlog = SPARSEREVLOG_REQUIREMENT in requirements
+    options[b'sparse-revlog'] = sparserevlog
+    if sparserevlog:
+        options[b'generaldelta'] = True
+
+    maxchainlen = None
+    if sparserevlog:
+        maxchainlen = revlogconst.SPARSE_REVLOG_MAX_CHAIN_LENGTH
+    # experimental config: format.maxchainlen
+    maxchainlen = ui.configint(b'format', b'maxchainlen', maxchainlen)
+    if maxchainlen is not None:
+        options[b'maxchainlen'] = maxchainlen
+
+    for r in requirements:
+        if r.startswith(b'exp-compression-'):
+            options[b'compengine'] = r[len(b'exp-compression-'):]
+
+    return options
+
 @interfaceutil.implementer(repository.completelocalrepository)
 class localrepository(object):
 
@@ -601,11 +689,6 @@ class localrepository(object):
         'dotencode',
         'exp-sparse',
         'internal-phase'
-    }
-    openerreqs = {
-        'revlogv1',
-        'generaldelta',
-        'treemanifest',
     }
 
     # list of prefix for file which can be written without 'wlock'
@@ -712,7 +795,6 @@ class localrepository(object):
                 self.svfs.vfs.audit = self._getsvfsward(self.svfs.vfs.audit)
             else: # standard vfs
                 self.svfs.audit = self._getsvfsward(self.svfs.audit)
-        self._applyopenerreqs()
 
         self._dirstatevalidatewarned = False
 
@@ -816,56 +898,6 @@ class localrepository(object):
                                                               role='client'))
             caps.add('bundle2=' + urlreq.quote(capsblob))
         return caps
-
-    def _applyopenerreqs(self):
-        self.svfs.options = {r: True for r in self.requirements
-                             if r in self.openerreqs}
-        # experimental config: format.chunkcachesize
-        chunkcachesize = self.ui.configint('format', 'chunkcachesize')
-        if chunkcachesize is not None:
-            self.svfs.options['chunkcachesize'] = chunkcachesize
-        # experimental config: format.manifestcachesize
-        manifestcachesize = self.ui.configint('format', 'manifestcachesize')
-        if manifestcachesize is not None:
-            self.svfs.options['manifestcachesize'] = manifestcachesize
-        deltabothparents = self.ui.configbool('storage',
-            'revlog.optimize-delta-parent-choice')
-        self.svfs.options['deltabothparents'] = deltabothparents
-        self.svfs.options['lazydeltabase'] = not scmutil.gddeltaconfig(self.ui)
-        chainspan = self.ui.configbytes('experimental', 'maxdeltachainspan')
-        if 0 <= chainspan:
-            self.svfs.options['maxdeltachainspan'] = chainspan
-        mmapindexthreshold = self.ui.configbytes('experimental',
-                                                 'mmapindexthreshold')
-        if mmapindexthreshold is not None:
-            self.svfs.options['mmapindexthreshold'] = mmapindexthreshold
-        withsparseread = self.ui.configbool('experimental', 'sparse-read')
-        srdensitythres = float(self.ui.config('experimental',
-                                              'sparse-read.density-threshold'))
-        srmingapsize = self.ui.configbytes('experimental',
-                                           'sparse-read.min-gap-size')
-        self.svfs.options['with-sparse-read'] = withsparseread
-        self.svfs.options['sparse-read-density-threshold'] = srdensitythres
-        self.svfs.options['sparse-read-min-gap-size'] = srmingapsize
-        sparserevlog = SPARSEREVLOG_REQUIREMENT in self.requirements
-        self.svfs.options['sparse-revlog'] = sparserevlog
-        if sparserevlog:
-            self.svfs.options['generaldelta'] = True
-        maxchainlen = None
-        if sparserevlog:
-            maxchainlen = revlogconst.SPARSE_REVLOG_MAX_CHAIN_LENGTH
-        # experimental config: format.maxchainlen
-        maxchainlen = self.ui.configint('format', 'maxchainlen', maxchainlen)
-        if maxchainlen is not None:
-            self.svfs.options['maxchainlen'] = maxchainlen
-
-        for r in self.requirements:
-            if r.startswith('exp-compression-'):
-                self.svfs.options['compengine'] = r[len('exp-compression-'):]
-
-        # TODO move "revlogv2" to openerreqs once finalized.
-        if REVLOGV2_REQUIREMENT in self.requirements:
-            self.svfs.options['revlogv2'] = True
 
     def _writerequirements(self):
         scmutil.writerequires(self.vfs, self.requirements)

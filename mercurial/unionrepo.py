@@ -192,14 +192,17 @@ class unionpeer(localrepo.localpeer):
     def canpush(self):
         return False
 
-class unionrepository(localrepo.localrepository):
-    def __init__(self, ui, path, path2):
-        localrepo.localrepository.__init__(self, ui, path)
-        self.ui.setconfig('phases', 'publish', False, 'unionrepo')
+class unionrepository(object):
+    """Represents the union of data in 2 repositories.
 
-        self._url = 'union:%s+%s' % (util.expandpath(path),
-                                     util.expandpath(path2))
-        self.repo2 = localrepo.localrepository(ui, path2)
+    Instances are not usable if constructed directly. Use ``instance()``
+    or ``makeunionrepository()`` to create a usable instance.
+    """
+    def __init__(self, repo2, url):
+        self.repo2 = repo2
+        self._url = url
+
+        self.ui.setconfig('phases', 'publish', False, 'unionrepo')
 
     @localrepo.unfilteredpropertycache
     def changelog(self):
@@ -260,4 +263,22 @@ def instance(ui, path, create, intents=None, createopts=None):
             repopath, repopath2 = s
     else:
         repopath, repopath2 = parentpath, path
-    return unionrepository(ui, repopath, repopath2)
+
+    return makeunionrepository(ui, repopath, repopath2)
+
+def makeunionrepository(ui, repopath1, repopath2):
+    """Make a union repository object from 2 local repo paths."""
+    repo1 = localrepo.instance(ui, repopath1, create=False)
+    repo2 = localrepo.instance(ui, repopath2, create=False)
+
+    url = 'union:%s+%s' % (util.expandpath(repopath1),
+                           util.expandpath(repopath2))
+
+    class derivedunionrepository(unionrepository, repo1.__class__):
+        pass
+
+    repo = repo1
+    repo.__class__ = derivedunionrepository
+    unionrepository.__init__(repo1, repo2, url)
+
+    return repo

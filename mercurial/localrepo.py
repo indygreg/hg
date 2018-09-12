@@ -841,11 +841,7 @@ class localrepository(object):
         return self._narrowmatch
 
     def setnarrowpats(self, newincludes, newexcludes):
-        target = self
-        if self.shared():
-            from . import hg
-            target = hg.sharedreposource(self)
-        narrowspec.save(target, newincludes, newexcludes)
+        narrowspec.save(self, newincludes, newexcludes)
         self.invalidate(clearfilecache=True)
 
     def __getitem__(self, changeid):

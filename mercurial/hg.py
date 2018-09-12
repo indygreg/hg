@@ -35,6 +35,7 @@ from . import (
     logcmdutil,
     logexchange,
     merge as mergemod,
+    narrowspec,
     node,
     phases,
     scmutil,
@@ -500,7 +501,8 @@ def _copycache(srcrepo, dstcachedir, fname):
         util.copyfile(srcbranchcache, dstbranchcache)
 
 def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
-          update=True, stream=False, branch=None, shareopts=None):
+          update=True, stream=False, branch=None, shareopts=None,
+          storeincludepats=None, storeexcludepats=None):
     """Make a copy of an existing repository.
 
     Create a copy of an existing repository in a new directory.  The
@@ -542,6 +544,13 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
     repository. "identity" means the name is derived from the node of the first
     changeset in the repository. "remote" means the name is derived from the
     remote's path/URL. Defaults to "identity."
+
+    storeincludepats and storeexcludepats: sets of file patterns to include and
+    exclude in the repository copy, respectively. If not defined, all files
+    will be included (a "full" clone). Otherwise a "narrow" clone containing
+    only the requested files will be performed. If ``storeincludepats`` is not
+    defined but ``storeexcludepats`` is, ``storeincludepats`` is assumed to be
+    ``path:.``. If both are empty sets, no files will be cloned.
     """
 
     if isinstance(source, bytes):
@@ -574,6 +583,24 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
         elif destvfs.listdir():
             raise error.Abort(_("destination '%s' is not empty") % dest)
 
+    createopts = {}
+    narrow = False
+
+    if storeincludepats is not None:
+        narrowspec.validatepatterns(storeincludepats)
+        narrow = True
+
+    if storeexcludepats is not None:
+        narrowspec.validatepatterns(storeexcludepats)
+        narrow = True
+
+    if narrow:
+        # Include everything by default if only exclusion patterns defined.
+        if storeexcludepats and not storeincludepats:
+            storeincludepats = {'path:.'}
+
+        createopts['narrowfiles'] = True
+
     shareopts = shareopts or {}
     sharepool = shareopts.get('pool')
     sharenamemode = shareopts.get('mode')
@@ -605,6 +632,11 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
             raise error.Abort(_('unknown share naming mode: %s') %
                               sharenamemode)
 
+        # TODO this is a somewhat arbitrary restriction.
+        if narrow:
+            ui.status(_('(pooled storage not supported for narrow clones)\n'))
+            sharepath = None
+
         if sharepath:
             return clonewithshare(ui, peeropts, sharepath, source, srcpeer,
                                   dest, pull=pull, rev=revs, update=update,
@@ -624,6 +656,10 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
         if (srcrepo and srcrepo.cancopy() and islocal(dest)
             and not phases.hassecret(srcrepo)):
             copy = not pull and not revs
+
+        # TODO this is a somewhat arbitrary restriction.
+        if narrow:
+            copy = False
 
         if copy:
             try:
@@ -671,8 +707,9 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
                           node=node.hex(node.nullid))
         else:
             try:
-                destpeer = peer(srcrepo or ui, peeropts, dest, create=True)
-                                # only pass ui when no srcrepo
+                # only pass ui when no srcrepo
+                destpeer = peer(srcrepo or ui, peeropts, dest, create=True,
+                                createopts=createopts)
             except OSError as inst:
                 if inst.errno == errno.EEXIST:
                     cleandir = None
@@ -714,6 +751,12 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
                     exchange.pull(local, srcpeer, revs,
                                   streamclonerequested=stream)
             elif srcrepo:
+                # TODO lift restriction once exchange.push() accepts narrow
+                # push.
+                if narrow:
+                    raise error.Abort(_('narrow clone not available for '
+                                        'remote destinations'))
+
                 exchange.push(srcrepo, destpeer, revs=revs,
                               bookmarks=srcrepo._bookmarks.keys())
             else:

@@ -16,6 +16,7 @@ from .node import (
 )
 from . import (
     mdiff,
+    phases,
     pycompat,
     setdiscovery,
 )
@@ -30,8 +31,25 @@ def pull(pullop):
     common, fetch, remoteheads = _pullchangesetdiscovery(
         repo, remote, pullop.heads, abortwhenunrelated=pullop.force)
 
+    # And fetch the data.
     pullheads = pullop.heads or remoteheads
-    _fetchchangesets(repo, tr, remote, common, fetch, pullheads)
+    csetres = _fetchchangesets(repo, tr, remote, common, fetch, pullheads)
+
+    # New revisions are written to the changelog. But all other updates
+    # are deferred. Do those now.
+
+    # Ensure all new changesets are draft by default. If the repo is
+    # publishing, the phase will be adjusted by the loop below.
+    if csetres['added']:
+        phases.registernew(repo, tr, phases.draft, csetres['added'])
+
+    # And adjust the phase of all changesets accordingly.
+    for phase in phases.phasenames:
+        if phase == b'secret' or not csetres['nodesbyphase'][phase]:
+            continue
+
+        phases.advanceboundary(repo, tr, phases.phasenames.index(phase),
+                               csetres['nodesbyphase'][phase])
 
 def _pullchangesetdiscovery(repo, remote, heads, abortwhenunrelated=True):
     """Determine which changesets need to be pulled."""
@@ -65,9 +83,6 @@ def _pullchangesetdiscovery(repo, remote, heads, abortwhenunrelated=True):
     return common, fetch, remoteheads
 
 def _fetchchangesets(repo, tr, remote, common, fetch, remoteheads):
-    if not fetch:
-        return
-
     # TODO consider adding a step here where we obtain the DAG shape first
     # (or ask the server to slice changesets into chunks for us) so that
     # we can perform multiple fetches in batches. This will facilitate
@@ -76,7 +91,7 @@ def _fetchchangesets(repo, tr, remote, common, fetch, remoteheads):
     with remote.commandexecutor() as e:
         objs = e.callcommand(b'changesetdata', {
             b'noderange': [sorted(common), sorted(remoteheads)],
-            b'fields': {b'parents', b'revision'},
+            b'fields': {b'parents', b'phase', b'revision'},
         }).result()
 
         # The context manager waits on all response data when exiting. So
@@ -108,15 +123,28 @@ def _processchangesetdata(repo, tr, objs):
     def onchangeset(cl, node):
         progress.increment()
 
+    nodesbyphase = {phase: set() for phase in phases.phasenames}
+
     # addgroup() expects a 7-tuple describing revisions. This normalizes
     # the wire data to that format.
+    #
+    # This loop also aggregates non-revision metadata, such as phase
+    # data.
     def iterrevisions():
         for cset in objs:
-            assert b'revisionsize' in cset
+            node = cset[b'node']
+
+            if b'phase' in cset:
+                nodesbyphase[cset[b'phase']].add(node)
+
+            # Some entries might only be metadata only updates.
+            if b'revisionsize' not in cset:
+                continue
+
             data = next(objs)
 
             yield (
-                cset[b'node'],
+                node,
                 cset[b'parents'][0],
                 cset[b'parents'][1],
                 # Linknode is always itself for changesets.
@@ -135,4 +163,5 @@ def _processchangesetdata(repo, tr, objs):
 
     return {
         'added': added,
+        'nodesbyphase': nodesbyphase,
     }

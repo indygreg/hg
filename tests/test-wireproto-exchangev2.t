@@ -55,6 +55,7 @@ Test basic clone
   sending command changesetdata: {
     'fields': set([
       'parents',
+      'phase',
       'revision'
     ]),
     'noderange': [
@@ -66,7 +67,7 @@ Test basic clone
     ]
   }
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  received frame(size=809; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=871; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   add changeset 3390ef850073
   add changeset 4432d83626e8
@@ -74,7 +75,7 @@ Test basic clone
   add changeset e96ae20f4188
   add changeset caa2a465451d
   updating the branch cache
-  new changesets 3390ef850073:caa2a465451d
+  new changesets 3390ef850073:caa2a465451d (3 drafts)
 
 All changesets should have been transferred
 
@@ -87,11 +88,11 @@ All changesets should have been transferred
        4       4 caa2a465451d e96ae20f4188 000000000000
 
   $ hg -R client-simple log -G -T '{rev} {node} {phase}\n'
-  o  4 caa2a465451dd1facda0f5b12312c355584188a1 public
+  o  4 caa2a465451dd1facda0f5b12312c355584188a1 draft
   |
-  o  3 e96ae20f4188487b9ae4ef3941c27c81143146e5 public
+  o  3 e96ae20f4188487b9ae4ef3941c27c81143146e5 draft
   |
-  | o  2 cd2534766bece138c7c1afdc6825302f0f62d81f public
+  | o  2 cd2534766bece138c7c1afdc6825302f0f62d81f draft
   | |
   | o  1 4432d83626e8a98655f062ec1f2a43b07f7fbbb0 public
   |/
@@ -126,6 +127,7 @@ Cloning only a specific revision works
   sending command changesetdata: {
     'fields': set([
       'parents',
+      'phase',
       'revision'
     ]),
     'noderange': [
@@ -136,7 +138,7 @@ Cloning only a specific revision works
     ]
   }
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  received frame(size=327; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=353; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   add changeset 3390ef850073
   add changeset 4432d83626e8
@@ -177,6 +179,7 @@ Incremental pull works
   sending command changesetdata: {
     'fields': set([
       'parents',
+      'phase',
       'revision'
     ]),
     'noderange': [
@@ -190,13 +193,73 @@ Incremental pull works
     ]
   }
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  received frame(size=495; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=571; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   add changeset cd2534766bec
   add changeset e96ae20f4188
   add changeset caa2a465451d
   updating the branch cache
-  new changesets cd2534766bec:caa2a465451d
+  new changesets cd2534766bec:caa2a465451d (3 drafts)
+  (run 'hg update' to get a working copy)
+
+  $ hg log -G -T '{rev} {node} {phase}\n'
+  o  4 caa2a465451dd1facda0f5b12312c355584188a1 draft
+  |
+  o  3 e96ae20f4188487b9ae4ef3941c27c81143146e5 draft
+  |
+  | o  2 cd2534766bece138c7c1afdc6825302f0f62d81f draft
+  | |
+  | o  1 4432d83626e8a98655f062ec1f2a43b07f7fbbb0 public
+  |/
+  o  0 3390ef850073fbc2f0dfff2244342c8e9229013a public
+  
+
+Phase-only update works
+
+  $ hg -R ../server-simple phase --public -r caa2a465451dd
+  $ hg --debug pull
+  pulling from http://localhost:$HGPORT/
+  using http://localhost:$HGPORT/
+  sending capabilities command
+  query 1; heads
+  sending 2 commands
+  sending command heads: {}
+  sending command known: {
+    'nodes': [
+      '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f',
+      '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1'
+    ]
+  }
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  received frame(size=43; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=3; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  searching for changes
+  all remote heads known locally
+  sending 1 commands
+  sending command changesetdata: {
+    'fields': set([
+      'parents',
+      'phase',
+      'revision'
+    ]),
+    'noderange': [
+      [
+        '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
+        '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
+      ],
+      [
+        '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
+        '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
+      ]
+    ]
+  }
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  received frame(size=92; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  2 local changesets published
   (run 'hg update' to get a working copy)
 
   $ hg log -G -T '{rev} {node} {phase}\n'
@@ -204,7 +267,7 @@ Incremental pull works
   |
   o  3 e96ae20f4188487b9ae4ef3941c27c81143146e5 public
   |
-  | o  2 cd2534766bece138c7c1afdc6825302f0f62d81f public
+  | o  2 cd2534766bece138c7c1afdc6825302f0f62d81f draft
   | |
   | o  1 4432d83626e8a98655f062ec1f2a43b07f7fbbb0 public
   |/

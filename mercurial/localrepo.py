@@ -431,7 +431,12 @@ def makelocalrepository(baseui, path, intents=None):
         extensions.loadall(ui)
 
     supportedrequirements = gathersupportedrequirements(ui)
+
+    # We first validate the requirements are known.
     ensurerequirementsrecognized(requirements, supportedrequirements)
+
+    # Then we validate that the known set is reasonable to use together.
+    ensurerequirementscompatible(ui, requirements)
 
     # At this point, we know we should be capable of opening the repository.
     # Now get on with doing that.
@@ -493,6 +498,24 @@ def ensurerequirementsrecognized(requirements, supported):
             b' '.join(sorted(missing)),
             hint=_(b'see https://mercurial-scm.org/wiki/MissingRequirement '
                    b'for more information'))
+
+def ensurerequirementscompatible(ui, requirements):
+    """Validates that a set of recognized requirements is mutually compatible.
+
+    Some requirements may not be compatible with others or require
+    config options that aren't enabled. This function is called during
+    repository opening to ensure that the set of requirements needed
+    to open a repository is sane and compatible with config options.
+
+    Extensions can monkeypatch this function to perform additional
+    checking.
+
+    ``error.RepoError`` should be raised on failure.
+    """
+    if b'exp-sparse' in requirements and not sparse.enabled:
+        raise error.RepoError(_(b'repository is using sparse feature but '
+                                b'sparse is not enabled; enable the '
+                                b'"sparse" extensions to access'))
 
 @interfaceutil.implementer(repository.completelocalrepository)
 class localrepository(object):
@@ -624,11 +647,6 @@ class localrepository(object):
         except IOError as inst:
             if inst.errno != errno.ENOENT:
                 raise
-
-        if 'exp-sparse' in self.requirements and not sparse.enabled:
-            raise error.RepoError(_('repository is using sparse feature but '
-                                    'sparse is not enabled; enable the '
-                                    '"sparse" extensions to access'))
 
         self.store = store.store(
             self.requirements, self.sharedpath,

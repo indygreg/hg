@@ -176,6 +176,7 @@ class statichttprepository(localrepo.localrepository):
         supportedrequirements = localrepo.gathersupportedrequirements(ui)
         localrepo.ensurerequirementsrecognized(requirements,
                                                supportedrequirements)
+        localrepo.ensurerequirementscompatible(ui, requirements)
 
         # setup store
         self.store = store.store(requirements, self.path, vfsclass)

@@ -408,6 +408,18 @@ def makelocalrepository(baseui, path, intents=None):
 
         raise error.RepoError(_(b'repository %s not found') % path)
 
+    # .hg/requires file contains a newline-delimited list of
+    # features/capabilities the opener (us) must have in order to use
+    # the repository. This file was introduced in Mercurial 0.9.2,
+    # which means very old repositories may not have one. We assume
+    # a missing file translates to no requirements.
+    try:
+        requirements = set(hgvfs.read(b'requires').splitlines())
+    except IOError as e:
+        if e.errno != errno.ENOENT:
+            raise
+        requirements = set()
+
     # The .hg/hgrc file may load extensions or contain config options
     # that influence repository construction. Attempt to load it and
     # process any new extensions that it may have pulled in.
@@ -424,6 +436,7 @@ def makelocalrepository(baseui, path, intents=None):
         origroot=path,
         wdirvfs=wdirvfs,
         hgvfs=hgvfs,
+        requirements=requirements,
         intents=intents)
 
 @interfaceutil.implementer(repository.completelocalrepository)
@@ -476,7 +489,8 @@ class localrepository(object):
         'bisect.state',
     }
 
-    def __init__(self, baseui, ui, origroot, wdirvfs, hgvfs, intents=None):
+    def __init__(self, baseui, ui, origroot, wdirvfs, hgvfs, requirements,
+                 intents=None):
         """Create a new local repository instance.
 
         Most callers should use ``hg.repository()``, ``localrepo.instance()``,
@@ -499,6 +513,9 @@ class localrepository(object):
 
         hgvfs
            ``vfs.vfs`` rooted at .hg/
+
+        requirements
+           ``set`` of bytestrings representing repository opening requirements.
 
         intents
            ``set`` of system strings indicating what this repo will be used
@@ -545,12 +562,23 @@ class localrepository(object):
             if engine.revlogheader():
                 self.supported.add('exp-compression-%s' % name)
 
-        try:
-            self.requirements = scmutil.readrequires(self.vfs, self.supported)
-        except IOError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
-            self.requirements = set()
+        # Validate that all seen repository requirements are supported.
+        missingrequirements = []
+        for r in requirements:
+            if r not in self.supported:
+                if not r or not r[0:1].isalnum():
+                    raise error.RequirementError(
+                        _(".hg/requires file is corrupt"))
+                missingrequirements.append(r)
+        missingrequirements.sort()
+        if missingrequirements:
+            raise error.RequirementError(
+                _("repository requires features unknown to this Mercurial: %s")
+                % " ".join(missingrequirements),
+                hint=_("see https://mercurial-scm.org/wiki/MissingRequirement"
+                       " for more information"))
+
+        self.requirements = requirements
 
         cachepath = self.vfs.join('cache')
         self.sharedpath = self.path

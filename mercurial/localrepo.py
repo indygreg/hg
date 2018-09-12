@@ -2378,12 +2378,7 @@ def undoname(fn):
 
 def instance(ui, path, create, intents=None, createopts=None):
     if create:
-        vfs = vfsmod.vfs(path, expandpath=True, realpath=True)
-
-        if vfs.exists('.hg'):
-            raise error.RepoError(_('repository %s already exists') % path)
-
-        createrepository(ui, vfs, createopts=createopts)
+        createrepository(ui, path, createopts=createopts)
 
     return localrepository(ui, util.urllocalpath(path), intents=intents)
 
@@ -2459,10 +2454,10 @@ def filterknowncreateopts(ui, createopts):
 
     return {k: v for k, v in createopts.items() if k not in known}
 
-def createrepository(ui, wdirvfs, createopts=None):
+def createrepository(ui, path, createopts=None):
     """Create a new repository in a vfs.
 
-    ``wdirvfs`` is a vfs instance pointing at the working directory.
+    ``path`` path to the new repo's working directory.
     ``createopts`` options for the new repository.
     """
     createopts = createopts or {}
@@ -2481,10 +2476,14 @@ def createrepository(ui, wdirvfs, createopts=None):
 
     requirements = newreporequirements(ui, createopts=createopts)
 
+    wdirvfs = vfsmod.vfs(path, expandpath=True, realpath=True)
     if not wdirvfs.exists():
         wdirvfs.makedirs()
 
     hgvfs = vfsmod.vfs(wdirvfs.join(b'.hg'))
+    if hgvfs.exists():
+        raise error.RepoError(_('repository %s already exists') % path)
+
     hgvfs.makedir(notindexed=True)
 
     if b'store' in requirements:

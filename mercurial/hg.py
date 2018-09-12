@@ -749,7 +749,9 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
                 overrides = {('ui', 'quietbookmarkmove'): True}
                 with local.ui.configoverride(overrides, 'clone'):
                     exchange.pull(local, srcpeer, revs,
-                                  streamclonerequested=stream)
+                                  streamclonerequested=stream,
+                                  includepats=storeincludepats,
+                                  excludepats=storeexcludepats)
             elif srcrepo:
                 # TODO lift restriction once exchange.push() accepts narrow
                 # push.

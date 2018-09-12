@@ -1313,7 +1313,8 @@ class pulloperation(object):
     """
 
     def __init__(self, repo, remote, heads=None, force=False, bookmarks=(),
-                 remotebookmarks=None, streamclonerequested=None):
+                 remotebookmarks=None, streamclonerequested=None,
+                 includepats=None, excludepats=None):
         # repo we pull into
         self.repo = repo
         # repo we pull from
@@ -1343,6 +1344,10 @@ class pulloperation(object):
         self.stepsdone = set()
         # Whether we attempted a clone from pre-generated bundles.
         self.clonebundleattempted = False
+        # Set of file patterns to include.
+        self.includepats = includepats
+        # Set of file patterns to exclude.
+        self.excludepats = excludepats
 
     @util.propertycache
     def pulledsubset(self):
@@ -1447,7 +1452,7 @@ def _fullpullbundle2(repo, pullop):
         pullop.rheads = set(pullop.rheads) - pullop.common
 
 def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
-         streamclonerequested=None):
+         streamclonerequested=None, includepats=None, excludepats=None):
     """Fetch repository data from a remote.
 
     This is the main function used to retrieve data from a remote repository.
@@ -1465,13 +1470,29 @@ def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
     of revlogs from the server. This only works when the local repository is
     empty. The default value of ``None`` means to respect the server
     configuration for preferring stream clones.
+    ``includepats`` and ``excludepats`` define explicit file patterns to
+    include and exclude in storage, respectively. If not defined, narrow
+    patterns from the repo instance are used, if available.
 
     Returns the ``pulloperation`` created for this pull.
     """
     if opargs is None:
         opargs = {}
+
+    # We allow the narrow patterns to be passed in explicitly to provide more
+    # flexibility for API consumers.
+    if includepats or excludepats:
+        includepats = includepats or set()
+        excludepats = excludepats or set()
+    else:
+        includepats, excludepats = repo.narrowpats
+
+    narrowspec.validatepatterns(includepats)
+    narrowspec.validatepatterns(excludepats)
+
     pullop = pulloperation(repo, remote, heads, force, bookmarks=bookmarks,
                            streamclonerequested=streamclonerequested,
+                           includepats=includepats, excludepats=excludepats,
                            **pycompat.strkwargs(opargs))
 
     peerlocal = pullop.remote.local()

@@ -270,7 +270,7 @@ class bundlerepository(localrepo.localrepository):
             localrepo.localrepository.__init__(self, ui, repopath)
         except error.RepoError:
             self._tempparent = pycompat.mkdtemp()
-            localrepo.instance(ui, self._tempparent, 1)
+            localrepo.instance(ui, self._tempparent, create=True)
             localrepo.localrepository.__init__(self, ui, self._tempparent)
         self.ui.setconfig('phases', 'publish', False, 'bundlerepo')
 

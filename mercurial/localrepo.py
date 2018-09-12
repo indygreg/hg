@@ -818,8 +818,8 @@ class localrepository(object):
         return caps
 
     def _applyopenerreqs(self):
-        self.svfs.options = dict((r, 1) for r in self.requirements
-                                           if r in self.openerreqs)
+        self.svfs.options = {r: True for r in self.requirements
+                             if r in self.openerreqs}
         # experimental config: format.chunkcachesize
         chunkcachesize = self.ui.configint('format', 'chunkcachesize')
         if chunkcachesize is not None:

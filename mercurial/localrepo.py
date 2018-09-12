@@ -397,6 +397,16 @@ def makelocalrepository(baseui, path, intents=None):
     hgpath = wdirvfs.join(b'.hg')
     hgvfs = vfsmod.vfs(hgpath, cacheaudited=True)
 
+    # The .hg/hgrc file may load extensions or contain config options
+    # that influence repository construction. Attempt to load it and
+    # process any new extensions that it may have pulled in.
+    try:
+        ui.readconfig(hgvfs.join(b'hgrc'), root=wdirvfs.base)
+    except IOError:
+        pass
+    else:
+        extensions.loadall(ui)
+
     return localrepository(
         baseui=baseui,
         ui=ui,
@@ -507,11 +517,6 @@ class localrepository(object):
         # Callback are in the form: func(repo, roots) --> processed root.
         # This list it to be filled by extension during repo setup
         self._phasedefaults = []
-        try:
-            self.ui.readconfig(self.vfs.join("hgrc"), self.root)
-            self._loadextensions()
-        except IOError:
-            pass
 
         if featuresetupfuncs:
             self.supported = set(self._basesupported) # use private copy
@@ -674,9 +679,6 @@ class localrepository(object):
 
     def close(self):
         self._writecaches()
-
-    def _loadextensions(self):
-        extensions.loadall(self.ui)
 
     def _writecaches(self):
         if self._revbranchcache:

@@ -19,7 +19,6 @@ from . import (
     manifest,
     namespaces,
     pathutil,
-    scmutil,
     store,
     url,
     util,
@@ -156,7 +155,7 @@ class statichttprepository(localrepo.localrepository):
         self.filtername = None
 
         try:
-            requirements = scmutil.readrequires(self.vfs, self.supported)
+            requirements = set(self.vfs.read(b'requires').splitlines())
         except IOError as inst:
             if inst.errno != errno.ENOENT:
                 raise
@@ -173,6 +172,10 @@ class statichttprepository(localrepo.localrepository):
                 # we do not care about empty old-style repositories here
                 msg = _("'%s' does not appear to be an hg repository") % path
                 raise error.RepoError(msg)
+
+        supportedrequirements = localrepo.gathersupportedrequirements(ui)
+        localrepo.ensurerequirementsrecognized(requirements,
+                                               supportedrequirements)
 
         # setup store
         self.store = store.store(requirements, self.path, vfsclass)

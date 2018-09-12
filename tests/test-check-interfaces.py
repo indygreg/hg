@@ -144,7 +144,7 @@ def main():
 
     ziverify.verifyClass(repository.completelocalrepository,
                          localrepo.localrepository)
-    repo = localrepo.localrepository(ui, rootdir)
+    repo = localrepo.makelocalrepository(ui, rootdir)
     checkzobject(repo)
 
     ziverify.verifyClass(wireprototypes.baseprotocolhandler,

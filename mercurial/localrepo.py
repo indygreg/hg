@@ -376,6 +376,18 @@ SPARSEREVLOG_REQUIREMENT = 'sparserevlog'
 # set to reflect that the extension knows how to handle that requirements.
 featuresetupfuncs = set()
 
+def makelocalrepository(ui, path, intents=None):
+    """Create a local repository object.
+
+    Given arguments needed to construct a local repository, this function
+    derives a type suitable for representing that repository and returns an
+    instance of it.
+
+    The returned object conforms to the ``repository.completelocalrepository``
+    interface.
+    """
+    return localrepository(ui, path, intents=intents)
+
 @interfaceutil.implementer(repository.completelocalrepository)
 class localrepository(object):
 
@@ -2388,7 +2400,7 @@ def instance(ui, path, create, intents=None, createopts=None):
     if create:
         createrepository(ui, localpath, createopts=createopts)
 
-    return localrepository(ui, localpath, intents=intents)
+    return makelocalrepository(ui, localpath, intents=intents)
 
 def islocal(path):
     return True

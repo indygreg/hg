@@ -255,7 +255,7 @@ def _getfilestarts(cgunpacker):
             pass
     return filespos
 
-class bundlerepository(localrepo.localrepository):
+class bundlerepository(object):
     """A repository instance that is a union of a local repo and a bundle.
 
     Instances represent a read-only repository composed of a local repository
@@ -263,25 +263,19 @@ class bundlerepository(localrepo.localrepository):
     conceptually similar to the state of a repository after an
     ``hg unbundle`` operation. However, the contents of the bundle are never
     applied to the actual base repository.
-    """
-    def __init__(self, ui, repopath, bundlepath):
-        self._tempparent = None
-        try:
-            localrepo.localrepository.__init__(self, ui, repopath)
-        except error.RepoError:
-            self._tempparent = pycompat.mkdtemp()
-            localrepo.instance(ui, self._tempparent, create=True)
-            localrepo.localrepository.__init__(self, ui, self._tempparent)
-        self.ui.setconfig('phases', 'publish', False, 'bundlerepo')
 
-        if repopath:
-            self._url = 'bundle:' + util.expandpath(repopath) + '+' + bundlepath
-        else:
-            self._url = 'bundle:' + bundlepath
+    Instances constructed directly are not usable as repository objects.
+    Use instance() or makebundlerepository() to create instances.
+    """
+    def __init__(self, bundlepath, url, tempparent):
+        self._tempparent = tempparent
+        self._url = url
+
+        self.ui.setconfig('phases', 'publish', False, 'bundlerepo')
 
         self.tempfile = None
         f = util.posixfile(bundlepath, "rb")
-        bundle = exchange.readbundle(ui, f, bundlepath)
+        bundle = exchange.readbundle(self.ui, f, bundlepath)
 
         if isinstance(bundle, bundle2.unbundle20):
             self._bundlefile = bundle
@@ -311,7 +305,7 @@ class bundlerepository(localrepo.localrepository):
             if bundle.compressed():
                 f = self._writetempbundle(bundle.read, '.hg10un',
                                           header='HG10UN')
-                bundle = exchange.readbundle(ui, f, bundlepath, self.vfs)
+                bundle = exchange.readbundle(self.ui, f, bundlepath, self.vfs)
 
             self._bundlefile = bundle
             self._cgunpacker = bundle
@@ -484,7 +478,41 @@ def instance(ui, path, create, intents=None, createopts=None):
 
 def makebundlerepository(ui, repopath, bundlepath):
     """Make a bundle repository object based on repo and bundle paths."""
-    return bundlerepository(ui, repopath, bundlepath)
+    if repopath:
+        url = 'bundle:%s+%s' % (util.expandpath(repopath), bundlepath)
+    else:
+        url = 'bundle:%s' % bundlepath
+
+    # Because we can't make any guarantees about the type of the base
+    # repository, we can't have a static class representing the bundle
+    # repository. We also can't make any guarantees about how to even
+    # call the base repository's constructor!
+    #
+    # So, our strategy is to go through ``localrepo.instance()`` to construct
+    # a repo instance. Then, we dynamically create a new type derived from
+    # both it and our ``bundlerepository`` class which overrides some
+    # functionality. We then change the type of the constructed repository
+    # to this new type and initialize the bundle-specific bits of it.
+
+    try:
+        parentrepo = localrepo.instance(ui, repopath, create=False)
+        tempparent = None
+    except error.RepoError:
+        tempparent = pycompat.mkdtemp()
+        try:
+            parentrepo = localrepo.instance(ui, tempparent, create=True)
+        except Exception:
+            shutil.rmtree(tempparent)
+            raise
+
+    class derivedbundlerepository(bundlerepository, parentrepo.__class__):
+        pass
+
+    repo = parentrepo
+    repo.__class__ = derivedbundlerepository
+    bundlerepository.__init__(repo, bundlepath, url, tempparent)
+
+    return repo
 
 class bundletransactionmanager(object):
     def transaction(self):

@@ -737,6 +737,10 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
                 revs = None
             local = destpeer.local()
             if local:
+                if narrow:
+                    with local.lock():
+                        local.setnarrowpats(storeincludepats, storeexcludepats)
+
                 u = util.url(abspath)
                 defaulturl = bytes(u)
                 local.ui.setconfig('paths', 'default', defaulturl, 'clone')

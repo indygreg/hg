@@ -92,19 +92,6 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
 
     if opts['narrow']:
         def pullbundle2extraprepare_widen(orig, pullop, kwargs):
-            # Create narrow spec patterns from clone flags
-            includepats = narrowspec.parsepatterns(opts['include'])
-            excludepats = narrowspec.parsepatterns(opts['exclude'])
-
-            if not includepats and excludepats:
-                # If nothing was included, we assume the user meant to include
-                # everything, except what they asked to exclude.
-                includepats = {'path:.'}
-
-            pullop.repo.setnarrowpats(includepats, excludepats)
-
-            # This will populate 'includepats' etc with the values from the
-            # narrowspec we just saved.
             orig(pullop, kwargs)
 
             if opts.get('depth'):

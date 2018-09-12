@@ -2463,7 +2463,7 @@ def createrepository(ui, wdirvfs, createopts=None):
     """Create a new repository in a vfs.
 
     ``wdirvfs`` is a vfs instance pointing at the working directory.
-    ``requirements`` is a set of requirements for the new repository.
+    ``createopts`` options for the new repository.
     """
     createopts = createopts or {}
 

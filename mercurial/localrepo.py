@@ -386,7 +386,18 @@ def makelocalrepository(ui, path, intents=None):
     The returned object conforms to the ``repository.completelocalrepository``
     interface.
     """
-    return localrepository(ui, path, intents=intents)
+    # Working directory VFS rooted at repository root.
+    wdirvfs = vfsmod.vfs(path, expandpath=True, realpath=True)
+
+    # Main VFS for .hg/ directory.
+    hgpath = wdirvfs.join(b'.hg')
+    hgvfs = vfsmod.vfs(hgpath, cacheaudited=True)
+
+    return localrepository(
+        ui, path,
+        wdirvfs=wdirvfs,
+        hgvfs=hgvfs,
+        intents=intents)
 
 @interfaceutil.implementer(repository.completelocalrepository)
 class localrepository(object):
@@ -438,30 +449,51 @@ class localrepository(object):
         'bisect.state',
     }
 
-    def __init__(self, baseui, path, intents=None):
+    def __init__(self, baseui, origroot, wdirvfs, hgvfs, intents=None):
         """Create a new local repository instance.
 
-        Most callers should use ``hg.repository()`` or ``localrepo.instance()``
-        for obtaining a new repository object.
+        Most callers should use ``hg.repository()``, ``localrepo.instance()``,
+        or ``localrepo.makelocalrepository()`` for obtaining a new repository
+        object.
+
+        Arguments:
+
+        baseui
+           ``ui.ui`` instance to use. A copy will be made (since new config
+           options may be loaded into it).
+
+        origroot
+           ``bytes`` path to working directory root of this repository.
+
+        wdirvfs
+           ``vfs.vfs`` rooted at the working directory.
+
+        hgvfs
+           ``vfs.vfs`` rooted at .hg/
+
+        intents
+           ``set`` of system strings indicating what this repo will be used
+           for.
         """
+        self.baseui = baseui
+        self.ui = baseui.copy()
+        self.ui.copy = baseui.copy  # prevent copying repo configuration
+
+        self.origroot = origroot
+        # vfs rooted at working directory.
+        self.wvfs = wdirvfs
+        self.root = wdirvfs.base
+        # vfs rooted at .hg/. Used to access most non-store paths.
+        self.vfs = hgvfs
+        self.path = hgvfs.base
 
         self.requirements = set()
         self.filtername = None
-        # wvfs: rooted at the repository root, used to access the working copy
-        self.wvfs = vfsmod.vfs(path, expandpath=True, realpath=True)
-        # vfs: rooted at .hg, used to access repo files outside of .hg/store
-        self.vfs = None
         # svfs: usually rooted at .hg/store, used to access repository history
         # If this is a shared repository, this vfs may point to another
         # repository's .hg/store directory.
         self.svfs = None
-        self.root = self.wvfs.base
-        self.path = self.wvfs.join(".hg")
-        self.origroot = path
-        self.baseui = baseui
-        self.ui = baseui.copy()
-        self.ui.copy = baseui.copy # prevent copying repo configuration
-        self.vfs = vfsmod.vfs(self.path, cacheaudited=True)
+
         if (self.ui.configbool('devel', 'all-warnings') or
             self.ui.configbool('devel', 'check-locks')):
             self.vfs.audit = self._getvfsward(self.vfs.audit)
@@ -498,7 +530,7 @@ class localrepository(object):
             except OSError as inst:
                 if inst.errno != errno.ENOENT:
                     raise
-            raise error.RepoError(_("repository %s not found") % path)
+            raise error.RepoError(_("repository %s not found") % origroot)
         else:
             try:
                 self.requirements = scmutil.readrequires(

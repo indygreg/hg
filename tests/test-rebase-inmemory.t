@@ -218,8 +218,25 @@ Test reporting of path conflicts
   
   $ hg rebase -r . -d 5
   rebasing 7:855e9797387e "added a back!" (tip)
-  abort: error: file 'a' cannot be written because  'a/' is a folder in 9b94b9373deb (containing 1 entries: a/a)
-  [255]
+  saved backup bundle to $TESTTMP/repo1/repo2/.hg/strip-backup/855e9797387e-81ee4c5d-rebase.hg
+
+  $ hg tglog
+  @  7: bb3f02be2688 'added a back!'
+  |
+  | o  6: d14530e5e3e6 'added bar'
+  | |
+  o |  5: 9b94b9373deb 'added foo'
+  |/
+  o  4: c6ad37a4f250 'a/a'
+  |
+  | o  3: 844a7de3e617 'c'
+  | |
+  o |  2: 09c044d2cb43 'd'
+  | |
+  o |  1: fc055c3b4d33 'b'
+  |/
+  o  0: b173517d0057 'a'
+  
 
   $ cd ..
 

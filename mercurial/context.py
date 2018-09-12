@@ -1910,14 +1910,19 @@ class overlayworkingctx(committablectx):
         # in p1 (test that p1 doesn't any paths matching `path/*`).
         match = matchmod.match('/', '', [path + '/'], default=b'relpath')
         matches = self.p1().manifest().matches(match)
-        if len(matches) > 0:
-            if len(matches) == 1 and matches.keys()[0] == path:
+        mfiles = matches.keys()
+        if len(mfiles) > 0:
+            if len(mfiles) == 1 and mfiles[0] == path:
+                return
+            # omit the files which are deleted in current IMM wctx
+            mfiles = [m for m in mfiles if self._cache[m]['exists']]
+            if not mfiles:
                 return
             raise error.Abort("error: file '%s' cannot be written because "
                               " '%s/' is a folder in %s (containing %d "
                               "entries: %s)"
-                              % (path, path, self.p1(), len(matches),
-                                 ', '.join(matches.keys())))
+                              % (path, path, self.p1(), len(mfiles),
+                                 ', '.join(mfiles)))
 
     def write(self, path, data, flags='', **kwargs):
         if data is None:

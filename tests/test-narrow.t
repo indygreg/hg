@@ -38,15 +38,12 @@
 
 Error if '.' or '..' are in the directory to track.
   $ hg clone --narrow ssh://user@dummy/master foo --include ./asdf
-  requesting all changes
   abort: "." and ".." are not allowed in narrowspec paths
   [255]
   $ hg clone --narrow ssh://user@dummy/master foo --include asdf/..
-  requesting all changes
   abort: "." and ".." are not allowed in narrowspec paths
   [255]
   $ hg clone --narrow ssh://user@dummy/master foo --include a/./c
-  requesting all changes
   abort: "." and ".." are not allowed in narrowspec paths
   [255]
 

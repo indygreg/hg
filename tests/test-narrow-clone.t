@@ -19,13 +19,11 @@
 Only path: and rootfilesin: pattern prefixes are allowed
 
   $ hg clone --narrow ssh://user@dummy/master badnarrow --noupdate --include 'glob:**'
-  requesting all changes
   abort: invalid prefix on narrow pattern: glob:**
   (narrow patterns must begin with one of the following: path:, rootfilesin:)
   [255]
 
   $ hg clone --narrow ssh://user@dummy/master badnarrow --noupdate --exclude 'set:ignored'
-  requesting all changes
   abort: invalid prefix on narrow pattern: set:ignored
   (narrow patterns must begin with one of the following: path:, rootfilesin:)
   [255]
@@ -67,7 +65,6 @@ narrow clone with a newline should fail
 
   $ hg clone --narrow ssh://user@dummy/master narrow_fail --noupdate --include 'dir/src/f10
   > '
-  requesting all changes
   abort: newlines are not allowed in narrowspec paths
   [255]
 

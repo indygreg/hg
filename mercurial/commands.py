@@ -43,6 +43,7 @@ from . import (
     hg,
     logcmdutil,
     merge as mergemod,
+    narrowspec,
     obsolete,
     obsutil,
     patch,
@@ -1466,13 +1467,29 @@ def clone(ui, source, dest=None, **opts):
     if opts.get('noupdate') and opts.get('updaterev'):
         raise error.Abort(_("cannot specify both --noupdate and --updaterev"))
 
+    # --include/--exclude can come from narrow or sparse.
+    includepats, excludepats = None, None
+
+    # hg.clone() differentiates between None and an empty set. So make sure
+    # patterns are sets if narrow is requested without patterns.
+    if opts.get('narrow'):
+        includepats = set()
+        excludepats = set()
+
+        if opts.get('include'):
+            includepats = narrowspec.parsepatterns(opts.get('include'))
+        if opts.get('exclude'):
+            excludepats = narrowspec.parsepatterns(opts.get('exclude'))
+
     r = hg.clone(ui, opts, source, dest,
                  pull=opts.get('pull'),
                  stream=opts.get('stream') or opts.get('uncompressed'),
                  revs=opts.get('rev'),
                  update=opts.get('updaterev') or not opts.get('noupdate'),
                  branch=opts.get('branch'),
-                 shareopts=opts.get('shareopts'))
+                 shareopts=opts.get('shareopts'),
+                 storeincludepats=includepats,
+                 storeexcludepats=excludepats)
 
     return r is None
 

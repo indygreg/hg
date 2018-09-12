@@ -479,7 +479,12 @@ def instance(ui, path, create, intents=None, createopts=None):
             repopath, bundlename = s
     else:
         repopath, bundlename = parentpath, path
-    return bundlerepository(ui, repopath, bundlename)
+
+    return makebundlerepository(ui, repopath, bundlename)
+
+def makebundlerepository(ui, repopath, bundlepath):
+    """Make a bundle repository object based on repo and bundle paths."""
+    return bundlerepository(ui, repopath, bundlepath)
 
 class bundletransactionmanager(object):
     def transaction(self):
@@ -588,8 +593,10 @@ def getremotechanges(ui, repo, peer, onlyheads=None, bundlename=None,
             bundle = None
         if not localrepo:
             # use the created uncompressed bundlerepo
-            localrepo = bundlerepo = bundlerepository(repo.baseui, repo.root,
-                                                      fname)
+            localrepo = bundlerepo = makebundlerepository(repo. baseui,
+                                                          repo.root,
+                                                          fname)
+
             # this repo contains local and peer now, so filter out local again
             common = repo.heads()
     if localrepo:

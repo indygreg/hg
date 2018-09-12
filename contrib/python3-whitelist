@@ -247,6 +247,7 @@ test-issue3084.t
 test-issue4074.t
 test-issue522.t
 test-issue586.t
+test-issue5979.t
 test-issue612.t
 test-issue619.t
 test-issue660.t

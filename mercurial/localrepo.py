@@ -479,8 +479,8 @@ def makelocalrepository(baseui, path, intents=None):
     # The store has changed over time and the exact layout is dictated by
     # requirements. The store interface abstracts differences across all
     # of them.
-    store = storemod.store(requirements, storebasepath,
-                           lambda base: vfsmod.vfs(base, cacheaudited=True))
+    store = makestore(requirements, storebasepath,
+                      lambda base: vfsmod.vfs(base, cacheaudited=True))
 
     hgvfs.createmode = store.createmode
 
@@ -566,6 +566,17 @@ def ensurerequirementscompatible(ui, requirements):
         raise error.RepoError(_(b'repository is using sparse feature but '
                                 b'sparse is not enabled; enable the '
                                 b'"sparse" extensions to access'))
+
+def makestore(requirements, path, vfstype):
+    """Construct a storage object for a repository."""
+    if b'store' in requirements:
+        if b'fncache' in requirements:
+            return storemod.fncachestore(path, vfstype,
+                                         b'dotencode' in requirements)
+
+        return storemod.encodedstore(path, vfstype)
+
+    return storemod.basicstore(path, vfstype)
 
 @interfaceutil.implementer(repository.completelocalrepository)
 class localrepository(object):

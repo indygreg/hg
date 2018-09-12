@@ -448,7 +448,7 @@ changesets that only contain changes to existing files:
 
   $ cat > fncacheloadwarn.py << EOF
   > from __future__ import absolute_import
-  > from mercurial import extensions, store
+  > from mercurial import extensions, localrepo
   > 
   > def extsetup(ui):
   >     def wrapstore(orig, requirements, *args):
@@ -456,7 +456,7 @@ changesets that only contain changes to existing files:
   >         if 'store' in requirements and 'fncache' in requirements:
   >             instrumentfncachestore(store, ui)
   >         return store
-  >     extensions.wrapfunction(store, 'store', wrapstore)
+  >     extensions.wrapfunction(localrepo, 'makestore', wrapstore)
   > 
   > def instrumentfncachestore(fncachestore, ui):
   >     class instrumentedfncache(type(fncachestore.fncache)):

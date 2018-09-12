@@ -585,10 +585,3 @@ class fncachestore(basicstore):
             if e.startswith(path) and self._exists(e):
                 return True
         return False
-
-def store(requirements, path, vfstype):
-    if 'store' in requirements:
-        if 'fncache' in requirements:
-            return fncachestore(path, vfstype, 'dotencode' in requirements)
-        return encodedstore(path, vfstype)
-    return basicstore(path, vfstype)

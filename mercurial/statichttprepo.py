@@ -19,7 +19,6 @@ from . import (
     manifest,
     namespaces,
     pathutil,
-    store,
     url,
     util,
     vfs as vfsmod,
@@ -179,7 +178,7 @@ class statichttprepository(localrepo.localrepository):
         localrepo.ensurerequirementscompatible(ui, requirements)
 
         # setup store
-        self.store = store.store(requirements, self.path, vfsclass)
+        self.store = localrepo.makestore(requirements, self.path, vfsclass)
         self.spath = self.store.path
         self.svfs = self.store.opener
         self.sjoin = self.store.join

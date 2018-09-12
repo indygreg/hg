@@ -56,3 +56,10 @@ web.apiserver = true
 web.api.http-v2 = true
 EOF
 }
+
+enablehttpv2client() {
+  cat >> $HGRCPATH << EOF
+[experimental]
+httppeer.advertise-v2 = true
+EOF
+}

@@ -26,6 +26,7 @@ from . import (
     changegroup,
     discovery,
     error,
+    exchangev2,
     lock as lockmod,
     logexchange,
     narrowspec,
@@ -1506,17 +1507,21 @@ def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
 
     pullop.trmanager = transactionmanager(repo, 'pull', remote.url())
     with repo.wlock(), repo.lock(), pullop.trmanager:
-        # This should ideally be in _pullbundle2(). However, it needs to run
-        # before discovery to avoid extra work.
-        _maybeapplyclonebundle(pullop)
-        streamclone.maybeperformlegacystreamclone(pullop)
-        _pulldiscovery(pullop)
-        if pullop.canusebundle2:
-            _fullpullbundle2(repo, pullop)
-        _pullchangeset(pullop)
-        _pullphase(pullop)
-        _pullbookmarks(pullop)
-        _pullobsolete(pullop)
+        # Use the modern wire protocol, if available.
+        if remote.capable('exchangev2'):
+            exchangev2.pull(pullop)
+        else:
+            # This should ideally be in _pullbundle2(). However, it needs to run
+            # before discovery to avoid extra work.
+            _maybeapplyclonebundle(pullop)
+            streamclone.maybeperformlegacystreamclone(pullop)
+            _pulldiscovery(pullop)
+            if pullop.canusebundle2:
+                _fullpullbundle2(repo, pullop)
+            _pullchangeset(pullop)
+            _pullphase(pullop)
+            _pullbookmarks(pullop)
+            _pullobsolete(pullop)
 
     # storing remotenames
     if repo.ui.configbool('experimental', 'remotenames'):

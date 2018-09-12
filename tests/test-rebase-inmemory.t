@@ -179,6 +179,48 @@ Test reporting of path conflicts
   rebasing 4:daf7dfc139cb "a/a" (tip)
   saved backup bundle to $TESTTMP/repo1/repo2/.hg/strip-backup/daf7dfc139cb-fdbfcf4f-rebase.hg
 
+  $ hg tglog
+  @  4: c6ad37a4f250 'a/a'
+  |
+  | o  3: 844a7de3e617 'c'
+  | |
+  o |  2: 09c044d2cb43 'd'
+  | |
+  o |  1: fc055c3b4d33 'b'
+  |/
+  o  0: b173517d0057 'a'
+  
+  $ echo foo > foo
+  $ hg ci -Aqm "added foo"
+  $ hg up '.^'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ echo bar > bar
+  $ hg ci -Aqm "added bar"
+  $ hg rm a/a
+  $ echo a > a
+  $ hg ci -Aqm "added a back!"
+  $ hg tglog
+  @  7: 855e9797387e 'added a back!'
+  |
+  o  6: d14530e5e3e6 'added bar'
+  |
+  | o  5: 9b94b9373deb 'added foo'
+  |/
+  o  4: c6ad37a4f250 'a/a'
+  |
+  | o  3: 844a7de3e617 'c'
+  | |
+  o |  2: 09c044d2cb43 'd'
+  | |
+  o |  1: fc055c3b4d33 'b'
+  |/
+  o  0: b173517d0057 'a'
+  
+  $ hg rebase -r . -d 5
+  rebasing 7:855e9797387e "added a back!" (tip)
+  abort: error: file 'a' cannot be written because  'a/' is a folder in 9b94b9373deb (containing 1 entries: a/a)
+  [255]
+
   $ cd ..
 
 Test dry-run rebasing

@@ -152,8 +152,10 @@ class shelvedfile(object):
             fp.close()
 
     def bundlerepo(self):
-        return bundlerepo.bundlerepository(self.repo.baseui, self.repo.root,
-                                           self.vfs.join(self.fname))
+        path = self.vfs.join(self.fname)
+        return bundlerepo.instance(self.repo.baseui,
+                                   'bundle://%s+%s' % (self.repo.root, path))
+
     def writebundle(self, bases, node):
         cgversion = changegroup.safeversion(self.repo)
         if cgversion == '01':

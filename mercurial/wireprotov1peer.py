@@ -64,6 +64,7 @@ def batchable(f):
         encresref.set(self._submitone(cmd, encargsorres))
         return next(batchable)
     setattr(plain, 'batchable', f)
+    setattr(plain, '__name__', f.__name__)
     return plain
 
 class future(object):

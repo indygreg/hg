@@ -29,27 +29,6 @@ VALID_PREFIXES = (
     b'rootfilesin:',
 )
 
-def parseserverpatterns(text):
-    """Parses the narrowspec format that's returned by the server."""
-    includepats = set()
-    excludepats = set()
-
-    # We get one entry per line, in the format "<key> <value>".
-    # It's OK for value to contain other spaces.
-    for kp in (l.split(' ', 1) for l in text.splitlines()):
-        if len(kp) != 2:
-            raise error.Abort(_('Invalid narrowspec pattern line: "%s"') % kp)
-        key = kp[0]
-        pat = kp[1]
-        if key == 'include':
-            includepats.add(pat)
-        elif key == 'exclude':
-            excludepats.add(pat)
-        else:
-            raise error.Abort(_('Invalid key "%s" in server response') % key)
-
-    return includepats, excludepats
-
 def normalizesplitpattern(kind, pat):
     """Returns the normalized version of a pattern and kind.
 

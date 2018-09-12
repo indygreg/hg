@@ -397,6 +397,17 @@ def makelocalrepository(baseui, path, intents=None):
     hgpath = wdirvfs.join(b'.hg')
     hgvfs = vfsmod.vfs(hgpath, cacheaudited=True)
 
+    # The .hg/ path should exist and should be a directory. All other
+    # cases are errors.
+    if not hgvfs.isdir():
+        try:
+            hgvfs.stat()
+        except OSError as e:
+            if e.errno != errno.ENOENT:
+                raise
+
+        raise error.RepoError(_(b'repository %s not found') % path)
+
     # The .hg/hgrc file may load extensions or contain config options
     # that influence repository construction. Attempt to load it and
     # process any new extensions that it may have pulled in.
@@ -503,7 +514,6 @@ class localrepository(object):
         self.vfs = hgvfs
         self.path = hgvfs.base
 
-        self.requirements = set()
         self.filtername = None
         # svfs: usually rooted at .hg/store, used to access repository history
         # If this is a shared repository, this vfs may point to another
@@ -535,20 +545,12 @@ class localrepository(object):
             if engine.revlogheader():
                 self.supported.add('exp-compression-%s' % name)
 
-        if not self.vfs.isdir():
-            try:
-                self.vfs.stat()
-            except OSError as inst:
-                if inst.errno != errno.ENOENT:
-                    raise
-            raise error.RepoError(_("repository %s not found") % origroot)
-        else:
-            try:
-                self.requirements = scmutil.readrequires(
-                        self.vfs, self.supported)
-            except IOError as inst:
-                if inst.errno != errno.ENOENT:
-                    raise
+        try:
+            self.requirements = scmutil.readrequires(self.vfs, self.supported)
+        except IOError as inst:
+            if inst.errno != errno.ENOENT:
+                raise
+            self.requirements = set()
 
         cachepath = self.vfs.join('cache')
         self.sharedpath = self.path

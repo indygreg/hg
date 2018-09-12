@@ -438,6 +438,19 @@ def makelocalrepository(baseui, path, intents=None):
     # Then we validate that the known set is reasonable to use together.
     ensurerequirementscompatible(ui, requirements)
 
+    # TODO there are unhandled edge cases related to opening repositories with
+    # shared storage. If storage is shared, we should also test for requirements
+    # compatibility in the pointed-to repo. This entails loading the .hg/hgrc in
+    # that repo, as that repo may load extensions needed to open it. This is a
+    # bit complicated because we don't want the other hgrc to overwrite settings
+    # in this hgrc.
+    #
+    # This bug is somewhat mitigated by the fact that we copy the .hg/requires
+    # file when sharing repos. But if a requirement is added after the share is
+    # performed, thereby introducing a new requirement for the opener, we may
+    # will not see that and could encounter a run-time error interacting with
+    # that shared store since it has an unknown-to-us requirement.
+
     # At this point, we know we should be capable of opening the repository.
     # Now get on with doing that.
 

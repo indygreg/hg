@@ -439,6 +439,29 @@ test unshare relshared repo
 
   $ rm -r thatdir
 
+Demonstrate buggy behavior around requirements validation
+See comment in localrepo.py:makelocalrepository() for more.
+
+  $ hg init sharenewrequires
+  $ hg share sharenewrequires shareoldrequires
+  updating working directory
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+  $ cat >> sharenewrequires/.hg/requires << EOF
+  > missing-requirement
+  > EOF
+
+We cannot open the repo with the unknown requirement
+
+  $ hg -R sharenewrequires status
+  abort: repository requires features unknown to this Mercurial: missing-requirement!
+  (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
+  [255]
+
+BUG: we don't get the same error when opening the shared repo pointing to it
+
+  $ hg -R shareoldrequires status
+
 Explicitly kill daemons to let the test exit on Windows
 
   $ killdaemons.py

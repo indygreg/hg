@@ -2377,10 +2377,11 @@ def undoname(fn):
     return os.path.join(base, name.replace('journal', 'undo', 1))
 
 def instance(ui, path, create, intents=None, createopts=None):
+    localpath = util.urllocalpath(path)
     if create:
-        createrepository(ui, path, createopts=createopts)
+        createrepository(ui, localpath, createopts=createopts)
 
-    return localrepository(ui, util.urllocalpath(path), intents=intents)
+    return localrepository(ui, localpath, intents=intents)
 
 def islocal(path):
     return True

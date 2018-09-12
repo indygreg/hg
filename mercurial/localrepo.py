@@ -376,7 +376,7 @@ SPARSEREVLOG_REQUIREMENT = 'sparserevlog'
 # set to reflect that the extension knows how to handle that requirements.
 featuresetupfuncs = set()
 
-def makelocalrepository(ui, path, intents=None):
+def makelocalrepository(baseui, path, intents=None):
     """Create a local repository object.
 
     Given arguments needed to construct a local repository, this function
@@ -386,6 +386,10 @@ def makelocalrepository(ui, path, intents=None):
     The returned object conforms to the ``repository.completelocalrepository``
     interface.
     """
+    ui = baseui.copy()
+    # Prevent copying repo configuration.
+    ui.copy = baseui.copy
+
     # Working directory VFS rooted at repository root.
     wdirvfs = vfsmod.vfs(path, expandpath=True, realpath=True)
 
@@ -394,7 +398,9 @@ def makelocalrepository(ui, path, intents=None):
     hgvfs = vfsmod.vfs(hgpath, cacheaudited=True)
 
     return localrepository(
-        ui, path,
+        baseui=baseui,
+        ui=ui,
+        origroot=path,
         wdirvfs=wdirvfs,
         hgvfs=hgvfs,
         intents=intents)
@@ -449,7 +455,7 @@ class localrepository(object):
         'bisect.state',
     }
 
-    def __init__(self, baseui, origroot, wdirvfs, hgvfs, intents=None):
+    def __init__(self, baseui, ui, origroot, wdirvfs, hgvfs, intents=None):
         """Create a new local repository instance.
 
         Most callers should use ``hg.repository()``, ``localrepo.instance()``,
@@ -459,8 +465,10 @@ class localrepository(object):
         Arguments:
 
         baseui
-           ``ui.ui`` instance to use. A copy will be made (since new config
-           options may be loaded into it).
+           ``ui.ui`` instance that ``ui`` argument was based off of.
+
+        ui
+           ``ui.ui`` instance for use by the repository.
 
         origroot
            ``bytes`` path to working directory root of this repository.
@@ -476,9 +484,7 @@ class localrepository(object):
            for.
         """
         self.baseui = baseui
-        self.ui = baseui.copy()
-        self.ui.copy = baseui.copy  # prevent copying repo configuration
-
+        self.ui = ui
         self.origroot = origroot
         # vfs rooted at working directory.
         self.wvfs = wdirvfs

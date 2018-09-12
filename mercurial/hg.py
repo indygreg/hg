@@ -158,9 +158,10 @@ def openpath(ui, path):
 wirepeersetupfuncs = []
 
 def _peerorrepo(ui, path, create=False, presetupfuncs=None,
-                intents=None):
+                intents=None, createopts=None):
     """return a repository object for the specified path"""
-    obj = _peerlookup(path).instance(ui, path, create, intents=intents)
+    obj = _peerlookup(path).instance(ui, path, create, intents=intents,
+                                     createopts=createopts)
     ui = getattr(obj, "ui", ui)
     if ui.configbool('devel', 'debug.extensions'):
         log = lambda msg, *values: ui.debug('debug.extensions: ',
@@ -184,20 +185,22 @@ def _peerorrepo(ui, path, create=False, presetupfuncs=None,
             f(ui, obj)
     return obj
 
-def repository(ui, path='', create=False, presetupfuncs=None, intents=None):
+def repository(ui, path='', create=False, presetupfuncs=None, intents=None,
+               createopts=None):
     """return a repository object for the specified path"""
     peer = _peerorrepo(ui, path, create, presetupfuncs=presetupfuncs,
-                       intents=intents)
+                       intents=intents, createopts=createopts)
     repo = peer.local()
     if not repo:
         raise error.Abort(_("repository '%s' is not local") %
                          (path or peer.url()))
     return repo.filtered('visible')
 
-def peer(uiorrepo, opts, path, create=False, intents=None):
+def peer(uiorrepo, opts, path, create=False, intents=None, createopts=None):
     '''return a repository peer for the specified path'''
     rui = remoteui(uiorrepo, opts)
-    return _peerorrepo(rui, path, create, intents=intents).peer()
+    return _peerorrepo(rui, path, create, intents=intents,
+                       createopts=createopts).peer()
 
 def defaultdest(source):
     '''return default destination of clone if none is given

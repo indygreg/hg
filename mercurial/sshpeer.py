@@ -597,7 +597,7 @@ def makepeer(ui, path, proc, stdin, stdout, stderr, autoreadstderr=True):
         raise error.RepoError(_('unknown version of SSH protocol: %s') %
                               protoname)
 
-def instance(ui, path, create, intents=None):
+def instance(ui, path, create, intents=None, createopts=None):
     """Create an SSH peer.
 
     The returned object conforms to the ``wireprotov1peer.wirepeer`` interface.
@@ -620,6 +620,14 @@ def instance(ui, path, create, intents=None):
     args = procutil.sshargs(sshcmd, u.host, u.user, u.port)
 
     if create:
+        # We /could/ do this, but only if the remote init command knows how to
+        # handle them. We don't yet make any assumptions about that. And without
+        # querying the remote, there's no way of knowing if the remote even
+        # supports said requested feature.
+        if createopts:
+            raise error.RepoError(_('cannot create remote SSH repositories '
+                                    'with extra options'))
+
         cmd = '%s %s %s' % (sshcmd, args,
             procutil.shellquote('%s init %s' %
                 (_serverquote(remotecmd), _serverquote(remotepath))))

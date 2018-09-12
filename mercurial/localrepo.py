@@ -2380,26 +2380,28 @@ def undoname(fn):
     assert name.startswith('journal')
     return os.path.join(base, name.replace('journal', 'undo', 1))
 
-def instance(ui, path, create, intents=None):
+def instance(ui, path, create, intents=None, createopts=None):
     if create:
         vfs = vfsmod.vfs(path, expandpath=True, realpath=True)
 
         if vfs.exists('.hg'):
             raise error.RepoError(_('repository %s already exists') % path)
 
-        createrepository(ui, vfs)
+        createrepository(ui, vfs, createopts=createopts)
 
     return localrepository(ui, util.urllocalpath(path), intents=intents)
 
 def islocal(path):
     return True
 
-def newreporequirements(ui):
+def newreporequirements(ui, createopts=None):
     """Determine the set of requirements for a new local repository.
 
     Extensions can wrap this function to specify custom requirements for
     new repositories.
     """
+    createopts = createopts or {}
+
     requirements = {'revlogv1'}
     if ui.configbool('format', 'usestore'):
         requirements.add('store')
@@ -2440,13 +2442,43 @@ def newreporequirements(ui):
 
     return requirements
 
-def createrepository(ui, wdirvfs):
+def filterknowncreateopts(ui, createopts):
+    """Filters a dict of repo creation options against options that are known.
+
+    Receives a dict of repo creation options and returns a dict of those
+    options that we don't know how to handle.
+
+    This function is called as part of repository creation. If the
+    returned dict contains any items, repository creation will not
+    be allowed, as it means there was a request to create a repository
+    with options not recognized by loaded code.
+
+    Extensions can wrap this function to filter out creation options
+    they know how to handle.
+    """
+    return dict(createopts)
+
+def createrepository(ui, wdirvfs, createopts=None):
     """Create a new repository in a vfs.
 
     ``wdirvfs`` is a vfs instance pointing at the working directory.
     ``requirements`` is a set of requirements for the new repository.
     """
-    requirements = newreporequirements(ui)
+    createopts = createopts or {}
+
+    unknownopts = filterknowncreateopts(ui, createopts)
+
+    if not isinstance(unknownopts, dict):
+        raise error.ProgrammingError('filterknowncreateopts() did not return '
+                                     'a dict')
+
+    if unknownopts:
+        raise error.Abort(_('unable to create repository because of unknown '
+                            'creation option: %s') %
+                          ', '.sorted(unknownopts),
+                          hint=_('is a required extension not loaded?'))
+
+    requirements = newreporequirements(ui, createopts=createopts)
 
     if not wdirvfs.exists():
         wdirvfs.makedirs()

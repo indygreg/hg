@@ -78,9 +78,10 @@ class ShortRepository(object):
     def __repr__(self):
         return '<ShortRepository: %s>' % self.scheme
 
-    def instance(self, ui, url, create, intents=None):
+    def instance(self, ui, url, create, intents=None, createopts=None):
         url = self.resolve(url)
-        return hg._peerlookup(url).instance(ui, url, create, intents=intents)
+        return hg._peerlookup(url).instance(ui, url, create, intents=intents,
+                                            createopts=createopts)
 
     def resolve(self, url):
         # Should this use the util.url class, or is manual parsing better?

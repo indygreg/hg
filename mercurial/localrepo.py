@@ -56,7 +56,7 @@ from . import (
     revsetlang,
     scmutil,
     sparse,
-    store,
+    store as storemod,
     subrepoutil,
     tags as tagsmod,
     transaction,
@@ -454,6 +454,40 @@ def makelocalrepository(baseui, path, intents=None):
     # At this point, we know we should be capable of opening the repository.
     # Now get on with doing that.
 
+    # The "store" part of the repository holds versioned data. How it is
+    # accessed is determined by various requirements. The ``shared`` or
+    # ``relshared`` requirements indicate the store lives in the path contained
+    # in the ``.hg/sharedpath`` file. This is an absolute path for
+    # ``shared`` and relative to ``.hg/`` for ``relshared``.
+    if b'shared' in requirements or b'relshared' in requirements:
+        sharedpath = hgvfs.read(b'sharedpath').rstrip(b'\n')
+        if b'relshared' in requirements:
+            sharedpath = hgvfs.join(sharedpath)
+
+        sharedvfs = vfsmod.vfs(sharedpath, realpath=True)
+
+        if not sharedvfs.exists():
+            raise error.RepoError(_(b'.hg/sharedpath points to nonexistent '
+                                    b'directory %s') % sharedvfs.base)
+
+        storebasepath = sharedvfs.base
+        cachepath = sharedvfs.join(b'cache')
+    else:
+        storebasepath = hgvfs.base
+        cachepath = hgvfs.join(b'cache')
+
+    # The store has changed over time and the exact layout is dictated by
+    # requirements. The store interface abstracts differences across all
+    # of them.
+    store = storemod.store(requirements, storebasepath,
+                           lambda base: vfsmod.vfs(base, cacheaudited=True))
+
+    hgvfs.createmode = store.createmode
+
+    # The cache vfs is used to manage cache files.
+    cachevfs = vfsmod.vfs(cachepath, cacheaudited=True)
+    cachevfs.createmode = store.createmode
+
     return localrepository(
         baseui=baseui,
         ui=ui,
@@ -462,6 +496,9 @@ def makelocalrepository(baseui, path, intents=None):
         hgvfs=hgvfs,
         requirements=requirements,
         supportedrequirements=supportedrequirements,
+        sharedpath=storebasepath,
+        store=store,
+        cachevfs=cachevfs,
         intents=intents)
 
 def gathersupportedrequirements(ui):
@@ -581,7 +618,8 @@ class localrepository(object):
     }
 
     def __init__(self, baseui, ui, origroot, wdirvfs, hgvfs, requirements,
-                 supportedrequirements, intents=None):
+                 supportedrequirements, sharedpath, store, cachevfs,
+                 intents=None):
         """Create a new local repository instance.
 
         Most callers should use ``hg.repository()``, ``localrepo.instance()``,
@@ -612,6 +650,17 @@ class localrepository(object):
            ``set`` of bytestrings representing repository requirements that we
            know how to open. May be a supetset of ``requirements``.
 
+        sharedpath
+           ``bytes`` Defining path to storage base directory. Points to a
+           ``.hg/`` directory somewhere.
+
+        store
+           ``store.basicstore`` (or derived) instance providing access to
+           versioned storage.
+
+        cachevfs
+           ``vfs.vfs`` used for cache files.
+
         intents
            ``set`` of system strings indicating what this repo will be used
            for.
@@ -627,12 +676,11 @@ class localrepository(object):
         self.path = hgvfs.base
         self.requirements = requirements
         self.supported = supportedrequirements
+        self.sharedpath = sharedpath
+        self.store = store
+        self.cachevfs = cachevfs
 
         self.filtername = None
-        # svfs: usually rooted at .hg/store, used to access repository history
-        # If this is a shared repository, this vfs may point to another
-        # repository's .hg/store directory.
-        self.svfs = None
 
         if (self.ui.configbool('devel', 'all-warnings') or
             self.ui.configbool('devel', 'check-locks')):
@@ -644,32 +692,9 @@ class localrepository(object):
 
         color.setup(self.ui)
 
-        cachepath = self.vfs.join('cache')
-        self.sharedpath = self.path
-        try:
-            sharedpath = self.vfs.read("sharedpath").rstrip('\n')
-            if 'relshared' in self.requirements:
-                sharedpath = self.vfs.join(sharedpath)
-            vfs = vfsmod.vfs(sharedpath, realpath=True)
-            cachepath = vfs.join('cache')
-            s = vfs.base
-            if not vfs.exists():
-                raise error.RepoError(
-                    _('.hg/sharedpath points to nonexistent directory %s') % s)
-            self.sharedpath = s
-        except IOError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
-
-        self.store = store.store(
-            self.requirements, self.sharedpath,
-            lambda base: vfsmod.vfs(base, cacheaudited=True))
         self.spath = self.store.path
         self.svfs = self.store.vfs
         self.sjoin = self.store.join
-        self.vfs.createmode = self.store.createmode
-        self.cachevfs = vfsmod.vfs(cachepath, cacheaudited=True)
-        self.cachevfs.createmode = self.store.createmode
         if (self.ui.configbool('devel', 'all-warnings') or
             self.ui.configbool('devel', 'check-locks')):
             if util.safehasattr(self.svfs, 'vfs'): # this is filtervfs

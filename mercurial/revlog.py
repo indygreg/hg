@@ -415,6 +415,10 @@ class revlog(object):
         self._srdensitythreshold = 0.50
         self._srmingapsize = 262144
 
+        # Make copy of flag processors so each revlog instance can support
+        # custom flags.
+        self._flagprocessors = dict(_flagprocessors)
+
         mmapindexthreshold = None
         v = REVLOG_DEFAULT_VERSION
         opts = getattr(opener, 'options', None)
@@ -1707,11 +1711,11 @@ class revlog(object):
             if flag & flags:
                 vhash = True
 
-                if flag not in _flagprocessors:
+                if flag not in self._flagprocessors:
                     message = _("missing processor for flag '%#x'") % (flag)
                     raise RevlogError(message)
 
-                processor = _flagprocessors[flag]
+                processor = self._flagprocessors[flag]
                 if processor is not None:
                     readtransform, writetransform, rawtransform = processor
 

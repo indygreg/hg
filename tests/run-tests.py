@@ -3118,8 +3118,8 @@ class TestRunner(object):
     def _checktools(self):
         """Ensure tools required to run tests are present."""
         for p in self.REQUIREDTOOLS:
-            if os.name == 'nt' and not p.endswith('.exe'):
-                p += '.exe'
+            if os.name == 'nt' and not p.endswith(b'.exe'):
+                p += b'.exe'
             found = self._findprogram(p)
             if found:
                 vlog("# Found prerequisite", p, "at", found)

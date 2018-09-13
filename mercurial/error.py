@@ -217,12 +217,10 @@ class ProgrammingError(Hint, RuntimeError):
     """Raised if a mercurial (core or extension) developer made a mistake"""
 
     def __init__(self, msg, *args, **kwargs):
-        if not isinstance(msg, str):
-            # This means we're on Python 3, because we got a
-            # bytes. Turn the message back into a string since this is
-            # an internal-only error that won't be printed except in a
-            # stack traces.
-            msg = msg.decode('utf8')
+        # On Python 3, turn the message back into a string since this is
+        # an internal-only error that won't be printed except in a
+        # stack traces.
+        msg = pycompat.sysstr(msg)
         super(ProgrammingError, self).__init__(msg, *args, **kwargs)
 
     __bytes__ = _tobytes

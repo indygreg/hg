@@ -452,6 +452,8 @@ class revlog(object):
                 self._srdensitythreshold = opts['sparse-read-density-threshold']
             if 'sparse-read-min-gap-size' in opts:
                 self._srmingapsize = opts['sparse-read-min-gap-size']
+            if opts.get('enableellipsis'):
+                self._flagprocessors[REVIDX_ELLIPSIS] = ellipsisprocessor
 
         if self._chunkcachesize <= 0:
             raise RevlogError(_('revlog chunk cache size %r is not greater '

@@ -727,6 +727,9 @@ def resolverevlogstorevfsoptions(ui, requirements):
         if r.startswith(b'exp-compression-'):
             options[b'compengine'] = r[len(b'exp-compression-'):]
 
+    if repository.NARROW_REQUIREMENT in requirements:
+        options[b'enableellipsis'] = True
+
     return options
 
 def makemain(**kwargs):

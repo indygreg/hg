@@ -225,3 +225,54 @@ class filelog(object):
 
     def _addrevision(self, *args, **kwargs):
         return self._revlog._addrevision(*args, **kwargs)
+
+class narrowfilelog(filelog):
+    """Filelog variation to be used with narrow stores."""
+
+    def __init__(self, opener, path, narrowmatch):
+        super(narrowfilelog, self).__init__(opener, path)
+        self._narrowmatch = narrowmatch
+
+    def renamed(self, node):
+        res = super(narrowfilelog, self).renamed(node)
+
+        # Renames that come from outside the narrowspec are problematic
+        # because we may lack the base text for the rename. This can result
+        # in code attempting to walk the ancestry or compute a diff
+        # encountering a missing revision. We address this by silently
+        # removing rename metadata if the source file is outside the
+        # narrow spec.
+        #
+        # A better solution would be to see if the base revision is available,
+        # rather than assuming it isn't.
+        #
+        # An even better solution would be to teach all consumers of rename
+        # metadata that the base revision may not be available.
+        #
+        # TODO consider better ways of doing this.
+        if res and not self._narrowmatch(res[0]):
+            return None
+
+        return res
+
+    def size(self, rev):
+        # Because we have a custom renamed() that may lie, we need to call
+        # the base renamed() to report accurate results.
+        node = self.node(rev)
+        if super(narrowfilelog, self).renamed(node):
+            return len(self.read(node))
+        else:
+            return super(narrowfilelog, self).size(rev)
+
+    def cmp(self, node, text):
+        different = super(narrowfilelog, self).cmp(node, text)
+
+        # Because renamed() may lie, we may get false positives for
+        # different content. Check for this by comparing against the original
+        # renamed() implementation.
+        if different:
+            if super(narrowfilelog, self).renamed(node):
+                t2 = self.read(node)
+                return t2 != text
+
+        return different

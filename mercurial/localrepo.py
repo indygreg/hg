@@ -743,9 +743,22 @@ class revlogfilestorage(object):
 
         return filelog.filelog(self.svfs, path)
 
+@interfaceutil.implementer(repository.ilocalrepositoryfilestorage)
+class revlognarrowfilestorage(object):
+    """File storage when using revlogs and narrow files."""
+
+    def file(self, path):
+        if path[0] == b'/':
+            path = path[1:]
+
+        return filelog.narrowfilelog(self.svfs, path, self.narrowmatch())
+
 def makefilestorage(requirements, **kwargs):
     """Produce a type conforming to ``ilocalrepositoryfilestorage``."""
-    return revlogfilestorage
+    if repository.NARROW_REQUIREMENT in requirements:
+        return revlognarrowfilestorage
+    else:
+        return revlogfilestorage
 
 # List of repository interfaces and factory functions for them. Each
 # will be called in order during ``makelocalrepository()`` to iteratively

@@ -1911,10 +1911,11 @@ static int index_slice_del(indexObject *self, PyObject *item)
 /* Argument changed from PySliceObject* to PyObject* in Python 3. */
 #ifdef IS_PY3K
 	if (PySlice_GetIndicesEx(item, length,
+				 &start, &stop, &step, &slicelength) < 0)
 #else
 	if (PySlice_GetIndicesEx((PySliceObject*)item, length,
-#endif
 				 &start, &stop, &step, &slicelength) < 0)
+#endif
 		return -1;
 
 	if (slicelength <= 0)

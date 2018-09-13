@@ -83,8 +83,11 @@ def _docensor(ui, repo, path, rev='', tombstone='', **opts):
         raise error.Abort(_('file does not exist at revision %s') % rev)
 
     fnode = fctx.filenode()
-    headctxs = [repo[c] for c in repo.heads()]
-    heads = [c for c in headctxs if path in c and c.filenode(path) == fnode]
+    heads = []
+    for headnode in repo.heads():
+        c = repo[headnode]
+        if path in c and c.filenode(path) == fnode:
+            heads.append(c)
     if heads:
         headlist = ', '.join([short(c.node()) for c in heads])
         raise error.Abort(_('cannot censor file in heads (%s)') % headlist,

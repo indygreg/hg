@@ -364,6 +364,7 @@ test-nointerrupt.t
 test-obshistory.t
 test-obsmarker-template.t
 test-obsmarkers-effectflag.t
+test-obsolete-bounds-checking.t
 test-obsolete-bundle-strip.t
 test-obsolete-changeset-exchange.t
 test-obsolete-checkheads.t

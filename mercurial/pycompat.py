@@ -138,7 +138,7 @@ if ispy3:
     if getattr(sys, 'argv', None) is not None:
         sysargv = list(map(os.fsencode, sys.argv))
 
-    bytechr = struct.Struct('>B').pack
+    bytechr = struct.Struct(r'>B').pack
     byterepr = b'%r'.__mod__
 
     class bytestr(bytes):
@@ -282,7 +282,7 @@ if ispy3:
     xrange = builtins.range
     unicode = str
 
-    def open(name, mode='r', buffering=-1, encoding=None):
+    def open(name, mode=b'r', buffering=-1, encoding=None):
         return builtins.open(name, sysstr(mode), buffering, encoding)
 
     safehasattr = _wrapattrfunc(builtins.hasattr)
@@ -359,7 +359,7 @@ else:
             return filename
         else:
             raise TypeError(
-                "expect str, not %s" % type(filename).__name__)
+                r"expect str, not %s" % type(filename).__name__)
 
     # In Python 2, fsdecode() has a very chance to receive bytes. So it's
     # better not to touch Python 2 part as it's already working fine.
@@ -404,11 +404,11 @@ else:
     rawinput = raw_input
     getargspec = inspect.getargspec
 
-isjython = sysplatform.startswith('java')
+isjython = sysplatform.startswith(b'java')
 
-isdarwin = sysplatform == 'darwin'
-isposix = osname == 'posix'
-iswindows = osname == 'nt'
+isdarwin = sysplatform == b'darwin'
+isposix = osname == b'posix'
+iswindows = osname == b'nt'
 
 def getoptb(args, shortlist, namelist):
     return _getoptbwrapper(getopt.getopt, args, shortlist, namelist)

@@ -742,7 +742,7 @@ def headrevs(revs, parentsfn):
 def linearize(revs, parentsfn):
     """Linearize and topologically sort a list of revisions.
 
-    The linearization process tires to create long runs of revs where a child
+    The linearization process tries to create long runs of revs where a child
     rev comes immediately after its first parent. This is done by visiting the
     heads of the revs in inverse topological order, and for each visited rev,
     visiting its second parent, then its first parent, then adding the rev

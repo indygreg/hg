@@ -3,6 +3,7 @@
 
 #ifdef _WIN32
 #ifdef _MSC_VER
+#if _MSC_VER < 1900
 /* msvc 6.0 has problems */
 #define inline __inline
 #if defined(_WIN64)
@@ -21,6 +22,18 @@ typedef unsigned short uint16_t;
 typedef unsigned long uint32_t;
 typedef unsigned __int64 uint64_t;
 #else
+/* VC++ 14 */
+#include <stdint.h>
+
+#if defined(_WIN64)
+typedef __int64 ssize_t;
+#else
+typedef int ssize_t;
+#endif
+#endif /* _MSC_VER < 1900 */
+
+#else
+/* not msvc */
 #include <stdint.h>
 #endif
 #else

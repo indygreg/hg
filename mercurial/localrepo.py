@@ -2503,3 +2503,28 @@ def createrepository(ui, path, createopts=None):
                      b'layout')
 
     scmutil.writerequires(hgvfs, requirements)
+
+def poisonrepository(repo):
+    """Poison a repository instance so it can no longer be used."""
+    # Perform any cleanup on the instance.
+    repo.close()
+
+    # Our strategy is to replace the type of the object with one that
+    # has all attribute lookups result in error.
+    #
+    # But we have to allow the close() method because some constructors
+    # of repos call close() on repo references.
+    class poisonedrepository(object):
+        def __getattribute__(self, item):
+            if item == r'close':
+                return object.__getattribute__(self, item)
+
+            raise error.ProgrammingError('repo instances should not be used '
+                                         'after unshare')
+
+        def close(self):
+            pass
+
+    # We may have a repoview, which intercepts __setattr__. So be sure
+    # we operate at the lowest level possible.
+    object.__setattr__(repo, r'__class__', poisonedrepository)

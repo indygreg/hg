@@ -307,6 +307,11 @@ def unshare(ui, repo):
     """convert a shared repository to a normal one
 
     Copy the store data to the repo and remove the sharedpath data.
+
+    Returns a new repository object representing the unshared repository.
+
+    The passed repository object is not usable after this function is
+    called.
     """
 
     destlock = lock = None
@@ -329,15 +334,21 @@ def unshare(ui, repo):
         destlock and destlock.release()
         lock and lock.release()
 
-    # update store, spath, svfs and sjoin of repo
-    repo.unfiltered().__init__(repo.baseui, repo.root)
+    # Removing share changes some fundamental properties of the repo instance.
+    # So we instantiate a new repo object and operate on it rather than
+    # try to keep the existing repo usable.
+    newrepo = repository(repo.baseui, repo.root, create=False)
 
     # TODO: figure out how to access subrepos that exist, but were previously
     #       removed from .hgsub
-    c = repo['.']
+    c = newrepo['.']
     subs = c.substate
     for s in sorted(subs):
         c.sub(s).unshare()
+
+    localrepo.poisonrepository(repo)
+
+    return newrepo
 
 def postshare(sourcerepo, destrepo, bookmarks=True, defaultpath=None):
     """Called after a new shared repo is created.

@@ -57,7 +57,7 @@ trailing whitespace
   >>> with open('a', 'rb') as f:
   ...     data = f.read()
   >>> with open('a', 'wb') as f:
-  ...     f.write(data.replace('dd', 'dd \r'))
+  ...     f.write(data.replace(b'dd', b'dd \r'))
   $ hg diff --nodates
   \x1b[0;1mdiff -r cf9f4ba66af2 a\x1b[0m (esc)
   \x1b[0;31;1m--- a/a\x1b[0m (esc)

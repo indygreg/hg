@@ -76,7 +76,7 @@ def _getannotate(repo, proto, path, lastnode):
                     content = f.read()
                 vfsbaselen = len(repo.vfs.base + '/')
                 relpath = p[vfsbaselen:]
-                result += '%s\0%s\0%s' % (relpath, len(content), content)
+                result += '%s\0%d\0%s' % (relpath, len(content), content)
     return result
 
 def _registerwireprotocommand():

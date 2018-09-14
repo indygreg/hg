@@ -479,7 +479,7 @@ def _copycache(srcrepo, dstcachedir, fname):
 
 def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
           update=True, stream=False, branch=None, shareopts=None,
-          storeincludepats=None, storeexcludepats=None):
+          storeincludepats=None, storeexcludepats=None, depth=None):
     """Make a copy of an existing repository.
 
     Create a copy of an existing repository in a new directory.  The
@@ -749,7 +749,8 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
                     exchange.pull(local, srcpeer, revs,
                                   streamclonerequested=stream,
                                   includepats=storeincludepats,
-                                  excludepats=storeexcludepats)
+                                  excludepats=storeexcludepats,
+                                  depth=depth)
             elif srcrepo:
                 # TODO lift restriction once exchange.push() accepts narrow
                 # push.

@@ -1316,7 +1316,7 @@ class pulloperation(object):
 
     def __init__(self, repo, remote, heads=None, force=False, bookmarks=(),
                  remotebookmarks=None, streamclonerequested=None,
-                 includepats=None, excludepats=None):
+                 includepats=None, excludepats=None, depth=None):
         # repo we pull into
         self.repo = repo
         # repo we pull from
@@ -1350,6 +1350,8 @@ class pulloperation(object):
         self.includepats = includepats
         # Set of file patterns to exclude.
         self.excludepats = excludepats
+        # Number of ancestor changesets to pull from each pulled head.
+        self.depth = depth
 
     @util.propertycache
     def pulledsubset(self):
@@ -1454,7 +1456,8 @@ def _fullpullbundle2(repo, pullop):
         pullop.rheads = set(pullop.rheads) - pullop.common
 
 def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
-         streamclonerequested=None, includepats=None, excludepats=None):
+         streamclonerequested=None, includepats=None, excludepats=None,
+         depth=None):
     """Fetch repository data from a remote.
 
     This is the main function used to retrieve data from a remote repository.
@@ -1475,6 +1478,9 @@ def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
     ``includepats`` and ``excludepats`` define explicit file patterns to
     include and exclude in storage, respectively. If not defined, narrow
     patterns from the repo instance are used, if available.
+    ``depth`` is an integer indicating the DAG depth of history we're
+    interested in. If defined, for each revision specified in ``heads``, we
+    will fetch up to this many of its ancestors and data associated with them.
 
     Returns the ``pulloperation`` created for this pull.
     """
@@ -1495,6 +1501,7 @@ def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
     pullop = pulloperation(repo, remote, heads, force, bookmarks=bookmarks,
                            streamclonerequested=streamclonerequested,
                            includepats=includepats, excludepats=excludepats,
+                           depth=depth,
                            **pycompat.strkwargs(opargs))
 
     peerlocal = pullop.remote.local()

@@ -1203,7 +1203,7 @@ class treemanifest(object):
             s._dirty = False
         self._loadfunc = _load_for_read
 
-    def writesubtrees(self, m1, m2, writesubtree):
+    def writesubtrees(self, m1, m2, writesubtree, match):
         self._load() # for consistency; should never have any effect here
         m1._load()
         m2._load()
@@ -1214,12 +1214,21 @@ class treemanifest(object):
                 return ld[1]
             return m._dirs.get(d, emptytree)._node
 
+        # we should have always loaded everything by the time we get here for
+        # `self`, but possibly not in `m1` or `m2`.
+        assert not self._lazydirs
+        # let's skip investigating things that `match` says we do not need.
+        visit = match.visitchildrenset(self._dir[:-1] or '.')
+        if visit == 'this' or visit == 'all':
+            visit = None
         for d, subm in self._dirs.iteritems():
+            if visit and d[:-1] not in visit:
+                continue
             subp1 = getnode(m1, d)
             subp2 = getnode(m2, d)
             if subp1 == nullid:
                 subp1, subp2 = subp2, subp1
-            writesubtree(subm, subp1, subp2)
+            writesubtree(subm, subp1, subp2, match)
 
     def walksubtrees(self, matcher=None):
         """Returns an iterator of the subtrees of this manifest, including this
@@ -1445,7 +1454,8 @@ class manifestrevlog(object):
             self._dirlogcache[d] = mfrevlog
         return self._dirlogcache[d]
 
-    def add(self, m, transaction, link, p1, p2, added, removed, readtree=None):
+    def add(self, m, transaction, link, p1, p2, added, removed, readtree=None,
+            match=None):
         if p1 in self.fulltextcache and util.safehasattr(m, 'fastdelta'):
             # If our first parent is in the manifest cache, we can
             # compute a delta here using properties we know about the
@@ -1469,9 +1479,11 @@ class manifestrevlog(object):
             # process.
             if self._treeondisk:
                 assert readtree, "readtree must be set for treemanifest writes"
+                assert match, "match must be specified for treemanifest writes"
                 m1 = readtree(self.tree, p1)
                 m2 = readtree(self.tree, p2)
-                n = self._addtree(m, transaction, link, m1, m2, readtree)
+                n = self._addtree(m, transaction, link, m1, m2, readtree,
+                                  match=match)
                 arraytext = None
             else:
                 text = m.text()
@@ -1483,17 +1495,17 @@ class manifestrevlog(object):
 
         return n
 
-    def _addtree(self, m, transaction, link, m1, m2, readtree):
+    def _addtree(self, m, transaction, link, m1, m2, readtree, match):
         # If the manifest is unchanged compared to one parent,
         # don't write a new revision
         if self.tree != '' and (m.unmodifiedsince(m1) or m.unmodifiedsince(
             m2)):
             return m.node()
-        def writesubtree(subm, subp1, subp2):
+        def writesubtree(subm, subp1, subp2, match):
             sublog = self.dirlog(subm.dir())
             sublog.add(subm, transaction, link, subp1, subp2, None, None,
-                       readtree=readtree)
-        m.writesubtrees(m1, m2, writesubtree)
+                       readtree=readtree, match=match)
+        m.writesubtrees(m1, m2, writesubtree, match)
         text = m.dirtext()
         n = None
         if self.tree != '':
@@ -1697,9 +1709,9 @@ class memmanifestctx(object):
     def read(self):
         return self._manifestdict
 
-    def write(self, transaction, link, p1, p2, added, removed):
+    def write(self, transaction, link, p1, p2, added, removed, match=None):
         return self._storage().add(self._manifestdict, transaction, link,
-                                   p1, p2, added, removed)
+                                   p1, p2, added, removed, match=match)
 
 @interfaceutil.implementer(repository.imanifestrevisionstored)
 class manifestctx(object):
@@ -1802,11 +1814,12 @@ class memtreemanifestctx(object):
     def read(self):
         return self._treemanifest
 
-    def write(self, transaction, link, p1, p2, added, removed):
+    def write(self, transaction, link, p1, p2, added, removed, match=None):
         def readtree(dir, node):
             return self._manifestlog.get(dir, node).read()
         return self._storage().add(self._treemanifest, transaction, link,
-                                   p1, p2, added, removed, readtree=readtree)
+                                   p1, p2, added, removed, readtree=readtree,
+                                   match=match)
 
 @interfaceutil.implementer(repository.imanifestrevisionstored)
 class treemanifestctx(object):

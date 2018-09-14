@@ -978,12 +978,17 @@ class imanifestrevisionstored(imanifestrevisionbase):
 class imanifestrevisionwritable(imanifestrevisionbase):
     """Interface representing a manifest revision that can be committed."""
 
-    def write(transaction, linkrev, p1node, p2node, added, removed):
+    def write(transaction, linkrev, p1node, p2node, added, removed, match=None):
         """Add this revision to storage.
 
         Takes a transaction object, the changeset revision number it will
         be associated with, its parent nodes, and lists of added and
         removed paths.
+
+        If match is provided, storage can choose not to inspect or write out
+        items that do not match. Storage is still required to be able to provide
+        the full manifest in the future for any directories written (these
+        manifests should not be "narrowed on disk").
 
         Returns the binary node of the created revision.
         """
@@ -1141,7 +1146,8 @@ class imanifeststorage(interfaceutil.Interface):
     def dirlog(d):
         """Obtain a manifest storage instance for a tree."""
 
-    def add(m, transaction, link, p1, p2, added, removed, readtree=None):
+    def add(m, transaction, link, p1, p2, added, removed, readtree=None,
+            match=None):
         """Add a revision to storage.
 
         ``m`` is an object conforming to ``imanifestdict``.
@@ -1152,6 +1158,15 @@ class imanifeststorage(interfaceutil.Interface):
 
         ``added`` and ``removed`` are iterables of added and removed paths,
         respectively.
+
+        ``readtree`` is a function that can be used to read the child tree(s)
+        when recursively writing the full tree structure when using
+        treemanifets.
+
+        ``match`` is a matcher that can be used to hint to storage that not all
+        paths must be inspected; this is an optimization and can be safely
+        ignored. Note that the storage must still be able to reproduce a full
+        manifest including files that did not match.
         """
 
 class imanifestlog(interfaceutil.Interface):

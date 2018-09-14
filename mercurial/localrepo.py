@@ -2109,9 +2109,16 @@ class localrepository(object):
                                   'changelog, but manifest differs)\n')
                 if files or md:
                     self.ui.note(_("committing manifest\n"))
+                    # we're using narrowmatch here since it's already applied at
+                    # other stages (such as dirstate.walk), so we're already
+                    # ignoring things outside of narrowspec in most cases. The
+                    # one case where we might have files outside the narrowspec
+                    # at this point is merges, and we already error out in the
+                    # case where the merge has files outside of the narrowspec,
+                    # so this is safe.
                     mn = mctx.write(trp, linkrev,
                                     p1.manifestnode(), p2.manifestnode(),
-                                    added, drop)
+                                    added, drop, match=self.narrowmatch())
                 else:
                     self.ui.debug('reusing manifest form p1 (listed files '
                                   'actually unchanged)\n')

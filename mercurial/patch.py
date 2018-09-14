@@ -2431,9 +2431,9 @@ def diffsinglehunkinline(hunklines):
     a = ''
     b = ''
     for line in hunklines:
-        if line[0] == '-':
+        if line[0:1] == '-':
             a += line[1:]
-        elif line[0] == '+':
+        elif line[0:1] == '+':
             b += line[1:]
         else:
             raise error.ProgrammingError('unexpected hunk line: %s' % line)

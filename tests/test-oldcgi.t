@@ -14,7 +14,7 @@ This tests if CGI files from before d0db3462d568 still work.
   > # sys.path.insert(0, "/path/to/python/lib") # if not a system-wide install
   > from mercurial import hgweb
   > 
-  > h = hgweb.hgweb("test", "Empty test repository")
+  > h = hgweb.hgweb(b"test", b"Empty test repository")
   > h.run()
   > HGWEB
 

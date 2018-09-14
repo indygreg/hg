@@ -1565,7 +1565,7 @@ Test that secret mq patch does not break hgweb
   > from mercurial.hgweb import wsgicgi
   > import cgitb
   > cgitb.enable()
-  > app = hgweb('.', 'test')
+  > app = hgweb(b'.', b'test')
   > wsgicgi.launch(app)
   > HGWEB
   $ . "$TESTDIR/cgienv"

@@ -16,7 +16,7 @@ This is a rudimentary test of the CGI files as of d74fc8dec2b4.
   > from mercurial.hgweb import hgweb
   > from mercurial.hgweb import wsgicgi
   > 
-  > application = hgweb("test", "Empty test repository")
+  > application = hgweb(b"test", b"Empty test repository")
   > wsgicgi.launch(application)
   > HGWEB
 

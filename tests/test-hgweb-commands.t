@@ -2276,7 +2276,7 @@ bookmarks view doesn't choke on bookmarks on secret changesets (issue3774)
   > from mercurial import demandimport; demandimport.enable()
   > from mercurial.hgweb import hgweb
   > from mercurial.hgweb import wsgicgi
-  > app = hgweb('.', 'test')
+  > app = hgweb(b'.', b'test')
   > wsgicgi.launch(app)
   > HGWEB
   $ . "$TESTDIR/cgienv"

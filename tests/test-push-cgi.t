@@ -21,7 +21,7 @@ create hgweb invocation script
   > from mercurial import demandimport; demandimport.enable()
   > from mercurial.hgweb import hgweb
   > from mercurial.hgweb import wsgicgi
-  > application = hgweb('.', 'test repository')
+  > application = hgweb(b'.', b'test repository')
   > wsgicgi.launch(application)
   > HGWEB
   $ chmod 755 hgweb.cgi

@@ -389,7 +389,7 @@ def shellquote(s):
     """
     global _quotere
     if _quotere is None:
-        _quotere = re.compile(r'(\\*)("|\\$)')
+        _quotere = re.compile(br'(\\*)("|\\$)')
     global _needsshellquote
     if _needsshellquote is None:
         # ":" is also treated as "safe character", because it is used as a part
@@ -397,11 +397,11 @@ def shellquote(s):
         # safe because shlex.split() (kind of) treats it as an escape char and
         # drops it.  It will leave the next character, even if it is another
         # "\".
-        _needsshellquote = re.compile(r'[^a-zA-Z0-9._:/-]').search
+        _needsshellquote = re.compile(br'[^a-zA-Z0-9._:/-]').search
     if s and not _needsshellquote(s) and not _quotere.search(s):
         # "s" shouldn't have to be quoted
         return s
-    return '"%s"' % _quotere.sub(r'\1\1\\\2', s)
+    return b'"%s"' % _quotere.sub(br'\1\1\\\2', s)
 
 def _unquote(s):
     if s.startswith(b'"') and s.endswith(b'"'):

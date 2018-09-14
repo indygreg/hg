@@ -408,21 +408,21 @@ if pycompat.iswindows:
     _INVALID_HANDLE_VALUE = -1
 
     class _COORD(ctypes.Structure):
-        _fields_ = [('X', ctypes.c_short),
-                    ('Y', ctypes.c_short)]
+        _fields_ = [(r'X', ctypes.c_short),
+                    (r'Y', ctypes.c_short)]
 
     class _SMALL_RECT(ctypes.Structure):
-        _fields_ = [('Left', ctypes.c_short),
-                    ('Top', ctypes.c_short),
-                    ('Right', ctypes.c_short),
-                    ('Bottom', ctypes.c_short)]
+        _fields_ = [(r'Left', ctypes.c_short),
+                    (r'Top', ctypes.c_short),
+                    (r'Right', ctypes.c_short),
+                    (r'Bottom', ctypes.c_short)]
 
     class _CONSOLE_SCREEN_BUFFER_INFO(ctypes.Structure):
-        _fields_ = [('dwSize', _COORD),
-                    ('dwCursorPosition', _COORD),
-                    ('wAttributes', _WORD),
-                    ('srWindow', _SMALL_RECT),
-                    ('dwMaximumWindowSize', _COORD)]
+        _fields_ = [(r'dwSize', _COORD),
+                    (r'dwCursorPosition', _COORD),
+                    (r'wAttributes', _WORD),
+                    (r'srWindow', _SMALL_RECT),
+                    (r'dwMaximumWindowSize', _COORD)]
 
     _STD_OUTPUT_HANDLE = 0xfffffff5 # (DWORD)-11
     _STD_ERROR_HANDLE = 0xfffffff4  # (DWORD)-12
@@ -484,7 +484,7 @@ if pycompat.iswindows:
             w32effects = None
         else:
             origattr = csbi.wAttributes
-            ansire = re.compile('\033\[([^m]*)m([^\033]*)(.*)',
+            ansire = re.compile(b'\033\[([^m]*)m([^\033]*)(.*)',
                                 re.MULTILINE | re.DOTALL)
 
     def win32print(ui, writefunc, *msgs, **opts):
@@ -516,15 +516,15 @@ if pycompat.iswindows:
                     # them if not found
                     pass
         # hack to ensure regexp finds data
-        if not text.startswith('\033['):
-            text = '\033[m' + text
+        if not text.startswith(b'\033['):
+            text = b'\033[m' + text
 
         # Look for ANSI-like codes embedded in text
         m = re.match(ansire, text)
 
         try:
             while m:
-                for sattr in m.group(1).split(';'):
+                for sattr in m.group(1).split(b';'):
                     if sattr:
                         attr = mapcolor(int(sattr), attr)
                 ui.flush()

@@ -818,8 +818,6 @@ packages = ['mercurial',
             'mercurial.thirdparty.attr',
             'mercurial.thirdparty.cbor',
             'mercurial.thirdparty.cbor.cbor2',
-            'mercurial.thirdparty.concurrent',
-            'mercurial.thirdparty.concurrent.futures',
             'mercurial.thirdparty.zope',
             'mercurial.thirdparty.zope.interface',
             'mercurial.utils',
@@ -832,6 +830,9 @@ packages = ['mercurial',
             'hgext.largefiles', 'hgext.lfs', 'hgext.narrow',
             'hgext.zeroconf', 'hgext3rd',
             'hgdemandimport']
+if sys.version_info[0] == 2:
+    packages.extend(['mercurial.thirdparty.concurrent',
+                     'mercurial.thirdparty.concurrent.futures'])
 
 common_depends = ['mercurial/bitmanipulation.h',
                   'mercurial/compat.h',

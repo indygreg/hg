@@ -130,6 +130,8 @@ def fastannotate(ui, repo, *pats, **opts):
     if ui.configbool('fastannotate', 'unfilteredrepo'):
         repo = repo.unfiltered()
 
+    opts = pycompat.byteskwargs(opts)
+
     rev = opts.get('rev', '.')
     rebuild = opts.get('rebuild', False)
 
@@ -207,12 +209,12 @@ def _annotatewrapper(orig, ui, repo, *pats, **opts):
 
     # treat the file as text (skip the isbinary check)
     if ui.configbool('fastannotate', 'forcetext'):
-        opts['text'] = True
+        opts[r'text'] = True
 
     # check if we need to do prefetch (client-side)
-    rev = opts.get('rev')
+    rev = opts.get(r'rev')
     if util.safehasattr(repo, 'prefetchfastannotate') and rev is not None:
-        paths = list(_matchpaths(repo, rev, pats, opts))
+        paths = list(_matchpaths(repo, rev, pats, pycompat.byteskwargs(opts)))
         repo.prefetchfastannotate(paths)
 
     return orig(ui, repo, *pats, **opts)
@@ -241,6 +243,7 @@ def debugbuildannotatecache(ui, repo, *pats, **opts):
     The annotate cache will be built using the default diff and follow
     options and lives in '.hg/fastannotate/default'.
     """
+    opts = pycompat.byteskwargs(opts)
     rev = opts.get('REV') or ui.config('fastannotate', 'mainbranch')
     if not rev:
         raise error.Abort(_('you need to provide a revision'),

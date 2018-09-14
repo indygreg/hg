@@ -42,6 +42,7 @@ from . import (
     help,
     hg,
     logcmdutil,
+    match as matchmod,
     merge as mergemod,
     narrowspec,
     obsolete,
@@ -1909,6 +1910,7 @@ def diff(ui, repo, *pats, **opts):
 
     diffopts = patch.diffallopts(ui, opts)
     m = scmutil.match(ctx2, pats, opts)
+    m = matchmod.intersectmatchers(m, repo.narrowmatch())
     ui.pager('diff')
     logcmdutil.diffordiffstat(ui, repo, diffopts, node1, node2, m, stat=stat,
                               listsubrepos=opts.get('subrepos'),

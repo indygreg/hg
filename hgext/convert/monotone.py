@@ -345,7 +345,7 @@ class monotone_source(common.converter_source, common.commandline):
 
         if version >= 12.0:
             self.automatestdio = True
-            self.ui.debug("mtn automate version %s - using automate stdio\n" %
+            self.ui.debug("mtn automate version %f - using automate stdio\n" %
                 version)
 
             # launch the long-running automate stdio process

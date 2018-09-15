@@ -61,7 +61,7 @@ experimental:
     "date": [0, 0],
     "desc": "",
     "extra": {"branch": "default"},
-    "manifest": null,
+    "manifest": "ffffffffffffffffffffffffffffffffffffffff",
     "modified": [],
     "node": "ffffffffffffffffffffffffffffffffffffffff",
     "parents": ["95c24699272ef57d062b8bccc32c878bf841784a"],
@@ -73,11 +73,8 @@ experimental:
    }
   ]
 
-Some keywords are invalid for working-directory revision, but they should
-never cause crash:
-
   $ hg log -r 'wdir()' -T '{manifest}\n'
-  
+  2147483647:ffffffffffff
 
 Changectx-derived keywords are disabled within {manifest} as {node} changes:
 

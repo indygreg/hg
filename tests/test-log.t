@@ -2126,6 +2126,7 @@ clean:
   phase:       draft
   parent:      0:65624cd9070a035fa7191a54f2b8af39f16b0c08
   parent:      -1:0000000000000000000000000000000000000000
+  manifest:    2147483647:ffffffffffffffffffffffffffffffffffffffff
   user:        test
   date:        [A-Za-z0-9:+ ]+ (re)
   extra:       branch=default
@@ -2164,6 +2165,7 @@ dirty:
   phase:       draft
   parent:      0:65624cd9070a035fa7191a54f2b8af39f16b0c08
   parent:      -1:0000000000000000000000000000000000000000
+  manifest:    2147483647:ffffffffffffffffffffffffffffffffffffffff
   user:        test
   date:        [A-Za-z0-9:+ ]+ (re)
   files:       d1/f1
@@ -2234,7 +2236,7 @@ dirty:
     "date": [*, 0], (glob)
     "desc": "",
     "extra": {"branch": "default"},
-    "manifest": null,
+    "manifest": "ffffffffffffffffffffffffffffffffffffffff",
     "modified": ["d1/f1"],
     "node": "ffffffffffffffffffffffffffffffffffffffff",
     "parents": ["65624cd9070a035fa7191a54f2b8af39f16b0c08"],

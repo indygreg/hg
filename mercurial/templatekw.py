@@ -11,6 +11,8 @@ from .i18n import _
 from .node import (
     hex,
     nullid,
+    wdirid,
+    wdirrev,
 )
 
 from . import (
@@ -475,9 +477,10 @@ def showmanifest(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     mnode = ctx.manifestnode()
     if mnode is None:
-        # just avoid crash, we might want to use the 'ff...' hash in future
-        return
-    mrev = repo.manifestlog.rev(mnode)
+        mnode = wdirid
+        mrev = wdirrev
+    else:
+        mrev = repo.manifestlog.rev(mnode)
     mhex = hex(mnode)
     mapping = context.overlaymap(mapping, {'rev': mrev, 'node': mhex})
     f = context.process('manifest', mapping)

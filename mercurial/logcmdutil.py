@@ -13,6 +13,8 @@ import os
 from .i18n import _
 from .node import (
     nullid,
+    wdirid,
+    wdirrev,
 )
 
 from . import (
@@ -191,7 +193,6 @@ class changesetprinter(object):
     def _show(self, ctx, copies, props):
         '''show a single changeset or file revision'''
         changenode = ctx.node()
-        rev = ctx.rev()
 
         if self.ui.quiet:
             self.ui.write("%s\n" % scmutil.formatchangeid(ctx),
@@ -226,9 +227,13 @@ class changesetprinter(object):
             self.ui.write(columns['parent'] % scmutil.formatchangeid(pctx),
                           label=label)
 
-        if self.ui.debugflag and rev is not None:
+        if self.ui.debugflag:
             mnode = ctx.manifestnode()
-            mrev = self.repo.manifestlog.rev(mnode)
+            if mnode is None:
+                mnode = wdirid
+                mrev = wdirrev
+            else:
+                mrev = self.repo.manifestlog.rev(mnode)
             self.ui.write(columns['manifest']
                           % scmutil.formatrevnode(self.ui, mrev, mnode),
                           label='ui.debug log.manifest')
@@ -343,11 +348,7 @@ class changesetformatter(changesetprinter):
                                        for c in ctx.parents()], name='node'))
 
         if self.ui.debugflag:
-            if ctx.rev() is None:
-                hexnode = None
-            else:
-                hexnode = fm.hexfunc(ctx.manifestnode())
-            fm.data(manifest=hexnode,
+            fm.data(manifest=fm.hexfunc(ctx.manifestnode() or wdirid),
                     extra=fm.formatdict(ctx.extra()))
 
             files = ctx.p1().status(ctx)

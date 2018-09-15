@@ -240,8 +240,9 @@ display how "{activebookmark}" template is unsuitable for the task
   - Y
   - 
 
-  $ hg bookmarks --active
+  $ hg bookmarks -ql .
   Y
   $ hg bookmarks --inactive
-  $ hg bookmarks --active
-  [1]
+  $ hg bookmarks -ql .
+  abort: no active bookmark!
+  [255]

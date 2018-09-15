@@ -1,0 +1,138 @@
+{
+    "version": 1, 
+    "interactions": [
+        {
+            "request": {
+                "body": "api.token=cli-hahayouwish&ids%5B0%5D=4564", 
+                "headers": {
+                    "content-length": [
+                        "58"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.7.1+861-aa7e312375cf)"
+                    ]
+                }, 
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.query"
+            }, 
+            "response": {
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "headers": {
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "set-cookie": [
+                        "phsid=A%2F24j2baem5tmap4tvfdz7ufmca2lhm3wx4agyqv4w; expires=Thu, 14-Sep-2023 04:24:35 GMT; Max-Age=157680000; path=/; domain=phab.mercurial-scm.org; secure; httponly"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "connection": [
+                        "close"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "date": [
+                        "Sat, 15 Sep 2018 04:24:35 GMT"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "content-type": [
+                        "application/json"
+                    ]
+                }, 
+                "body": {
+                    "string": "{\"result\":[{\"id\":\"4564\",\"phid\":\"PHID-DREV-6cgnf5fyeeqhntbxgfb7\",\"title\":\"localrepo: move some vfs initialization out of __init__\",\"uri\":\"https:\\/\\/phab.mercurial-scm.org\\/D4564\",\"dateCreated\":\"1536856174\",\"dateModified\":\"1536856175\",\"authorPHID\":\"PHID-USER-p54bpwbifxx7sbgpx47d\",\"status\":\"0\",\"statusName\":\"Needs Review\",\"properties\":[],\"branch\":null,\"summary\":\"In order to make repository types more dynamic, we'll need to move the\\nlogic for determining repository behavior out of\\nlocalrepository.__init__ so we can influence behavior before the type\\nis instantiated.\\n\\nThis commit starts that process by moving working directory and .hg\\/\\nvfs initialization to our new standalone function for instantiating\\nlocal repositories.\\n\\nAside from API changes, behavior should be fully backwards compatible.\\n\\n.. api::\\n\\n   localrepository.__init__ now does less work and accepts new args\\n\\n   Use ``hg.repository()``, ``localrepo.instance()``, or\\n   ``localrepo.makelocalrepository()`` to obtain a new local repository\\n   instance instead of calling the ``localrepository`` constructor\\n   directly.\",\"testPlan\":\"\",\"lineCount\":\"64\",\"activeDiffPHID\":\"PHID-DIFF-ir6bizkdou7fm7xhuo6v\",\"diffs\":[\"11002\"],\"commits\":[],\"reviewers\":{\"PHID-PROJ-3dvcxzznrjru2xmmses3\":\"PHID-PROJ-3dvcxzznrjru2xmmses3\"},\"ccs\":[\"PHID-USER-q42dn7cc3donqriafhjx\"],\"hashes\":[],\"auxiliary\":{\"phabricator:projects\":[],\"phabricator:depends-on\":[\"PHID-DREV-gqp33hnxg65vkl3xioka\"]},\"repositoryPHID\":\"PHID-REPO-bvunnehri4u2isyr7bc3\"}],\"error_code\":null,\"error_info\":null}"
+                }
+            }
+        }, 
+        {
+            "request": {
+                "body": "api.token=cli-hahayouwish&objectIdentifier=PHID-DREV-6cgnf5fyeeqhntbxgfb7&transactions%5B0%5D%5Btype%5D=accept&transactions%5B0%5D%5Bvalue%5D=true&transactions%5B1%5D%5Btype%5D=comment&transactions%5B1%5D%5Bvalue%5D=I+think+I+like+where+this+is+headed.+Will+read+rest+of+series+later.", 
+                "headers": {
+                    "content-length": [
+                        "301"
+                    ], 
+                    "content-type": [
+                        "application/x-www-form-urlencoded"
+                    ], 
+                    "host": [
+                        "phab.mercurial-scm.org"
+                    ], 
+                    "accept": [
+                        "application/mercurial-0.1"
+                    ], 
+                    "user-agent": [
+                        "mercurial/proto-1.0 (Mercurial 4.7.1+861-aa7e312375cf)"
+                    ]
+                }, 
+                "method": "POST", 
+                "uri": "https://phab.mercurial-scm.org//api/differential.revision.edit"
+            }, 
+            "response": {
+                "status": {
+                    "message": "OK", 
+                    "code": 200
+                }, 
+                "headers": {
+                    "expires": [
+                        "Sat, 01 Jan 2000 00:00:00 GMT"
+                    ], 
+                    "x-content-type-options": [
+                        "nosniff"
+                    ], 
+                    "set-cookie": [
+                        "phsid=A%2Fcna7xx3xon5xxyoasbveqlfz4fswd2risihw7dff; expires=Thu, 14-Sep-2023 04:24:36 GMT; Max-Age=157680000; path=/; domain=phab.mercurial-scm.org; secure; httponly"
+                    ], 
+                    "strict-transport-security": [
+                        "max-age=0; includeSubdomains; preload"
+                    ], 
+                    "server": [
+                        "Apache/2.4.10 (Debian)"
+                    ], 
+                    "x-xss-protection": [
+                        "1; mode=block"
+                    ], 
+                    "cache-control": [
+                        "no-store"
+                    ], 
+                    "date": [
+                        "Sat, 15 Sep 2018 04:24:36 GMT"
+                    ], 
+                    "x-frame-options": [
+                        "Deny"
+                    ], 
+                    "content-type": [
+                        "application/json"
+                    ]
+                }, 
+                "body": {
+                    "string": "{\"result\":{\"object\":{\"id\":\"4564\",\"phid\":\"PHID-DREV-6cgnf5fyeeqhntbxgfb7\"},\"transactions\":[{\"phid\":\"PHID-XACT-DREV-nfqswjwwfuzdrhb\"},{\"phid\":\"PHID-XACT-DREV-oqb5pkqsdify6nm\"},{\"phid\":\"PHID-XACT-DREV-i6epvc7avyv3ve7\"},{\"phid\":\"PHID-XACT-DREV-du5hbg5rege3i5w\"}]},\"error_code\":null,\"error_info\":null}"
+                }
+            }
+        }
+    ]
+}

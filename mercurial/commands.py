@@ -19,6 +19,8 @@ from .node import (
     nullid,
     nullrev,
     short,
+    wdirhex,
+    wdirrev,
 )
 from . import (
     archival,
@@ -313,37 +315,31 @@ def annotate(ui, repo, *pats, **opts):
     else:
         datefunc = dateutil.datestr
     if ctx.rev() is None:
-        def hexfn(node):
-            if node is None:
-                return None
-            else:
-                return hex(node)
         if opts.get('changeset'):
             # omit "+" suffix which is appended to node hex
             def formatrev(rev):
-                if rev is None:
+                if rev == wdirrev:
                     return '%d' % ctx.p1().rev()
                 else:
                     return '%d' % rev
         else:
             def formatrev(rev):
-                if rev is None:
+                if rev == wdirrev:
                     return '%d+' % ctx.p1().rev()
                 else:
                     return '%d ' % rev
         def formathex(h):
-            if h is None:
+            if h == wdirhex:
                 return '%s+' % shorthex(hex(ctx.p1().node()))
             else:
                 return '%s ' % shorthex(h)
     else:
-        hexfn = hex
         formatrev = b'%d'.__mod__
         formathex = shorthex
 
     opmap = [('user', ' ', lambda x: x.fctx.user(), ui.shortuser),
-             ('rev', ' ', lambda x: x.fctx.rev(), formatrev),
-             ('node', ' ', lambda x: hexfn(x.fctx.node()), formathex),
+             ('rev', ' ', lambda x: scmutil.intrev(x.fctx), formatrev),
+             ('node', ' ', lambda x: hex(scmutil.binnode(x.fctx)), formathex),
              ('date', ' ', lambda x: x.fctx.date(), util.cachefunc(datefunc)),
              ('path', ' ', lambda x: x.fctx.path(), pycompat.bytestr),
              ('line_number', ':', lambda x: x.lineno, pycompat.bytestr),

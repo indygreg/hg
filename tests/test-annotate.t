@@ -564,7 +564,7 @@ annotate modified file
   $ hg annotate -ncr "wdir()" -Tjson foo
   [
    {
-    "lines": [{"line": "foo\n", "node": "472b18db256d1e8282064eab4bfdaf48cbfe83cd", "rev": 11}, {"line": "foofoo\n", "node": null, "rev": null}],
+    "lines": [{"line": "foo\n", "node": "472b18db256d1e8282064eab4bfdaf48cbfe83cd", "rev": 11}, {"line": "foofoo\n", "node": "ffffffffffffffffffffffffffffffffffffffff", "rev": 2147483647}],
     "path": "foo"
    }
   ]

@@ -2208,10 +2208,10 @@ dirty:
     "branch": "default",
     "date": [*, 0], (glob)
     "desc": "",
-    "node": null,
+    "node": "ffffffffffffffffffffffffffffffffffffffff",
     "parents": ["65624cd9070a035fa7191a54f2b8af39f16b0c08"],
     "phase": "draft",
-    "rev": null,
+    "rev": 2147483647,
     "tags": [],
     "user": "test"
    }
@@ -2220,8 +2220,8 @@ dirty:
   $ hg log -r 'wdir()' -Tjson -q
   [
    {
-    "node": null,
-    "rev": null
+    "node": "ffffffffffffffffffffffffffffffffffffffff",
+    "rev": 2147483647
    }
   ]
 
@@ -2236,11 +2236,11 @@ dirty:
     "extra": {"branch": "default"},
     "manifest": null,
     "modified": ["d1/f1"],
-    "node": null,
+    "node": "ffffffffffffffffffffffffffffffffffffffff",
     "parents": ["65624cd9070a035fa7191a54f2b8af39f16b0c08"],
     "phase": "draft",
     "removed": [".d6/f1"],
-    "rev": null,
+    "rev": 2147483647,
     "tags": [],
     "user": "test"
    }

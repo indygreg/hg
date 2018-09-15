@@ -325,16 +325,9 @@ class changesetformatter(changesetprinter):
         '''show a single changeset or file revision'''
         fm = self._fm
         fm.startitem()
-
         fm.context(ctx=ctx)
-        # TODO: maybe this should be wdirrev/wdirnode?
-        rev = ctx.rev()
-        if rev is None:
-            hexnode = None
-        else:
-            hexnode = fm.hexfunc(ctx.node())
-        fm.data(rev=rev,
-                node=hexnode)
+        fm.data(rev=scmutil.intrev(ctx),
+                node=fm.hexfunc(scmutil.binnode(ctx)))
 
         if self.ui.quiet:
             return
@@ -350,7 +343,7 @@ class changesetformatter(changesetprinter):
                                        for c in ctx.parents()], name='node'))
 
         if self.ui.debugflag:
-            if rev is None:
+            if ctx.rev() is None:
                 hexnode = None
             else:
                 hexnode = fm.hexfunc(ctx.manifestnode())

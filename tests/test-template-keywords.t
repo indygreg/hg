@@ -52,6 +52,27 @@ experimental:
   $ hg log -r 'wdir()' -T '{rev}:{node}\n'
   2147483647:ffffffffffffffffffffffffffffffffffffffff
 
+  $ hg log -r 'wdir()' -Tjson --debug
+  [
+   {
+    "added": [],
+    "bookmarks": [],
+    "branch": "default",
+    "date": [0, 0],
+    "desc": "",
+    "extra": {"branch": "default"},
+    "manifest": null,
+    "modified": [],
+    "node": "ffffffffffffffffffffffffffffffffffffffff",
+    "parents": ["95c24699272ef57d062b8bccc32c878bf841784a"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 2147483647,
+    "tags": [],
+    "user": "test"
+   }
+  ]
+
 Some keywords are invalid for working-directory revision, but they should
 never cause crash:
 

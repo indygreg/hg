@@ -229,7 +229,8 @@ def checkportisavailable(port):
 closefds = os.name == 'posix'
 def Popen4(cmd, wd, timeout, env=None):
     processlock.acquire()
-    p = subprocess.Popen(cmd, shell=True, bufsize=-1, cwd=wd, env=env,
+    p = subprocess.Popen(_strpath(cmd), shell=True, bufsize=-1,
+                         cwd=_strpath(wd), env=env,
                          close_fds=closefds,
                          stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
@@ -988,7 +989,7 @@ class Test(unittest.TestCase):
             return (
                 (b''.join(c.isalpha() and b'[%s%s]' % (c.lower(), c.upper()) or
                     c in b'/\\' and br'[/\\]' or c.isdigit() and c or b'\\' + c
-                    for c in p))
+                    for c in [p[i:i + 1] for i in range(len(p))]))
             )
         else:
             return re.escape(p)
@@ -1137,7 +1138,8 @@ class Test(unittest.TestCase):
         Return a tuple (exitcode, output). output is None in debug mode.
         """
         if self._debug:
-            proc = subprocess.Popen(cmd, shell=True, cwd=self._testtmp,
+            proc = subprocess.Popen(_strpath(cmd), shell=True,
+                                    cwd=_strpath(self._testtmp),
                                     env=env)
             ret = proc.wait()
             return (ret, None)
@@ -1817,10 +1819,8 @@ class TestResult(unittest._TextTestResult):
                 pass
             elif self._options.view:
                 v = self._options.view
-                if PYTHON3:
-                    v = _bytespath(v)
-                os.system(b"%s %s %s" %
-                          (v, test.refpath, test.errpath))
+                os.system(r"%s %s %s" %
+                          (v, _strpath(test.refpath), _strpath(test.errpath)))
             else:
                 servefail, lines = getdiff(expected, got,
                                            test.refpath, test.errpath)
@@ -2888,7 +2888,10 @@ class TestRunner(object):
         """Configure the environment to use the appropriate Python in tests."""
         # Tests must use the same interpreter as us or bad things will happen.
         pyexename = sys.platform == 'win32' and b'python.exe' or b'python'
-        if getattr(os, 'symlink', None):
+
+        # os.symlink() is a thing with py3 on Windows, but it requires
+        # Administrator rights.
+        if getattr(os, 'symlink', None) and os.name != 'nt':
             vlog("# Making python executable in test path a symlink to '%s'" %
                  sys.executable)
             mypython = os.path.join(self._tmpbindir, pyexename)

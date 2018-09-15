@@ -303,6 +303,11 @@ def annotate(ui, repo, *pats, **opts):
     ctx = scmutil.revsingle(repo, rev)
 
     rootfm = ui.formatter('annotate', opts)
+    if ui.debugflag:
+        shorthex = pycompat.identity
+    else:
+        def shorthex(h):
+            return h[:12]
     if ui.quiet:
         datefunc = dateutil.shortdate
     else:
@@ -312,7 +317,7 @@ def annotate(ui, repo, *pats, **opts):
             if node is None:
                 return None
             else:
-                return rootfm.hexfunc(node)
+                return hex(node)
         if opts.get('changeset'):
             # omit "+" suffix which is appended to node hex
             def formatrev(rev):
@@ -326,14 +331,15 @@ def annotate(ui, repo, *pats, **opts):
                     return '%d+' % ctx.p1().rev()
                 else:
                     return '%d ' % rev
-        def formathex(hex):
-            if hex is None:
-                return '%s+' % rootfm.hexfunc(ctx.p1().node())
+        def formathex(h):
+            if h is None:
+                return '%s+' % shorthex(hex(ctx.p1().node()))
             else:
-                return '%s ' % hex
+                return '%s ' % shorthex(h)
     else:
-        hexfn = rootfm.hexfunc
-        formatrev = formathex = pycompat.bytestr
+        hexfn = hex
+        formatrev = b'%d'.__mod__
+        formathex = shorthex
 
     opmap = [('user', ' ', lambda x: x.fctx.user(), ui.shortuser),
              ('rev', ' ', lambda x: x.fctx.rev(), formatrev),

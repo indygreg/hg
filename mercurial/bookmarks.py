@@ -915,14 +915,12 @@ def addbookmarks(repo, tr, names, rev=None, force=False, inactive=False):
     elif cur != tgt and newact == repo._activebookmark:
         deactivate(repo)
 
-def _printbookmarks(ui, repo, bmarks, **opts):
+def _printbookmarks(ui, repo, fm, bmarks):
     """private method to print bookmarks
 
     Provides a way for extensions to control how bookmarks are printed (e.g.
     prepend or postpend names)
     """
-    opts = pycompat.byteskwargs(opts)
-    fm = ui.formatter('bookmarks', opts)
     hexfn = fm.hexfunc
     if len(bmarks) == 0 and fm.isplain():
         ui.status(_("no bookmarks set\n"))
@@ -937,10 +935,9 @@ def _printbookmarks(ui, repo, bmarks, **opts):
                      repo.changelog.rev(n), hexfn(n), label=label)
         fm.data(active=(activebookmarklabel in label))
         fm.plain('\n')
-    fm.end()
 
-def printbookmarks(ui, repo, **opts):
-    """print bookmarks to a formatter
+def printbookmarks(ui, repo, fm):
+    """print bookmarks by the given formatter
 
     Provides a way for extensions to control how bookmarks are printed.
     """
@@ -954,7 +951,7 @@ def printbookmarks(ui, repo, **opts):
             prefix, label = ' ', ''
 
         bmarks[bmark] = (n, prefix, label)
-    _printbookmarks(ui, repo, bmarks, **opts)
+    _printbookmarks(ui, repo, fm, bmarks)
 
 def preparehookargs(name, old, new):
     if new is None:

@@ -1011,7 +1011,9 @@ def bookmark(ui, repo, *names, **opts):
             return 1
         ui.write("%s\n" % book, label=bookmarks.activebookmarklabel)
     else: # show bookmarks
-        bookmarks.printbookmarks(ui, repo, **opts)
+        opts = pycompat.byteskwargs(opts)
+        with ui.formatter('bookmarks', opts) as fm:
+            bookmarks.printbookmarks(ui, repo, fm)
 
 @command('branch',
     [('f', 'force', None,

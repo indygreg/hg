@@ -230,7 +230,7 @@ class remotenames(object):
                     self._nodetohoists.setdefault(node[0], []).append(name)
         return self._nodetohoists
 
-def wrapprintbookmarks(orig, ui, repo, bmarks, **opts):
+def wrapprintbookmarks(orig, ui, repo, fm, bmarks):
     if 'remotebookmarks' not in repo.names:
         return
     ns = repo.names['remotebookmarks']
@@ -243,7 +243,7 @@ def wrapprintbookmarks(orig, ui, repo, bmarks, **opts):
 
         bmarks[name] = (node, ' ', '')
 
-    return orig(ui, repo, bmarks, **opts)
+    return orig(ui, repo, fm, bmarks)
 
 def extsetup(ui):
     extensions.wrapfunction(bookmarks, '_printbookmarks', wrapprintbookmarks)

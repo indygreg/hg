@@ -1004,7 +1004,7 @@ class Test(unittest.TestCase):
         environment."""
         # Put the restoreenv script inside self._threadtmp
         scriptpath = os.path.join(self._threadtmp, b'restoreenv.sh')
-        testenv['HGTEST_RESTOREENV'] = scriptpath
+        testenv['HGTEST_RESTOREENV'] = _strpath(scriptpath)
 
         # Only restore environment variable names that the shell allows
         # us to export.
@@ -1036,15 +1036,16 @@ class Test(unittest.TestCase):
         env = os.environ.copy()
         env['PYTHONUSERBASE'] = sysconfig.get_config_var('userbase') or ''
         env['HGEMITWARNINGS'] = '1'
-        env['TESTTMP'] = self._testtmp
+        env['TESTTMP'] = _strpath(self._testtmp)
         env['TESTNAME'] = self.name
-        env['HOME'] = self._testtmp
+        env['HOME'] = _strpath(self._testtmp)
         # This number should match portneeded in _getport
         for port in xrange(3):
             # This list should be parallel to _portmap in _getreplacements
             defineport(port)
-        env["HGRCPATH"] = os.path.join(self._threadtmp, b'.hgrc')
-        env["DAEMON_PIDS"] = os.path.join(self._threadtmp, b'daemon.pids')
+        env["HGRCPATH"] = _strpath(os.path.join(self._threadtmp, b'.hgrc'))
+        env["DAEMON_PIDS"] = _strpath(os.path.join(self._threadtmp,
+                                                   b'daemon.pids'))
         env["HGEDITOR"] = ('"' + sys.executable + '"'
                            + ' -c "import sys; sys.exit(0)"')
         env["HGMERGE"] = "internal:merge"
@@ -1069,7 +1070,7 @@ class Test(unittest.TestCase):
 
         # LOCALIP could be ::1 or 127.0.0.1. Useful for tests that require raw
         # IP addresses.
-        env['LOCALIP'] = self._localip()
+        env['LOCALIP'] = _strpath(self._localip())
 
         # Reset some environment variables to well-known values so that
         # the tests produce repeatable output.

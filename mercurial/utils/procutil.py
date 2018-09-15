@@ -320,9 +320,18 @@ def shellenviron(environ=None):
 if pycompat.iswindows:
     def shelltonative(cmd, env):
         return platform.shelltocmdexe(cmd, shellenviron(env))
+
+    tonativestr = encoding.strfromlocal
 else:
     def shelltonative(cmd, env):
         return cmd
+
+    tonativestr = pycompat.identity
+
+def tonativeenv(env):
+    '''convert the environment from bytes to strings suitable for Popen(), etc.
+    '''
+    return pycompat.rapply(tonativestr, env)
 
 def system(cmd, environ=None, cwd=None, out=None):
     '''enhanced shell command execution.

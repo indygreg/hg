@@ -1130,10 +1130,10 @@ class ui(object):
 
         try:
             pager = subprocess.Popen(
-                command, shell=shell, bufsize=-1,
+                procutil.tonativestr(command), shell=shell, bufsize=-1,
                 close_fds=procutil.closefds, stdin=subprocess.PIPE,
                 stdout=procutil.stdout, stderr=procutil.stderr,
-                env=procutil.shellenviron(env))
+                env=procutil.tonativeenv(procutil.shellenviron(env)))
         except OSError as e:
             if e.errno == errno.ENOENT and not shell:
                 self.warn(_("missing pager command '%s', skipping pager\n")

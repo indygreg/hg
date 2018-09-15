@@ -961,36 +961,33 @@ def bookmark(ui, repo, *names, **opts):
     opts = pycompat.byteskwargs(opts)
     force = opts.get('force')
     rev = opts.get('rev')
-    delete = opts.get('delete')
     rename = opts.get('rename')
     inactive = opts.get('inactive')
-    active = opts.get('active')
 
-    if delete and rename:
-        raise error.Abort(_("--delete and --rename are incompatible"))
-    if delete and rev:
-        raise error.Abort(_("--rev is incompatible with --delete"))
-    if rename and rev:
-        raise error.Abort(_("--rev is incompatible with --rename"))
-    if delete and active:
-        raise error.Abort(_("--delete is incompatible with --active"))
-    if rev and active:
-        raise error.Abort(_("--rev is incompatible with --active"))
-    if rename and active:
-        raise error.Abort(_("--rename is incompatible with --active"))
-    if names and active:
+    selactions = [k for k in ['delete', 'rename', 'active'] if opts.get(k)]
+    if len(selactions) > 1:
+        raise error.Abort(_('--%s and --%s are incompatible')
+                          % tuple(selactions[:2]))
+    if selactions:
+        action = selactions[0]
+    else:
+        action = None
+
+    if rev and action in {'delete', 'rename', 'active'}:
+        raise error.Abort(_("--rev is incompatible with --%s") % action)
+    if names and action == 'active':
         raise error.Abort(_("NAMES is incompatible with --active"))
-    if inactive and active:
+    if inactive and action == 'active':
         raise error.Abort(_("--inactive is incompatible with --active"))
-    if not names and (delete or rev):
+    if not names and (action == 'delete' or rev):
         raise error.Abort(_("bookmark name required"))
 
-    if delete or rename or names or inactive:
+    if action in {'delete', 'rename'} or names or inactive:
         with repo.wlock(), repo.lock(), repo.transaction('bookmark') as tr:
-            if delete:
+            if action == 'delete':
                 names = pycompat.maplist(repo._bookmarks.expandname, names)
                 bookmarks.delete(repo, tr, names)
-            elif rename:
+            elif action == 'rename':
                 if not names:
                     raise error.Abort(_("new bookmark name required"))
                 elif len(names) > 1:
@@ -1006,7 +1003,7 @@ def bookmark(ui, repo, *names, **opts):
                     ui.status(_("no active bookmark\n"))
                 else:
                     bookmarks.deactivate(repo)
-    elif active:
+    elif action == 'active':
         book = repo._activebookmark
         if book is None:
             return 1

@@ -958,12 +958,13 @@ def bookmark(ui, repo, *names, **opts):
 
           hg book -f @
     '''
-    force = opts.get(r'force')
-    rev = opts.get(r'rev')
-    delete = opts.get(r'delete')
-    rename = opts.get(r'rename')
-    inactive = opts.get(r'inactive')
-    active = opts.get(r'active')
+    opts = pycompat.byteskwargs(opts)
+    force = opts.get('force')
+    rev = opts.get('rev')
+    delete = opts.get('delete')
+    rename = opts.get('rename')
+    inactive = opts.get('inactive')
+    active = opts.get('active')
 
     if delete and rename:
         raise error.Abort(_("--delete and --rename are incompatible"))
@@ -1011,7 +1012,6 @@ def bookmark(ui, repo, *names, **opts):
             return 1
         ui.write("%s\n" % book, label=bookmarks.activebookmarklabel)
     else: # show bookmarks
-        opts = pycompat.byteskwargs(opts)
         with ui.formatter('bookmarks', opts) as fm:
             bookmarks.printbookmarks(ui, repo, fm)
 

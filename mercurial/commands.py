@@ -969,6 +969,8 @@ def bookmark(ui, repo, *names, **opts):
                           % tuple(selactions[:2]))
     if selactions:
         action = selactions[0]
+    elif names or rev:
+        action = 'add'
     else:
         action = None
 
@@ -978,10 +980,10 @@ def bookmark(ui, repo, *names, **opts):
         raise error.Abort(_("NAMES is incompatible with --active"))
     if inactive and action == 'active':
         raise error.Abort(_("--inactive is incompatible with --active"))
-    if not names and (action == 'delete' or rev):
+    if not names and action in {'add', 'delete'}:
         raise error.Abort(_("bookmark name required"))
 
-    if action in {'delete', 'rename'} or names or inactive:
+    if action in {'add', 'delete', 'rename'} or inactive:
         with repo.wlock(), repo.lock(), repo.transaction('bookmark') as tr:
             if action == 'delete':
                 names = pycompat.maplist(repo._bookmarks.expandname, names)
@@ -993,7 +995,7 @@ def bookmark(ui, repo, *names, **opts):
                     raise error.Abort(_("only one new bookmark name allowed"))
                 oldname = repo._bookmarks.expandname(opts['rename'])
                 bookmarks.rename(repo, tr, oldname, names[0], force, inactive)
-            elif names:
+            elif action == 'add':
                 bookmarks.addbookmarks(repo, tr, names, rev, force, inactive)
             elif inactive:
                 if len(repo._bookmarks) == 0:

@@ -26,4 +26,4 @@ Check if ":hg:`help TOPIC`" is valid:
   $ testrepohg files 'glob:{hgdemandimport,hgext,mercurial}/**/*.py' \
   > | sed 's|\\|/|g' \
   > | xargs $PYTHON "$TESTTMP/scanhelptopics.py" \
-  > | xargs -n1 hg help > /dev/null
+  > | xargs -n1 hg help --config extensions.phabricator= > /dev/null

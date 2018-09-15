@@ -1,7 +1,7 @@
 #require vcr
   $ cat >> $HGRCPATH <<EOF
   > [extensions]
-  > phabricator = $TESTDIR/../contrib/phabricator.py
+  > phabricator = 
   > EOF
   $ hg init repo
   $ cd repo

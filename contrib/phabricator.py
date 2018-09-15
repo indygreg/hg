@@ -106,6 +106,37 @@ colortable = {
     b'phabricator.node': b'',
 }
 
+_VCR_FLAGS = [
+    (b'', b'test-vcr', b'',
+     _(b'Path to a vcr file. If nonexistent, will record a new vcr transcript'
+       b', otherwise will mock all http requests using the specified vcr file.'
+       b' (ADVANCED)'
+     )),
+]
+
+def vcrcommand(name, flags, spec):
+    fullflags = flags + _VCR_FLAGS
+    def decorate(fn):
+        def inner(*args, **kwargs):
+            cassette = kwargs.pop(r'test_vcr', None)
+            if cassette:
+                import hgdemandimport
+                with hgdemandimport.deactivated():
+                    import vcr as vcrmod
+                    import vcr.stubs as stubs
+                vcr = vcrmod.VCR(
+                    serializer=r'json',
+                    custom_patches=[
+                        (urlmod, 'httpconnection', stubs.VCRHTTPConnection),
+                        (urlmod, 'httpsconnection', stubs.VCRHTTPSConnection),
+                    ])
+                with vcr.use_cassette(cassette):
+                    return fn(*args, **kwargs)
+            return fn(*args, **kwargs)
+        inner.__name__ = fn.__name__
+        return command(name, fullflags, spec)(inner)
+    return decorate
+
 def urlencodenested(params):
     """like urlencode, but works with nested parameters.
 
@@ -215,7 +246,7 @@ def callconduit(repo, name, params):
         raise error.Abort(msg)
     return parsed[r'result']
 
-@command(b'debugcallconduit', [], _(b'METHOD'))
+@vcrcommand(b'debugcallconduit', [], _(b'METHOD'))
 def debugcallconduit(ui, repo, name):
     """call Conduit API
 
@@ -452,7 +483,7 @@ def userphids(repo, names):
                           % b' '.join(sorted(unresolved)))
     return [entry[r'phid'] for entry in data]
 
-@command(b'phabsend',
+@vcrcommand(b'phabsend',
          [(b'r', b'rev', [], _(b'revisions to send'), _(b'REV')),
           (b'', b'amend', True, _(b'update commit messages')),
           (b'', b'reviewer', [], _(b'specify reviewers')),
@@ -909,7 +940,7 @@ def readpatch(repo, drevs, write):
         content = b'%s%s\n%s' % (header, desc, body)
         write(encoding.unitolocal(content))
 
-@command(b'phabread',
+@vcrcommand(b'phabread',
          [(b'', b'stack', False, _(b'read dependencies'))],
          _(b'DREVSPEC [OPTIONS]'))
 def phabread(ui, repo, spec, **opts):
@@ -936,7 +967,7 @@ def phabread(ui, repo, spec, **opts):
     drevs = querydrev(repo, spec)
     readpatch(repo, drevs, ui.write)
 
-@command(b'phabupdate',
+@vcrcommand(b'phabupdate',
          [(b'', b'accept', False, _(b'accept revisions')),
           (b'', b'reject', False, _(b'reject revisions')),
           (b'', b'abandon', False, _(b'abandon revisions')),

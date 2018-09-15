@@ -70,10 +70,8 @@ Template keywords
   1 {"id": "D4597", "url": "https://phab.mercurial-scm.org/D4597"}
   0 {"id": "D4596", "url": "https://phab.mercurial-scm.org/D4596"}
 
-BUG: this should work, but doesn't.
-  $ hg log -T'{rev} {phabreview.url}\n'
-  hg: parse error: {* 'D4597'*} is not a dictionary (glob)
-  (keyword 'phabreview' does not support member operation)
-  [255]
+  $ hg log -T'{rev} {phabreview.url} {phabreview.id}\n'
+  1 https://phab.mercurial-scm.org/D4597 D4597
+  0 https://phab.mercurial-scm.org/D4596 D4596
 
   $ cd ..

@@ -62,6 +62,7 @@ from mercurial import (
     scmutil,
     smartset,
     tags,
+    templateutil,
     url as urlmod,
     util,
 )
@@ -1006,7 +1007,7 @@ def template_review(context, mapping):
     ctx = context.resource(mapping, b'ctx')
     m = _differentialrevisiondescre.search(ctx.description())
     if m:
-        return {
+        return templateutil.hybriddict({
             b'url': m.group(b'url'),
             b'id': b"D{}".format(m.group(b'id')),
-        }
+        })

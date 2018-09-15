@@ -961,7 +961,7 @@ def bookmark(ui, repo, *names, **opts):
     opts = pycompat.byteskwargs(opts)
     force = opts.get('force')
     rev = opts.get('rev')
-    inactive = opts.get('inactive')
+    inactive = opts.get('inactive')  # meaning add/rename to inactive bookmark
 
     selactions = [k for k in ['delete', 'rename', 'active'] if opts.get(k)]
     if len(selactions) > 1:
@@ -971,6 +971,8 @@ def bookmark(ui, repo, *names, **opts):
         action = selactions[0]
     elif names or rev:
         action = 'add'
+    elif inactive:
+        action = 'inactive'  # meaning deactivate
     else:
         action = None
 
@@ -983,7 +985,7 @@ def bookmark(ui, repo, *names, **opts):
     if not names and action in {'add', 'delete'}:
         raise error.Abort(_("bookmark name required"))
 
-    if action in {'add', 'delete', 'rename'} or inactive:
+    if action in {'add', 'delete', 'rename', 'inactive'}:
         with repo.wlock(), repo.lock(), repo.transaction('bookmark') as tr:
             if action == 'delete':
                 names = pycompat.maplist(repo._bookmarks.expandname, names)
@@ -997,7 +999,7 @@ def bookmark(ui, repo, *names, **opts):
                 bookmarks.rename(repo, tr, oldname, names[0], force, inactive)
             elif action == 'add':
                 bookmarks.addbookmarks(repo, tr, names, rev, force, inactive)
-            elif inactive:
+            elif action == 'inactive':
                 if len(repo._bookmarks) == 0:
                     ui.status(_("no bookmarks set\n"))
                 elif not repo._activebookmark:

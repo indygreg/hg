@@ -86,8 +86,6 @@ if os.environ.get('RTUNICODEPEDANTRY', False):
     except NameError:
         pass
 
-origenviron = os.environ.copy()
-osenvironb = getattr(os, 'environb', os.environ)
 processlock = threading.Lock()
 
 pygmentspresent = False
@@ -141,6 +139,8 @@ if pygmentspresent:
     runnerformatter = formatters.Terminal256Formatter(style=TestRunnerStyle)
     runnerlexer = TestRunnerLexer()
 
+origenviron = os.environ.copy()
+
 if sys.version_info > (3, 5, 0):
     PYTHON3 = True
     xrange = range # we use xrange in one place, and we'd rather not use range
@@ -153,6 +153,13 @@ if sys.version_info > (3, 5, 0):
         if p is None:
             return p
         return p.decode('utf-8')
+
+    osenvironb = getattr(os, 'environb', None)
+    if osenvironb is None:
+        # Windows lacks os.environb, for instance.
+        osenvironb = {
+            _bytespath(k): _bytespath(v) for k, v in os.environ.items()
+        }
 
 elif sys.version_info >= (3, 0, 0):
     print('%s is only supported on Python 3.5+ and 2.7, not %s' %
@@ -169,6 +176,7 @@ else:
         return p
 
     _strpath = _bytespath
+    osenvironb = os.environ
 
 # For Windows support
 wifexited = getattr(os, "WIFEXITED", lambda x: False)

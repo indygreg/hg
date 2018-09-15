@@ -4,7 +4,7 @@
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
-"""simple Phabricator integration
+"""simple Phabricator integration (EXPERIMENTAL)
 
 This extension provides a ``phabsend`` command which sends a stack of
 changesets to Phabricator, and a ``phabread`` command which prints a stack of

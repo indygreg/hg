@@ -770,3 +770,13 @@ def has_repobundlerepo():
 @check('repofncache', 'repository has an fncache')
 def has_repofncache():
     return 'fncache' in getrepofeatures()
+
+@check('vcr', 'vcr http mocking library')
+def has_vcr():
+    try:
+        import vcr
+        vcr.VCR
+        return True
+    except (ImportError, AttributeError):
+        pass
+    return False

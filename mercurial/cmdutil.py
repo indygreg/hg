@@ -654,16 +654,15 @@ def morestatus(repo, fm):
     statetuple = _getrepostate(repo)
     label = 'status.morestatus'
     if statetuple:
-        fm.startitem()
         state, statedetectionpredicate, helpfulmsg = statetuple
         statemsg = _('The repository is in an unfinished *%s* state.') % state
-        fm.write('statemsg', '%s\n',  _commentlines(statemsg), label=label)
+        fm.plain('%s\n' % _commentlines(statemsg), label=label)
         conmsg = _conflictsmsg(repo)
         if conmsg:
-            fm.write('conflictsmsg', '%s\n', conmsg, label=label)
+            fm.plain('%s\n' % conmsg, label=label)
         if helpfulmsg:
             helpmsg = helpfulmsg()
-            fm.write('helpmsg', '%s\n', helpmsg, label=label)
+            fm.plain('%s\n' % helpmsg, label=label)
 
 def findpossible(cmd, table, strict=False):
     """

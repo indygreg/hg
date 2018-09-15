@@ -69,11 +69,6 @@
    {
     "path": "a.orig",
     "status": "?"
-   },
-   {
-    "conflictsmsg": "# Unresolved merge conflicts:\n# \n#     a\n# \n# To mark files as resolved:  hg resolve --mark FILE\n",
-    "helpmsg": "# To continue:    hg commit\n# To abort:       hg merge --abort\n",
-    "statemsg": "# The repository is in an unfinished *merge* state.\n"
    }
   ]
 

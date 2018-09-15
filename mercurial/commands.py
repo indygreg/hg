@@ -980,8 +980,8 @@ def bookmark(ui, repo, *names, **opts):
         raise error.Abort(_("--rev is incompatible with --%s") % action)
     if names and action == 'active':
         raise error.Abort(_("NAMES is incompatible with --active"))
-    if inactive and action == 'active':
-        raise error.Abort(_("--inactive is incompatible with --active"))
+    if inactive and action in {'delete', 'active'}:
+        raise error.Abort(_("--inactive is incompatible with --%s") % action)
     if not names and action in {'add', 'delete'}:
         raise error.Abort(_("bookmark name required"))
 

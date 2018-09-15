@@ -327,6 +327,12 @@ delete nonexistent bookmark
   abort: bookmark 'A' does not exist
   [255]
 
+delete with --inactive
+
+  $ hg bookmark -d --inactive Y
+  abort: --inactive is incompatible with --delete
+  [255]
+
 bookmark name with spaces should be stripped
 
   $ hg bookmark ' x  y '

@@ -247,8 +247,10 @@ class KeepAliveHandler(object):
         except (socket.error, httplib.HTTPException) as err:
             raise urlerr.urlerror(err)
 
-        # if not a persistent connection, don't try to reuse it
-        if r.will_close:
+        # If not a persistent connection, don't try to reuse it. Look
+        # for this using getattr() since vcr doesn't define this
+        # attribute, and in that case always close the connection.
+        if getattr(r, r'will_close', True):
             self._cm.remove(h)
 
         if DEBUG:

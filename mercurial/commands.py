@@ -961,7 +961,6 @@ def bookmark(ui, repo, *names, **opts):
     opts = pycompat.byteskwargs(opts)
     force = opts.get('force')
     rev = opts.get('rev')
-    rename = opts.get('rename')
     inactive = opts.get('inactive')
 
     selactions = [k for k in ['delete', 'rename', 'active'] if opts.get(k)]
@@ -992,8 +991,8 @@ def bookmark(ui, repo, *names, **opts):
                     raise error.Abort(_("new bookmark name required"))
                 elif len(names) > 1:
                     raise error.Abort(_("only one new bookmark name allowed"))
-                rename = repo._bookmarks.expandname(rename)
-                bookmarks.rename(repo, tr, rename, names[0], force, inactive)
+                oldname = repo._bookmarks.expandname(opts['rename'])
+                bookmarks.rename(repo, tr, oldname, names[0], force, inactive)
             elif names:
                 bookmarks.addbookmarks(repo, tr, names, rev, force, inactive)
             elif inactive:

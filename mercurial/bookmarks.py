@@ -936,21 +936,23 @@ def _printbookmarks(ui, repo, fm, bmarks):
         fm.data(active=(activebookmarklabel in label))
         fm.plain('\n')
 
-def printbookmarks(ui, repo, fm):
+def printbookmarks(ui, repo, fm, names=None):
     """print bookmarks by the given formatter
 
     Provides a way for extensions to control how bookmarks are printed.
     """
     marks = repo._bookmarks
     bmarks = {}
-    for bmark, n in sorted(marks.iteritems()):
+    for bmark in (names or marks):
+        if bmark not in marks:
+            raise error.Abort(_("bookmark '%s' does not exist") % bmark)
         active = repo._activebookmark
         if bmark == active:
             prefix, label = '*', activebookmarklabel
         else:
             prefix, label = ' ', ''
 
-        bmarks[bmark] = (n, prefix, label)
+        bmarks[bmark] = (marks[bmark], prefix, label)
     _printbookmarks(ui, repo, fm, bmarks)
 
 def preparehookargs(name, old, new):

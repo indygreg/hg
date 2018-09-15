@@ -68,6 +68,25 @@ list bookmarks
      X                         0:f7b1eb17ad24
    * X2                        0:f7b1eb17ad24
      Y                         -1:000000000000
+  $ hg bookmarks -l
+     X                         0:f7b1eb17ad24
+   * X2                        0:f7b1eb17ad24
+     Y                         -1:000000000000
+  $ hg bookmarks -l X Y
+     X                         0:f7b1eb17ad24
+     Y                         -1:000000000000
+  $ hg bookmarks -l .
+   * X2                        0:f7b1eb17ad24
+  $ hg bookmarks -l X A Y
+  abort: bookmark 'A' does not exist
+  [255]
+  $ hg bookmarks -l -r0
+  abort: --rev is incompatible with --list
+  [255]
+  $ hg bookmarks -l --inactive
+  abort: --inactive is incompatible with --list
+  [255]
+
   $ hg log -T '{bookmarks % "{rev} {bookmark}\n"}'
   0 X
   0 X2

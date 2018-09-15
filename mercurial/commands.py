@@ -903,6 +903,7 @@ def bisect(ui, repo, rev=None, extra=None, command=None,
     ('d', 'delete', False, _('delete a given bookmark')),
     ('m', 'rename', '', _('rename a given bookmark'), _('OLD')),
     ('i', 'inactive', False, _('mark a bookmark inactive')),
+    ('l', 'list', False, _('list existing bookmarks')),
     ('', 'active', False, _('display the active bookmark')),
     ] + formatteropts,
     _('hg bookmarks [OPTIONS]... [NAME]...'))
@@ -924,7 +925,7 @@ def bookmark(ui, repo, *names, **opts):
     diverged, a new 'divergent bookmark' of the form 'name@path' will
     be created. Using :hg:`merge` will resolve the divergence.
 
-    Specifying bookmark as '.' to -m or -d options is equivalent to specifying
+    Specifying bookmark as '.' to -m/-d/-l options is equivalent to specifying
     the active bookmark's name.
 
     A bookmark named '@' has the special property that :hg:`clone` will
@@ -963,7 +964,8 @@ def bookmark(ui, repo, *names, **opts):
     rev = opts.get('rev')
     inactive = opts.get('inactive')  # meaning add/rename to inactive bookmark
 
-    selactions = [k for k in ['delete', 'rename', 'active'] if opts.get(k)]
+    selactions = [k for k in ['delete', 'rename', 'active', 'list']
+                  if opts.get(k)]
     if len(selactions) > 1:
         raise error.Abort(_('--%s and --%s are incompatible')
                           % tuple(selactions[:2]))
@@ -974,13 +976,13 @@ def bookmark(ui, repo, *names, **opts):
     elif inactive:
         action = 'inactive'  # meaning deactivate
     else:
-        action = None
+        action = 'list'
 
-    if rev and action in {'delete', 'rename', 'active'}:
+    if rev and action in {'delete', 'rename', 'active', 'list'}:
         raise error.Abort(_("--rev is incompatible with --%s") % action)
     if names and action == 'active':
         raise error.Abort(_("NAMES is incompatible with --active"))
-    if inactive and action in {'delete', 'active'}:
+    if inactive and action in {'delete', 'active', 'list'}:
         raise error.Abort(_("--inactive is incompatible with --%s") % action)
     if not names and action in {'add', 'delete'}:
         raise error.Abort(_("bookmark name required"))
@@ -1011,9 +1013,12 @@ def bookmark(ui, repo, *names, **opts):
         if book is None:
             return 1
         ui.write("%s\n" % book, label=bookmarks.activebookmarklabel)
-    else: # show bookmarks
+    elif action == 'list':
+        names = pycompat.maplist(repo._bookmarks.expandname, names)
         with ui.formatter('bookmarks', opts) as fm:
-            bookmarks.printbookmarks(ui, repo, fm)
+            bookmarks.printbookmarks(ui, repo, fm, names)
+    else:
+        raise error.ProgrammingError('invalid action: %s' % action)
 
 @command('branch',
     [('f', 'force', None,

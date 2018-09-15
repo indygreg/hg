@@ -85,9 +85,9 @@ def _docensor(ui, repo, path, rev='', tombstone='', **opts):
     fnode = fctx.filenode()
     heads = []
     for headnode in repo.heads():
-        c = repo[headnode]
-        if path in c and c.filenode(path) == fnode:
-            heads.append(c)
+        hc = repo[headnode]
+        if path in hc and hc.filenode(path) == fnode:
+            heads.append(hc)
     if heads:
         headlist = ', '.join([short(c.node()) for c in heads])
         raise error.Abort(_('cannot censor file in heads (%s)') % headlist,

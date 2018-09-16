@@ -498,20 +498,19 @@ def makebundlerepository(ui, repopath, bundlepath):
     # to this new type and initialize the bundle-specific bits of it.
 
     try:
-        parentrepo = localrepo.instance(ui, repopath, create=False)
+        repo = localrepo.instance(ui, repopath, create=False)
         tempparent = None
     except error.RepoError:
         tempparent = pycompat.mkdtemp()
         try:
-            parentrepo = localrepo.instance(ui, tempparent, create=True)
+            repo = localrepo.instance(ui, tempparent, create=True)
         except Exception:
             shutil.rmtree(tempparent)
             raise
 
-    class derivedbundlerepository(bundlerepository, parentrepo.__class__):
+    class derivedbundlerepository(bundlerepository, repo.__class__):
         pass
 
-    repo = parentrepo
     repo.__class__ = derivedbundlerepository
     bundlerepository.__init__(repo, bundlepath, url, tempparent)
 

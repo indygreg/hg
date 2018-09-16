@@ -65,7 +65,7 @@ by the WSGI standard and strictly implemented by mod_wsgi.
   >     'SERVER_PROTOCOL': 'HTTP/1.0'
   > }
   > 
-  > i = hgweb('.')
+  > i = hgweb(b'.')
   > for c in i(env, startrsp):
   >     pass
   > print('---- ERRORS')
@@ -74,7 +74,7 @@ by the WSGI standard and strictly implemented by mod_wsgi.
   > print(sorted([x for x in os.environ if x.startswith('wsgi')]))
   > print('---- request.ENVIRON wsgi variables')
   > with i._obtainrepo() as repo:
-  >     print(sorted([x for x in repo.ui.environ if x.startswith('wsgi')]))
+  >     print(sorted([x for x in repo.ui.environ if x.startswith(b'wsgi')]))
   > EOF
   $ $PYTHON request.py
   ---- STATUS

@@ -64,11 +64,11 @@ should be used from d74fc8dec2b4 onward to route the request.
   > 
   > output = stringio()
   > env['QUERY_STRING'] = 'style=atom'
-  > process(hgweb('.', name='repo'))
+  > process(hgweb(b'.', name=b'repo'))
   > 
   > output = stringio()
   > env['QUERY_STRING'] = 'style=raw'
-  > process(hgwebdir({'repo': '.'}))
+  > process(hgwebdir({'repo': b'.'}))
   > EOF
   $ $PYTHON request.py
   ---- STATUS

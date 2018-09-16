@@ -331,6 +331,7 @@ test-mq-qsave.t
 test-mq-safety.t
 test-mq-subrepo.t
 test-mq-symlinks.t
+test-mq.t
 test-mv-cp-st-diff.t
 test-narrow-acl.t
 test-narrow-archive.t
@@ -393,6 +394,7 @@ test-pull-r.t
 test-pull-update.t
 test-pull.t
 test-purge.t
+test-push-cgi.t
 test-push-checkheads-partial-C1.t
 test-push-checkheads-partial-C2.t
 test-push-checkheads-partial-C3.t

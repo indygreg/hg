@@ -74,12 +74,12 @@ should be used from d74fc8dec2b4 onward to route the request.
   > output = stringio()
   > env['PATH_INFO'] = '/'
   > env['QUERY_STRING'] = 'style=raw'
-  > process(hgwebdir({'repo': b'.'}))
+  > process(hgwebdir({b'repo': b'.'}))
   > 
   > output = stringio()
   > env['PATH_INFO'] = '/repo/file/tip/'
   > env['QUERY_STRING'] = 'style=raw'
-  > process(hgwebdir({'repo': b'.'}))
+  > process(hgwebdir({b'repo': b'.'}))
   > EOF
   $ $PYTHON request.py
   ---- STATUS

@@ -827,8 +827,11 @@ class cgpacker(object):
         else:
             self._verbosenote = lambda s: None
 
-    def generate(self, commonrevs, clnodes, fastpathlinkrev, source):
-        """Yield a sequence of changegroup byte chunks."""
+    def generate(self, commonrevs, clnodes, fastpathlinkrev, source,
+                 changelog=True):
+        """Yield a sequence of changegroup byte chunks.
+        If changelog is False, changelog data won't be added to changegroup
+        """
 
         repo = self._repo
         cl = repo.changelog
@@ -838,9 +841,11 @@ class cgpacker(object):
 
         clstate, deltas = self._generatechangelog(cl, clnodes)
         for delta in deltas:
-            for chunk in _revisiondeltatochunks(delta, self._builddeltaheader):
-                size += len(chunk)
-                yield chunk
+            if changelog:
+                for chunk in _revisiondeltatochunks(delta,
+                                                    self._builddeltaheader):
+                    size += len(chunk)
+                    yield chunk
 
         close = closechunk()
         size += len(close)

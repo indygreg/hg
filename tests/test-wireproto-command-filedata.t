@@ -53,7 +53,7 @@ Missing arguments is an error
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0001/ro/filedata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -85,7 +85,7 @@ Missing arguments is an error
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0001/ro/filedata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -120,7 +120,7 @@ Unknown node is an error
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0001/ro/filedata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -155,7 +155,7 @@ Fetching a single revision returns just metadata by default
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0001/ro/filedata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -206,7 +206,7 @@ Requesting parents works
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0001/ro/filedata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -263,7 +263,7 @@ Requesting revision data works
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0001/ro/filedata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -322,7 +322,7 @@ haveparents=False should be same as above
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0001/ro/filedata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -381,7 +381,7 @@ haveparents=True should emit a delta
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0001/ro/filedata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -442,7 +442,7 @@ Requesting multiple revisions works
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0001/ro/filedata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -515,7 +515,7 @@ Revisions are sorted by DAG order, parents first
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0001/ro/filedata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -588,7 +588,7 @@ Requesting parents and revision data works
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0001/ro/filedata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n

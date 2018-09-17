@@ -130,6 +130,11 @@ noderange
 nodes
    (array of bytestrings) Changelog revisions to request explicitly.
 
+nodesdepth
+   (unsigned integer) Number of ancestor revisions of elements in ``nodes``
+   to also fetch. When defined, for each element in ``nodes``, DAG ancestors
+   will be walked until at most N total revisions are emitted.
+
 fields
    (set of bytestring) Which data associated with changelog revisions to
    fetch. The following values are recognized:
@@ -229,9 +234,10 @@ revisions)
 TODO support different hash "namespaces" for revisions (e.g. sha-1 versus other)
 TODO support emitting obsolescence data
 TODO support filtering based on relevant paths (narrow clone)
-TODO support depth limiting
 TODO support hgtagsfnodes cache / tags data
 TODO support branch heads cache
+TODO consider unify query mechanism. e.g. as an array of "query descriptors"
+rather than a set of top-level arguments that have semantics when combined.
 
 filedata
 --------

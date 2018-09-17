@@ -104,6 +104,41 @@ Empty noderange heads results in an error
   abort: heads in noderange request cannot be empty!
   [255]
 
+nodesdepth requires nodes argument
+
+  $ sendhttpv2peer << EOF
+  > command changesetdata
+  >     nodesdepth 42
+  >     noderange eval:[[], [b'ignored']]
+  > EOF
+  creating http peer for wire protocol version 2
+  sending changesetdata command
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-exp-framing-0005\r\n
+  s>     content-type: application/mercurial-exp-framing-0005\r\n
+  s>     content-length: 69\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s>     =\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Inoderange\x82\x80\x81GignoredJnodesdepthB42DnameMchangesetdata
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
+  s>     Transfer-Encoding: chunked\r\n
+  s>     \r\n
+  s>     4d\r\n
+  s>     E\x00\x00\x01\x00\x02\x012
+  s>     \xa2Eerror\xa1GmessageX&nodesdepth requires the nodes argumentFstatusEerror
+  s>     \r\n
+  received frame(size=69; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  s>     0\r\n
+  s>     \r\n
+  abort: nodesdepth requires the nodes argument!
+  [255]
+
 Sending just noderange heads sends all revisions
 
   $ sendhttpv2peer << EOF
@@ -313,6 +348,168 @@ Specifying a noderange and nodes takes union
     },
     {
       b'node': b'\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd'
+    }
+  ]
+
+nodesdepth of 1 limits to exactly requested nodes
+
+  $ sendhttpv2peer << EOF
+  > command changesetdata
+  >     nodes eval:[b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11']
+  >     nodesdepth eval:1
+  > EOF
+  creating http peer for wire protocol version 2
+  sending changesetdata command
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-exp-framing-0005\r\n
+  s>     content-type: application/mercurial-exp-framing-0005\r\n
+  s>     content-length: 74\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s>     B\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Enodes\x81T\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11Jnodesdepth\x01DnameMchangesetdata
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
+  s>     Transfer-Encoding: chunked\r\n
+  s>     \r\n
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
+  s>     \r\n
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     30\r\n
+  s>     (\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x01\xa1DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11
+  s>     \r\n
+  received frame(size=40; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
+  s>     0\r\n
+  s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  response: gen[
+    {
+      b'totalitems': 1
+    },
+    {
+      b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
+    }
+  ]
+
+nodesdepth of 2 limits to first ancestor
+
+  $ sendhttpv2peer << EOF
+  > command changesetdata
+  >     nodes eval:[b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11']
+  >     nodesdepth eval:2
+  > EOF
+  creating http peer for wire protocol version 2
+  sending changesetdata command
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-exp-framing-0005\r\n
+  s>     content-type: application/mercurial-exp-framing-0005\r\n
+  s>     content-length: 74\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s>     B\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Enodes\x81T\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11Jnodesdepth\x02DnameMchangesetdata
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
+  s>     Transfer-Encoding: chunked\r\n
+  s>     \r\n
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
+  s>     \r\n
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     4b\r\n
+  s>     C\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x02\xa1DnodeT3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:\xa1DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11
+  s>     \r\n
+  received frame(size=67; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
+  s>     0\r\n
+  s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  response: gen[
+    {
+      b'totalitems': 2
+    },
+    {
+      b'node': b'3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:'
+    },
+    {
+      b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
+    }
+  ]
+
+nodesdepth with multiple nodes
+
+  $ sendhttpv2peer << EOF
+  > command changesetdata
+  >     nodes eval:[b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11', b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd']
+  >     nodesdepth eval:2
+  > EOF
+  creating http peer for wire protocol version 2
+  sending changesetdata command
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-exp-framing-0005\r\n
+  s>     content-type: application/mercurial-exp-framing-0005\r\n
+  s>     content-length: 95\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s>     W\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Enodes\x82T\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11T\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddJnodesdepth\x02DnameMchangesetdata
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
+  s>     Transfer-Encoding: chunked\r\n
+  s>     \r\n
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
+  s>     \r\n
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     81\r\n
+  s>     y\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x04\xa1DnodeT3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:\xa1DnodeTu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1\xa1DnodeT\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd\xa1DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11
+  s>     \r\n
+  received frame(size=121; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
+  s>     0\r\n
+  s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  response: gen[
+    {
+      b'totalitems': 4
+    },
+    {
+      b'node': b'3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:'
+    },
+    {
+      b'node': b'u\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1'
+    },
+    {
+      b'node': b'\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd'
+    },
+    {
+      b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
     }
   ]
 

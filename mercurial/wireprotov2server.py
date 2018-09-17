@@ -657,6 +657,10 @@ def capabilitiesv2(repo, proto):
             'type': 'list',
             'example': [b'0123456...'],
         },
+        'nodesdepth': {
+            'type': 'int',
+            'example': 10,
+        },
         'fields': {
             'type': 'set',
             'default': set,
@@ -665,13 +669,17 @@ def capabilitiesv2(repo, proto):
         },
     },
     permission='pull')
-def changesetdata(repo, proto, noderange, nodes, fields):
+def changesetdata(repo, proto, noderange, nodes, nodesdepth, fields):
     # TODO look for unknown fields and abort when they can't be serviced.
     # This could probably be validated by dispatcher using validvalues.
 
     if noderange is None and nodes is None:
         raise error.WireprotoCommandError(
             'noderange or nodes must be defined')
+
+    if nodesdepth is not None and nodes is None:
+        raise error.WireprotoCommandError(
+            'nodesdepth requires the nodes argument')
 
     if noderange is not None:
         if len(noderange) != 2:
@@ -689,7 +697,13 @@ def changesetdata(repo, proto, noderange, nodes, fields):
     outgoing = []
 
     if nodes is not None:
-        outgoing.extend(n for n in nodes if hasnode(n))
+        outgoing = [n for n in nodes if hasnode(n)]
+
+        if nodesdepth:
+            outgoing = [cl.node(r) for r in
+                        repo.revs(b'ancestors(%ln, %d)', outgoing,
+                                  nodesdepth - 1)]
+
         seen |= set(outgoing)
 
     if noderange is not None:

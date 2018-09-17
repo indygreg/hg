@@ -123,7 +123,7 @@ class transaction(util.transactional):
         self._usages = 1
         self.report = report
         # a vfs to the store content
-        self.opener = opener
+        self._opener = opener
         # a map to access file in various {location -> vfs}
         vfsmap = vfsmap.copy()
         vfsmap[''] = opener  # set default value
@@ -491,10 +491,10 @@ class transaction(util.transactional):
         if self._after:
             self._after()
             self._after = None # Help prevent cycles.
-        if self.opener.isfile(self._backupjournal):
-            self.opener.unlink(self._backupjournal)
-        if self.opener.isfile(self._journal):
-            self.opener.unlink(self._journal)
+        if self._opener.isfile(self._backupjournal):
+            self._opener.unlink(self._backupjournal)
+        if self._opener.isfile(self._journal):
+            self._opener.unlink(self._journal)
         for l, _f, b, c in self._backupentries:
             if l not in self._vfsmap and c:
                 self.report("couldn't remove %s: unknown cache location"
@@ -534,8 +534,8 @@ class transaction(util.transactional):
         """write transaction data for possible future undo call"""
         if self._undoname is None:
             return
-        undobackupfile = self.opener.open("%s.backupfiles" % self._undoname,
-                                          'w')
+        undobackupfile = self._opener.open("%s.backupfiles" % self._undoname,
+                                           'w')
         undobackupfile.write('%d\n' % version)
         for l, f, b, c in self._backupentries:
             if not f:  # temporary file
@@ -566,9 +566,9 @@ class transaction(util.transactional):
         try:
             if not self.entries and not self._backupentries:
                 if self._backupjournal:
-                    self.opener.unlink(self._backupjournal)
+                    self._opener.unlink(self._backupjournal)
                 if self._journal:
-                    self.opener.unlink(self._journal)
+                    self._opener.unlink(self._journal)
                 return
 
             self.report(_("transaction abort!\n"))
@@ -578,9 +578,9 @@ class transaction(util.transactional):
                     self._abortcallback[cat](self)
                 # Prevent double usage and help clear cycles.
                 self._abortcallback = None
-                _playback(self._journal, self.report, self.opener, self._vfsmap,
-                          self.entries, self._backupentries, False,
-                          checkambigfiles=self._checkambigfiles)
+                _playback(self._journal, self.report, self._opener,
+                          self._vfsmap, self.entries, self._backupentries,
+                          False, checkambigfiles=self._checkambigfiles)
                 self.report(_("rollback completed\n"))
             except BaseException:
                 self.report(_("rollback failed - please run hg recover\n"))

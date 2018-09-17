@@ -20,6 +20,7 @@ from . import (
     discovery,
     encoding,
     error,
+    narrowspec,
     pycompat,
     streamclone,
     util,
@@ -429,6 +430,7 @@ def _capabilitiesv2(repo, proto):
         'commands': {},
         'compression': compression,
         'framingmediatypes': [FRAMINGTYPE],
+        'pathfilterprefixes': set(narrowspec.VALID_PREFIXES),
     }
 
     # TODO expose available changesetdata fields.

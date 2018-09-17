@@ -23,7 +23,9 @@ FILENAME = 'narrowspec'
 # Pattern prefixes that are allowed in narrow patterns. This list MUST
 # only contain patterns that are fast and safe to evaluate. Keep in mind
 # that patterns are supplied by clients and executed on remote servers
-# as part of wire protocol commands.
+# as part of wire protocol commands. That means that changes to this
+# data structure influence the wire protocol and should not be taken
+# lightly - especially removals.
 VALID_PREFIXES = (
     b'path:',
     b'rootfilesin:',

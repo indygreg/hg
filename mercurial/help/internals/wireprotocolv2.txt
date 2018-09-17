@@ -82,6 +82,11 @@ framingmediatypes
    An array of bytestrings defining the supported framing protocol
    media types. Servers will not accept media types not in this list.
 
+pathfilterprefixes
+   (set of bytestring) Matcher prefixes that are recognized when performing
+   path filtering. Specifying a path filter whose type/prefix does not
+   match one in this set will likely be rejected by the server.
+
 rawrepoformats
    An array of storage formats the repository is using. This set of
    requirements can be used to determine whether a client can read a

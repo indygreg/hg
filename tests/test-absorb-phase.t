@@ -1,7 +1,7 @@
   $ cat >> $HGRCPATH << EOF
   > [extensions]
   > absorb=
-  > drawdag=$RUNTESTDIR/drawdag.py
+  > drawdag=$TESTDIR/drawdag.py
   > EOF
 
   $ hg init

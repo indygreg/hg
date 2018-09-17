@@ -145,9 +145,9 @@ class transaction(util.transactional):
             releasefn = lambda tr, success: None
         self._releasefn = releasefn
 
-        self.checkambigfiles = set()
+        self._checkambigfiles = set()
         if checkambigfiles:
-            self.checkambigfiles.update(checkambigfiles)
+            self._checkambigfiles.update(checkambigfiles)
 
         self.names = [name]
 
@@ -340,7 +340,7 @@ class transaction(util.transactional):
                         checkambig = False
                     else:
                         self.addbackup(name, location=location)
-                        checkambig = (name, location) in self.checkambigfiles
+                        checkambig = (name, location) in self._checkambigfiles
                     files.append(vfs(name, 'w', atomictemp=True,
                                      checkambig=checkambig))
                 genfunc(*files)
@@ -580,7 +580,7 @@ class transaction(util.transactional):
                 self._abortcallback = None
                 _playback(self._journal, self.report, self.opener, self._vfsmap,
                           self.entries, self._backupentries, False,
-                          checkambigfiles=self.checkambigfiles)
+                          checkambigfiles=self._checkambigfiles)
                 self.report(_("rollback completed\n"))
             except BaseException:
                 self.report(_("rollback failed - please run hg recover\n"))

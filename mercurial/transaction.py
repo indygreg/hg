@@ -38,7 +38,7 @@ gengrouppostfinalize='postfinalize'
 
 def active(func):
     def _active(self, *args, **kwds):
-        if self.count == 0:
+        if self._count == 0:
             raise error.Abort(_(
                 'cannot use transaction when it is already committed/aborted'))
         return func(self, *args, **kwds)
@@ -119,8 +119,8 @@ class transaction(util.transactional):
         which determine whether file stat ambiguity should be avoided
         for corresponded files.
         """
-        self.count = 1
-        self.usages = 1
+        self._count = 1
+        self._usages = 1
         self.report = report
         # a vfs to the store content
         self.opener = opener
@@ -191,7 +191,7 @@ class transaction(util.transactional):
     def __repr__(self):
         name = r'/'.join(self.names)
         return (r'<transaction name=%s, count=%d, usages=%d>' %
-                (name, self.count, self.usages))
+                (name, self._count, self._usages))
 
     def __del__(self):
         if self.journal:
@@ -373,22 +373,22 @@ class transaction(util.transactional):
 
     @active
     def nest(self, name=r'<unnamed>'):
-        self.count += 1
-        self.usages += 1
+        self._count += 1
+        self._usages += 1
         self.names.append(name)
         return self
 
     def release(self):
-        if self.count > 0:
-            self.usages -= 1
+        if self._count > 0:
+            self._usages -= 1
         if self.names:
             self.names.pop()
         # if the transaction scopes are left without being closed, fail
-        if self.count > 0 and self.usages == 0:
+        if self._count > 0 and self._usages == 0:
             self._abort()
 
     def running(self):
-        return self.count > 0
+        return self._count > 0
 
     def addpending(self, category, callback):
         """add a callback to be called when the transaction is pending
@@ -454,7 +454,7 @@ class transaction(util.transactional):
     @active
     def close(self):
         '''commit the transaction'''
-        if self.count == 1:
+        if self._count == 1:
             self.validator(self)  # will raise exception if needed
             self.validator = None # Help prevent cycles.
             self._generatefiles(group=gengroupprefinalize)
@@ -465,8 +465,8 @@ class transaction(util.transactional):
             self._finalizecallback = None
             self._generatefiles(group=gengrouppostfinalize)
 
-        self.count -= 1
-        if self.count != 0:
+        self._count -= 1
+        if self._count != 0:
             return
         self.file.close()
         self._backupsfile.close()
@@ -557,8 +557,8 @@ class transaction(util.transactional):
 
 
     def _abort(self):
-        self.count = 0
-        self.usages = 0
+        self._count = 0
+        self._usages = 0
         self.file.close()
         self._backupsfile.close()
 

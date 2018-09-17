@@ -128,7 +128,7 @@ class transaction(util.transactional):
         vfsmap = vfsmap.copy()
         vfsmap[''] = opener  # set default value
         self._vfsmap = vfsmap
-        self.after = after
+        self._after = after
         self.entries = []
         self.map = {}
         self._journal = journalname
@@ -488,9 +488,9 @@ class transaction(util.transactional):
                                 % (vfs.join(b), inst))
         self.entries = []
         self._writeundo()
-        if self.after:
-            self.after()
-            self.after = None # Help prevent cycles.
+        if self._after:
+            self._after()
+            self._after = None # Help prevent cycles.
         if self.opener.isfile(self._backupjournal):
             self.opener.unlink(self._backupjournal)
         if self.opener.isfile(self._journal):

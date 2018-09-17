@@ -436,7 +436,18 @@ def _capabilitiesv2(repo, proto):
     # TODO expose available changesetdata fields.
 
     for command, entry in COMMANDS.items():
-        args = {arg: meta['example'] for arg, meta in entry.args.items()}
+        args = {}
+
+        for arg, meta in entry.args.items():
+            args[arg] = {
+                # TODO should this be a normalized type using CBOR's
+                # terminology?
+                b'type': meta['type'],
+                b'required': meta['required'],
+            }
+
+            if not meta['required']:
+                args[arg][b'default'] = meta['default']()
 
         caps['commands'][command] = {
             'args': args,

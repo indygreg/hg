@@ -59,12 +59,24 @@ commands
    are:
 
       args
-         A map of argument names and their expected types.
+         (map) Describes arguments accepted by the command.
 
-         Types are defined as a representative value for the expected type.
-         e.g. an argument expecting a boolean type will have its value
-         set to true. An integer type will have its value set to 42. The
-         actual values are arbitrary and may not have meaning.
+         Keys are bytestrings denoting the argument name.
+
+         Values are maps describing the argument. The map has the following
+         bytestring keys:
+
+         default
+            (varied) The default value for this argument if not specified. Only
+            present if ``required`` is not true.
+
+         required
+            (boolean) Whether the argument must be specified. Failure to send
+            required arguments will result in an error executing the command.
+
+         type
+            (bytestring) The type of the argument. e.g. ``bytes`` or ``bool``.
+
       permissions
          An array of permissions required to execute this command.
 

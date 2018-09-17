@@ -212,7 +212,7 @@ Request for HTTPv2 service returns information about it
   s>     Content-Type: application/mercurial-cbor\r\n
   s>     Content-Length: *\r\n (glob)
   s>     \r\n
-  s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0001\xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa3Ffields\xd9\x01\x02\x82GparentsHrevisionInoderange\x82\x81J0123456...\x81Iabcdef...Enodes\x81J0123456...Kpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xf5Enodes\x81J0123456...DpathGfoo.txtKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xf4Kpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\x81HdeadbeefKpermissions\x81DpullHlistkeys\xa2Dargs\xa1InamespaceBnsKpermissions\x81DpullFlookup\xa2Dargs\xa1CkeyCfooKpermissions\x81DpullLmanifestdata\xa2Dargs\xa4Ffields\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xf5Enodes\x81J0123456...Dtree@Kpermissions\x81DpullGpushkey\xa2Dargs\xa4CkeyCkeyInamespaceBnsCnewCnewColdColdKpermissions\x81DpushKcompression\x81\xa1DnameDzlibQframingmediatypes\x81X&application/mercurial-exp-framing-0005Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Nv1capabilitiesY\x01\xd3batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0001\xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa3Ffields\xa3Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetInoderange\xa3Gdefault\xf6Hrequired\xf4DtypeDlistEnodes\xa3Gdefault\xf6Hrequired\xf4DtypeDlistKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa3Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa2Dargs\xa4Ffields\xa3Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullGpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushKcompression\x81\xa1DnameDzlibQframingmediatypes\x81X&application/mercurial-exp-framing-0005Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Nv1capabilitiesY\x01\xd3batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   cbor> {
     b'apibase': b'api/',
     b'apis': {
@@ -232,21 +232,21 @@ Request for HTTPv2 service returns information about it
           },
           b'changesetdata': {
             b'args': {
-              b'fields': set([
-                b'parents',
-                b'revision'
-              ]),
-              b'noderange': [
-                [
-                  b'0123456...'
-                ],
-                [
-                  b'abcdef...'
-                ]
-              ],
-              b'nodes': [
-                b'0123456...'
-              ]
+              b'fields': {
+                b'default': set([]),
+                b'required': False,
+                b'type': b'set'
+              },
+              b'noderange': {
+                b'default': None,
+                b'required': False,
+                b'type': b'list'
+              },
+              b'nodes': {
+                b'default': None,
+                b'required': False,
+                b'type': b'list'
+              }
             },
             b'permissions': [
               b'pull'
@@ -254,15 +254,24 @@ Request for HTTPv2 service returns information about it
           },
           b'filedata': {
             b'args': {
-              b'fields': set([
-                b'parents',
-                b'revision'
-              ]),
-              b'haveparents': True,
-              b'nodes': [
-                b'0123456...'
-              ],
-              b'path': b'foo.txt'
+              b'fields': {
+                b'default': set([]),
+                b'required': False,
+                b'type': b'set'
+              },
+              b'haveparents': {
+                b'default': False,
+                b'required': False,
+                b'type': b'bool'
+              },
+              b'nodes': {
+                b'required': True,
+                b'type': b'list'
+              },
+              b'path': {
+                b'required': True,
+                b'type': b'bytes'
+              }
             },
             b'permissions': [
               b'pull'
@@ -270,7 +279,11 @@ Request for HTTPv2 service returns information about it
           },
           b'heads': {
             b'args': {
-              b'publiconly': False
+              b'publiconly': {
+                b'default': False,
+                b'required': False,
+                b'type': b'bool'
+              }
             },
             b'permissions': [
               b'pull'
@@ -278,9 +291,11 @@ Request for HTTPv2 service returns information about it
           },
           b'known': {
             b'args': {
-              b'nodes': [
-                b'deadbeef'
-              ]
+              b'nodes': {
+                b'default': [],
+                b'required': False,
+                b'type': b'list'
+              }
             },
             b'permissions': [
               b'pull'
@@ -288,7 +303,10 @@ Request for HTTPv2 service returns information about it
           },
           b'listkeys': {
             b'args': {
-              b'namespace': b'ns'
+              b'namespace': {
+                b'required': True,
+                b'type': b'bytes'
+              }
             },
             b'permissions': [
               b'pull'
@@ -296,7 +314,10 @@ Request for HTTPv2 service returns information about it
           },
           b'lookup': {
             b'args': {
-              b'key': b'foo'
+              b'key': {
+                b'required': True,
+                b'type': b'bytes'
+              }
             },
             b'permissions': [
               b'pull'
@@ -304,15 +325,24 @@ Request for HTTPv2 service returns information about it
           },
           b'manifestdata': {
             b'args': {
-              b'fields': set([
-                b'parents',
-                b'revision'
-              ]),
-              b'haveparents': True,
-              b'nodes': [
-                b'0123456...'
-              ],
-              b'tree': b''
+              b'fields': {
+                b'default': set([]),
+                b'required': False,
+                b'type': b'set'
+              },
+              b'haveparents': {
+                b'default': False,
+                b'required': False,
+                b'type': b'bool'
+              },
+              b'nodes': {
+                b'required': True,
+                b'type': b'list'
+              },
+              b'tree': {
+                b'required': True,
+                b'type': b'bytes'
+              }
             },
             b'permissions': [
               b'pull'
@@ -320,10 +350,22 @@ Request for HTTPv2 service returns information about it
           },
           b'pushkey': {
             b'args': {
-              b'key': b'key',
-              b'namespace': b'ns',
-              b'new': b'new',
-              b'old': b'old'
+              b'key': {
+                b'required': True,
+                b'type': b'bytes'
+              },
+              b'namespace': {
+                b'required': True,
+                b'type': b'bytes'
+              },
+              b'new': {
+                b'required': True,
+                b'type': b'bytes'
+              },
+              b'old': {
+                b'required': True,
+                b'type': b'bytes'
+              }
             },
             b'permissions': [
               b'push'
@@ -373,7 +415,7 @@ capabilities command returns expected info
   s>     Content-Type: application/mercurial-cbor\r\n
   s>     Content-Length: *\r\n (glob)
   s>     \r\n
-  s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0001\xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa3Ffields\xd9\x01\x02\x82GparentsHrevisionInoderange\x82\x81J0123456...\x81Iabcdef...Enodes\x81J0123456...Kpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xf5Enodes\x81J0123456...DpathGfoo.txtKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xf4Kpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\x81HdeadbeefKpermissions\x81DpullHlistkeys\xa2Dargs\xa1InamespaceBnsKpermissions\x81DpullFlookup\xa2Dargs\xa1CkeyCfooKpermissions\x81DpullLmanifestdata\xa2Dargs\xa4Ffields\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xf5Enodes\x81J0123456...Dtree@Kpermissions\x81DpullGpushkey\xa2Dargs\xa4CkeyCkeyInamespaceBnsCnewCnewColdColdKpermissions\x81DpushKcompression\x81\xa1DnameDzlibQframingmediatypes\x81X&application/mercurial-exp-framing-0005Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Nv1capabilitiesY\x01\xd3batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0001\xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa3Ffields\xa3Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetInoderange\xa3Gdefault\xf6Hrequired\xf4DtypeDlistEnodes\xa3Gdefault\xf6Hrequired\xf4DtypeDlistKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa3Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa2Dargs\xa4Ffields\xa3Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullGpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushKcompression\x81\xa1DnameDzlibQframingmediatypes\x81X&application/mercurial-exp-framing-0005Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Nv1capabilitiesY\x01\xd3batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   sending capabilities command
   s>     POST /api/exp-http-v2-0001/ro/capabilities HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
@@ -396,11 +438,11 @@ capabilities command returns expected info
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     33e\r\n
-  s>     6\x03\x00\x01\x00\x02\x001
-  s>     \xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa3Ffields\xd9\x01\x02\x82GparentsHrevisionInoderange\x82\x81J0123456...\x81Iabcdef...Enodes\x81J0123456...Kpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xf5Enodes\x81J0123456...DpathGfoo.txtKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xf4Kpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\x81HdeadbeefKpermissions\x81DpullHlistkeys\xa2Dargs\xa1InamespaceBnsKpermissions\x81DpullFlookup\xa2Dargs\xa1CkeyCfooKpermissions\x81DpullLmanifestdata\xa2Dargs\xa4Ffields\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xf5Enodes\x81J0123456...Dtree@Kpermissions\x81DpullGpushkey\xa2Dargs\xa4CkeyCkeyInamespaceBnsCnewCnewColdColdKpermissions\x81DpushKcompression\x81\xa1DnameDzlibQframingmediatypes\x81X&application/mercurial-exp-framing-0005Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1
+  s>     485\r\n
+  s>     }\x04\x00\x01\x00\x02\x001
+  s>     \xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa3Ffields\xa3Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetInoderange\xa3Gdefault\xf6Hrequired\xf4DtypeDlistEnodes\xa3Gdefault\xf6Hrequired\xf4DtypeDlistKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa3Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa2Dargs\xa4Ffields\xa3Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullGpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushKcompression\x81\xa1DnameDzlibQframingmediatypes\x81X&application/mercurial-exp-framing-0005Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1
   s>     \r\n
-  received frame(size=822; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=1149; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -424,21 +466,21 @@ capabilities command returns expected info
         },
         b'changesetdata': {
           b'args': {
-            b'fields': set([
-              b'parents',
-              b'revision'
-            ]),
-            b'noderange': [
-              [
-                b'0123456...'
-              ],
-              [
-                b'abcdef...'
-              ]
-            ],
-            b'nodes': [
-              b'0123456...'
-            ]
+            b'fields': {
+              b'default': set([]),
+              b'required': False,
+              b'type': b'set'
+            },
+            b'noderange': {
+              b'default': None,
+              b'required': False,
+              b'type': b'list'
+            },
+            b'nodes': {
+              b'default': None,
+              b'required': False,
+              b'type': b'list'
+            }
           },
           b'permissions': [
             b'pull'
@@ -446,15 +488,24 @@ capabilities command returns expected info
         },
         b'filedata': {
           b'args': {
-            b'fields': set([
-              b'parents',
-              b'revision'
-            ]),
-            b'haveparents': True,
-            b'nodes': [
-              b'0123456...'
-            ],
-            b'path': b'foo.txt'
+            b'fields': {
+              b'default': set([]),
+              b'required': False,
+              b'type': b'set'
+            },
+            b'haveparents': {
+              b'default': False,
+              b'required': False,
+              b'type': b'bool'
+            },
+            b'nodes': {
+              b'required': True,
+              b'type': b'list'
+            },
+            b'path': {
+              b'required': True,
+              b'type': b'bytes'
+            }
           },
           b'permissions': [
             b'pull'
@@ -462,7 +513,11 @@ capabilities command returns expected info
         },
         b'heads': {
           b'args': {
-            b'publiconly': False
+            b'publiconly': {
+              b'default': False,
+              b'required': False,
+              b'type': b'bool'
+            }
           },
           b'permissions': [
             b'pull'
@@ -470,9 +525,11 @@ capabilities command returns expected info
         },
         b'known': {
           b'args': {
-            b'nodes': [
-              b'deadbeef'
-            ]
+            b'nodes': {
+              b'default': [],
+              b'required': False,
+              b'type': b'list'
+            }
           },
           b'permissions': [
             b'pull'
@@ -480,7 +537,10 @@ capabilities command returns expected info
         },
         b'listkeys': {
           b'args': {
-            b'namespace': b'ns'
+            b'namespace': {
+              b'required': True,
+              b'type': b'bytes'
+            }
           },
           b'permissions': [
             b'pull'
@@ -488,7 +548,10 @@ capabilities command returns expected info
         },
         b'lookup': {
           b'args': {
-            b'key': b'foo'
+            b'key': {
+              b'required': True,
+              b'type': b'bytes'
+            }
           },
           b'permissions': [
             b'pull'
@@ -496,15 +559,24 @@ capabilities command returns expected info
         },
         b'manifestdata': {
           b'args': {
-            b'fields': set([
-              b'parents',
-              b'revision'
-            ]),
-            b'haveparents': True,
-            b'nodes': [
-              b'0123456...'
-            ],
-            b'tree': b''
+            b'fields': {
+              b'default': set([]),
+              b'required': False,
+              b'type': b'set'
+            },
+            b'haveparents': {
+              b'default': False,
+              b'required': False,
+              b'type': b'bool'
+            },
+            b'nodes': {
+              b'required': True,
+              b'type': b'list'
+            },
+            b'tree': {
+              b'required': True,
+              b'type': b'bytes'
+            }
           },
           b'permissions': [
             b'pull'
@@ -512,10 +584,22 @@ capabilities command returns expected info
         },
         b'pushkey': {
           b'args': {
-            b'key': b'key',
-            b'namespace': b'ns',
-            b'new': b'new',
-            b'old': b'old'
+            b'key': {
+              b'required': True,
+              b'type': b'bytes'
+            },
+            b'namespace': {
+              b'required': True,
+              b'type': b'bytes'
+            },
+            b'new': {
+              b'required': True,
+              b'type': b'bytes'
+            },
+            b'old': {
+              b'required': True,
+              b'type': b'bytes'
+            }
           },
           b'permissions': [
             b'push'

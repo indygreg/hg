@@ -121,7 +121,7 @@ class transaction(util.transactional):
         """
         self._count = 1
         self._usages = 1
-        self.report = report
+        self._report = report
         # a vfs to the store content
         self._opener = opener
         # a map to access file in various {location -> vfs}
@@ -473,8 +473,8 @@ class transaction(util.transactional):
         # cleanup temporary files
         for l, f, b, c in self._backupentries:
             if l not in self._vfsmap and c:
-                self.report("couldn't remove %s: unknown cache location %s\n"
-                            % (b, l))
+                self._report("couldn't remove %s: unknown cache location %s\n"
+                             % (b, l))
                 continue
             vfs = self._vfsmap[l]
             if not f and b and vfs.exists(b):
@@ -484,8 +484,8 @@ class transaction(util.transactional):
                     if not c:
                         raise
                     # Abort may be raise by read only opener
-                    self.report("couldn't remove %s: %s\n"
-                                % (vfs.join(b), inst))
+                    self._report("couldn't remove %s: %s\n"
+                                 % (vfs.join(b), inst))
         self.entries = []
         self._writeundo()
         if self._after:
@@ -497,8 +497,8 @@ class transaction(util.transactional):
             self._opener.unlink(self._journal)
         for l, _f, b, c in self._backupentries:
             if l not in self._vfsmap and c:
-                self.report("couldn't remove %s: unknown cache location"
-                            "%s\n" % (b, l))
+                self._report("couldn't remove %s: unknown cache location"
+                             "%s\n" % (b, l))
                 continue
             vfs = self._vfsmap[l]
             if b and vfs.exists(b):
@@ -508,8 +508,8 @@ class transaction(util.transactional):
                     if not c:
                         raise
                     # Abort may be raise by read only opener
-                    self.report("couldn't remove %s: %s\n"
-                                % (vfs.join(b), inst))
+                    self._report("couldn't remove %s: %s\n"
+                                 % (vfs.join(b), inst))
         self._backupentries = []
         self._journal = None
 
@@ -544,8 +544,8 @@ class transaction(util.transactional):
                 u = ''
             else:
                 if l not in self._vfsmap and c:
-                    self.report("couldn't remove %s: unknown cache location"
-                                "%s\n" % (b, l))
+                    self._report("couldn't remove %s: unknown cache location"
+                                 "%s\n" % (b, l))
                     continue
                 vfs = self._vfsmap[l]
                 base, name = vfs.split(b)
@@ -571,19 +571,19 @@ class transaction(util.transactional):
                     self._opener.unlink(self._journal)
                 return
 
-            self.report(_("transaction abort!\n"))
+            self._report(_("transaction abort!\n"))
 
             try:
                 for cat in sorted(self._abortcallback):
                     self._abortcallback[cat](self)
                 # Prevent double usage and help clear cycles.
                 self._abortcallback = None
-                _playback(self._journal, self.report, self._opener,
+                _playback(self._journal, self._report, self._opener,
                           self._vfsmap, self.entries, self._backupentries,
                           False, checkambigfiles=self._checkambigfiles)
-                self.report(_("rollback completed\n"))
+                self._report(_("rollback completed\n"))
             except BaseException:
-                self.report(_("rollback failed - please run hg recover\n"))
+                self._report(_("rollback failed - please run hg recover\n"))
         finally:
             self._journal = None
             self._releasefn(self, False) # notify failure of transaction

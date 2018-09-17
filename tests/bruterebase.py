@@ -45,7 +45,7 @@ def debugbruterebase(ui, repo, source, dest):
             subset = [rev for j, rev in enumerate(srevs) if i & (1 << j) != 0]
             spec = revsetlang.formatspec(b'%ld', subset)
             tr = repo.transaction(b'rebase')
-            tr.report = lambda x: 0 # hide "transaction abort"
+            tr._report = lambda x: 0 # hide "transaction abort"
 
             ui.pushbuffer()
             try:

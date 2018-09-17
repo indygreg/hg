@@ -433,8 +433,6 @@ def _capabilitiesv2(repo, proto):
         'pathfilterprefixes': set(narrowspec.VALID_PREFIXES),
     }
 
-    # TODO expose available changesetdata fields.
-
     for command, entry in COMMANDS.items():
         args = {}
 
@@ -448,6 +446,9 @@ def _capabilitiesv2(repo, proto):
 
             if not meta['required']:
                 args[arg][b'default'] = meta['default']()
+
+            if meta['validvalues']:
+                args[arg][b'validvalues'] = meta['validvalues']
 
         caps['commands'][command] = {
             'args': args,
@@ -563,6 +564,9 @@ def wireprotocommand(name, args=None, permission='push'):
        ``example``
           An example value for this argument.
 
+       ``validvalues``
+          Set of recognized values for this argument.
+
     ``permission`` defines the permission type needed to run this command.
     Can be ``push`` or ``pull``. These roughly map to read-write and read-only,
     respectively. Default is to assume command requires ``push`` permissions
@@ -619,6 +623,7 @@ def wireprotocommand(name, args=None, permission='push'):
 
         meta.setdefault('default', lambda: None)
         meta.setdefault('required', False)
+        meta.setdefault('validvalues', None)
 
     def register(func):
         if name in COMMANDS:
@@ -656,11 +661,13 @@ def capabilitiesv2(repo, proto):
             'type': 'set',
             'default': set,
             'example': {b'parents', b'revision'},
+            'validvalues': {b'bookmarks', b'parents', b'phase', b'revision'},
         },
     },
     permission='pull')
 def changesetdata(repo, proto, noderange, nodes, fields):
     # TODO look for unknown fields and abort when they can't be serviced.
+    # This could probably be validated by dispatcher using validvalues.
 
     if noderange is None and nodes is None:
         raise error.WireprotoCommandError(
@@ -808,6 +815,7 @@ def getfilestore(repo, proto, path):
             'type': 'set',
             'default': set,
             'example': {b'parents', b'revision'},
+            'validvalues': {b'parents', b'revision'},
         },
         'path': {
             'type': 'bytes',
@@ -966,6 +974,7 @@ def lookupv2(repo, proto, key):
             'type': 'set',
             'default': set,
             'example': {b'parents', b'revision'},
+            'validvalues': {b'parents', b'revision'},
         },
         'tree': {
             'type': 'bytes',

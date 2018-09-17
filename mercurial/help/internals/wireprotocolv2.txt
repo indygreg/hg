@@ -77,6 +77,13 @@ commands
          type
             (bytestring) The type of the argument. e.g. ``bytes`` or ``bool``.
 
+         validvalues
+            (set) Values that are recognized for this argument. Some arguments
+            only allow a fixed set of values to be specified. These arguments
+            may advertise that set in this key. If this set is advertised and
+            a value not in this set is specified, the command should result
+            in error.
+
       permissions
          An array of permissions required to execute this command.
 

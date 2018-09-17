@@ -1927,6 +1927,10 @@ Controls generic server settings.
     repositories to the exchange format required by the bundle1 data
     format can consume a lot of CPU.
 
+``bundle2.stream``
+    Whether to allow clients to pull using the bundle2 streaming protocol.
+    (default: False)
+
 ``zliblevel``
     Integer between ``-1`` and ``9`` that controls the zlib compression level
     for wire protocol commands that send zlib compressed output (notably the

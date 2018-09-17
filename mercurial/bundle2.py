@@ -1532,7 +1532,7 @@ def getrepocaps(repo, allowpushback=False, role=None):
     if role == 'server':
         streamsupported = repo.ui.configbool('server', 'uncompressed',
                                              untrusted=True)
-        featuresupported = repo.ui.configbool('experimental', 'bundle2.stream')
+        featuresupported = repo.ui.configbool('server', 'bundle2.stream')
 
         if not streamsupported or not featuresupported:
             caps.pop('stream')

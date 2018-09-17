@@ -4,7 +4,7 @@
 
 #if stream-bundle2
   $ cat << EOF >> $HGRCPATH
-  > [experimental]
+  > [server]
   > bundle2.stream = yes
   > EOF
 #endif

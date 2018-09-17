@@ -456,9 +456,6 @@ coreconfigitem('experimental', 'bundle2-output-capture',
 coreconfigitem('experimental', 'bundle2.pushback',
     default=False,
 )
-coreconfigitem('experimental', 'bundle2.stream',
-    default=False,
-)
 coreconfigitem('experimental', 'bundle2lazylocking',
     default=False,
 )
@@ -972,6 +969,10 @@ coreconfigitem('server', 'bundle1.push',
 )
 coreconfigitem('server', 'bundle1gd.push',
     default=None,
+)
+coreconfigitem('server', 'bundle2.stream',
+    default=False,
+    alias=[('experimental', 'bundle2.stream')]
 )
 coreconfigitem('server', 'compressionengines',
     default=list,

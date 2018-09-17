@@ -143,7 +143,7 @@ class transaction(util.transactional):
         # A callback to do something just after releasing transaction.
         if releasefn is None:
             releasefn = lambda tr, success: None
-        self.releasefn = releasefn
+        self._releasefn = releasefn
 
         self.checkambigfiles = set()
         if checkambigfiles:
@@ -513,8 +513,8 @@ class transaction(util.transactional):
         self._backupentries = []
         self._journal = None
 
-        self.releasefn(self, True) # notify success of closing transaction
-        self.releasefn = None # Help prevent cycles.
+        self._releasefn(self, True) # notify success of closing transaction
+        self._releasefn = None # Help prevent cycles.
 
         # run post close action
         categories = sorted(self._postclosecallback)
@@ -586,8 +586,8 @@ class transaction(util.transactional):
                 self.report(_("rollback failed - please run hg recover\n"))
         finally:
             self._journal = None
-            self.releasefn(self, False) # notify failure of transaction
-            self.releasefn = None # Help prevent cycles.
+            self._releasefn(self, False) # notify failure of transaction
+            self._releasefn = None # Help prevent cycles.
 
 def rollback(opener, vfsmap, file, report, checkambigfiles=None):
     """Rolls back the transaction contained in the given file

@@ -2976,7 +2976,7 @@ class TestRunner(object):
         makedirs(self._bindir)
 
         vlog("# Running", cmd)
-        if os.system(cmd) == 0:
+        if os.system(_strpath(cmd)) == 0:
             if not self.options.verbose:
                 try:
                     os.remove(installerrs)

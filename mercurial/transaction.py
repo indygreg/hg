@@ -132,7 +132,7 @@ class transaction(util.transactional):
         self.entries = []
         self.map = {}
         self.journal = journalname
-        self.undoname = undoname
+        self._undoname = undoname
         self._queue = []
         # A callback to validate transaction content before closing it.
         # should raise exception is anything is wrong.
@@ -532,9 +532,10 @@ class transaction(util.transactional):
 
     def _writeundo(self):
         """write transaction data for possible future undo call"""
-        if self.undoname is None:
+        if self._undoname is None:
             return
-        undobackupfile = self.opener.open("%s.backupfiles" % self.undoname, 'w')
+        undobackupfile = self.opener.open("%s.backupfiles" % self._undoname,
+                                          'w')
         undobackupfile.write('%d\n' % version)
         for l, f, b, c in self._backupentries:
             if not f:  # temporary file
@@ -549,7 +550,7 @@ class transaction(util.transactional):
                 vfs = self._vfsmap[l]
                 base, name = vfs.split(b)
                 assert name.startswith(self.journal), name
-                uname = name.replace(self.journal, self.undoname, 1)
+                uname = name.replace(self.journal, self._undoname, 1)
                 u = vfs.reljoin(base, uname)
                 util.copyfile(vfs.join(b), vfs.join(u), hardlink=True)
             undobackupfile.write("%s\0%s\0%s\0%d\n" % (l, f, u, c))

@@ -1929,7 +1929,7 @@ Controls generic server settings.
 
 ``bundle2.stream``
     Whether to allow clients to pull using the bundle2 streaming protocol.
-    (default: False)
+    (default: True)
 
 ``zliblevel``
     Integer between ``-1`` and ``9`` that controls the zlib compression level

@@ -792,10 +792,8 @@ Stream clone with basicstore
   $ hg clone --config experimental.changegroup3=True --stream -U \
   >   http://localhost:$HGPORT1 stream-clone-basicstore
   streaming all changes
-  18 files to transfer, * of data (glob)
+  21 files to transfer, * of data (glob)
   transferred * in * seconds (*) (glob)
-  searching for changes
-  no changes found
   $ hg -R stream-clone-basicstore verify
   checking changesets
   checking manifests
@@ -808,10 +806,8 @@ Stream clone with encodedstore
   $ hg clone --config experimental.changegroup3=True --stream -U \
   >   http://localhost:$HGPORT2 stream-clone-encodedstore
   streaming all changes
-  18 files to transfer, * of data (glob)
+  21 files to transfer, * of data (glob)
   transferred * in * seconds (*) (glob)
-  searching for changes
-  no changes found
   $ hg -R stream-clone-encodedstore verify
   checking changesets
   checking manifests
@@ -824,10 +820,8 @@ Stream clone with fncachestore
   $ hg clone --config experimental.changegroup3=True --stream -U \
   >   http://localhost:$HGPORT stream-clone-fncachestore
   streaming all changes
-  18 files to transfer, * of data (glob)
+  22 files to transfer, * of data (glob)
   transferred * in * seconds (*) (glob)
-  searching for changes
-  no changes found
   $ hg -R stream-clone-fncachestore verify
   checking changesets
   checking manifests

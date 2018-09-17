@@ -2,10 +2,10 @@
 
 #testcases stream-legacy stream-bundle2
 
-#if stream-bundle2
+#if stream-legacy
   $ cat << EOF >> $HGRCPATH
   > [server]
-  > bundle2.stream = yes
+  > bundle2.stream = no
   > EOF
 #endif
 

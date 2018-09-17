@@ -81,7 +81,8 @@ substitutions = [
      br'listkeys%0A'
      br'pushkey%0A'
      br'remote-changegroup%3Dhttp%2Chttps%0A'
-     br'rev-branch-cache',
+     br'rev-branch-cache%0A'
+     br'stream%3Dv2',
      # (replacement patterns)
      br'$USUAL_BUNDLE2_CAPS_NO_PHASES$'
     ),

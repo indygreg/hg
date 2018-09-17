@@ -971,7 +971,7 @@ coreconfigitem('server', 'bundle1gd.push',
     default=None,
 )
 coreconfigitem('server', 'bundle2.stream',
-    default=False,
+    default=True,
     alias=[('experimental', 'bundle2.stream')]
 )
 coreconfigitem('server', 'compressionengines',

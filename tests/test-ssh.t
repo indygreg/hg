@@ -60,10 +60,8 @@ clone remote via stream
 
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --stream ssh://user@dummy/remote local-stream
   streaming all changes
-  4 files to transfer, 602 bytes of data
-  transferred 602 bytes in * seconds (*) (glob)
-  searching for changes
-  no changes found
+  8 files to transfer, 827 bytes of data
+  transferred 827 bytes in * seconds (*) (glob)
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd local-stream
@@ -82,10 +80,8 @@ clone bookmarks via stream
   $ hg -R local-stream book mybook
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --stream ssh://user@dummy/local-stream stream2
   streaming all changes
-  4 files to transfer, 602 bytes of data
-  transferred 602 bytes in * seconds (*) (glob)
-  searching for changes
-  no changes found
+  9 files to transfer, 870 bytes of data
+  transferred 870 bytes in * seconds (*) (glob)
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd stream2
@@ -497,9 +493,9 @@ debug output
   devel-peer-request:   pairs: 81 bytes
   sending hello command
   sending between command
-  remote: 413 (sshv1 !)
+  remote: 427 (sshv1 !)
   protocol upgraded to exp-ssh-v2-0001 (sshv2 !)
-  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   remote: 1 (sshv1 !)
   devel-peer-request: protocaps
   devel-peer-request:   caps: * bytes (glob)

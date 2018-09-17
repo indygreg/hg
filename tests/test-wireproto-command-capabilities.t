@@ -34,7 +34,7 @@ A normal capabilities request is serviced for version 1
   s>     Content-Type: application/mercurial-0.1\r\n
   s>     Content-Length: *\r\n (glob)
   s>     \r\n
-  s>     batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
 
 A proper request without the API server enabled returns the legacy response
 
@@ -59,7 +59,7 @@ A proper request without the API server enabled returns the legacy response
   s>     Content-Type: application/mercurial-0.1\r\n
   s>     Content-Length: *\r\n (glob)
   s>     \r\n
-  s>     batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
 
 Restart with just API server enabled. This enables serving the new format.
 
@@ -95,7 +95,7 @@ X-HgUpgrade-<N> without CBOR advertisement uses legacy response
   s>     Content-Type: application/mercurial-0.1\r\n
   s>     Content-Length: *\r\n (glob)
   s>     \r\n
-  s>     batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
 
 X-HgUpgrade-<N> without known serialization in X-HgProto-<N> uses legacy response
 
@@ -120,7 +120,7 @@ X-HgUpgrade-<N> without known serialization in X-HgProto-<N> uses legacy respons
   s>     Content-Type: application/mercurial-0.1\r\n
   s>     Content-Length: *\r\n (glob)
   s>     \r\n
-  s>     batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
 
 X-HgUpgrade-<N> + X-HgProto-<N> headers trigger new response format
 
@@ -145,11 +145,11 @@ X-HgUpgrade-<N> + X-HgProto-<N> headers trigger new response format
   s>     Content-Type: application/mercurial-cbor\r\n
   s>     Content-Length: *\r\n (glob)
   s>     \r\n
-  s>     \xa3GapibaseDapi/Dapis\xa0Nv1capabilitiesY\x01\xc5batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     \xa3GapibaseDapi/Dapis\xa0Nv1capabilitiesY\x01\xd3batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   cbor> {
     b'apibase': b'api/',
     b'apis': {},
-    b'v1capabilities': b'batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash'
+    b'v1capabilities': b'batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash'
   }
 
 Restart server to enable HTTPv2
@@ -182,11 +182,11 @@ Only requested API services are returned
   s>     Content-Type: application/mercurial-cbor\r\n
   s>     Content-Length: *\r\n (glob)
   s>     \r\n
-  s>     \xa3GapibaseDapi/Dapis\xa0Nv1capabilitiesY\x01\xc5batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     \xa3GapibaseDapi/Dapis\xa0Nv1capabilitiesY\x01\xd3batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   cbor> {
     b'apibase': b'api/',
     b'apis': {},
-    b'v1capabilities': b'batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash'
+    b'v1capabilities': b'batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash'
   }
 
 Request for HTTPv2 service returns information about it
@@ -212,7 +212,7 @@ Request for HTTPv2 service returns information about it
   s>     Content-Type: application/mercurial-cbor\r\n
   s>     Content-Length: *\r\n (glob)
   s>     \r\n
-  s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0001\xa4Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa3Ffields\xd9\x01\x02\x82GparentsHrevisionInoderange\x82\x81J0123456...\x81Iabcdef...Enodes\x81J0123456...Kpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\x82GparentsHrevisionKhaveparents\xf5Enodes\x81J0123456...DpathGfoo.txtKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xf4Kpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\x81HdeadbeefKpermissions\x81DpullHlistkeys\xa2Dargs\xa1InamespaceBnsKpermissions\x81DpullFlookup\xa2Dargs\xa1CkeyCfooKpermissions\x81DpullLmanifestdata\xa2Dargs\xa4Ffields\x82GparentsHrevisionKhaveparents\xf5Enodes\x81J0123456...Dtree@Kpermissions\x81DpullGpushkey\xa2Dargs\xa4CkeyCkeyInamespaceBnsCnewCnewColdColdKpermissions\x81DpushKcompression\x81\xa1DnameDzlibQframingmediatypes\x81X&application/mercurial-exp-framing-0005Nrawrepoformats\x82LgeneraldeltaHrevlogv1Nv1capabilitiesY\x01\xc5batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0001\xa4Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa3Ffields\xd9\x01\x02\x82GparentsHrevisionInoderange\x82\x81J0123456...\x81Iabcdef...Enodes\x81J0123456...Kpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\x82GparentsHrevisionKhaveparents\xf5Enodes\x81J0123456...DpathGfoo.txtKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xf4Kpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\x81HdeadbeefKpermissions\x81DpullHlistkeys\xa2Dargs\xa1InamespaceBnsKpermissions\x81DpullFlookup\xa2Dargs\xa1CkeyCfooKpermissions\x81DpullLmanifestdata\xa2Dargs\xa4Ffields\x82GparentsHrevisionKhaveparents\xf5Enodes\x81J0123456...Dtree@Kpermissions\x81DpullGpushkey\xa2Dargs\xa4CkeyCkeyInamespaceBnsCnewCnewColdColdKpermissions\x81DpushKcompression\x81\xa1DnameDzlibQframingmediatypes\x81X&application/mercurial-exp-framing-0005Nrawrepoformats\x82LgeneraldeltaHrevlogv1Nv1capabilitiesY\x01\xd3batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   cbor> {
     b'apibase': b'api/',
     b'apis': {
@@ -344,7 +344,7 @@ Request for HTTPv2 service returns information about it
         ]
       }
     },
-    b'v1capabilities': b'batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash'
+    b'v1capabilities': b'batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash'
   }
 
 capabilities command returns expected info
@@ -369,7 +369,7 @@ capabilities command returns expected info
   s>     Content-Type: application/mercurial-cbor\r\n
   s>     Content-Length: *\r\n (glob)
   s>     \r\n
-  s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0001\xa4Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa3Ffields\xd9\x01\x02\x82GparentsHrevisionInoderange\x82\x81J0123456...\x81Iabcdef...Enodes\x81J0123456...Kpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\x82GparentsHrevisionKhaveparents\xf5Enodes\x81J0123456...DpathGfoo.txtKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xf4Kpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\x81HdeadbeefKpermissions\x81DpullHlistkeys\xa2Dargs\xa1InamespaceBnsKpermissions\x81DpullFlookup\xa2Dargs\xa1CkeyCfooKpermissions\x81DpullLmanifestdata\xa2Dargs\xa4Ffields\x82GparentsHrevisionKhaveparents\xf5Enodes\x81J0123456...Dtree@Kpermissions\x81DpullGpushkey\xa2Dargs\xa4CkeyCkeyInamespaceBnsCnewCnewColdColdKpermissions\x81DpushKcompression\x81\xa1DnameDzlibQframingmediatypes\x81X&application/mercurial-exp-framing-0005Nrawrepoformats\x82LgeneraldeltaHrevlogv1Nv1capabilitiesY\x01\xc5batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0001\xa4Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa3Ffields\xd9\x01\x02\x82GparentsHrevisionInoderange\x82\x81J0123456...\x81Iabcdef...Enodes\x81J0123456...Kpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\x82GparentsHrevisionKhaveparents\xf5Enodes\x81J0123456...DpathGfoo.txtKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xf4Kpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\x81HdeadbeefKpermissions\x81DpullHlistkeys\xa2Dargs\xa1InamespaceBnsKpermissions\x81DpullFlookup\xa2Dargs\xa1CkeyCfooKpermissions\x81DpullLmanifestdata\xa2Dargs\xa4Ffields\x82GparentsHrevisionKhaveparents\xf5Enodes\x81J0123456...Dtree@Kpermissions\x81DpullGpushkey\xa2Dargs\xa4CkeyCkeyInamespaceBnsCnewCnewColdColdKpermissions\x81DpushKcompression\x81\xa1DnameDzlibQframingmediatypes\x81X&application/mercurial-exp-framing-0005Nrawrepoformats\x82LgeneraldeltaHrevlogv1Nv1capabilitiesY\x01\xd3batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   sending capabilities command
   s>     POST /api/exp-http-v2-0001/ro/capabilities HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n

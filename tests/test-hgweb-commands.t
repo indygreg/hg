@@ -2183,7 +2183,7 @@ capabilities
   
   batch
   branchmap
-  $USUAL_BUNDLE2_CAPS_SERVER$
+  $USUAL_BUNDLE2_CAPS$
   changegroupsubset
   compression=$BUNDLE2_COMPRESSIONS$
   getbundle

@@ -465,10 +465,8 @@ A manifest with just a gzip bundle
   no compatible clone bundles available on server; falling back to regular clone
   (you may want to report this to the server operator)
   streaming all changes
-  4 files to transfer, 613 bytes of data
-  transferred 613 bytes in * seconds (*) (glob)
-  searching for changes
-  no changes found
+  9 files to transfer, 816 bytes of data
+  transferred 816 bytes in * seconds (*) (glob)
 
 A manifest with a stream clone but no BUNDLESPEC
 
@@ -480,10 +478,8 @@ A manifest with a stream clone but no BUNDLESPEC
   no compatible clone bundles available on server; falling back to regular clone
   (you may want to report this to the server operator)
   streaming all changes
-  4 files to transfer, 613 bytes of data
-  transferred 613 bytes in * seconds (*) (glob)
-  searching for changes
-  no changes found
+  9 files to transfer, 816 bytes of data
+  transferred 816 bytes in * seconds (*) (glob)
 
 A manifest with a gzip bundle and a stream clone
 
@@ -526,10 +522,8 @@ A manifest with a gzip bundle and a stream clone with unsupported requirements
   no compatible clone bundles available on server; falling back to regular clone
   (you may want to report this to the server operator)
   streaming all changes
-  4 files to transfer, 613 bytes of data
-  transferred 613 bytes in * seconds (*) (glob)
-  searching for changes
-  no changes found
+  9 files to transfer, 816 bytes of data
+  transferred 816 bytes in * seconds (*) (glob)
 
 Test clone bundle retrieved through bundle2
 

@@ -149,7 +149,7 @@ class transaction(util.transactional):
         if checkambigfiles:
             self._checkambigfiles.update(checkambigfiles)
 
-        self.names = [name]
+        self._names = [name]
 
         # A dict dedicated to precisely tracking the changes introduced in the
         # transaction.
@@ -189,7 +189,7 @@ class transaction(util.transactional):
         self._abortcallback = {}
 
     def __repr__(self):
-        name = r'/'.join(self.names)
+        name = r'/'.join(self._names)
         return (r'<transaction name=%s, count=%d, usages=%d>' %
                 (name, self._count, self._usages))
 
@@ -375,14 +375,14 @@ class transaction(util.transactional):
     def nest(self, name=r'<unnamed>'):
         self._count += 1
         self._usages += 1
-        self.names.append(name)
+        self._names.append(name)
         return self
 
     def release(self):
         if self._count > 0:
             self._usages -= 1
-        if self.names:
-            self.names.pop()
+        if self._names:
+            self._names.pop()
         # if the transaction scopes are left without being closed, fail
         if self._count > 0 and self._usages == 0:
             self._abort()

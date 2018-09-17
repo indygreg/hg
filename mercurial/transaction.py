@@ -139,7 +139,7 @@ class transaction(util.transactional):
         # target user is repository hooks.
         if validator is None:
             validator = lambda tr: None
-        self.validator = validator
+        self._validator = validator
         # A callback to do something just after releasing transaction.
         if releasefn is None:
             releasefn = lambda tr, success: None
@@ -455,8 +455,8 @@ class transaction(util.transactional):
     def close(self):
         '''commit the transaction'''
         if self._count == 1:
-            self.validator(self)  # will raise exception if needed
-            self.validator = None # Help prevent cycles.
+            self._validator(self)  # will raise exception if needed
+            self._validator = None # Help prevent cycles.
             self._generatefiles(group=gengroupprefinalize)
             categories = sorted(self._finalizecallback)
             for cat in categories:

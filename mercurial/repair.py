@@ -190,7 +190,11 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
     with ui.uninterruptable():
         try:
             with repo.transaction("strip") as tr:
-                offset = len(tr.entries)
+                # TODO this code violates the interface abstraction of the
+                # transaction and makes assumptions that file storage is
+                # using append-only files. We'll need some kind of storage
+                # API to handle stripping for us.
+                offset = len(tr._entries)
 
                 tr.startgroup()
                 cl.strip(striprev, tr)
@@ -200,8 +204,8 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
                     repo.file(fn).strip(striprev, tr)
                 tr.endgroup()
 
-                for i in pycompat.xrange(offset, len(tr.entries)):
-                    file, troffset, ignore = tr.entries[i]
+                for i in pycompat.xrange(offset, len(tr._entries)):
+                    file, troffset, ignore = tr._entries[i]
                     with repo.svfs(file, 'a', checkambig=True) as fp:
                         fp.truncate(troffset)
                     if troffset == 0:

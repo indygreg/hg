@@ -129,7 +129,7 @@ class transaction(util.transactional):
         vfsmap[''] = opener  # set default value
         self._vfsmap = vfsmap
         self._after = after
-        self.entries = []
+        self._entries = []
         self._map = {}
         self._journal = journalname
         self._undoname = undoname
@@ -230,8 +230,8 @@ class transaction(util.transactional):
         """add a append-only entry to memory and on-disk state"""
         if file in self._map or file in self._backupmap:
             return
-        self.entries.append((file, offset, data))
-        self._map[file] = len(self.entries) - 1
+        self._entries.append((file, offset, data))
+        self._map[file] = len(self._entries) - 1
         # add enough data to the journal to do the truncate
         self._file.write("%s\0%d\n" % (file, offset))
         self._file.flush()
@@ -352,7 +352,7 @@ class transaction(util.transactional):
     @active
     def find(self, file):
         if file in self._map:
-            return self.entries[self._map[file]]
+            return self._entries[self._map[file]]
         if file in self._backupmap:
             return self._backupentries[self._backupmap[file]]
         return None
@@ -367,7 +367,7 @@ class transaction(util.transactional):
         if file not in self._map:
             raise KeyError(file)
         index = self._map[file]
-        self.entries[index] = (file, offset, data)
+        self._entries[index] = (file, offset, data)
         self._file.write("%s\0%d\n" % (file, offset))
         self._file.flush()
 
@@ -486,7 +486,7 @@ class transaction(util.transactional):
                     # Abort may be raise by read only opener
                     self._report("couldn't remove %s: %s\n"
                                  % (vfs.join(b), inst))
-        self.entries = []
+        self._entries = []
         self._writeundo()
         if self._after:
             self._after()
@@ -564,7 +564,7 @@ class transaction(util.transactional):
         self._backupsfile.close()
 
         try:
-            if not self.entries and not self._backupentries:
+            if not self._entries and not self._backupentries:
                 if self._backupjournal:
                     self._opener.unlink(self._backupjournal)
                 if self._journal:
@@ -579,7 +579,7 @@ class transaction(util.transactional):
                 # Prevent double usage and help clear cycles.
                 self._abortcallback = None
                 _playback(self._journal, self._report, self._opener,
-                          self._vfsmap, self.entries, self._backupentries,
+                          self._vfsmap, self._entries, self._backupentries,
                           False, checkambigfiles=self._checkambigfiles)
                 self._report(_("rollback completed\n"))
             except BaseException:

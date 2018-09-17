@@ -21,6 +21,7 @@ from mercurial import (
     error,
     exchange,
     extensions,
+    match as matchmod,
     narrowspec,
     repair,
     repository,
@@ -72,6 +73,9 @@ def getbundlechangegrouppart_widen(bundler, repo, source, bundlecaps=None,
     newmatch = narrowspec.match(repo.root, include=include, exclude=exclude)
     oldinclude = sorted(filter(bool, kwargs.get(r'oldincludepats', [])))
     oldexclude = sorted(filter(bool, kwargs.get(r'oldexcludepats', [])))
+    oldmatch = narrowspec.match(repo.root, include=oldinclude,
+                                exclude=oldexclude)
+    diffmatch = matchmod.differencematcher(newmatch, oldmatch)
     common = set(common or [nullid])
 
     if (oldinclude != include or oldexclude != exclude):
@@ -84,7 +88,7 @@ def getbundlechangegrouppart_widen(bundler, repo, source, bundlecaps=None,
             # XXX: we should only send the filelogs (and treemanifest). user
             # already has the changelog and manifest
             packer = changegroup.getbundler(version, repo,
-                                            filematcher=newmatch,
+                                            filematcher=diffmatch,
                                             fullnodes=commonnodes)
             cgdata = packer.generate(set([nullid]), list(commonnodes), False,
                     source)

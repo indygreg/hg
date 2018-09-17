@@ -95,7 +95,7 @@ added upstream revisions.
   adding changesets
   adding manifests
   adding file changes
-  added 0 changesets with 1 changes to 2 files
+  added 0 changesets with 1 changes to 1 files
   3 local changesets published
   $ hg tracked
   I path:inside
@@ -154,7 +154,7 @@ widen the narrow spec to include the wider file
   adding changesets
   adding manifests
   adding file changes
-  added 0 changesets with 1 changes to 3 files
+  added 0 changesets with 1 changes to 1 files
   5 local changesets published
   $ hg tracked
   I path:inside
@@ -259,7 +259,7 @@ make narrow clone with every third node.
   adding changesets
   adding manifests
   adding file changes
-  added 0 changesets with 1 changes to 5 files
+  added 0 changesets with 1 changes to 1 files
   11 local changesets published
   $ hg tracked
   I path:d0
@@ -351,7 +351,7 @@ Widening that fails can be recovered from
   adding changesets
   adding manifests
   adding file changes
-  added 0 changesets with 1 changes to 2 files
+  added 0 changesets with 1 changes to 1 files
   11 local changesets published
   $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
   11: local

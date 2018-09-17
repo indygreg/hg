@@ -157,7 +157,7 @@ class transaction(util.transactional):
 
         # a dict of arguments to be passed to hooks
         self.hookargs = {}
-        self.file = opener.open(self._journal, "w")
+        self._file = opener.open(self._journal, "w")
 
         # a list of ('location', 'path', 'backuppath', cache) entries.
         # - if 'backuppath' is empty, no file existed at backup time
@@ -233,8 +233,8 @@ class transaction(util.transactional):
         self.entries.append((file, offset, data))
         self.map[file] = len(self.entries) - 1
         # add enough data to the journal to do the truncate
-        self.file.write("%s\0%d\n" % (file, offset))
-        self.file.flush()
+        self._file.write("%s\0%d\n" % (file, offset))
+        self._file.flush()
 
     @active
     def addbackup(self, file, hardlink=True, location=''):
@@ -368,8 +368,8 @@ class transaction(util.transactional):
             raise KeyError(file)
         index = self.map[file]
         self.entries[index] = (file, offset, data)
-        self.file.write("%s\0%d\n" % (file, offset))
-        self.file.flush()
+        self._file.write("%s\0%d\n" % (file, offset))
+        self._file.flush()
 
     @active
     def nest(self, name=r'<unnamed>'):
@@ -468,7 +468,7 @@ class transaction(util.transactional):
         self._count -= 1
         if self._count != 0:
             return
-        self.file.close()
+        self._file.close()
         self._backupsfile.close()
         # cleanup temporary files
         for l, f, b, c in self._backupentries:
@@ -560,7 +560,7 @@ class transaction(util.transactional):
     def _abort(self):
         self._count = 0
         self._usages = 0
-        self.file.close()
+        self._file.close()
         self._backupsfile.close()
 
         try:

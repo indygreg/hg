@@ -130,7 +130,7 @@ class transaction(util.transactional):
         self._vfsmap = vfsmap
         self._after = after
         self.entries = []
-        self.map = {}
+        self._map = {}
         self._journal = journalname
         self._undoname = undoname
         self._queue = []
@@ -218,7 +218,7 @@ class transaction(util.transactional):
     @active
     def add(self, file, offset, data=None):
         """record the state of an append-only file before update"""
-        if file in self.map or file in self._backupmap:
+        if file in self._map or file in self._backupmap:
             return
         if self._queue:
             self._queue[-1].append((file, offset, data))
@@ -228,10 +228,10 @@ class transaction(util.transactional):
 
     def _addentry(self, file, offset, data):
         """add a append-only entry to memory and on-disk state"""
-        if file in self.map or file in self._backupmap:
+        if file in self._map or file in self._backupmap:
             return
         self.entries.append((file, offset, data))
-        self.map[file] = len(self.entries) - 1
+        self._map[file] = len(self.entries) - 1
         # add enough data to the journal to do the truncate
         self._file.write("%s\0%d\n" % (file, offset))
         self._file.flush()
@@ -251,7 +251,7 @@ class transaction(util.transactional):
             msg = 'cannot use transaction.addbackup inside "group"'
             raise error.ProgrammingError(msg)
 
-        if file in self.map or file in self._backupmap:
+        if file in self._map or file in self._backupmap:
             return
         vfs = self._vfsmap[location]
         dirname, filename = vfs.split(file)
@@ -351,8 +351,8 @@ class transaction(util.transactional):
 
     @active
     def find(self, file):
-        if file in self.map:
-            return self.entries[self.map[file]]
+        if file in self._map:
+            return self.entries[self._map[file]]
         if file in self._backupmap:
             return self._backupentries[self._backupmap[file]]
         return None
@@ -364,9 +364,9 @@ class transaction(util.transactional):
         that are not pending in the queue
         '''
 
-        if file not in self.map:
+        if file not in self._map:
             raise KeyError(file)
-        index = self.map[file]
+        index = self._map[file]
         self.entries[index] = (file, offset, data)
         self._file.write("%s\0%d\n" % (file, offset))
         self._file.flush()

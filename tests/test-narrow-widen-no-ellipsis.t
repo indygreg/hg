@@ -88,15 +88,41 @@ Widen the narrow spec to see the widest file. This should not get the newly
 added upstream revisions.
 
   $ cd narrow
-  $ hg tracked --addinclude widest/f
+  $ hg tracked --addinclude widest/f --debug
   comparing with ssh://user@dummy/master
+  running python "*dummyssh" 'user@dummy' 'hg -R master serve --stdio' (glob)
+  sending hello command
+  sending between command
+  remote: * (glob)
+  remote: capabilities: * (glob)
+  remote: 1
+  sending protocaps command
+  query 1; heads
+  sending batch command
   searching for changes
+  all local heads known remotely
   no changes found
+  sending getbundle command
+  bundle2-input-bundle: with-transaction
+  bundle2-input-part: "changegroup" (params: * mandatory) supported (glob)
   adding changesets
+  add changeset * (glob)
+  add changeset * (glob)
+  add changeset * (glob)
   adding manifests
+  adding widest/ revisions (tree !)
   adding file changes
+  adding widest/f revisions (tree !)
   added 0 changesets with 1 changes to 1 files
+  bundle2-input-part: total payload size * (glob)
+  bundle2-input-part: "listkeys" (params: 1 mandatory) supported
+  bundle2-input-part: "phase-heads" supported
+  bundle2-input-part: total payload size 24
+  bundle2-input-bundle: 2 parts total
+  checking for updated bookmarks
   3 local changesets published
+   widest/f: add from widened narrow clone -> g
+  getting widest/f
   $ hg tracked
   I path:inside
   I path:widest/f

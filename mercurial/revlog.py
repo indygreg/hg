@@ -105,9 +105,6 @@ _maxinline = 131072
 _chunksize = 1048576
 
 LookupError = error.LookupError
-AmbiguousPrefixLookupError = error.AmbiguousPrefixLookupError
-CensoredNodeError = error.CensoredNodeError
-ProgrammingError = error.ProgrammingError
 
 # Store flag processors (cf. 'addflagprocessor()' to register)
 _flagprocessors = {
@@ -180,10 +177,10 @@ def addflagprocessor(flag, processor):
     """
     if not flag & REVIDX_KNOWN_FLAGS:
         msg = _("cannot register processor on unknown flag '%#x'.") % (flag)
-        raise ProgrammingError(msg)
+        raise error.ProgrammingError(msg)
     if flag not in REVIDX_FLAGS_ORDER:
         msg = _("flag '%#x' undefined in REVIDX_FLAGS_ORDER.") % (flag)
-        raise ProgrammingError(msg)
+        raise error.ProgrammingError(msg)
     if flag in _flagprocessors:
         msg = _("cannot register multiple processors on flag '%#x'.") % (flag)
         raise error.Abort(msg)
@@ -1279,8 +1276,8 @@ class revlog(object):
             # parsers.c radix tree lookup gave multiple matches
             # fast path: for unfiltered changelog, radix tree is accurate
             if not getattr(self, 'filteredrevs', None):
-                raise AmbiguousPrefixLookupError(id, self.indexfile,
-                                                 _('ambiguous identifier'))
+                raise error.AmbiguousPrefixLookupError(
+                    id, self.indexfile, _('ambiguous identifier'))
             # fall through to slow path that filters hidden revisions
         except (AttributeError, ValueError):
             # we are pure python, or key was too short to search radix tree
@@ -1303,8 +1300,8 @@ class revlog(object):
                     if len(nl) == 1 and not maybewdir:
                         self._pcache[id] = nl[0]
                         return nl[0]
-                    raise AmbiguousPrefixLookupError(id, self.indexfile,
-                                                     _('ambiguous identifier'))
+                    raise error.AmbiguousPrefixLookupError(
+                        id, self.indexfile, _('ambiguous identifier'))
                 if maybewdir:
                     raise error.WdirUnsupported
                 return None
@@ -1572,7 +1569,7 @@ class revlog(object):
     def snapshotdepth(self, rev):
         """number of snapshot in the chain before this one"""
         if not self.issnapshot(rev):
-            raise ProgrammingError('revision %d not a snapshot')
+            raise error.ProgrammingError('revision %d not a snapshot')
         return len(self._deltachain(rev)[0]) - 1
 
     def revdiff(self, rev1, rev2):
@@ -1696,7 +1693,8 @@ class revlog(object):
         if flags == 0:
             return text, True
         if not operation in ('read', 'write'):
-            raise ProgrammingError(_("invalid '%s' operation ") % (operation))
+            raise error.ProgrammingError(_("invalid '%s' operation") %
+                                         operation)
         # Check all flags are known.
         if flags & ~REVIDX_KNOWN_FLAGS:
             raise error.RevlogError(_("incompatible revision flag '%#x'") %

@@ -364,14 +364,16 @@ class bundlerepository(object):
         self.manstart = self._cgunpacker.tell()
         return c
 
-    def _constructmanifest(self):
+    @localrepo.unfilteredpropertycache
+    def manifestlog(self):
         self._cgunpacker.seek(self.manstart)
         # consume the header if it exists
         self._cgunpacker.manifestheader()
         linkmapper = self.unfiltered().changelog.rev
-        m = bundlemanifest(self.svfs, self._cgunpacker, linkmapper)
+        rootstore = bundlemanifest(self.svfs, self._cgunpacker, linkmapper)
         self.filestart = self._cgunpacker.tell()
-        return m
+
+        return manifest.manifestlog(self.svfs, self, rootstore)
 
     def _consumemanifest(self):
         """Consumes the manifest portion of the bundle, setting filestart so the

@@ -994,15 +994,10 @@ class localrepository(object):
         return changelog.changelog(self.svfs,
                                    trypending=txnutil.mayhavepending(self.root))
 
-    def _constructmanifest(self):
-        # This is a temporary function while we migrate from manifest to
-        # manifestlog. It allows bundlerepo and unionrepo to intercept the
-        # manifest creation.
-        return manifest.manifestrevlog(self.svfs)
-
     @storecache('00manifest.i')
     def manifestlog(self):
-        return manifest.manifestlog(self.svfs, self)
+        rootstore = manifest.manifestrevlog(self.svfs)
+        return manifest.manifestlog(self.svfs, self, rootstore)
 
     @repofilecache('dirstate')
     def dirstate(self):

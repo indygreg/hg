@@ -495,7 +495,9 @@ def perftags(ui, repo, **opts):
     repocleartagscache = repocleartagscachefunc(repo)
     def t():
         repo.changelog = mercurial.changelog.changelog(svfs)
-        repo.manifestlog = mercurial.manifest.manifestlog(svfs, repo)
+        rootmanifest = mercurial.manifest.manifestrevlog(svfs)
+        repo.manifestlog = mercurial.manifest.manifestlog(svfs, repo,
+                                                          rootmanifest)
         repocleartagscache()
         return len(repo.tags())
     timer(t)

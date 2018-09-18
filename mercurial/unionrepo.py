@@ -208,6 +208,12 @@ class unionrepository(object):
     def changelog(self):
         return unionchangelog(self.svfs, self.repo2.svfs)
 
+    @localrepo.unfilteredpropertycache
+    def manifestlog(self):
+        rootstore = unionmanifest(self.svfs, self.repo2.svfs,
+                                  self.unfiltered()._clrev)
+        return manifest.manifestlog(self.svfs, self, rootstore)
+
     def _clrev(self, rev2):
         """map from repo2 changelog rev to temporary rev in self.changelog"""
         node = self.repo2.changelog.node(rev2)

@@ -104,8 +104,6 @@ _zlibdecompress = zlib.decompress
 _maxinline = 131072
 _chunksize = 1048576
 
-LookupError = error.LookupError
-
 # Store flag processors (cf. 'addflagprocessor()' to register)
 _flagprocessors = {
     REVIDX_ISCENSORED: None,
@@ -619,7 +617,7 @@ class revlog(object):
             # parsers.c radix tree lookup failed
             if node == wdirid or node in wdirfilenodeids:
                 raise error.WdirUnsupported
-            raise LookupError(node, self.indexfile, _('no node'))
+            raise error.LookupError(node, self.indexfile, _('no node'))
         except KeyError:
             # pure python cache lookup failed
             n = self._nodecache
@@ -637,7 +635,7 @@ class revlog(object):
                     return r
             if node == wdirid or node in wdirfilenodeids:
                 raise error.WdirUnsupported
-            raise LookupError(node, self.indexfile, _('no node'))
+            raise error.LookupError(node, self.indexfile, _('no node'))
 
     # Accessors for index entries.
 
@@ -1235,7 +1233,7 @@ class revlog(object):
                 node = id
                 self.rev(node) # quick search the index
                 return node
-            except LookupError:
+            except error.LookupError:
                 pass # may be partial hex id
         try:
             # str(rev)
@@ -1255,7 +1253,7 @@ class revlog(object):
                 node = bin(id)
                 self.rev(node)
                 return node
-            except (TypeError, LookupError):
+            except (TypeError, error.LookupError):
                 pass
 
     def _partialmatch(self, id):
@@ -1320,7 +1318,7 @@ class revlog(object):
         if n:
             return n
 
-        raise LookupError(id, self.indexfile, _('no match found'))
+        raise error.LookupError(id, self.indexfile, _('no match found'))
 
     def shortest(self, node, minlength=1):
         """Find the shortest unambiguous prefix that matches node."""
@@ -1333,7 +1331,7 @@ class revlog(object):
                 # single 'ff...' match
                 return True
             if node is None:
-                raise LookupError(node, self.indexfile, _('no node'))
+                raise error.LookupError(node, self.indexfile, _('no node'))
             return True
 
         def maybewdir(prefix):
@@ -1354,7 +1352,7 @@ class revlog(object):
                 return disambiguate(hexnode, length)
             except error.RevlogError:
                 if node != wdirid:
-                    raise LookupError(node, self.indexfile, _('no node'))
+                    raise error.LookupError(node, self.indexfile, _('no node'))
             except AttributeError:
                 # Fall through to pure code
                 pass
@@ -2085,12 +2083,12 @@ class revlog(object):
 
                 for p in (p1, p2):
                     if p not in self.nodemap:
-                        raise LookupError(p, self.indexfile,
-                                          _('unknown parent'))
+                        raise error.LookupError(p, self.indexfile,
+                                                _('unknown parent'))
 
                 if deltabase not in self.nodemap:
-                    raise LookupError(deltabase, self.indexfile,
-                                      _('unknown delta base'))
+                    raise error.LookupError(deltabase, self.indexfile,
+                                            _('unknown delta base'))
 
                 baserev = self.rev(deltabase)
 

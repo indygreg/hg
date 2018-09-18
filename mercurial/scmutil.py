@@ -207,7 +207,7 @@ def callcatch(ui, func):
             ui.error("\n%r\n" % pycompat.bytestr(stringutil.ellipsis(msg)))
     except error.CensoredNodeError as inst:
         ui.error(_("abort: file censored %s!\n") % inst)
-    except error.RevlogError as inst:
+    except error.StorageError as inst:
         ui.error(_("abort: %s!\n") % inst)
     except error.InterventionRequired as inst:
         ui.error("%s\n" % inst)

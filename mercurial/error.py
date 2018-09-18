@@ -283,7 +283,7 @@ class PushkeyFailed(Abort):
         Abort.__init__(self, 'failed to update value for "%s/%s"'
                        % (namespace, key))
 
-class CensoredNodeError(RevlogError):
+class CensoredNodeError(StorageError):
     """error raised when content verification fails on a censored node
 
     Also contains the tombstone data substituted for the uncensored data.
@@ -291,10 +291,10 @@ class CensoredNodeError(RevlogError):
 
     def __init__(self, filename, node, tombstone):
         from .node import short
-        RevlogError.__init__(self, '%s:%s' % (filename, short(node)))
+        StorageError.__init__(self, '%s:%s' % (filename, short(node)))
         self.tombstone = tombstone
 
-class CensoredBaseError(RevlogError):
+class CensoredBaseError(StorageError):
     """error raised when a delta is rejected because its base is censored
 
     A delta based on a censored revision must be formed as single patch

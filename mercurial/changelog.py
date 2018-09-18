@@ -513,10 +513,10 @@ class changelog(revlog.revlog):
         # revision text contain two "\n\n" sequences -> corrupt
         # repository since read cannot unpack the revision.
         if not user:
-            raise error.RevlogError(_("empty username"))
+            raise error.StorageError(_("empty username"))
         if "\n" in user:
-            raise error.RevlogError(_("username %r contains a newline")
-                                    % pycompat.bytestr(user))
+            raise error.StorageError(_("username %r contains a newline")
+                                     % pycompat.bytestr(user))
 
         desc = stripdesc(desc)
 
@@ -529,8 +529,8 @@ class changelog(revlog.revlog):
             if branch in ("default", ""):
                 del extra["branch"]
             elif branch in (".", "null", "tip"):
-                raise error.RevlogError(_('the name \'%s\' is reserved')
-                                        % branch)
+                raise error.StorageError(_('the name \'%s\' is reserved')
+                                         % branch)
         if extra:
             extra = encodeextra(extra)
             parseddate = "%s %s" % (parseddate, extra)

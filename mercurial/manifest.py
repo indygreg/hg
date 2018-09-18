@@ -643,7 +643,7 @@ def _checkforbidden(l):
     """Check filenames for illegal characters."""
     for f in l:
         if '\n' in f or '\r' in f:
-            raise error.RevlogError(
+            raise error.StorageError(
                 _("'\\n' and '\\r' disallowed in filenames: %r")
                 % pycompat.bytestr(f))
 

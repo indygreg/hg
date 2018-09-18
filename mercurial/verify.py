@@ -360,7 +360,7 @@ class verifier(object):
 
             try:
                 fl = repo.file(f)
-            except error.RevlogError as e:
+            except error.StorageError as e:
                 self.err(lr, _("broken revlog! (%s)") % e, f)
                 continue
 

@@ -19,7 +19,7 @@ from mercurial.utils import (
     stringutil,
 )
 
-class InvalidPointer(error.RevlogError):
+class InvalidPointer(error.StorageError):
     pass
 
 class gitlfspointer(dict):

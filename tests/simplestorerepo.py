@@ -61,6 +61,9 @@ def validaterev(rev):
     if not isinstance(rev, int):
         raise ValueError('expected int')
 
+class simplestoreerror(error.StorageError):
+    pass
+
 @interfaceutil.implementer(repository.irevisiondelta)
 @attr.s(slots=True, frozen=True)
 class simplestorerevisiondelta(object):
@@ -261,8 +264,8 @@ class filestorage(object):
             return text, True
 
         if flags & ~revlog.REVIDX_KNOWN_FLAGS:
-            raise error.RevlogError(_("incompatible revision flag '%#x'") %
-                                    (flags & ~revlog.REVIDX_KNOWN_FLAGS))
+            raise simplestoreerror(_("incompatible revision flag '%#x'") %
+                                   (flags & ~revlog.REVIDX_KNOWN_FLAGS))
 
         validatehash = True
         # Depending on the operation (read or write), the order might be
@@ -279,7 +282,7 @@ class filestorage(object):
 
                 if flag not in revlog._flagprocessors:
                     message = _("missing processor for flag '%#x'") % (flag)
-                    raise error.RevlogError(message)
+                    raise simplestoreerror(message)
 
                 processor = revlog._flagprocessors[flag]
                 if processor is not None:
@@ -299,7 +302,7 @@ class filestorage(object):
         if p1 is None and p2 is None:
             p1, p2 = self.parents(node)
         if node != revlog.hash(text, p1, p2):
-            raise error.RevlogError(_("integrity check failed on %s") %
+            raise simplestoreerror(_("integrity check failed on %s") %
                 self._path)
 
     def revision(self, node, raw=False):

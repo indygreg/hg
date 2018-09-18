@@ -586,7 +586,7 @@ def remote(repo, remote=None):
         raise error.Abort(_('lfs: unknown url scheme: %s') % scheme)
     return _storemap[scheme](repo, url)
 
-class LfsRemoteError(error.RevlogError):
+class LfsRemoteError(error.StorageError):
     pass
 
 class LfsCorruptionError(error.Abort):

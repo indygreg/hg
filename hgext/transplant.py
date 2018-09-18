@@ -503,7 +503,7 @@ class transplanter(object):
 def hasnode(repo, node):
     try:
         return repo.changelog.rev(node) is not None
-    except error.RevlogError:
+    except error.StorageError:
         return False
 
 def browserevs(ui, repo, nodes, opts):

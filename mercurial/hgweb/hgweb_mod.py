@@ -435,7 +435,7 @@ class hgweb(object):
             res.status = '404 Not Found'
             res.headers['Content-Type'] = ctype
             return rctx.sendtemplate('error', error=msg)
-        except (error.RepoError, error.RevlogError) as e:
+        except (error.RepoError, error.StorageError) as e:
             res.status = '500 Internal Server Error'
             res.headers['Content-Type'] = ctype
             return rctx.sendtemplate('error', error=pycompat.bytestr(e))

@@ -61,6 +61,17 @@ narrow clone a file, f10
 
   $ cd ..
 
+BUG: local-to-local narrow clones should work, but don't.
+
+  $ hg clone --narrow master narrow-via-localpeer --noupdate --include "dir/src/f10"
+  requesting all changes
+  abort: server doesn't support narrow clones
+  [255]
+  $ hg tracked -R narrow-via-localpeer
+  abort: repository narrow-via-localpeer not found!
+  [255]
+  $ rm -Rf narrow-via-localpeer
+
 narrow clone with a newline should fail
 
   $ hg clone --narrow ssh://user@dummy/master narrow_fail --noupdate --include 'dir/src/f10

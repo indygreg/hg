@@ -104,7 +104,6 @@ _zlibdecompress = zlib.decompress
 _maxinline = 131072
 _chunksize = 1048576
 
-RevlogError = error.RevlogError
 LookupError = error.LookupError
 AmbiguousPrefixLookupError = error.AmbiguousPrefixLookupError
 CensoredNodeError = error.CensoredNodeError
@@ -303,7 +302,8 @@ class revlogoldio(object):
 
     def packentry(self, entry, node, version, rev):
         if gettype(entry[0]):
-            raise RevlogError(_('index entry flags need revlog version 1'))
+            raise error.RevlogError(_('index entry flags need revlog '
+                                      'version 1'))
         e2 = (getoffset(entry[0]), entry[1], entry[3], entry[4],
               node(entry[5]), node(entry[6]), entry[7])
         return indexformatv0_pack(*e2)
@@ -456,11 +456,11 @@ class revlog(object):
                 self._flagprocessors[REVIDX_ELLIPSIS] = ellipsisprocessor
 
         if self._chunkcachesize <= 0:
-            raise RevlogError(_('revlog chunk cache size %r is not greater '
-                                'than 0') % self._chunkcachesize)
+            raise error.RevlogError(_('revlog chunk cache size %r is not '
+                                      'greater than 0') % self._chunkcachesize)
         elif self._chunkcachesize & (self._chunkcachesize - 1):
-            raise RevlogError(_('revlog chunk cache size %r is not a power '
-                                'of 2') % self._chunkcachesize)
+            raise error.RevlogError(_('revlog chunk cache size %r is not a '
+                                      'power of 2') % self._chunkcachesize)
 
         indexdata = ''
         self._initempty = True
@@ -485,22 +485,22 @@ class revlog(object):
         fmt = v & 0xFFFF
         if fmt == REVLOGV0:
             if flags:
-                raise RevlogError(_('unknown flags (%#04x) in version %d '
-                                    'revlog %s') %
-                                  (flags >> 16, fmt, self.indexfile))
+                raise error.RevlogError(_('unknown flags (%#04x) in version %d '
+                                          'revlog %s') %
+                                        (flags >> 16, fmt, self.indexfile))
         elif fmt == REVLOGV1:
             if flags & ~REVLOGV1_FLAGS:
-                raise RevlogError(_('unknown flags (%#04x) in version %d '
-                                    'revlog %s') %
-                                  (flags >> 16, fmt, self.indexfile))
+                raise error.RevlogError(_('unknown flags (%#04x) in version %d '
+                                          'revlog %s') %
+                                        (flags >> 16, fmt, self.indexfile))
         elif fmt == REVLOGV2:
             if flags & ~REVLOGV2_FLAGS:
-                raise RevlogError(_('unknown flags (%#04x) in version %d '
-                                    'revlog %s') %
-                                  (flags >> 16, fmt, self.indexfile))
+                raise error.RevlogError(_('unknown flags (%#04x) in version %d '
+                                          'revlog %s') %
+                                        (flags >> 16, fmt, self.indexfile))
         else:
-            raise RevlogError(_('unknown version (%d) in revlog %s') %
-                              (fmt, self.indexfile))
+            raise error.RevlogError(_('unknown version (%d) in revlog %s') %
+                                    (fmt, self.indexfile))
 
         self._storedeltachains = True
 
@@ -510,7 +510,8 @@ class revlog(object):
         try:
             d = self._io.parseindex(indexdata, self._inline)
         except (ValueError, IndexError):
-            raise RevlogError(_("index %s is corrupted") % (self.indexfile))
+            raise error.RevlogError(_("index %s is corrupted") %
+                                    self.indexfile)
         self.index, nodemap, self._chunkcache = d
         if nodemap is not None:
             self.nodemap = self._nodecache = nodemap
@@ -617,7 +618,7 @@ class revlog(object):
             return self._nodecache[node]
         except TypeError:
             raise
-        except RevlogError:
+        except error.RevlogError:
             # parsers.c radix tree lookup failed
             if node == wdirid or node in wdirfilenodeids:
                 raise error.WdirUnsupported
@@ -1268,13 +1269,13 @@ class revlog(object):
             if partial and self.hasnode(partial):
                 if maybewdir:
                     # single 'ff...' match in radix tree, ambiguous with wdir
-                    raise RevlogError
+                    raise error.RevlogError
                 return partial
             if maybewdir:
                 # no 'ff...' match in radix tree, wdir identified
                 raise error.WdirUnsupported
             return None
-        except RevlogError:
+        except error.RevlogError:
             # parsers.c radix tree lookup gave multiple matches
             # fast path: for unfiltered changelog, radix tree is accurate
             if not getattr(self, 'filteredrevs', None):
@@ -1354,7 +1355,7 @@ class revlog(object):
             try:
                 length = max(self.index.shortest(node), minlength)
                 return disambiguate(hexnode, length)
-            except RevlogError:
+            except error.RevlogError:
                 if node != wdirid:
                     raise LookupError(node, self.indexfile, _('no node'))
             except AttributeError:
@@ -1698,8 +1699,8 @@ class revlog(object):
             raise ProgrammingError(_("invalid '%s' operation ") % (operation))
         # Check all flags are known.
         if flags & ~REVIDX_KNOWN_FLAGS:
-            raise RevlogError(_("incompatible revision flag '%#x'") %
-                              (flags & ~REVIDX_KNOWN_FLAGS))
+            raise error.RevlogError(_("incompatible revision flag '%#x'") %
+                                    (flags & ~REVIDX_KNOWN_FLAGS))
         validatehash = True
         # Depending on the operation (read or write), the order might be
         # reversed due to non-commutative transforms.
@@ -1715,7 +1716,7 @@ class revlog(object):
 
                 if flag not in self._flagprocessors:
                     message = _("missing processor for flag '%#x'") % (flag)
-                    raise RevlogError(message)
+                    raise error.RevlogError(message)
 
                 processor = self._flagprocessors[flag]
                 if processor is not None:
@@ -1744,9 +1745,9 @@ class revlog(object):
                 revornode = rev
                 if revornode is None:
                     revornode = templatefilters.short(hex(node))
-                raise RevlogError(_("integrity check failed on %s:%s")
+                raise error.RevlogError(_("integrity check failed on %s:%s")
                     % (self.indexfile, pycompat.bytestr(revornode)))
-        except RevlogError:
+        except error.RevlogError:
             if self._censorable and _censoredtext(text):
                 raise error.CensoredNodeError(self.indexfile, node, text)
             raise
@@ -1765,8 +1766,8 @@ class revlog(object):
 
         trinfo = tr.find(self.indexfile)
         if trinfo is None:
-            raise RevlogError(_("%s not found in the transaction")
-                              % self.indexfile)
+            raise error.RevlogError(_("%s not found in the transaction")
+                                    % self.indexfile)
 
         trindex = trinfo[2]
         if trindex is not None:
@@ -1817,8 +1818,8 @@ class revlog(object):
             multiple calls
         """
         if link == nullrev:
-            raise RevlogError(_("attempted to add linkrev -1 to %s")
-                              % self.indexfile)
+            raise error.RevlogError(_("attempted to add linkrev -1 to %s")
+                                    % self.indexfile)
 
         if flags:
             node = node or self.hash(text, p1, p2)
@@ -1831,7 +1832,7 @@ class revlog(object):
             cachedelta = None
 
         if len(rawtext) > _maxentrysize:
-            raise RevlogError(
+            raise error.RevlogError(
                 _("%s: size of %d bytes exceeds maximum revlog storage of 2GiB")
                 % (self.indexfile, len(rawtext)))
 
@@ -1916,8 +1917,8 @@ class revlog(object):
             try:
                 return _zlibdecompress(data)
             except zlib.error as e:
-                raise RevlogError(_('revlog decompress error: %s') %
-                                  stringutil.forcebytestr(e))
+                raise error.RevlogError(_('revlog decompress error: %s') %
+                                        stringutil.forcebytestr(e))
         # '\0' is more common than 'u' so it goes first.
         elif t == '\0':
             return data
@@ -1932,7 +1933,7 @@ class revlog(object):
                 compressor = engine.revlogcompressor()
                 self._decompressors[t] = compressor
             except KeyError:
-                raise RevlogError(_('unknown compression type %r') % t)
+                raise error.RevlogError(_('unknown compression type %r') % t)
 
         return compressor.decompress(data)
 
@@ -1953,11 +1954,11 @@ class revlog(object):
           if both are set, they must correspond to each other.
         """
         if node == nullid:
-            raise RevlogError(_("%s: attempt to add null revision") %
-                              (self.indexfile))
+            raise error.RevlogError(_("%s: attempt to add null revision") %
+                                    self.indexfile)
         if node == wdirid or node in wdirfilenodeids:
-            raise RevlogError(_("%s: attempt to add wdir revision") %
-                              (self.indexfile))
+            raise error.RevlogError(_("%s: attempt to add wdir revision") %
+                                    self.indexfile)
 
         if self._inline:
             fh = ifh

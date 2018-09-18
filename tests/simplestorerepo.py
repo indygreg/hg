@@ -279,7 +279,7 @@ class filestorage(object):
 
                 if flag not in revlog._flagprocessors:
                     message = _("missing processor for flag '%#x'") % (flag)
-                    raise revlog.RevlogError(message)
+                    raise error.RevlogError(message)
 
                 processor = revlog._flagprocessors[flag]
                 if processor is not None:

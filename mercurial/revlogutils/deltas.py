@@ -33,7 +33,6 @@ from .. import (
     mdiff,
 )
 
-RevlogError = error.RevlogError
 CensoredNodeError = error.CensoredNodeError
 
 # maximum <delta-chain-data>/<revision-text-length> ratio
@@ -460,7 +459,7 @@ def _textfromdelta(fh, revlog, baserev, delta, p1, p2, flags, expectednode):
         if validatehash:
             revlog.checkhash(fulltext, expectednode, p1=p1, p2=p2)
         if flags & REVIDX_ISCENSORED:
-            raise RevlogError(_('node %s is not censored') % expectednode)
+            raise error.RevlogError(_('node %s is not censored') % expectednode)
     except CensoredNodeError:
         # must pass the censored index flag to add censored revisions
         if not flags & REVIDX_ISCENSORED:

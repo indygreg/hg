@@ -106,9 +106,6 @@ added upstream revisions.
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "changegroup" (params: * mandatory) supported (glob)
   adding changesets
-  add changeset * (glob)
-  add changeset * (glob)
-  add changeset * (glob)
   adding manifests
   adding widest/ revisions (tree !)
   adding file changes

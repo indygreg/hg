@@ -91,7 +91,7 @@ def getbundlechangegrouppart_widen(bundler, repo, source, bundlecaps=None,
                                             filematcher=diffmatch,
                                             fullnodes=commonnodes)
             cgdata = packer.generate(set([nullid]), list(commonnodes), False,
-                    source)
+                                     source, changelog=False)
 
             part = bundler.newpart('changegroup', data=cgdata)
             part.addparam('version', version)

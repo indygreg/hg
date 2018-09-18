@@ -260,6 +260,8 @@ def _widen(ui, repo, remote, commoninc, newincludes, newexcludes):
     def setnewnarrowpats():
         repo.setnarrowpats(newincludes, newexcludes)
     repo.setnewnarrowpats = setnewnarrowpats
+    # silence the devel-warning of applying an empty changegroup
+    overrides = {('devel', 'all-warnings'): False}
 
     with ui.uninterruptable():
         ds = repo.dirstate
@@ -267,7 +269,7 @@ def _widen(ui, repo, remote, commoninc, newincludes, newexcludes):
         with ds.parentchange():
             ds.setparents(node.nullid, node.nullid)
         common = commoninc[0]
-        with wrappedextraprepare:
+        with wrappedextraprepare, repo.ui.configoverride(overrides, 'widen'):
             exchange.pull(repo, remote, heads=common)
         with ds.parentchange():
             ds.setparents(p1, p2)

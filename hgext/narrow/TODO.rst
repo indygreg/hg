@@ -7,17 +7,10 @@ about the filtering of status being done at an awkward layer. This
 came up the import to hgext, but nobody's got concrete improvement
 ideas as of then.
 
-Fold most (or preferably all) of narrowrevlog.py into core.
-
-Address commentary in narrowrevlog.excludedmanifestrevlog.add -
+Address commentary in manifest.excludedmanifestrevlog.add -
 specifically we should improve the collaboration with core so that
 add() never gets called on an excluded directory and we can improve
 the stand-in to raise a ProgrammingError.
-
-Figure out how to correctly produce narrowmanifestrevlog and
-narrowfilelog instances instead of monkeypatching regular revlogs at
-runtime to our subclass. Even better, merge the narrowing logic
-directly into core.
 
 Reason more completely about rename-filtering logic in
 narrowfilelog. There could be some surprises lurking there.

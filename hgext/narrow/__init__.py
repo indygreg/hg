@@ -28,7 +28,6 @@ from . import (
     narrowcopies,
     narrowpatch,
     narrowrepo,
-    narrowrevlog,
     narrowtemplates,
     narrowwirepeer,
 )
@@ -58,7 +57,6 @@ def featuresetup(ui, features):
 def uisetup(ui):
     """Wraps user-facing mercurial commands with narrow-aware versions."""
     localrepo.featuresetupfuncs.add(featuresetup)
-    narrowrevlog.setup()
     narrowbundle2.setup()
     narrowcommands.setup()
     narrowwirepeer.uisetup()

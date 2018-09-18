@@ -34,7 +34,14 @@ class Hint(object):
         self.hint = kw.pop(r'hint', None)
         super(Hint, self).__init__(*args, **kw)
 
-class RevlogError(Hint, Exception):
+class StorageError(Hint, Exception):
+    """Raised when an error occurs in a storage layer.
+
+    Usually subclassed by a storage-specific exception.
+    """
+    __bytes__ = _tobytes
+
+class RevlogError(StorageError):
     __bytes__ = _tobytes
 
 class FilteredIndexError(IndexError):

@@ -571,7 +571,7 @@ class ifiledata(interfaceutil.Interface):
     def checkhash(fulltext, node, p1=None, p2=None, rev=None):
         """Validate the stored hash of a given fulltext and node.
 
-        Raises ``error.RevlogError`` is hash validation fails.
+        Raises ``error.StorageError`` is hash validation fails.
         """
 
     def revision(node, raw=False):

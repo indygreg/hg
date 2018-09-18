@@ -422,7 +422,7 @@ class ifiledatatests(basetestcase):
             with self.assertRaises(IndexError):
                 f.size(i)
 
-        with self.assertRaises(error.RevlogError):
+        with self.assertRaises(error.StorageError):
             f.checkhash(b'', nullid)
 
         with self.assertRaises(error.LookupError):
@@ -527,13 +527,13 @@ class ifiledatatests(basetestcase):
         f.checkhash(fulltext, node)
         f.checkhash(fulltext, node, nullid, nullid)
 
-        with self.assertRaises(error.RevlogError):
+        with self.assertRaises(error.StorageError):
             f.checkhash(fulltext + b'extra', node)
 
-        with self.assertRaises(error.RevlogError):
+        with self.assertRaises(error.StorageError):
             f.checkhash(fulltext, node, b'\x01' * 20, nullid)
 
-        with self.assertRaises(error.RevlogError):
+        with self.assertRaises(error.StorageError):
             f.checkhash(fulltext, node, nullid, b'\x01' * 20)
 
         self.assertEqual(f.revision(node), fulltext)
@@ -603,13 +603,13 @@ class ifiledatatests(basetestcase):
         f.checkhash(fulltext1, node1, node0, nullid)
         f.checkhash(fulltext2, node2, node1, nullid)
 
-        with self.assertRaises(error.RevlogError):
+        with self.assertRaises(error.StorageError):
             f.checkhash(fulltext1, b'\x01' * 20)
 
-        with self.assertRaises(error.RevlogError):
+        with self.assertRaises(error.StorageError):
             f.checkhash(fulltext1 + b'extra', node1, node0, nullid)
 
-        with self.assertRaises(error.RevlogError):
+        with self.assertRaises(error.StorageError):
             f.checkhash(fulltext1, node1, node0, node0)
 
         self.assertEqual(f.revision(node0), fulltext0)
@@ -852,7 +852,7 @@ class ifilemutationtests(basetestcase):
         f = self._makefilefn()
         with self._maketransactionfn() as tr:
             # Adding a revision with bad node value fails.
-            with self.assertRaises(error.RevlogError):
+            with self.assertRaises(error.StorageError):
                 f.addrevision(b'foo', tr, 0, nullid, nullid, node=b'\x01' * 20)
 
     def testaddrevisionunknownflag(self):
@@ -863,7 +863,7 @@ class ifilemutationtests(basetestcase):
                     flags = 1 << i
                     break
 
-            with self.assertRaises(error.RevlogError):
+            with self.assertRaises(error.StorageError):
                 f.addrevision(b'foo', tr, 0, nullid, nullid, flags=flags)
 
     def testaddgroupsimple(self):
@@ -891,7 +891,7 @@ class ifilemutationtests(basetestcase):
         ]
 
         with self._maketransactionfn() as tr:
-            with self.assertRaises(error.RevlogError):
+            with self.assertRaises(error.StorageError):
                 f.addgroup(deltas, linkmapper, tr, addrevisioncb=cb)
 
             node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)

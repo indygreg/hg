@@ -142,8 +142,10 @@ def main():
     ziverify.verifyClass(repository.ipeerbase, unionrepo.unionpeer)
     checkzobject(unionrepo.unionpeer(dummyrepo()))
 
-    ziverify.verifyClass(repository.completelocalrepository,
+    ziverify.verifyClass(repository.ilocalrepositorymain,
                          localrepo.localrepository)
+    ziverify.verifyClass(repository.ilocalrepositoryfilestorage,
+                         localrepo.revlogfilestorage)
     repo = localrepo.makelocalrepository(ui, rootdir)
     checkzobject(repo)
 

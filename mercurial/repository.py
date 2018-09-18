@@ -1222,8 +1222,21 @@ class imanifestlog(interfaceutil.Interface):
         Raises ``error.LookupError`` if the node is not known.
         """
 
-class completelocalrepository(interfaceutil.Interface):
-    """Monolithic interface for local repositories.
+class ilocalrepositoryfilestorage(interfaceutil.Interface):
+    """Local repository sub-interface providing access to tracked file storage.
+
+    This interface defines how a repository accesses storage for a single
+    tracked file path.
+    """
+
+    def file(f):
+        """Obtain a filelog for a tracked path.
+
+        The returned type conforms to the ``ifilestorage`` interface.
+        """
+
+class ilocalrepositorymain(interfaceutil.Interface):
+    """Main interface for local repositories.
 
     This currently captures the reality of things - not how things should be.
     """
@@ -1439,12 +1452,6 @@ class completelocalrepository(interfaceutil.Interface):
     def wjoin(f, *insidef):
         """Calls self.vfs.reljoin(self.root, f, *insidef)"""
 
-    def file(f):
-        """Obtain a filelog for a tracked path.
-
-        The returned type conforms to the ``ifilestorage`` interface.
-        """
-
     def setparents(p1, p2):
         """Set the parent nodes of the working directory."""
 
@@ -1572,3 +1579,7 @@ class completelocalrepository(interfaceutil.Interface):
 
     def savecommitmessage(text):
         pass
+
+class completelocalrepository(ilocalrepositorymain,
+                              ilocalrepositoryfilestorage):
+    """Complete interface for a local repository."""

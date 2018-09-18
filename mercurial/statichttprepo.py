@@ -134,7 +134,8 @@ class statichttppeer(localrepo.localpeer):
     def canpush(self):
         return False
 
-class statichttprepository(localrepo.localrepository):
+class statichttprepository(localrepo.localrepository,
+                           localrepo.revlogfilestorage):
     supported = localrepo.localrepository._basesupported
 
     def __init__(self, ui, path):

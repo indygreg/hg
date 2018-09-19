@@ -27,8 +27,6 @@ class filelog(object):
         self.filename = path
         # Used by repo upgrade.
         self.index = self._revlog.index
-        # Used by verify.
-        self.version = self._revlog.version
         # Used by changegroup generation.
         self._generaldelta = self._revlog._generaldelta
 

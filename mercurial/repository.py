@@ -737,12 +737,6 @@ class ifilemutation(interfaceutil.Interface):
 class ifilestorage(ifileindex, ifiledata, ifilemutation):
     """Complete storage interface for a single tracked file."""
 
-    version = interfaceutil.Attribute(
-        """Version number of storage.
-
-        TODO this feels revlog centric and could likely be removed.
-        """)
-
     _generaldelta = interfaceutil.Attribute(
         """Whether deltas can be against any parent revision.
 

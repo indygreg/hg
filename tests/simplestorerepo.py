@@ -109,8 +109,6 @@ class filestorage(object):
         # This is used by changegroup code :/
         self._generaldelta = True
 
-        self.version = 1
-
     def _refreshindex(self):
         self._indexbynode.clear()
         self._indexbyrev.clear()

@@ -143,6 +143,7 @@ from mercurial import (
     node,
     pycompat,
     registrar,
+    repository,
     revlog,
     scmutil,
     templateutil,
@@ -242,6 +243,7 @@ def reposetup(ui, repo):
                 if any(ctx[f].islfs() for f in ctx.files()
                        if f in ctx and match(f)):
                     repo.requirements.add('lfs')
+                    repo.features.add(repository.REPO_FEATURE_LFS)
                     repo._writerequirements()
                     repo.prepushoutgoinghooks.add('lfs', wrapper.prepush)
                     break
@@ -305,6 +307,8 @@ def extsetup(ui):
     wrapfilelog(filelog.filelog)
 
     wrapfunction = extensions.wrapfunction
+
+    wrapfunction(localrepo, 'makefilestorage', wrapper.localrepomakefilestorage)
 
     wrapfunction(cmdutil, '_updatecatformatter', wrapper._updatecatformatter)
     wrapfunction(scmutil, 'wrapconvertsink', wrapper.convertsink)

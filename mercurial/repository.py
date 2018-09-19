@@ -25,6 +25,8 @@ NARROW_REQUIREMENT = 'narrowhg-experimental'
 REPO_FEATURE_REVLOG_FILE_STORAGE = b'revlogfilestorage'
 # The storage part of the repository is shared from an external source.
 REPO_FEATURE_SHARED_STORAGE = b'sharedstore'
+# LFS supported for backing file storage.
+REPO_FEATURE_LFS = b'lfs'
 
 class ipeerconnection(interfaceutil.Interface):
     """Represents a "connection" to a repository.

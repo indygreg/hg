@@ -14,6 +14,7 @@ from mercurial.node import bin, hex, nullid, short
 
 from mercurial import (
     error,
+    repository,
     revlog,
     util,
 )
@@ -28,6 +29,12 @@ from . import (
     blobstore,
     pointer,
 )
+
+def localrepomakefilestorage(orig, requirements, features, **kwargs):
+    if b'lfs' in requirements:
+        features.add(repository.REPO_FEATURE_LFS)
+
+    return orig(requirements=requirements, features=features, **kwargs)
 
 def allsupportedversions(orig, ui):
     versions = orig(ui)

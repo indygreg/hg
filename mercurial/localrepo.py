@@ -2792,7 +2792,7 @@ def createrepository(ui, path, createopts=None):
     if unknownopts:
         raise error.Abort(_('unable to create repository because of unknown '
                             'creation option: %s') %
-                          ', '.sorted(unknownopts),
+                          ', '.join(sorted(unknownopts)),
                           hint=_('is a required extension not loaded?'))
 
     requirements = newreporequirements(ui, createopts=createopts)

@@ -47,7 +47,7 @@ $4 = expected result
   >     echo "--------------"
   >     echo "test L:$1 R:$2 W:$3 - $4"
   >     echo "--------------"
-  >     hg merge -y --debug --traceback --tool="$PYTHON ../merge"
+  >     hg merge -y --debug --traceback --tool="\"$PYTHON\" ../merge"
   > 
   >     echo "--------------"
   >     hg status -camC -X rev

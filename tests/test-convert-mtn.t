@@ -43,7 +43,7 @@ create monotone repository
   $ mkdir dir
   $ echo b > dir/b
   $ echo d > dir/d
-  $ $PYTHON -c 'open("bin", "wb").write(b"a\\x00b") and None'
+  $ "$PYTHON" -c 'open("bin", "wb").write(b"a\\x00b") and None'
   $ echo c > c
   $ mtn add a dir/b dir/d c bin
   mtn: adding 'a' to workspace manifest
@@ -65,7 +65,7 @@ update monotone working directory
   $ echo b >> dir/b
   $ mtn drop c
   mtn: dropping 'c' from workspace manifest
-  $ $PYTHON -c 'open("bin", "wb").write(b"b\\x00c") and None'
+  $ "$PYTHON" -c 'open("bin", "wb").write(b"b\\x00c") and None'
   $ mtn ci -m update1
   mtn: beginning commit on branch 'com.selenic.test'
   mtn: committed revision 51d0a982464573a2a2cf5ee2c9219c652aaebeff

@@ -22,32 +22,32 @@ approximates the behavior of code formatters well enough for our tests.
   >     sys.stdout.write(line)
   > EOF
   $ TESTLINES="foo\nbar\nbaz\nqux\n"
-  $ printf $TESTLINES | $PYTHON $UPPERCASEPY
+  $ printf $TESTLINES | "$PYTHON" $UPPERCASEPY
   foo
   bar
   baz
   qux
-  $ printf $TESTLINES | $PYTHON $UPPERCASEPY all
+  $ printf $TESTLINES | "$PYTHON" $UPPERCASEPY all
   FOO
   BAR
   BAZ
   QUX
-  $ printf $TESTLINES | $PYTHON $UPPERCASEPY 1-1
+  $ printf $TESTLINES | "$PYTHON" $UPPERCASEPY 1-1
   FOO
   bar
   baz
   qux
-  $ printf $TESTLINES | $PYTHON $UPPERCASEPY 1-2
+  $ printf $TESTLINES | "$PYTHON" $UPPERCASEPY 1-2
   FOO
   BAR
   baz
   qux
-  $ printf $TESTLINES | $PYTHON $UPPERCASEPY 2-3
+  $ printf $TESTLINES | "$PYTHON" $UPPERCASEPY 2-3
   foo
   BAR
   BAZ
   qux
-  $ printf $TESTLINES | $PYTHON $UPPERCASEPY 2-2 4-4
+  $ printf $TESTLINES | "$PYTHON" $UPPERCASEPY 2-2 4-4
   foo
   BAR
   baz
@@ -65,9 +65,9 @@ choose which behavior to use by naming files.
   > evolution.createmarkers=True
   > evolution.allowunstable=True
   > [fix]
-  > uppercase-whole-file:command=$PYTHON $UPPERCASEPY all
+  > uppercase-whole-file:command="$PYTHON" $UPPERCASEPY all
   > uppercase-whole-file:fileset=set:**.whole
-  > uppercase-changed-lines:command=$PYTHON $UPPERCASEPY
+  > uppercase-changed-lines:command="$PYTHON" $UPPERCASEPY
   > uppercase-changed-lines:linerange={first}-{last}
   > uppercase-changed-lines:fileset=set:**.changed
   > EOF

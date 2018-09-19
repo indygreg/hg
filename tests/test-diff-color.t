@@ -396,12 +396,12 @@ test inline color diff
 
 multibyte character shouldn't be broken up in word diff:
 
-  $ $PYTHON <<'EOF'
+  $ "$PYTHON" <<'EOF'
   > with open("utf8", "wb") as f:
   >     f.write(b"blah \xe3\x82\xa2 blah\n")
   > EOF
   $ hg ci -Am 'add utf8 char' utf8
-  $ $PYTHON <<'EOF'
+  $ "$PYTHON" <<'EOF'
   > with open("utf8", "wb") as f:
   >     f.write(b"blah \xe3\x82\xa4 blah\n")
   > EOF

@@ -43,4 +43,4 @@ outputs, which should be fixed later.
   > -X tests/test-imports-checker.t \
   > -X tests/test-lock.py \
   > -X tests/test-verify-repo-operations.py \
-  > | sed 's-\\-/-g' | $PYTHON "$import_checker" -
+  > | sed 's-\\-/-g' | "$PYTHON" "$import_checker" -

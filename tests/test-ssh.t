@@ -284,7 +284,7 @@ a bad, evil hook that prints to stdout
 
   $ cat <<EOF >> ../remote/.hg/hgrc
   > [hooks]
-  > changegroup.stdout = $PYTHON $TESTTMP/badhook
+  > changegroup.stdout = "$PYTHON" $TESTTMP/badhook
   > changegroup.pystdout = python:$TESTTMP/badpyhook.py:hook
   > EOF
   $ echo r > r
@@ -408,7 +408,7 @@ parameters:
   abort: no suitable response from remote hg!
   [255]
 
-  $ SSH_ORIGINAL_COMMAND="'hg' -R 'a'repo' serve --stdio" $PYTHON "$TESTDIR/../contrib/hg-ssh"
+  $ SSH_ORIGINAL_COMMAND="'hg' -R 'a'repo' serve --stdio" "$PYTHON" "$TESTDIR/../contrib/hg-ssh"
   Illegal command "'hg' -R 'a'repo' serve --stdio": No closing quotation
   [255]
 

@@ -14,7 +14,7 @@ Test simplemerge command:
 
 changing local directly
 
-  $ $PYTHON simplemerge local base other && echo "merge succeeded"
+  $ "$PYTHON" simplemerge local base other && echo "merge succeeded"
   merge succeeded
   $ cat local
   local
@@ -24,7 +24,7 @@ changing local directly
 
 printing to stdout
 
-  $ $PYTHON simplemerge -p local base other
+  $ "$PYTHON" simplemerge -p local base other
   local
   base
   other
@@ -43,7 +43,7 @@ conflicts
   $ echo end >> conflict-local
   $ echo end >> conflict-other
 
-  $ $PYTHON simplemerge -p conflict-local base conflict-other
+  $ "$PYTHON" simplemerge -p conflict-local base conflict-other
   base
   <<<<<<< conflict-local
   not other
@@ -55,7 +55,7 @@ conflicts
 
 1 label
 
-  $ $PYTHON simplemerge -p -L foo conflict-local base conflict-other
+  $ "$PYTHON" simplemerge -p -L foo conflict-local base conflict-other
   base
   <<<<<<< foo
   not other
@@ -67,7 +67,7 @@ conflicts
 
 2 labels
 
-  $ $PYTHON simplemerge -p -L foo -L bar conflict-local base conflict-other
+  $ "$PYTHON" simplemerge -p -L foo -L bar conflict-local base conflict-other
   base
   <<<<<<< foo
   not other
@@ -79,7 +79,7 @@ conflicts
 
 3 labels
 
-  $ $PYTHON simplemerge -p -L foo -L bar -L base conflict-local base conflict-other
+  $ "$PYTHON" simplemerge -p -L foo -L bar -L base conflict-local base conflict-other
   base
   <<<<<<< foo
   not other
@@ -93,21 +93,21 @@ conflicts
 
 too many labels
 
-  $ $PYTHON simplemerge -p -L foo -L bar -L baz -L buz conflict-local base conflict-other
+  $ "$PYTHON" simplemerge -p -L foo -L bar -L baz -L buz conflict-local base conflict-other
   abort: can only specify three labels.
   [255]
 
 binary file
 
-  $ $PYTHON -c "f = open('binary-local', 'w'); f.write('\x00'); f.close()"
+  $ "$PYTHON" -c "f = open('binary-local', 'w'); f.write('\x00'); f.close()"
   $ cat orig >> binary-local
-  $ $PYTHON simplemerge -p binary-local base other
+  $ "$PYTHON" simplemerge -p binary-local base other
   warning: binary-local looks like a binary file.
   [1]
 
 binary file --text
 
-  $ $PYTHON simplemerge -a -p binary-local base other 2>&1
+  $ "$PYTHON" simplemerge -a -p binary-local base other 2>&1
   warning: binary-local looks like a binary file.
   \x00local (esc)
   base
@@ -115,7 +115,7 @@ binary file --text
 
 help
 
-  $ $PYTHON simplemerge --help
+  $ "$PYTHON" simplemerge --help
   simplemerge [OPTS] LOCAL BASE OTHER
   
       Simple three-way file merge utility with a minimal feature set.
@@ -134,7 +134,7 @@ help
 
 wrong number of arguments
 
-  $ $PYTHON simplemerge
+  $ "$PYTHON" simplemerge
   simplemerge: wrong number of arguments
   simplemerge [OPTS] LOCAL BASE OTHER
   
@@ -155,7 +155,7 @@ wrong number of arguments
 
 bad option
 
-  $ $PYTHON simplemerge --foo -p local base other
+  $ "$PYTHON" simplemerge --foo -p local base other
   simplemerge: option --foo not recognized
   simplemerge [OPTS] LOCAL BASE OTHER
   

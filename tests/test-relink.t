@@ -49,7 +49,7 @@ don't sit forever trying to double-lock the source repo
 
 Test files are read in binary mode
 
-  $ $PYTHON -c "open('.hg/store/data/dummy.i', 'wb').write(b'a\r\nb\n')"
+  $ "$PYTHON" -c "open('.hg/store/data/dummy.i', 'wb').write(b'a\r\nb\n')"
   $ cd ..
 
 
@@ -68,7 +68,7 @@ clone and pull to break links
   $ echo b >> b
   $ hg ci -m changeb
   created new head
-  $ $PYTHON -c "open('.hg/store/data/dummy.i', 'wb').write(b'a\nb\r\n')"
+  $ "$PYTHON" -c "open('.hg/store/data/dummy.i', 'wb').write(b'a\nb\r\n')"
 
 
 relink
@@ -98,9 +98,9 @@ relink
 
 check hardlinks
 
-  $ $PYTHON arelinked.py repo/.hg/store/data/a.i clone/.hg/store/data/a.i
+  $ "$PYTHON" arelinked.py repo/.hg/store/data/a.i clone/.hg/store/data/a.i
   repo/.hg/store/data/a.i == clone/.hg/store/data/a.i
-  $ $PYTHON arelinked.py repo/.hg/store/data/b.i clone/.hg/store/data/b.i
+  $ "$PYTHON" arelinked.py repo/.hg/store/data/b.i clone/.hg/store/data/b.i
   repo/.hg/store/data/b.i != clone/.hg/store/data/b.i
 
 #endif

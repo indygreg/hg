@@ -1772,7 +1772,7 @@ replacement makes message meaningless.
 This tests that section lookup by translated string isn't broken by
 such str.lower().
 
-  $ $PYTHON <<EOF
+  $ "$PYTHON" <<EOF
   > def escape(s):
   >     return ''.join('\u%x' % ord(uc) for uc in s.decode('cp932'))
   > # translation of "record" in ja_JP.cp932
@@ -1806,7 +1806,7 @@ such str.lower().
   > ambiguous = ./ambiguous.py
   > EOF
 
-  $ $PYTHON <<EOF | sh
+  $ "$PYTHON" <<EOF | sh
   > upper = "\x8bL\x98^"
   > print("hg --encoding cp932 help -e ambiguous.%s" % upper)
   > EOF
@@ -1816,7 +1816,7 @@ such str.lower().
   Upper name should show only this message
   
 
-  $ $PYTHON <<EOF | sh
+  $ "$PYTHON" <<EOF | sh
   > lower = "\x8bl\x98^"
   > print("hg --encoding cp932 help -e ambiguous.%s" % lower)
   > EOF
@@ -2026,7 +2026,7 @@ Compression engines listed in `hg help bundlespec`
 Test usage of section marks in help documents
 
   $ cd "$TESTDIR"/../doc
-  $ $PYTHON check-seclevel.py
+  $ "$PYTHON" check-seclevel.py
   $ cd $TESTTMP
 
 #if serve

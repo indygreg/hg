@@ -26,10 +26,10 @@ Initialize the test repository
 
   $ hg init repo
   $ cd repo
-  $ $PYTHON ../writepatterns.py a 0 5A 1B 5C 1D
-  $ $PYTHON ../writepatterns.py b 1 1A 1B
-  $ $PYTHON ../writepatterns.py c 1 5A
-  $ $PYTHON ../writepatterns.py d 1 5A 1B
+  $ "$PYTHON" ../writepatterns.py a 0 5A 1B 5C 1D
+  $ "$PYTHON" ../writepatterns.py b 1 1A 1B
+  $ "$PYTHON" ../writepatterns.py c 1 5A
+  $ "$PYTHON" ../writepatterns.py d 1 5A 1B
   $ hg add
   adding a
   adding b
@@ -114,13 +114,13 @@ Add file, missing a last end of line
 
 What's in a
 
-  $ $PYTHON ../cat.py a
+  $ "$PYTHON" ../cat.py a
   'A\nA\nA\nA\nA\nE\nC\nC\nC\nC\nC\nF\nF\n'
-  $ $PYTHON ../cat.py newnoeol
+  $ "$PYTHON" ../cat.py newnoeol
   'a\nb'
-  $ $PYTHON ../cat.py c
+  $ "$PYTHON" ../cat.py c
   'A\nA\nA\nA\nA\nB\nB\n'
-  $ $PYTHON ../cat.py d
+  $ "$PYTHON" ../cat.py d
   'A\nA\nA\nA\n'
 
   $ cd ..

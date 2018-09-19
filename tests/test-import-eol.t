@@ -29,14 +29,14 @@
 
 Test different --eol values
 
-  $ $PYTHON -c 'open("a", "wb").write(b"a\nbbb\ncc\n\nd\ne")'
+  $ "$PYTHON" -c 'open("a", "wb").write(b"a\nbbb\ncc\n\nd\ne")'
   $ hg ci -Am adda
   adding .hgignore
   adding a
-  $ $PYTHON ../makepatch.py empty:lf eol.diff
-  $ $PYTHON ../makepatch.py empty:crlf eol-empty-crlf.diff
-  $ $PYTHON ../makepatch.py empty:stripped-lf eol-empty-stripped-lf.diff
-  $ $PYTHON ../makepatch.py empty:stripped-crlf eol-empty-stripped-crlf.diff
+  $ "$PYTHON" ../makepatch.py empty:lf eol.diff
+  $ "$PYTHON" ../makepatch.py empty:crlf eol-empty-crlf.diff
+  $ "$PYTHON" ../makepatch.py empty:stripped-lf eol-empty-stripped-lf.diff
+  $ "$PYTHON" ../makepatch.py empty:stripped-crlf eol-empty-stripped-crlf.diff
 
 invalid eol
 
@@ -116,7 +116,7 @@ auto EOL on LF file
 
 auto EOL on CRLF file
 
-  $ $PYTHON -c 'open("a", "wb").write(b"a\r\nbbb\r\ncc\r\n\r\nd\r\ne")'
+  $ "$PYTHON" -c 'open("a", "wb").write(b"a\r\nbbb\r\ncc\r\n\r\nd\r\ne")'
   $ hg commit -m 'switch EOLs in a'
   $ hg --traceback --config patch.eol='auto' import eol.diff
   applying eol.diff
@@ -132,11 +132,11 @@ auto EOL on CRLF file
 
 auto EOL on new file or source without any EOL
 
-  $ $PYTHON -c 'open("noeol", "wb").write(b"noeol")'
+  $ "$PYTHON" -c 'open("noeol", "wb").write(b"noeol")'
   $ hg add noeol
   $ hg commit -m 'add noeol'
-  $ $PYTHON -c 'open("noeol", "wb").write(b"noeol\r\nnoeol\n")'
-  $ $PYTHON -c 'open("neweol", "wb").write(b"neweol\nneweol\r\n")'
+  $ "$PYTHON" -c 'open("noeol", "wb").write(b"noeol\r\nnoeol\n")'
+  $ "$PYTHON" -c 'open("neweol", "wb").write(b"neweol\nneweol\r\n")'
   $ hg add neweol
   $ hg diff --git > noeol.diff
   $ hg revert --no-backup noeol neweol
@@ -154,10 +154,10 @@ auto EOL on new file or source without any EOL
 
 Test --eol and binary patches
 
-  $ $PYTHON -c 'open("b", "wb").write(b"a\x00\nb\r\nd")'
+  $ "$PYTHON" -c 'open("b", "wb").write(b"a\x00\nb\r\nd")'
   $ hg ci -Am addb
   adding b
-  $ $PYTHON -c 'open("b", "wb").write(b"a\x00\nc\r\nd")'
+  $ "$PYTHON" -c 'open("b", "wb").write(b"a\x00\nc\r\nd")'
   $ hg diff --git > bin.diff
   $ hg revert --no-backup b
 

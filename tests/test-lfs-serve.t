@@ -509,7 +509,7 @@ Only the files required by diff are prefetched
 
 #endif
 
-  $ $PYTHON $TESTDIR/killdaemons.py $DAEMON_PIDS
+  $ "$PYTHON" $TESTDIR/killdaemons.py $DAEMON_PIDS
 
 #if lfsremote-on
   $ cat $TESTTMP/errors.log | grep '^[A-Z]'

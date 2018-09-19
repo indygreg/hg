@@ -36,7 +36,7 @@
   >             sys.exit(0)
   > sys.exit(1)
   > EOF
-  $ $PYTHON $TESTTMP/spawn.py >> $DAEMON_PIDS
+  $ "$PYTHON" $TESTTMP/spawn.py >> $DAEMON_PIDS
 #endif
 
   $ cat >> $HGRCPATH <<EOF
@@ -850,7 +850,7 @@ Check error message when object does not exist:
 
 (Restart the server in a different location so it no longer has the content)
 
-  $ $PYTHON $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
+  $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
 
 #if hg-server
   $ cat $TESTTMP/access.log $TESTTMP/errors.log
@@ -888,7 +888,7 @@ Check error message when object does not exist:
 #endif
 
 #if windows git-server
-  $ $PYTHON $TESTTMP/spawn.py >> $DAEMON_PIDS
+  $ "$PYTHON" $TESTTMP/spawn.py >> $DAEMON_PIDS
 #endif
 
 #if hg-server
@@ -938,4 +938,4 @@ Check error message when object does not exist:
   abort: LFS server error for "a": The object does not exist!
   [255]
 
-  $ $PYTHON $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
+  $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS

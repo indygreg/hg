@@ -79,7 +79,7 @@ With --prefix /foo/
   listening at http://localhost/foo/ (bound to *$LOCALIP*:HGPORT1) (glob) (?)
   % errors
 
-  $ $PYTHON $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
+  $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
 
 With out of bounds accesses
 

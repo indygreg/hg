@@ -115,7 +115,7 @@ now test that we fixed the bug for all scripts/extensions
   > printfiles(repo, 6)
   > printfiles(repo, 7)
   > __EOF__
-  $ $PYTHON $TESTTMP/committwice.py
+  $ "$PYTHON" $TESTTMP/committwice.py
   PRE: len(repo): 6
   POST: len(repo): 8
   revision 6 files: ['bugfix', 'file1']

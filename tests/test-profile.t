@@ -105,7 +105,7 @@ Various statprof formatters work
 
 statprof can be used as a standalone module
 
-  $ $PYTHON -m mercurial.statprof hotpath
+  $ "$PYTHON" -m mercurial.statprof hotpath
   must specify --file to load
   [1]
 

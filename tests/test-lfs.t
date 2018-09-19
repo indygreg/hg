@@ -486,7 +486,7 @@ enabled adds the lfs requirement
   > [lfs]
   > track=all()
   > EOF
-  $ $PYTHON <<'EOF'
+  $ "$PYTHON" <<'EOF'
   > def write(path, content):
   >     with open(path, 'wb') as f:
   >         f.write(content)

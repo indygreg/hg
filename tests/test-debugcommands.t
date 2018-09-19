@@ -544,7 +544,7 @@ Test internal debugstacktrace command
   >     util.dst('hi ...\\nfrom h hidden in g', 1, depth=2)
   > f()
   > EOF
-  $ $PYTHON debugstacktrace.py
+  $ "$PYTHON" debugstacktrace.py
   stacktrace at:
    debugstacktrace.py:12 in * (glob)
    debugstacktrace.py:5  in f

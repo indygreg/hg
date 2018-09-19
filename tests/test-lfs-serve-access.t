@@ -52,7 +52,7 @@ Downloads fail...
   abort: LFS HTTP error: HTTP Error 400: no such method: .git (action=download)!
   [255]
 
-  $ $PYTHON $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
+  $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
 
   $ cat $TESTTMP/access.log $TESTTMP/errors.log
   $LOCALIP - - [$LOGDATE$] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
@@ -141,7 +141,7 @@ Blob URIs are correct when --prefix is used
   lfs: found f03217a32529a28a42d03b1244fe09b6e0f9fd06d7b966d4d50567be2abe6c0e in the local lfs store
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
-  $ $PYTHON $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
+  $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
 
   $ cat $TESTTMP/access.log $TESTTMP/errors.log
   $LOCALIP - - [$LOGDATE$] "GET /subdir/mount/point?cmd=capabilities HTTP/1.1" 200 - (glob)
@@ -174,7 +174,7 @@ though the client doesn't send the blob.
   server2/.hg/store/lfs/objects
   server2/.hg/store/lfs/objects/f0
   server2/.hg/store/lfs/objects/f0/3217a32529a28a42d03b1244fe09b6e0f9fd06d7b966d4d50567be2abe6c0e
-  $ $PYTHON $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
+  $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
   $ cat $TESTTMP/errors.log
 
   $ cat >> $TESTTMP/lfsstoreerror.py <<EOF
@@ -286,7 +286,7 @@ Test a checksum failure during the processing of the GET request
   abort: HTTP error: HTTP Error 422: corrupt blob (oid=276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d, action=download)!
   [255]
 
-  $ $PYTHON $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
+  $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
 
   $ cat $TESTTMP/access.log
   $LOCALIP - - [$LOGDATE$] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
@@ -438,7 +438,7 @@ the GET/PUT request.
     "transfer": "basic"
   }
 
-  $ $PYTHON $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
+  $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
 
   $ cat $TESTTMP/access.log $TESTTMP/errors.log
   $LOCALIP - - [$LOGDATE$] "GET /?cmd=capabilities HTTP/1.1" 401 - (glob)

@@ -1393,7 +1393,7 @@ Set up repository for non-ascii encoding tests:
 
   $ hg init nonascii
   $ cd nonascii
-  $ $PYTHON <<EOF
+  $ "$PYTHON" <<EOF
   > open('latin1', 'wb').write(b'\xe9')
   > open('utf-8', 'wb').write(b'\xc3\xa9')
   > EOF

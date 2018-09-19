@@ -1,6 +1,6 @@
   $ cat << EOF >> $HGRCPATH
   > [ui]
-  > ssh=$PYTHON "$TESTDIR/dummyssh"
+  > ssh="$PYTHON" "$TESTDIR/dummyssh"
   > EOF
 
 Set up repo

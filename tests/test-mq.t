@@ -1128,9 +1128,9 @@ create a git binary patch
   > path = sys.argv[1]
   > open(path, 'wb').write(b'BIN\x00ARY')
   > EOF
-  $ $PYTHON writebin.py bucephalus
+  $ "$PYTHON" writebin.py bucephalus
 
-  $ $PYTHON "$TESTDIR/md5sum.py" bucephalus
+  $ "$PYTHON" "$TESTDIR/md5sum.py" bucephalus
   8ba2a2f3e77b55d03051ff9c24ad65e7  bucephalus
   $ hg add bucephalus
   $ hg qnew -f --git addbucephalus
@@ -1149,7 +1149,7 @@ check binary patches can be popped and pushed
   applying addbucephalus
   now at: addbucephalus
   $ test -f bucephalus
-  $ $PYTHON "$TESTDIR/md5sum.py" bucephalus
+  $ "$PYTHON" "$TESTDIR/md5sum.py" bucephalus
   8ba2a2f3e77b55d03051ff9c24ad65e7  bucephalus
 
 
@@ -1575,7 +1575,7 @@ Test that secret mq patch does not break hgweb
   $ PATH_INFO=/tags; export PATH_INFO
 #endif
   $ QUERY_STRING='style=raw'
-  $ $PYTHON hgweb.cgi | grep '^tip'
+  $ "$PYTHON" hgweb.cgi | grep '^tip'
   tip	[0-9a-f]{40} (re)
 
   $ cd ..

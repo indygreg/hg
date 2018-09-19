@@ -442,7 +442,7 @@ with a specific bundle type
   --===============*==-- (glob)
 
 utf-8 patch:
-  $ $PYTHON -c 'fp = open("utf", "wb"); fp.write(b"h\xC3\xB6mma!\n"); fp.close();'
+  $ "$PYTHON" -c 'fp = open("utf", "wb"); fp.write(b"h\xC3\xB6mma!\n"); fp.close();'
   $ hg commit -A -d '4 0' -m 'utf-8 content'
   adding description
   adding utf
@@ -558,7 +558,7 @@ mime encoded mbox (base64):
   $ rm mbox
 
 mime encoded mbox (quoted-printable):
-  $ $PYTHON -c 'fp = open("long", "wb"); fp.write(b"%s\nfoo\n\nbar\n" % (b"x" * 1024)); fp.close();'
+  $ "$PYTHON" -c 'fp = open("long", "wb"); fp.write(b"%s\nfoo\n\nbar\n" % (b"x" * 1024)); fp.close();'
   $ hg commit -A -d '4 0' -m 'long line'
   adding long
 
@@ -672,7 +672,7 @@ mime encoded mbox (quoted-printable):
   $ rm mbox
 
 iso-8859-1 patch:
-  $ $PYTHON -c 'fp = open("isolatin", "wb"); fp.write(b"h\xF6mma!\n"); fp.close();'
+  $ "$PYTHON" -c 'fp = open("isolatin", "wb"); fp.write(b"h\xF6mma!\n"); fp.close();'
   $ hg commit -A -d '5 0' -m 'isolatin 8-bit encoding'
   adding isolatin
 

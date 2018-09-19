@@ -68,7 +68,7 @@ Verify that updating to revision 0 via commands.update() works properly
   > EOF
   $ hg up null
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  $ $PYTHON ./update_to_rev0.py
+  $ "$PYTHON" ./update_to_rev0.py
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg identify -n
   0

@@ -149,10 +149,10 @@ qimport -f
 
 build diff with CRLF
 
-  $ $PYTHON ../writelines.py b 5 'a\n' 5 'a\r\n'
+  $ "$PYTHON" ../writelines.py b 5 'a\n' 5 'a\r\n'
   $ hg ci -Am addb
   adding b
-  $ $PYTHON ../writelines.py b 2 'a\n' 10 'b\n' 2 'a\r\n'
+  $ "$PYTHON" ../writelines.py b 2 'a\n' 10 'b\n' 2 'a\r\n'
   $ hg diff > b.diff
   $ hg up -C
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved

@@ -20,7 +20,7 @@ Prepare repo a:
 
 Create a non-inlined filelog:
 
-  $ $PYTHON -c 'open("data1", "wb").write(b"".join(b"%d\n" % x for x in range(10000)))'
+  $ "$PYTHON" -c 'open("data1", "wb").write(b"".join(b"%d\n" % x for x in range(10000)))'
   $ for j in 0 1 2 3 4 5 6 7 8 9; do
   >   cat data1 >> b
   >   hg commit -m test
@@ -564,7 +564,7 @@ iterable in addbranchrevs()
   > hg.clone(myui, {}, repo, dest=b"ua")
   > EOF
 
-  $ $PYTHON simpleclone.py
+  $ "$PYTHON" simpleclone.py
   updating to branch default
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
@@ -578,7 +578,7 @@ iterable in addbranchrevs()
   > hg.clone(myui, {}, repo, dest=b"ua", branch=[b"stable",])
   > EOF
 
-  $ $PYTHON branchclone.py
+  $ "$PYTHON" branchclone.py
   adding changesets
   adding manifests
   adding file changes

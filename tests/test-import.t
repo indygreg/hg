@@ -305,7 +305,7 @@ plain diff in email, subject, message body
   new changesets 80971e65b431
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ $PYTHON mkmsg.py diffed-tip.patch msg.patch
+  $ "$PYTHON" mkmsg.py diffed-tip.patch msg.patch
   $ hg --cwd b import ../msg.patch
   applying ../msg.patch
   $ hg --cwd b tip | grep email
@@ -371,7 +371,7 @@ hg export in email, should use patch header
   new changesets 80971e65b431
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ $PYTHON mkmsg.py exported-tip.patch msg.patch
+  $ "$PYTHON" mkmsg.py exported-tip.patch msg.patch
   $ cat msg.patch | hg --cwd b import -
   applying patch from stdin
   $ hg --cwd b tip | grep second
@@ -403,7 +403,7 @@ plain diff in email, [PATCH] subject, message body with subject
   new changesets 80971e65b431
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ $PYTHON mkmsg2.py diffed-tip.patch msg.patch
+  $ "$PYTHON" mkmsg2.py diffed-tip.patch msg.patch
   $ cat msg.patch | hg --cwd b import -
   applying patch from stdin
   $ hg --cwd b tip --template '{desc}\n'
@@ -865,7 +865,7 @@ Test importing a patch ending with a binary file removal
   $ hg init binaryremoval
   $ cd binaryremoval
   $ echo a > a
-  $ $PYTHON -c "open('b', 'wb').write(b'a\x00b')"
+  $ "$PYTHON" -c "open('b', 'wb').write(b'a\x00b')"
   $ hg ci -Am addall
   adding a
   adding b

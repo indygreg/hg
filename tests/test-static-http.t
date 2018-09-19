@@ -9,7 +9,7 @@
 This server doesn't do range requests so it's basically only good for
 one pull
 
-  $ $PYTHON "$TESTDIR/dumbhttp.py" -p $HGPORT --pid dumb.pid \
+  $ "$PYTHON" "$TESTDIR/dumbhttp.py" -p $HGPORT --pid dumb.pid \
   > --logfile server.log
   $ cat dumb.pid >> $DAEMON_PIDS
   $ hg init remote

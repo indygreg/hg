@@ -7,7 +7,7 @@
   > EOF
 
   $ echo "[ui]" >> $HGRCPATH
-  $ echo "patch=$PYTHON ../patchtool.py" >> $HGRCPATH
+  $ echo "patch=\"$PYTHON\" ../patchtool.py" >> $HGRCPATH
 
   $ hg init a
   $ cd a

@@ -1,7 +1,7 @@
   $ hg init rep; cd rep
 
   $ touch empty-file
-  $ $PYTHON -c 'for x in range(10000): print(x)' > large-file
+  $ "$PYTHON" -c 'for x in range(10000): print(x)' > large-file
 
   $ hg addremove
   adding empty-file
@@ -10,7 +10,7 @@
   $ hg commit -m A
 
   $ rm large-file empty-file
-  $ $PYTHON -c 'for x in range(10,10000): print(x)' > another-file
+  $ "$PYTHON" -c 'for x in range(10,10000): print(x)' > another-file
 
   $ hg addremove -s50
   adding another-file
@@ -34,8 +34,8 @@ comparing two empty files caused ZeroDivisionError in the past
 
   $ hg init rep2; cd rep2
 
-  $ $PYTHON -c 'for x in range(10000): print(x)' > large-file
-  $ $PYTHON -c 'for x in range(50): print(x)' > tiny-file
+  $ "$PYTHON" -c 'for x in range(10000): print(x)' > large-file
+  $ "$PYTHON" -c 'for x in range(50): print(x)' > tiny-file
 
   $ hg addremove
   adding large-file
@@ -43,7 +43,7 @@ comparing two empty files caused ZeroDivisionError in the past
 
   $ hg commit -m A
 
-  $ $PYTHON -c 'for x in range(70): print(x)' > small-file
+  $ "$PYTHON" -c 'for x in range(70): print(x)' > small-file
   $ rm tiny-file
   $ rm large-file
 
@@ -57,7 +57,7 @@ comparing two empty files caused ZeroDivisionError in the past
 
 should be sorted by path for stable result
 
-  $ for i in `$PYTHON $TESTDIR/seq.py 0 9`; do
+  $ for i in `"$PYTHON" $TESTDIR/seq.py 0 9`; do
   >     cp small-file $i
   > done
   $ rm small-file
@@ -88,7 +88,7 @@ should be sorted by path for stable result
 pick one from many identical files
 
   $ cp 0 a
-  $ rm `$PYTHON $TESTDIR/seq.py 0 9`
+  $ rm `"$PYTHON" $TESTDIR/seq.py 0 9`
   $ hg addremove
   removing 0
   removing 1
@@ -107,11 +107,11 @@ pick one from many identical files
 pick one from many similar files
 
   $ cp 0 a
-  $ for i in `$PYTHON $TESTDIR/seq.py 0 9`; do
+  $ for i in `"$PYTHON" $TESTDIR/seq.py 0 9`; do
   >     echo $i >> $i
   > done
   $ hg commit -m 'make them slightly different'
-  $ rm `$PYTHON $TESTDIR/seq.py 0 9`
+  $ rm `"$PYTHON" $TESTDIR/seq.py 0 9`
   $ hg addremove -s50
   removing 0
   removing 1

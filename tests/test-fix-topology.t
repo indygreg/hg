@@ -9,7 +9,7 @@ A script that implements uppercasing all letters in a file.
   > sys.stdout.write(sys.stdin.read().upper())
   > EOF
   $ TESTLINES="foo\nbar\nbaz\n"
-  $ printf $TESTLINES | $PYTHON $UPPERCASEPY
+  $ printf $TESTLINES | "$PYTHON" $UPPERCASEPY
   FOO
   BAR
   BAZ
@@ -22,7 +22,7 @@ relationships. We indicate fixed file content by uppercasing it.
   > [extensions]
   > fix =
   > [fix]
-  > uppercase-whole-file:command=$PYTHON $UPPERCASEPY
+  > uppercase-whole-file:command="$PYTHON" $UPPERCASEPY
   > uppercase-whole-file:fileset=set:**
   > EOF
 

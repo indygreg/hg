@@ -90,12 +90,12 @@ Create an extension to test bundle2 remote-changegroup parts
 
 Start a simple HTTP server to serve bundles
 
-  $ $PYTHON "$TESTDIR/dumbhttp.py" -p $HGPORT --pid dumb.pid
+  $ "$PYTHON" "$TESTDIR/dumbhttp.py" -p $HGPORT --pid dumb.pid
   $ cat dumb.pid >> $DAEMON_PIDS
 
   $ cat >> $HGRCPATH << EOF
   > [ui]
-  > ssh=$PYTHON "$TESTDIR/dummyssh"
+  > ssh="$PYTHON" "$TESTDIR/dummyssh"
   > logtemplate={rev}:{node|short} {phase} {author} {bookmarks} {desc|firstline}
   > EOF
 

@@ -2591,7 +2591,7 @@ Test metadata encoding (issue5754)
   > [extensions]
   > amend =
   > EOF
-  $ $PYTHON <<'EOF'
+  $ "$PYTHON" <<'EOF'
   > with open('test1', 'wb') as f:
   >    f.write(b't\xe8st1') and None
   > with open('test2', 'wb') as f:

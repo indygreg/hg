@@ -145,7 +145,7 @@ Check hgweb's load order of extensions and registration of functions
   > EOF
   $ . "$TESTDIR/cgienv"
 
-  $ PATH_INFO='/' SCRIPT_NAME='' $PYTHON hgweb.cgi \
+  $ PATH_INFO='/' SCRIPT_NAME='' "$PYTHON" hgweb.cgi \
   >    | grep '^[0-9]) ' # ignores HTML output
   1) foo imported
   1) bar imported
@@ -164,7 +164,7 @@ Check hgweb's load order of extensions and registration of functions
   $ PATH_INFO='/shortlog'
 #endif
   $ export PATH_INFO
-  $ SCRIPT_NAME='' QUERY_STRING='rev=foo() and bar()' $PYTHON hgweb.cgi \
+  $ SCRIPT_NAME='' QUERY_STRING='rev=foo() and bar()' "$PYTHON" hgweb.cgi \
   >     | grep '<a href="/rev/[0-9a-z]*">'
      <a href="/rev/c24b9ac61126">add file</a>
 

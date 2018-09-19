@@ -233,7 +233,7 @@ log rotation
   $ sed -e 's/\(.*test1.*\)/#\1/; s#\(.*commit2.*\)#os.rmdir(".hg/blackbox.log")\
   > os.rename(".hg/blackbox.log-", ".hg/blackbox.log")\
   > \1#' $TESTDIR/test-dispatch.py > ../test-dispatch.py
-  $ $PYTHON $TESTDIR/blackbox-readonly-dispatch.py
+  $ "$PYTHON" $TESTDIR/blackbox-readonly-dispatch.py
   running: --debug add foo
   warning: cannot write to blackbox.log: Is a directory (no-windows !)
   warning: cannot write to blackbox.log: $TESTTMP/blackboxtest3/.hg/blackbox.log: Access is denied (windows !)
@@ -343,7 +343,7 @@ when using chg, blackbox.log should get rotated correctly
   > noop=$TESTTMP/noop.py
   > EOF
 
-  $ $PYTHON -c 'print("a" * 400)' > .hg/blackbox.log
+  $ "$PYTHON" -c 'print("a" * 400)' > .hg/blackbox.log
   $ chg noop
   $ chg noop
   $ chg noop
@@ -362,7 +362,7 @@ when using chg, blackbox.log should get rotated correctly
   >     print('%s: %s %d' % (p, desc, limit))
   > EOF
 
-  $ $PYTHON showsize.py .hg/blackbox*
+  $ "$PYTHON" showsize.py .hg/blackbox*
   .hg/blackbox.log: < 500
   .hg/blackbox.log.1: >= 500
   .hg/blackbox.log.2: >= 500

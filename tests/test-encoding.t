@@ -14,7 +14,7 @@ we need a repo with some legacy latin-1 changesets
   (run 'hg update' to get a working copy)
   $ hg co
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ $PYTHON << EOF
+  $ "$PYTHON" << EOF
   > f = open('latin-1', 'wb'); f.write(b"latin-1 e' encoded: \xe9"); f.close()
   > f = open('utf-8', 'wb'); f.write(b"utf-8 e' encoded: \xc3\xa9"); f.close()
   > f = open('latin-1-tag', 'wb'); f.write(b"\xe9"); f.close()

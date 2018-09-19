@@ -435,7 +435,7 @@ divergent bookmarks
 
 (test that too many divergence of bookmark)
 
-  $ $PYTHON $TESTDIR/seq.py 1 100 | while read i; do hg bookmarks -r 000000000000 "X@${i}"; done
+  $ "$PYTHON" $TESTDIR/seq.py 1 100 | while read i; do hg bookmarks -r 000000000000 "X@${i}"; done
   $ hg pull ../a
   pulling from ../a
   searching for changes
@@ -463,7 +463,7 @@ divergent bookmarks
      @1                        2:0d2164f0ce0d
      @foo                      2:0d2164f0ce0d
 
-  $ $PYTHON $TESTDIR/seq.py 1 100 | while read i; do hg bookmarks -d "X@${i}"; done
+  $ "$PYTHON" $TESTDIR/seq.py 1 100 | while read i; do hg bookmarks -d "X@${i}"; done
   $ hg bookmarks -d "@1"
 
   $ hg push -f ../a
@@ -1082,7 +1082,7 @@ Check hook preventing push (issue4455)
   > ssh=ssh://user@dummy/issue4455-dest
   > http=http://localhost:$HGPORT/
   > [ui]
-  > ssh=$PYTHON "$TESTDIR/dummyssh"
+  > ssh="$PYTHON" "$TESTDIR/dummyssh"
   > EOF
   $ cat >> ../issue4455-dest/.hg/hgrc << EOF
   > [hooks]

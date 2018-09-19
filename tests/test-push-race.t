@@ -102,7 +102,7 @@ A set of extension and shell functions ensures this scheduling.
 
   $ cat >> $HGRCPATH << EOF
   > [ui]
-  > ssh = $PYTHON "$TESTDIR/dummyssh"
+  > ssh = "$PYTHON" "$TESTDIR/dummyssh"
   > # simplify output
   > logtemplate = {node|short} {desc} ({branch})
   > [phases]

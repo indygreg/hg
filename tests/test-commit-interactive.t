@@ -915,7 +915,7 @@ This tests that translated help message is lower()-ed correctly.
   >         b''.join(escape(c) for c in pycompat.iterbytestr(l)))
   > EOF
 
-  $ hg commit -i --encoding cp932 2>&1 <<EOF | $PYTHON $TESTTMP/escape.py | grep '^y - '
+  $ hg commit -i --encoding cp932 2>&1 <<EOF | "$PYTHON" $TESTTMP/escape.py | grep '^y - '
   > ?
   > q
   > EOF

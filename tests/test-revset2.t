@@ -413,14 +413,14 @@ no crash by empty group "()" while optimizing `or` operations
 test that chained `or` operations never eat up stack (issue4624)
 (uses `0:1` instead of `0` to avoid future optimization of trivial revisions)
 
-  $ hg log -T '{rev}\n' -r `$PYTHON -c "print '+'.join(['0:1'] * 500)"`
+  $ hg log -T '{rev}\n' -r `"$PYTHON" -c "print '+'.join(['0:1'] * 500)"`
   0
   1
 
 test that repeated `-r` options never eat up stack (issue4565)
 (uses `-r 0::1` to avoid possible optimization at old-style parser)
 
-  $ hg log -T '{rev}\n' `$PYTHON -c "for i in range(500): print '-r 0::1 ',"`
+  $ hg log -T '{rev}\n' `"$PYTHON" -c "for i in range(500): print '-r 0::1 ',"`
   0
   1
 
@@ -1527,7 +1527,7 @@ test author/desc/keyword in problematic encoding
   $ hg init problematicencoding
   $ cd problematicencoding
 
-  $ $PYTHON > setup.sh <<EOF
+  $ "$PYTHON" > setup.sh <<EOF
   > print u'''
   > echo a > text
   > hg add text
@@ -1543,7 +1543,7 @@ test author/desc/keyword in problematic encoding
   $ sh < setup.sh
 
 test in problematic encoding
-  $ $PYTHON > test.sh <<EOF
+  $ "$PYTHON" > test.sh <<EOF
   > print u'''
   > hg --encoding cp932 log --template '{rev}\\n' -r 'author(\u30A2)'
   > echo ====

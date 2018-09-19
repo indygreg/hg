@@ -603,13 +603,13 @@ Test patterns:
 
 Test listfile and listfile0
 
-  $ $PYTHON -c "open('listfile0', 'wb').write(b'fenugreek\0new\0')"
+  $ "$PYTHON" -c "open('listfile0', 'wb').write(b'fenugreek\0new\0')"
   $ hg debugwalk -v -I 'listfile0:listfile0'
   * matcher:
   <includematcher includes='(?:fenugreek(?:/|$)|new(?:/|$))'>
   f  fenugreek  fenugreek
   f  new        new
-  $ $PYTHON -c "open('listfile', 'wb').write(b'fenugreek\nnew\r\nmammals/skunk\n')"
+  $ "$PYTHON" -c "open('listfile', 'wb').write(b'fenugreek\nnew\r\nmammals/skunk\n')"
   $ hg debugwalk -v -I 'listfile:listfile'
   * matcher:
   <includematcher includes='(?:fenugreek(?:/|$)|new(?:/|$)|mammals/skunk(?:/|$))'>
@@ -644,7 +644,7 @@ Test split patterns on overflow
   > for i in range(20000 // 100):
   >   print('x' * 100)
   > EOF
-  $ $PYTHON printnum.py >> overflow.list
+  $ "$PYTHON" printnum.py >> overflow.list
   $ echo fenugreek >> overflow.list
   $ hg debugwalk 'listfile:overflow.list' 2>&1 | egrep -v '^xxx'
   f  fennel     fennel     exact

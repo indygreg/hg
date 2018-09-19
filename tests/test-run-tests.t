@@ -6,7 +6,7 @@ Avoid interference from actual test env:
 
 Smoke test with install
 ============
-  $ $PYTHON $TESTDIR/run-tests.py $HGTEST_RUN_TESTS_PURE -l
+  $ "$PYTHON" $TESTDIR/run-tests.py $HGTEST_RUN_TESTS_PURE -l
   
   # Ran 0 tests, 0 skipped, 0 failed.
 
@@ -14,14 +14,14 @@ Define a helper to avoid the install step
 =============
   $ rt()
   > {
-  >     $PYTHON $TESTDIR/run-tests.py --with-hg=`which hg` "$@"
+  >     "$PYTHON" $TESTDIR/run-tests.py --with-hg=`which hg` "$@"
   > }
 
 error paths
 
 #if symlink
   $ ln -s `which true` hg
-  $ $PYTHON $TESTDIR/run-tests.py --with-hg=./hg
+  $ "$PYTHON" $TESTDIR/run-tests.py --with-hg=./hg
   warning: --with-hg should specify an hg script
   
   # Ran 0 tests, 0 skipped, 0 failed.
@@ -30,7 +30,7 @@ error paths
 
 #if execbit
   $ touch hg
-  $ $PYTHON $TESTDIR/run-tests.py --with-hg=./hg
+  $ "$PYTHON" $TESTDIR/run-tests.py --with-hg=./hg
   usage: run-tests.py [options] [tests]
   run-tests.py: error: --with-hg must specify an executable hg script
   [2]
@@ -1283,7 +1283,7 @@ Test globbing of local IP addresses
 Add support for external test formatter
 =======================================
 
-  $ CUSTOM_TEST_RESULT=basic_test_result $PYTHON $TESTDIR/run-tests.py --with-hg=`which hg` "$@" test-success.t test-failure.t
+  $ CUSTOM_TEST_RESULT=basic_test_result "$PYTHON" $TESTDIR/run-tests.py --with-hg=`which hg` "$@" test-success.t test-failure.t
   
   # Ran 2 tests, 0 skipped, 0 failed.
   ON_START! <__main__.TestSuite tests=[<__main__.TTest testMethod=test-failure.t>, <__main__.TTest testMethod=test-success.t>]>

@@ -950,13 +950,13 @@ Annotate with orphaned CR (issue5798)
   ...     f.write(b'0a\r0b\r\n1c\r1d\r\n0e\n1f\n0g') and None
   $ hg ci -m1
 
-  $ hg annotate -r0 a | $PYTHON "$TESTTMP/substcr.py"
+  $ hg annotate -r0 a | "$PYTHON" "$TESTTMP/substcr.py"
   0: 0a[CR]0b[CR]
   0: 0c[CR]0d[CR]
   0: 0e
   0: 0f
   0: 0g
-  $ hg annotate -r1 a | $PYTHON "$TESTTMP/substcr.py"
+  $ hg annotate -r1 a | "$PYTHON" "$TESTTMP/substcr.py"
   0: 0a[CR]0b[CR]
   1: 1c[CR]1d[CR]
   0: 0e

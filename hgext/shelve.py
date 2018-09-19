@@ -148,6 +148,7 @@ class shelvedfile(object):
                                 source='unshelve',
                                 url='bundle:' + self.vfs.join(self.fname),
                                 targetphase=targetphase)
+            return self.repo['tip']
         finally:
             fp.close()
 
@@ -791,8 +792,7 @@ def _unshelverestorecommit(ui, repo, basename):
         node = shelvedfile(repo, basename, 'shelve').readinfo()['node']
     if node is None or node not in repo:
         with ui.configoverride({('ui', 'quiet'): True}):
-            shelvedfile(repo, basename, 'hg').applybundle()
-        shelvectx = repo['tip']
+            shelvectx = shelvedfile(repo, basename, 'hg').applybundle()
         # We might not strip the unbundled changeset, so we should keep track of
         # the unshelve node in case we need to reuse it (eg: unshelve --keep)
         if node is None:

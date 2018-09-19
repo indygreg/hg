@@ -111,6 +111,9 @@ class filelog(object):
     def strip(self, minlink, transaction):
         return self._revlog.strip(minlink, transaction)
 
+    def censorrevision(self, tr, node, tombstone=b''):
+        return self._revlog.censorrevision(node, tombstone=tombstone)
+
     def files(self):
         return self._revlog.files()
 

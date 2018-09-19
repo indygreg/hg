@@ -691,6 +691,23 @@ class ifilemutation(interfaceutil.Interface):
         even if it existed in the store previously.
         """
 
+    def censorrevision(tr, node, tombstone=b''):
+        """Remove the content of a single revision.
+
+        The specified ``node`` will have its content purged from storage.
+        Future attempts to access the revision data for this node will
+        result in failure.
+
+        A ``tombstone`` message can optionally be stored. This message may be
+        displayed to users when they attempt to access the missing revision
+        data.
+
+        Storage backends may have stored deltas against the previous content
+        in this revision. As part of censoring a revision, these storage
+        backends are expected to rewrite any internally stored deltas such
+        that they no longer reference the deleted content.
+        """
+
     def getstrippoint(minlink):
         """Find the minimum revision that must be stripped to strip a linkrev.
 

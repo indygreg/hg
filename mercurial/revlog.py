@@ -2492,3 +2492,92 @@ class revlog(object):
         finally:
             destrevlog._lazydeltabase = oldlazydeltabase
             destrevlog._deltabothparents = oldamd
+
+    def censorrevision(self, node, tombstone=b''):
+        if (self.version & 0xFFFF) == REVLOGV0:
+            raise error.RevlogError(_('cannot censor with version %d revlogs') %
+                                    self.version)
+
+        rev = self.rev(node)
+        tombstone = packmeta({b'censored': tombstone}, b'')
+
+        if len(tombstone) > self.rawsize(rev):
+            raise error.Abort(_('censor tombstone must be no longer than '
+                                'censored data'))
+
+        # Using two files instead of one makes it easy to rewrite entry-by-entry
+        idxread = self.opener(self.indexfile, 'r')
+        idxwrite = self.opener(self.indexfile, 'wb', atomictemp=True)
+        if self.version & FLAG_INLINE_DATA:
+            dataread, datawrite = idxread, idxwrite
+        else:
+            dataread = self.opener(self.datafile, 'r')
+            datawrite = self.opener(self.datafile, 'wb', atomictemp=True)
+
+        # Copy all revlog data up to the entry to be censored.
+        offset = self.start(rev)
+
+        for chunk in util.filechunkiter(idxread, limit=rev * self._io.size):
+            idxwrite.write(chunk)
+        for chunk in util.filechunkiter(dataread, limit=offset):
+            datawrite.write(chunk)
+
+        def rewriteindex(r, newoffs, newdata=None):
+            """Rewrite the index entry with a new data offset and new data.
+
+            The newdata argument, if given, is a tuple of three positive
+            integers: (new compressed, new uncompressed, added flag bits).
+            """
+            offlags, comp, uncomp, base, link, p1, p2, nodeid = self.index[r]
+            flags = gettype(offlags)
+            if newdata:
+                comp, uncomp, nflags = newdata
+                flags |= nflags
+            offlags = offset_type(newoffs, flags)
+            e = (offlags, comp, uncomp, r, link, p1, p2, nodeid)
+            idxwrite.write(self._io.packentry(e, None, self.version, r))
+            idxread.seek(self._io.size, 1)
+
+        def rewrite(r, offs, data, nflags=REVIDX_DEFAULT_FLAGS):
+            """Write the given fulltext with the given data offset.
+
+            Returns:
+                The integer number of data bytes written, for tracking data
+                offsets.
+            """
+            flag, compdata = self.compress(data)
+            newcomp = len(flag) + len(compdata)
+            rewriteindex(r, offs, (newcomp, len(data), nflags))
+            datawrite.write(flag)
+            datawrite.write(compdata)
+            dataread.seek(self.length(r), 1)
+            return newcomp
+
+        # Rewrite censored entry with (padded) tombstone data.
+        pad = ' ' * (self.rawsize(rev) - len(tombstone))
+        offset += rewrite(rev, offset, tombstone + pad, REVIDX_ISCENSORED)
+
+        # Rewrite all following filelog revisions fixing up offsets and deltas.
+        for srev in pycompat.xrange(rev + 1, len(self)):
+            if rev in self.parentrevs(srev):
+                # Immediate children of censored node must be re-added as
+                # fulltext.
+                try:
+                    revdata = self.revision(srev)
+                except error.CensoredNodeError as e:
+                    revdata = e.tombstone
+                dlen = rewrite(srev, offset, revdata)
+            else:
+                # Copy any other revision data verbatim after fixing up the
+                # offset.
+                rewriteindex(srev, offset)
+                dlen = self.length(srev)
+                for chunk in util.filechunkiter(dataread, limit=dlen):
+                    datawrite.write(chunk)
+            offset += dlen
+
+        idxread.close()
+        idxwrite.close()
+        if dataread is not idxread:
+            dataread.close()
+            datawrite.close()

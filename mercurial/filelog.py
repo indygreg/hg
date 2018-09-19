@@ -214,15 +214,6 @@ class filelog(object):
 
         return self._revlog.clone(tr, destrevlog._revlog, **kwargs)
 
-    def start(self, rev):
-        return self._revlog.start(rev)
-
-    def end(self, rev):
-        return self._revlog.end(rev)
-
-    def length(self, rev):
-        return self._revlog.length(rev)
-
     def compress(self, data):
         return self._revlog.compress(data)
 

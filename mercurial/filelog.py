@@ -22,10 +22,14 @@ class filelog(object):
         self._revlog = revlog.revlog(opener,
                                      '/'.join(('data', path + '.i')),
                                      censorable=True)
-        # full name of the user visible file, relative to the repository root
+        # Full name of the user visible file, relative to the repository root.
+        # Used by LFS.
         self.filename = path
+        # Used by repo upgrade.
         self.index = self._revlog.index
+        # Used by verify.
         self.version = self._revlog.version
+        # Used by changegroup generation.
         self._generaldelta = self._revlog._generaldelta
 
     def __len__(self):
@@ -55,21 +59,25 @@ class filelog(object):
     def linkrev(self, rev):
         return self._revlog.linkrev(rev)
 
+    # Used by LFS, verify.
     def flags(self, rev):
         return self._revlog.flags(rev)
 
     def commonancestorsheads(self, node1, node2):
         return self._revlog.commonancestorsheads(node1, node2)
 
+    # Used by dagop.blockdescendants().
     def descendants(self, revs):
         return self._revlog.descendants(revs)
 
+    # Used by hgweb.
     def headrevs(self):
         return self._revlog.headrevs()
 
     def heads(self, start=None, stop=None):
         return self._revlog.heads(start, stop)
 
+    # Used by hgweb, children extension.
     def children(self, node):
         return self._revlog.children(node)
 
@@ -79,9 +87,11 @@ class filelog(object):
     def iscensored(self, rev):
         return self._revlog.iscensored(rev)
 
+    # Used by verify.
     def rawsize(self, rev):
         return self._revlog.rawsize(rev)
 
+    # Might be unused.
     def checkhash(self, text, node, p1=None, p2=None, rev=None):
         return self._revlog.checkhash(text, node, p1=p1, p2=p2, rev=rev)
 
@@ -117,6 +127,7 @@ class filelog(object):
     def files(self):
         return self._revlog.files()
 
+    # Used by verify.
     def checksize(self):
         return self._revlog.checksize()
 
@@ -182,6 +193,10 @@ class filelog(object):
 
         return True
 
+    # TODO these aren't part of the interface and aren't internal methods.
+    # Callers should be fixed to not use them.
+
+    # Used by LFS.
     @property
     def filename(self):
         return self._revlog.filename
@@ -190,8 +205,7 @@ class filelog(object):
     def filename(self, value):
         self._revlog.filename = value
 
-    # TODO these aren't part of the interface and aren't internal methods.
-    # Callers should be fixed to not use them.
+    # Used by bundlefilelog, unionfilelog.
     @property
     def indexfile(self):
         return self._revlog.indexfile
@@ -200,10 +214,12 @@ class filelog(object):
     def indexfile(self, value):
         self._revlog.indexfile = value
 
+    # Used by LFS, repo upgrade.
     @property
     def opener(self):
         return self._revlog.opener
 
+    # Used by repo upgrade.
     def clone(self, tr, destrevlog, **kwargs):
         if not isinstance(destrevlog, filelog):
             raise error.ProgrammingError('expected filelog to clone()')

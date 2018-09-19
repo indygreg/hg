@@ -201,10 +201,6 @@ class filelog(object):
         self._revlog.indexfile = value
 
     @property
-    def datafile(self):
-        return self._revlog.datafile
-
-    @property
     def opener(self):
         return self._revlog.opener
 

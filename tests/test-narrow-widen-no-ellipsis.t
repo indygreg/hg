@@ -90,7 +90,7 @@ added upstream revisions.
   $ cd narrow
   $ hg tracked --addinclude widest/f --debug
   comparing with ssh://user@dummy/master
-  running python "*dummyssh" 'user@dummy' 'hg -R master serve --stdio' (glob)
+  running python "*dummyssh" *user@dummy* *hg -R master serve --stdio* (glob)
   sending hello command
   sending between command
   remote: * (glob)

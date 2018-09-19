@@ -2798,12 +2798,13 @@ def createrepository(ui, path, createopts=None):
     requirements = newreporequirements(ui, createopts=createopts)
 
     wdirvfs = vfsmod.vfs(path, expandpath=True, realpath=True)
-    if not wdirvfs.exists():
-        wdirvfs.makedirs()
 
     hgvfs = vfsmod.vfs(wdirvfs.join(b'.hg'))
     if hgvfs.exists():
         raise error.RepoError(_('repository %s already exists') % path)
+
+    if not wdirvfs.exists():
+        wdirvfs.makedirs()
 
     hgvfs.makedir(notindexed=True)
 

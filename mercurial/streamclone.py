@@ -168,7 +168,7 @@ def maybeperformlegacystreamclone(pullop):
         repo.requirements = requirements | (
                 repo.requirements - repo.supportedformats)
         repo.svfs.options = localrepo.resolvestorevfsoptions(
-            repo.ui, repo.requirements)
+            repo.ui, repo.requirements, repo.features)
         repo._writerequirements()
 
         if rbranchmap:
@@ -643,5 +643,5 @@ def applybundlev2(repo, fp, filecount, filesize, requirements):
     repo.requirements = set(requirements) | (
             repo.requirements - repo.supportedformats)
     repo.svfs.options = localrepo.resolvestorevfsoptions(
-        repo.ui, repo.requirements)
+        repo.ui, repo.requirements, repo.features)
     repo._writerequirements()

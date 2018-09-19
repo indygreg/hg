@@ -19,6 +19,13 @@ from .utils import (
 # we should move this to just "narrow" or similar.
 NARROW_REQUIREMENT = 'narrowhg-experimental'
 
+# Local repository feature string.
+
+# Revlogs are being used for file storage.
+REPO_FEATURE_REVLOG_FILE_STORAGE = b'revlogfilestorage'
+# The storage part of the repository is shared from an external source.
+REPO_FEATURE_SHARED_STORAGE = b'sharedstore'
+
 class ipeerconnection(interfaceutil.Interface):
     """Represents a "connection" to a repository.
 
@@ -1274,6 +1281,24 @@ class ilocalrepositorymain(interfaceutil.Interface):
 
     requirements = interfaceutil.Attribute(
         """Set of requirements this repo uses.""")
+
+    features = interfaceutil.Attribute(
+        """Set of "features" this repository supports.
+
+        A "feature" is a loosely-defined term. It can refer to a feature
+        in the classical sense or can describe an implementation detail
+        of the repository. For example, a ``readonly`` feature may denote
+        the repository as read-only. Or a ``revlogfilestore`` feature may
+        denote that the repository is using revlogs for file storage.
+
+        The intent of features is to provide a machine-queryable mechanism
+        for repo consumers to test for various repository characteristics.
+
+        Features are similar to ``requirements``. The main difference is that
+        requirements are stored on-disk and represent requirements to open the
+        repository. Features are more run-time capabilities of the repository
+        and more granular capabilities (which may be derived from requirements).
+        """)
 
     filtername = interfaceutil.Attribute(
         """Name of the repoview that is active on this repo.""")

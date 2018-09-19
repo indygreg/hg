@@ -478,6 +478,8 @@ def makelocalrepository(baseui, path, intents=None):
     # At this point, we know we should be capable of opening the repository.
     # Now get on with doing that.
 
+    features = set()
+
     # The "store" part of the repository holds versioned data. How it is
     # accessed is determined by various requirements. The ``shared`` or
     # ``relshared`` requirements indicate the store lives in the path contained
@@ -494,6 +496,8 @@ def makelocalrepository(baseui, path, intents=None):
             raise error.RepoError(_(b'.hg/sharedpath points to nonexistent '
                                     b'directory %s') % sharedvfs.base)
 
+        features.add(repository.REPO_FEATURE_SHARED_STORAGE)
+
         storebasepath = sharedvfs.base
         cachepath = sharedvfs.join(b'cache')
     else:
@@ -508,7 +512,7 @@ def makelocalrepository(baseui, path, intents=None):
     hgvfs.createmode = store.createmode
 
     storevfs = store.vfs
-    storevfs.options = resolvestorevfsoptions(ui, requirements)
+    storevfs.options = resolvestorevfsoptions(ui, requirements, features)
 
     # The cache vfs is used to manage cache files.
     cachevfs = vfsmod.vfs(cachepath, cacheaudited=True)
@@ -528,6 +532,7 @@ def makelocalrepository(baseui, path, intents=None):
         typ = fn(ui=ui,
                  intents=intents,
                  requirements=requirements,
+                 features=features,
                  wdirvfs=wdirvfs,
                  hgvfs=hgvfs,
                  store=store,
@@ -564,6 +569,7 @@ def makelocalrepository(baseui, path, intents=None):
         sharedpath=storebasepath,
         store=store,
         cachevfs=cachevfs,
+        features=features,
         intents=intents)
 
 def gathersupportedrequirements(ui):
@@ -643,7 +649,7 @@ def makestore(requirements, path, vfstype):
 
     return storemod.basicstore(path, vfstype)
 
-def resolvestorevfsoptions(ui, requirements):
+def resolvestorevfsoptions(ui, requirements, features):
     """Resolve the options to pass to the store vfs opener.
 
     The returned dict is used to influence behavior of the storage layer.
@@ -664,11 +670,11 @@ def resolvestorevfsoptions(ui, requirements):
     # opener options for it because those options wouldn't do anything
     # meaningful on such old repos.
     if b'revlogv1' in requirements or REVLOGV2_REQUIREMENT in requirements:
-        options.update(resolverevlogstorevfsoptions(ui, requirements))
+        options.update(resolverevlogstorevfsoptions(ui, requirements, features))
 
     return options
 
-def resolverevlogstorevfsoptions(ui, requirements):
+def resolverevlogstorevfsoptions(ui, requirements, features):
     """Resolve opener options specific to revlogs."""
 
     options = {}
@@ -756,8 +762,10 @@ class revlognarrowfilestorage(object):
 
         return filelog.narrowfilelog(self.svfs, path, self.narrowmatch())
 
-def makefilestorage(requirements, **kwargs):
+def makefilestorage(requirements, features, **kwargs):
     """Produce a type conforming to ``ilocalrepositoryfilestorage``."""
+    features.add(repository.REPO_FEATURE_REVLOG_FILE_STORAGE)
+
     if repository.NARROW_REQUIREMENT in requirements:
         return revlognarrowfilestorage
     else:
@@ -831,7 +839,7 @@ class localrepository(object):
 
     def __init__(self, baseui, ui, origroot, wdirvfs, hgvfs, requirements,
                  supportedrequirements, sharedpath, store, cachevfs,
-                 intents=None):
+                 features, intents=None):
         """Create a new local repository instance.
 
         Most callers should use ``hg.repository()``, ``localrepo.instance()``,
@@ -873,6 +881,10 @@ class localrepository(object):
         cachevfs
            ``vfs.vfs`` used for cache files.
 
+        features
+           ``set`` of bytestrings defining features/capabilities of this
+           instance.
+
         intents
            ``set`` of system strings indicating what this repo will be used
            for.
@@ -891,6 +903,7 @@ class localrepository(object):
         self.sharedpath = sharedpath
         self.store = store
         self.cachevfs = cachevfs
+        self.features = features
 
         self.filtername = None
 

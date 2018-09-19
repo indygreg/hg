@@ -1798,7 +1798,7 @@ def handlechangegroup(op, inpart):
                 "non-empty and does not use tree manifests"))
         op.repo.requirements.add('treemanifest')
         op.repo.svfs.options = localrepo.resolvestorevfsoptions(
-            op.repo.ui, op.repo.requirements)
+            op.repo.ui, op.repo.requirements, op.repo.features)
         op.repo._writerequirements()
     extrakwargs = {}
     targetphase = inpart.params.get('targetphase')

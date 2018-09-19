@@ -1745,6 +1745,10 @@ class revlog(object):
         tr.replace(self.indexfile, trindex * self._io.size)
         self._chunkclear()
 
+    def _nodeduplicatecallback(self, transaction, node):
+        """called when trying to add a node already stored.
+        """
+
     def addrevision(self, text, transaction, link, p1, p2, cachedelta=None,
                     node=None, flags=REVIDX_DEFAULT_FLAGS, deltacomputer=None):
         """add a revision to the log
@@ -2026,6 +2030,7 @@ class revlog(object):
                 nodes.append(node)
 
                 if node in self.nodemap:
+                    self._nodeduplicatecallback(transaction, node)
                     # this can happen if two branches make the same change
                     continue
 

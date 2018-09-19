@@ -70,10 +70,6 @@ class filelog(object):
     def descendants(self, revs):
         return self._revlog.descendants(revs)
 
-    # Used by hgweb.
-    def headrevs(self):
-        return self._revlog.headrevs()
-
     def heads(self, start=None, stop=None):
         return self._revlog.heads(start, stop)
 

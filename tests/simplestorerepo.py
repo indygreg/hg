@@ -564,18 +564,6 @@ class filestorage(object):
                 revision=revision,
                 delta=delta)
 
-    def headrevs(self):
-        # Assume all revisions are heads by default.
-        revishead = {rev: True for rev in self._indexbyrev}
-
-        for rev, entry in self._indexbyrev.items():
-            # Unset head flag for all seen parents.
-            revishead[self.rev(entry[b'p1'])] = False
-            revishead[self.rev(entry[b'p2'])] = False
-
-        return [rev for rev, ishead in sorted(revishead.items())
-                if ishead]
-
     def heads(self, start=None, stop=None):
         # This is copied from revlog.py.
         if start is None and stop is None:
@@ -628,8 +616,8 @@ class filestorage(object):
 
         heads = {}
         futurelargelinkrevs = set()
-        for head in self.headrevs():
-            headlinkrev = self.linkrev(head)
+        for head in self.heads():
+            headlinkrev = self.linkrev(self.rev(head))
             heads[head] = headlinkrev
             if headlinkrev >= minlink:
                 futurelargelinkrevs.add(headlinkrev)

@@ -130,7 +130,6 @@ class ifileindextests(basetestcase):
 
         self.assertEqual(list(f.descendants([nullrev])), [])
 
-        self.assertEqual(f.headrevs(), [nullrev])
         self.assertEqual(f.heads(), [nullid])
         self.assertEqual(f.heads(nullid), [nullid])
         self.assertEqual(f.heads(None, [nullid]), [nullid])
@@ -214,8 +213,6 @@ class ifileindextests(basetestcase):
             f.iscensored(1)
 
         self.assertEqual(list(f.descendants([0])), [])
-
-        self.assertEqual(f.headrevs(), [0])
 
         self.assertEqual(f.heads(), [node])
         self.assertEqual(f.heads(node), [node])
@@ -327,8 +324,6 @@ class ifileindextests(basetestcase):
         self.assertEqual(list(f.descendants([1])), [2])
         self.assertEqual(list(f.descendants([0, 1])), [1, 2])
 
-        self.assertEqual(f.headrevs(), [2])
-
         self.assertEqual(f.heads(), [node2])
         self.assertEqual(f.heads(node0), [node2])
         self.assertEqual(f.heads(node1), [node2])
@@ -371,8 +366,6 @@ class ifileindextests(basetestcase):
         self.assertEqual(list(f.descendants([3])), [4])
         self.assertEqual(list(f.descendants([0, 1])), [1, 2, 3, 4, 5])
         self.assertEqual(list(f.descendants([1, 3])), [2, 4])
-
-        self.assertEqual(f.headrevs(), [2, 4, 5])
 
         self.assertEqual(f.heads(), [node2, node4, node5])
         self.assertEqual(f.heads(node0), [node2, node4, node5])

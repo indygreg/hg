@@ -525,14 +525,6 @@ class ifileindex(interfaceutil.Interface):
         If ``nullrev`` is in the set, this is equivalent to ``revs()``.
         """
 
-    def headrevs():
-        """Obtain a list of revision numbers that are DAG heads.
-
-        The list is sorted oldest to newest.
-
-        TODO determine if sorting is required.
-        """
-
     def heads(start=None, stop=None):
         """Obtain a list of nodes that are DAG heads, with control.
 

@@ -214,9 +214,6 @@ class filelog(object):
 
         return self._revlog.clone(tr, destrevlog._revlog, **kwargs)
 
-    def _addrevision(self, *args, **kwargs):
-        return self._revlog._addrevision(*args, **kwargs)
-
 class narrowfilelog(filelog):
     """Filelog variation to be used with narrow stores."""
 

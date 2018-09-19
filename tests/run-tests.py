@@ -1153,7 +1153,7 @@ class Test(unittest.TestCase):
             killdaemons(env['DAEMON_PIDS'])
             return ret
 
-        output = ''
+        output = b''
         proc.tochild.close()
 
         try:
@@ -1177,7 +1177,7 @@ class Test(unittest.TestCase):
             output = re.sub(s, r, output)
 
         if normalizenewlines:
-            output = output.replace('\r\n', '\n')
+            output = output.replace(b'\r\n', b'\n')
 
         return ret, output.splitlines(True)
 

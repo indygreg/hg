@@ -104,12 +104,12 @@ def main(args):
                 ctype = m.group('ctype')
                 if not ctype:
                     ctype = 'str'
-                name = m.group('section') + "." + m.group('option')
+                name = m.group('section') + b"." + m.group('option')
                 default = m.group('default')
                 if default in (None, 'False', 'None', '0', '[]', '""', "''"):
-                    default = ''
+                    default = b''
                 if re.match(b'[a-z.]+$', default):
-                    default = '<variable>'
+                    default = b'<variable>'
                 if (name in foundopts and (ctype, default) != foundopts[name]
                     and name not in allowinconsistent):
                     print(l.rstrip())
@@ -117,19 +117,19 @@ def main(args):
                                                         foundopts[name]))
                     print("at %s:%d:" % (f, linenum))
                 foundopts[name] = (ctype, default)
-                carryover = ''
+                carryover = b''
             else:
                 m = re.search(configpartialre, line)
                 if m:
                     carryover = line
                 else:
-                    carryover = ''
+                    carryover = b''
 
     for name in sorted(foundopts):
         if name not in documented:
-            if not (name.startswith("devel.") or
-                    name.startswith("experimental.") or
-                    name.startswith("debug.")):
+            if not (name.startswith(b"devel.") or
+                    name.startswith(b"experimental.") or
+                    name.startswith(b"debug.")):
                 ctype, default = foundopts[name]
                 if default:
                     default = ' [%s]' % default

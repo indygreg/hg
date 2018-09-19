@@ -121,10 +121,6 @@ class filelog(object):
     def files(self):
         return self._revlog.files()
 
-    # Used by verify.
-    def checksize(self):
-        return self._revlog.checksize()
-
     def read(self, node):
         t = self.revision(node)
         if not t.startswith('\1\n'):

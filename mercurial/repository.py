@@ -751,12 +751,6 @@ class ifilestorage(ifileindex, ifiledata, ifilemutation):
         be a better API for that.
         """
 
-    def checksize():
-        """Obtain the expected sizes of backing files.
-
-        TODO this is used by verify and it should not be part of the interface.
-        """
-
     def verifyintegrity(state):
         """Verifies the integrity of file storage.
 

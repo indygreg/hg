@@ -422,10 +422,6 @@ class filestorage(object):
 
         return [b'/'.join((self._storepath, f)) for f in entries]
 
-    # Required by verify.
-    def checksize(self):
-        return 0, 0
-
     def add(self, text, meta, transaction, linkrev, p1, p2):
         if meta or text.startswith(b'\1\n'):
             text = revlog.packmeta(meta, text)

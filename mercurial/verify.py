@@ -342,7 +342,8 @@ class verifier(object):
                 storefiles.add(_normpath(f))
 
         state = {
-            'revlogv1': self.revlogv1,
+            # TODO this assumes revlog storage for changelog.
+            'expectedversion': self.repo.changelog.version & 0xFFFF
         }
 
         files = sorted(set(filenodes) | set(filelinkrevs))

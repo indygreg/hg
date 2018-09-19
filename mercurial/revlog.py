@@ -2600,10 +2600,10 @@ class revlog(object):
         if di:
             yield revlogproblem(error=_('index contains %d extra bytes') % di)
 
-        if self.version != REVLOGV0:
-            if not state['revlogv1']:
-                yield revlogproblem(warning=_("warning: `%s' uses revlog "
-                                             "format 1") % self.indexfile)
-        elif state['revlogv1']:
-            yield revlogproblem(warning=_("warning: `%s' uses revlog "
-                                          "format 0") % self.indexfile)
+        version = self.version & 0xFFFF
+
+        # The verifier tells us what version revlog we should be.
+        if version != state['expectedversion']:
+            yield revlogproblem(
+                warning=_("warning: '%s' uses revlog format %d; expected %d") %
+                        (self.indexfile, version, state['expectedversion']))

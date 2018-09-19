@@ -311,6 +311,7 @@ class chgcmdserver(commandserver.server):
             _newchgui(ui, channeledsystem(fin, fout, 'S'), self.attachio),
             repo, fin, fout)
         self.clientsock = sock
+        self._ioattached = False
         self._oldios = []  # original (self.ch, ui.fp, fd) before "attachio"
         self.hashstate = hashstate
         self.baseaddress = baseaddress
@@ -324,6 +325,7 @@ class chgcmdserver(commandserver.server):
         # handled by dispatch._dispatch()
         self.ui.flush()
         self._restoreio()
+        self._ioattached = False
 
     def attachio(self):
         """Attach to client's stdio passed via unix domain socket; all
@@ -337,13 +339,13 @@ class chgcmdserver(commandserver.server):
 
         ui = self.ui
         ui.flush()
-        first = self._saveio()
+        self._saveio()
         for fd, (cn, fn, mode) in zip(clientfds, _iochannels):
             assert fd > 0
             fp = getattr(ui, fn)
             os.dup2(fd, fp.fileno())
             os.close(fd)
-            if not first:
+            if self._ioattached:
                 continue
             # reset buffering mode when client is first attached. as we want
             # to see output immediately on pager, the mode stays unchanged
@@ -362,18 +364,18 @@ class chgcmdserver(commandserver.server):
                 setattr(ui, fn, newfp)
             setattr(self, cn, newfp)
 
+        self._ioattached = True
         self.cresult.write(struct.pack('>i', len(clientfds)))
 
     def _saveio(self):
         if self._oldios:
-            return False
+            return
         ui = self.ui
         for cn, fn, _mode in _iochannels:
             ch = getattr(self, cn)
             fp = getattr(ui, fn)
             fd = os.dup(fp.fileno())
             self._oldios.append((ch, fp, fd))
-        return True
 
     def _restoreio(self):
         ui = self.ui

@@ -669,19 +669,10 @@ shelve should leave dirstate clean (issue4055)
   shelved as default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
-#if phasebased
   $ hg rebase -d 6c103be8f4e4 --config extensions.rebase=
-  rebasing 2:323bfa07f744 "xyz"
+  rebasing 2:323bfa07f744 "xyz"( \(tip\))? (re)
   merging x
-  warning: orphaned descendants detected, not stripping 323bfa07f744 (?)
-#endif
-
-#if stripbased
-  $ hg rebase -d 6c103be8f4e4 --config extensions.rebase=
-  rebasing 2:323bfa07f744 "xyz" (tip)
-  merging x
-  saved backup bundle to $TESTTMP/shelverebase/.hg/strip-backup/323bfa07f744-78114325-rebase.hg
-#endif
+  saved backup bundle to \$TESTTMP/shelverebase/.hg/strip-backup/323bfa07f744-(78114325|7ae538ef)-rebase.hg (re)
   $ hg unshelve
   unshelving change 'default'
   rebasing shelved changes

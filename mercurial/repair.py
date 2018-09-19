@@ -24,6 +24,7 @@ from . import (
     exchange,
     obsolete,
     obsutil,
+    phases,
     pycompat,
     util,
 )
@@ -276,7 +277,8 @@ def safestriproots(ui, repo, nodes):
     # orphaned = affected - wanted
     # affected = descendants(roots(wanted))
     # wanted = revs
-    tostrip = set(repo.revs('%ld-(::((roots(%ld)::)-%ld))', revs, revs, revs))
+    revset = '%ld - ( ::( (roots(%ld):: and not _phase(%s)) -%ld) )'
+    tostrip = set(repo.revs(revset, revs, revs, phases.internal, revs))
     notstrip = revs - tostrip
     if notstrip:
         nodestr = ', '.join(sorted(short(repo[n].node()) for n in notstrip))

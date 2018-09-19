@@ -143,7 +143,7 @@ def _filerevision(web, fctx):
     f = fctx.path()
     text = fctx.data()
     parity = paritygen(web.stripecount)
-    ishead = fctx.filerev() in fctx.filelog().headrevs()
+    ishead = fctx.filenode() in fctx.filelog().heads()
 
     if stringutil.binary(text):
         mt = mimetypes.guess_type(f)[0] or 'application/octet-stream'
@@ -922,7 +922,7 @@ def annotate(web):
     fctx = webutil.filectx(web.repo, web.req)
     f = fctx.path()
     parity = paritygen(web.stripecount)
-    ishead = fctx.filerev() in fctx.filelog().headrevs()
+    ishead = fctx.filenode() in fctx.filelog().heads()
 
     # parents() is called once per line and several lines likely belong to
     # same revision. So it is worth caching.

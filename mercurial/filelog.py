@@ -189,6 +189,9 @@ class filelog(object):
 
         return True
 
+    def verifyintegrity(self, state):
+        return self._revlog.verifyintegrity(state)
+
     # TODO these aren't part of the interface and aren't internal methods.
     # Callers should be fixed to not use them.
 

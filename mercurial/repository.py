@@ -318,6 +318,20 @@ class peer(object):
             _('cannot %s; remote repository does not support the %r '
               'capability') % (purpose, name))
 
+class iverifyproblem(interfaceutil.Interface):
+    """Represents a problem with the integrity of the repository.
+
+    Instances of this interface are emitted to describe an integrity issue
+    with a repository (e.g. corrupt storage, missing data, etc).
+
+    Instances are essentially messages associated with severity.
+    """
+    warning = interfaceutil.Attribute(
+        """Message indicating a non-fatal problem.""")
+
+    error = interfaceutil.Attribute(
+        """Message indicating a fatal problem.""")
+
 class irevisiondelta(interfaceutil.Interface):
     """Represents a delta between one revision and another.
 
@@ -747,6 +761,17 @@ class ifilestorage(ifileindex, ifiledata, ifilemutation):
         """Obtain the expected sizes of backing files.
 
         TODO this is used by verify and it should not be part of the interface.
+        """
+
+    def verifyintegrity(state):
+        """Verifies the integrity of file storage.
+
+        ``state`` is a dict holding state of the verifier process. It can be
+        used to communicate data between invocations of multiple storage
+        primitives.
+
+        The method yields objects conforming to the ``iverifyproblem``
+        interface.
         """
 
 class idirs(interfaceutil.Interface):

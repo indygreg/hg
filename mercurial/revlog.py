@@ -254,6 +254,12 @@ class revlogrevisiondelta(object):
     revision = attr.ib()
     delta = attr.ib()
 
+@interfaceutil.implementer(repository.iverifyproblem)
+@attr.s(frozen=True)
+class revlogproblem(object):
+    warning = attr.ib(default=None)
+    error = attr.ib(default=None)
+
 # index v0:
 #  4 bytes: offset
 #  4 bytes: compressed length
@@ -2581,3 +2587,23 @@ class revlog(object):
         if dataread is not idxread:
             dataread.close()
             datawrite.close()
+
+    def verifyintegrity(self, state):
+        """Verifies the integrity of the revlog.
+
+        Yields ``revlogproblem`` instances describing problems that are
+        found.
+        """
+        dd, di = self.checksize()
+        if dd:
+            yield revlogproblem(error=_('data length off by %d bytes') % dd)
+        if di:
+            yield revlogproblem(error=_('index contains %d extra bytes') % di)
+
+        if self.version != REVLOGV0:
+            if not state['revlogv1']:
+                yield revlogproblem(warning=_("warning: `%s' uses revlog "
+                                             "format 1") % self.indexfile)
+        elif state['revlogv1']:
+            yield revlogproblem(warning=_("warning: `%s' uses revlog "
+                                          "format 0") % self.indexfile)

@@ -229,4 +229,8 @@ def main():
         basenode=b'')
     checkzobject(rdr)
 
+    ziverify.verifyClass(repository.iverifyproblem,
+                         revlog.revlogproblem)
+    checkzobject(revlog.revlogproblem())
+
 main()

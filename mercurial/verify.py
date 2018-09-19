@@ -341,6 +341,10 @@ class verifier(object):
             elif (size > 0 or not revlogv1) and f.startswith('data/'):
                 storefiles.add(_normpath(f))
 
+        state = {
+            'revlogv1': self.revlogv1,
+        }
+
         files = sorted(set(filenodes) | set(filelinkrevs))
         revisions = 0
         progress = ui.makeprogress(_('checking'), unit=_('files'),
@@ -373,7 +377,19 @@ class verifier(object):
                                   ff)
                         self.fncachewarned = True
 
-            self.checklog(fl, f, lr)
+            if not len(fl) and (self.havecl or self.havemf):
+                self.err(lr, _("empty or missing %s") % f)
+            else:
+                for problem in fl.verifyintegrity(state):
+                    if problem.warning:
+                        self.warn(problem.warning)
+                    elif problem.error:
+                        self.err(lr, problem.error, f)
+                    else:
+                        raise error.ProgrammingError(
+                            'problem instance does not set warning or error '
+                            'attribute: %s' % problem.msg)
+
             seen = {}
             rp = None
             for i in fl:

@@ -456,7 +456,16 @@ class chgcmdserver(commandserver.server):
         os.umask(mask)
 
     def runcommand(self):
-        return super(chgcmdserver, self).runcommand()
+        # pager may be attached within the runcommand session, which should
+        # be detached at the end of the session. otherwise the pager wouldn't
+        # receive EOF.
+        globaloldios = self._oldios
+        self._oldios = []
+        try:
+            return super(chgcmdserver, self).runcommand()
+        finally:
+            self._restoreio()
+            self._oldios = globaloldios
 
     def setenv(self):
         """Clear and update os.environ

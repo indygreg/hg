@@ -214,9 +214,6 @@ class filelog(object):
 
         return self._revlog.clone(tr, destrevlog._revlog, **kwargs)
 
-    def compress(self, data):
-        return self._revlog.compress(data)
-
     def _addrevision(self, *args, **kwargs):
         return self._revlog._addrevision(*args, **kwargs)
 

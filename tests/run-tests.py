@@ -156,10 +156,33 @@ if sys.version_info > (3, 5, 0):
 
     osenvironb = getattr(os, 'environb', None)
     if osenvironb is None:
-        # Windows lacks os.environb, for instance.
-        osenvironb = {
-            _bytespath(k): _bytespath(v) for k, v in os.environ.items()
-        }
+        # Windows lacks os.environb, for instance.  A proxy over the real thing
+        # instead of a copy allows the environment to be updated via bytes on
+        # all platforms.
+        class environbytes(object):
+            def __init__(self, strenv):
+                self.__len__ = strenv.__len__
+                self.clear = strenv.clear
+                self._strenv = strenv
+            def __getitem__(self, k):
+                v = self._strenv.__getitem__(_strpath(k))
+                return _bytespath(v)
+            def __setitem__(self, k, v):
+                self._strenv.__setitem__(_strpath(k), _strpath(v))
+            def __delitem__(self, k):
+                self._strenv.__delitem__(_strpath(k))
+            def __contains__(self, k):
+                return self._strenv.__contains__(_strpath(k))
+            def __iter__(self):
+                return iter([_bytespath(k) for k in iter(self._strenv)])
+            def get(self, k, default=None):
+                v = self._strenv.get(_strpath(k), _strpath(default))
+                return _bytespath(v)
+            def pop(self, k, default=None):
+                v = self._strenv.pop(_strpath(k), _strpath(default))
+                return _bytespath(v)
+
+        osenvironb = environbytes(os.environ)
 
 elif sys.version_info >= (3, 0, 0):
     print('%s is only supported on Python 3.5+ and 2.7, not %s' %

@@ -49,10 +49,6 @@ from . import (
     vfs as vfsmod,
 )
 
-from .utils import (
-    stringutil,
-)
-
 release = lock.release
 
 # shared features
@@ -261,44 +257,13 @@ def share(ui, source, dest=None, update=True, bookmarks=True, defaultpath=None,
         rev, checkout = addbranchrevs(srcrepo, srcrepo, branches, None)
     else:
         srcrepo = source.local()
-        origsource = source = srcrepo.url()
         checkout = None
 
-    sharedpath = srcrepo.sharedpath # if our source is already sharing
+    r = repository(ui, dest, create=True, createopts={
+        'sharedrepo': srcrepo,
+        'sharedrelative': relative,
+    })
 
-    destwvfs = vfsmod.vfs(dest, realpath=True)
-    destvfs = vfsmod.vfs(os.path.join(destwvfs.base, '.hg'), realpath=True)
-
-    if destvfs.lexists():
-        raise error.Abort(_('destination already exists'))
-
-    if not destwvfs.isdir():
-        destwvfs.makedirs()
-    destvfs.makedir()
-
-    requirements = ''
-    try:
-        requirements = srcrepo.vfs.read('requires')
-    except IOError as inst:
-        if inst.errno != errno.ENOENT:
-            raise
-
-    if relative:
-        try:
-            sharedpath = os.path.relpath(sharedpath, destvfs.base)
-            requirements += 'relshared\n'
-        except (IOError, ValueError) as e:
-            # ValueError is raised on Windows if the drive letters differ on
-            # each path
-            raise error.Abort(_('cannot calculate relative path'),
-                              hint=stringutil.forcebytestr(e))
-    else:
-        requirements += 'shared\n'
-
-    destvfs.write('requires', requirements)
-    destvfs.write('sharedpath', sharedpath)
-
-    r = repository(ui, destwvfs.base)
     postshare(srcrepo, r, bookmarks=bookmarks, defaultpath=defaultpath)
     _postshareupdate(r, update, checkout=checkout)
     return r

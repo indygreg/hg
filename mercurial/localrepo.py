@@ -2714,6 +2714,17 @@ def newreporequirements(ui, createopts=None):
     """
     createopts = createopts or {}
 
+    # If the repo is being created from a shared repository, we copy
+    # its requirements.
+    if 'sharedrepo' in createopts:
+        requirements = set(createopts['sharedrepo'].requirements)
+        if createopts.get('sharedrelative'):
+            requirements.add('relshared')
+        else:
+            requirements.add('shared')
+
+        return requirements
+
     requirements = {'revlogv1'}
     if ui.configbool('format', 'usestore'):
         requirements.add('store')
@@ -2771,7 +2782,11 @@ def filterknowncreateopts(ui, createopts):
     Extensions can wrap this function to filter out creation options
     they know how to handle.
     """
-    known = {'narrowfiles'}
+    known = {
+        'narrowfiles',
+        'sharedrepo',
+        'sharedrelative',
+    }
 
     return {k: v for k, v in createopts.items() if k not in known}
 
@@ -2780,6 +2795,17 @@ def createrepository(ui, path, createopts=None):
 
     ``path`` path to the new repo's working directory.
     ``createopts`` options for the new repository.
+
+    The following keys for ``createopts`` are recognized:
+
+    narrowfiles
+       Set up repository to support narrow file storage.
+    sharedrepo
+       Repository object from which storage should be shared.
+    sharedrelative
+       Boolean indicating if the path to the shared repo should be
+       stored as relative. By default, the pointer to the "parent" repo
+       is stored as an absolute path.
     """
     createopts = createopts or {}
 
@@ -2803,12 +2829,24 @@ def createrepository(ui, path, createopts=None):
     if hgvfs.exists():
         raise error.RepoError(_('repository %s already exists') % path)
 
+    if 'sharedrepo' in createopts:
+        sharedpath = createopts['sharedrepo'].sharedpath
+
+        if createopts.get('sharedrelative'):
+            try:
+                sharedpath = os.path.relpath(sharedpath, hgvfs.base)
+            except (IOError, ValueError) as e:
+                # ValueError is raised on Windows if the drive letters differ
+                # on each path.
+                raise error.Abort(_('cannot calculate relative path'),
+                                  hint=stringutil.forcebytestr(e))
+
     if not wdirvfs.exists():
         wdirvfs.makedirs()
 
     hgvfs.makedir(notindexed=True)
 
-    if b'store' in requirements:
+    if b'store' in requirements and 'sharedrepo' not in createopts:
         hgvfs.mkdir(b'store')
 
         # We create an invalid changelog outside the store so very old
@@ -2824,6 +2862,10 @@ def createrepository(ui, path, createopts=None):
                      b'layout')
 
     scmutil.writerequires(hgvfs, requirements)
+
+    # Write out file telling readers where to find the shared store.
+    if 'sharedrepo' in createopts:
+        hgvfs.write(b'sharedpath', sharedpath)
 
 def poisonrepository(repo):
     """Poison a repository instance so it can no longer be used."""

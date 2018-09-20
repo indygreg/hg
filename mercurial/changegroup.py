@@ -1071,8 +1071,14 @@ class cgpacker(object):
             store = mfl.getstorage(tree)
 
             if not self._filematcher.visitdir(store.tree[:-1] or '.'):
+                # No nodes to send because this directory is out of
+                # the client's view of the repository (probably
+                # because of narrow clones).
                 prunednodes = []
             else:
+                # Avoid sending any manifest nodes we can prove the
+                # client already has by checking linkrevs. See the
+                # related comment in generatefiles().
                 prunednodes = self._prunemanifests(store, nodes, commonrevs)
             if tree and not prunednodes:
                 continue
@@ -1164,6 +1170,10 @@ class cgpacker(object):
                 return linkrevnodes[x]
 
             frev, flr = filerevlog.rev, filerevlog.linkrev
+            # Skip sending any filenode we know the client already
+            # has. This avoids over-sending files relatively
+            # inexpensively, so it's not a problem if we under-filter
+            # here.
             filenodes = [n for n in linkrevnodes
                          if flr(frev(n)) not in commonrevs]
 

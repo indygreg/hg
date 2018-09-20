@@ -545,3 +545,10 @@ class changelog(revlog.revlog):
         just to access this is costly."""
         extra = self.read(rev)[5]
         return encoding.tolocal(extra.get("branch")), 'close' in extra
+
+    def _nodeduplicatecallback(self, transaction, node):
+        # keep track of revisions that got "re-added", eg: unbunde of know rev.
+        #
+        # We track them in a list to preserve their order from the source bundle
+        duplicates = transaction.changes.setdefault('revduplicates', [])
+        duplicates.append(self.rev(node))

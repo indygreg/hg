@@ -4878,10 +4878,10 @@ def revert(ui, repo, *pats, **opts):
         if node != parent:
             if dirty:
                 hint = _("uncommitted changes, use --all to discard all"
-                         " changes, or 'hg update %s' to update") % ctx.rev()
+                         " changes, or 'hg update %d' to update") % ctx.rev()
             else:
                 hint = _("use --all to revert all files,"
-                         " or 'hg update %s' to update") % ctx.rev()
+                         " or 'hg update %d' to update") % ctx.rev()
         elif dirty:
             hint = _("uncommitted changes, use --all to discard all changes")
         else:

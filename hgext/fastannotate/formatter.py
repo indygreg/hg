@@ -78,7 +78,7 @@ class defaultformatter(object):
             pieces.append(l)
             if name in ['node', 'date']: # node and date has fixed size
                 l = l[:1]
-            widths = map(encoding.colwidth, set(l))
+            widths = pycompat.maplist(encoding.colwidth, set(l))
             maxwidth = (max(widths) if widths else 0)
             maxwidths.append(maxwidth)
 

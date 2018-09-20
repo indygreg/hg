@@ -1213,7 +1213,7 @@ class PythonTest(Test):
 
     def _run(self, env):
         py3kswitch = self._py3kwarnings and b' -3' or b''
-        cmd = b'%s%s "%s"' % (PYTHON, py3kswitch, self.path)
+        cmd = b'"%s"%s "%s"' % (PYTHON, py3kswitch, self.path)
         vlog("# Running", cmd)
         normalizenewlines = os.name == 'nt'
         result = self._runcommand(cmd, env,
@@ -1475,7 +1475,7 @@ class TTest(Test):
                     # We've just entered a Python block. Add the header.
                     inpython = True
                     addsalt(prepos, False) # Make sure we report the exit code.
-                    script.append(b'%s -m heredoctest <<EOF\n' % PYTHON)
+                    script.append(b'"%s" -m heredoctest <<EOF\n' % PYTHON)
                 addsalt(n, True)
                 script.append(l[2:])
             elif l.startswith(b'  ... '): # python inlines
@@ -3078,7 +3078,7 @@ class TestRunner(object):
         if self._hgpath is not None:
             return self._hgpath
 
-        cmd = b'%s -c "import mercurial; print (mercurial.__path__[0])"'
+        cmd = b'"%s" -c "import mercurial; print (mercurial.__path__[0])"'
         cmd = cmd % PYTHON
         if PYTHON3:
             cmd = _strpath(cmd)

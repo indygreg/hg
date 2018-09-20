@@ -163,23 +163,23 @@ def clientfetch(repo, paths, lastnodemap=None, peer=None):
                 'getannotate',
                 {'path': p, 'lastnode':lastnodemap.get(p)}))
 
-    ui.debug('fastannotate: server returned\n')
-    for result in results:
-        r = result.result()
-        # TODO: pconvert these paths on the server?
-        r = {util.pconvert(p): v for p, v in r.iteritems()}
-        for path in sorted(r):
-            # ignore malicious paths
-            if not path.startswith('fastannotate/') or '/../' in (path + '/'):
-                ui.debug('fastannotate: ignored malicious path %s\n' % path)
-                continue
-            content = r[path]
-            if ui.debugflag:
-                ui.debug('fastannotate: writing %d bytes to %s\n'
-                         % (len(content), path))
-            repo.vfs.makedirs(os.path.dirname(path))
-            with repo.vfs(path, 'wb') as f:
-                f.write(content)
+        for result in results:
+            r = result.result()
+            # TODO: pconvert these paths on the server?
+            r = {util.pconvert(p): v for p, v in r.iteritems()}
+            for path in sorted(r):
+                # ignore malicious paths
+                if (not path.startswith('fastannotate/')
+                    or '/../' in (path + '/')):
+                    ui.debug('fastannotate: ignored malicious path %s\n' % path)
+                    continue
+                content = r[path]
+                if ui.debugflag:
+                    ui.debug('fastannotate: writing %d bytes to %s\n'
+                             % (len(content), path))
+                repo.vfs.makedirs(os.path.dirname(path))
+                with repo.vfs(path, 'wb') as f:
+                    f.write(content)
 
 def _filterfetchpaths(repo, paths):
     """return a subset of paths whose history is long and need to fetch linelog

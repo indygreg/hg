@@ -47,7 +47,6 @@ setup the local repo
   sending protocaps command
   fastannotate: requesting 1 files
   sending getannotate command
-  fastannotate: server returned
   fastannotate: writing 112 bytes to fastannotate/default/a.l
   fastannotate: writing 94 bytes to fastannotate/default/a.m
   fastannotate: a: using fast path (resolved fctx: True)
@@ -94,7 +93,6 @@ client can also build things up on its own (causing diverge)
   sending protocaps command
   fastannotate: requesting 1 files
   sending getannotate command
-  fastannotate: server returned
   fastannotate: a: 1 new changesets in the main branch
   0: 1
   1: 2
@@ -142,7 +140,6 @@ in the "fctx" mode, the client could also build the cache locally
 
   $ hg annotate a --config fastannotate.modes=fctx --debug --config fastannotate.mainbranch=4 | grep fastannotate
   fastannotate: requesting 1 files
-  fastannotate: server returned
   fastannotate: a: 1 new changesets in the main branch
 
 the server would rebuild broken cache automatically
@@ -171,7 +168,6 @@ use the "debugbuildannotatecache" command to build annotate cache
   sending protocaps command
   fastannotate: requesting 1 files
   sending getannotate command
-  fastannotate: server returned
   fastannotate: writing * (glob)
   fastannotate: writing * (glob)
   $ diff $p1/a.l $p2/a.l

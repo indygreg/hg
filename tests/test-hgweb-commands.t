@@ -26,7 +26,7 @@ Set up the repo
   $ hg ci -Ambranch
   $ hg branch unstable
   marked working directory as branch unstable
-  >>> open('msg', 'wb').write(b'branch commit with null character: \0\n')
+  >>> open('msg', 'wb').write(b'branch commit with null character: \0\n') and None
   $ hg ci -l msg
   $ rm msg
 

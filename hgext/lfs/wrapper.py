@@ -240,8 +240,8 @@ def hgclone(orig, ui, opts, *args, **kwargs):
 
     return result
 
-def hgpostshare(orig, sourcerepo, destrepo, bookmarks=True, defaultpath=None):
-    orig(sourcerepo, destrepo, bookmarks, defaultpath)
+def hgpostshare(orig, sourcerepo, destrepo, defaultpath=None):
+    orig(sourcerepo, destrepo, defaultpath=defaultpath)
 
     # If lfs is required for this repo, permanently enable it locally
     if 'lfs' in destrepo.requirements:

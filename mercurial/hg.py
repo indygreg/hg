@@ -259,12 +259,17 @@ def share(ui, source, dest=None, update=True, bookmarks=True, defaultpath=None,
         srcrepo = source.local()
         checkout = None
 
+    shareditems = set()
+    if bookmarks:
+        shareditems.add(sharedbookmarks)
+
     r = repository(ui, dest, create=True, createopts={
         'sharedrepo': srcrepo,
         'sharedrelative': relative,
+        'shareditems': shareditems,
     })
 
-    postshare(srcrepo, r, bookmarks=bookmarks, defaultpath=defaultpath)
+    postshare(srcrepo, r, defaultpath=defaultpath)
     _postshareupdate(r, update, checkout=checkout)
     return r
 
@@ -315,7 +320,7 @@ def unshare(ui, repo):
 
     return newrepo
 
-def postshare(sourcerepo, destrepo, bookmarks=True, defaultpath=None):
+def postshare(sourcerepo, destrepo, defaultpath=None):
     """Called after a new shared repo is created.
 
     The new repo only has a requirements file and pointer to the source.
@@ -329,10 +334,6 @@ def postshare(sourcerepo, destrepo, bookmarks=True, defaultpath=None):
         template = ('[paths]\n'
                     'default = %s\n')
         destrepo.vfs.write('hgrc', util.tonativeeol(template % default))
-
-    with destrepo.wlock():
-        if bookmarks:
-            destrepo.vfs.write('shared', sharedbookmarks + '\n')
 
 def _postshareupdate(repo, update, checkout=None):
     """Maybe perform a working directory update after a shared repo is created.

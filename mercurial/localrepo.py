@@ -2786,6 +2786,7 @@ def filterknowncreateopts(ui, createopts):
         'narrowfiles',
         'sharedrepo',
         'sharedrelative',
+        'shareditems',
     }
 
     return {k: v for k, v in createopts.items() if k not in known}
@@ -2806,6 +2807,8 @@ def createrepository(ui, path, createopts=None):
        Boolean indicating if the path to the shared repo should be
        stored as relative. By default, the pointer to the "parent" repo
        is stored as an absolute path.
+    shareditems
+       Set of items to share to the new repository (in addition to storage).
     """
     createopts = createopts or {}
 
@@ -2866,6 +2869,10 @@ def createrepository(ui, path, createopts=None):
     # Write out file telling readers where to find the shared store.
     if 'sharedrepo' in createopts:
         hgvfs.write(b'sharedpath', sharedpath)
+
+    if createopts.get('shareditems'):
+        shared = b'\n'.join(sorted(createopts['shareditems'])) + b'\n'
+        hgvfs.write(b'shared', shared)
 
 def poisonrepository(repo):
     """Poison a repository instance so it can no longer be used."""

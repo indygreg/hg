@@ -1,5 +1,52 @@
 #require no-reposimplestore no-chg
 
+  $ hg init requirements
+  $ cd requirements
+
+# LFS not loaded by default.
+
+  $ hg config extensions
+  [1]
+
+# Adding lfs to requires file will auto-load lfs extension.
+
+  $ echo lfs >> .hg/requires
+  $ hg config extensions
+  extensions.lfs=
+
+# But only if there is no config entry for the extension already.
+
+  $ cat > .hg/hgrc << EOF
+  > [extensions]
+  > lfs=!
+  > EOF
+
+  $ hg config extensions
+  abort: repository requires features unknown to this Mercurial: lfs!
+  (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
+  [255]
+
+  $ cat > .hg/hgrc << EOF
+  > [extensions]
+  > lfs=
+  > EOF
+
+  $ hg config extensions
+  extensions.lfs=
+
+  $ cat > .hg/hgrc << EOF
+  > [extensions]
+  > lfs = missing.py
+  > EOF
+
+  $ hg config extensions
+  *** failed to import extension lfs from missing.py: [Errno 2] $ENOENT$: 'missing.py'
+  abort: repository requires features unknown to this Mercurial: lfs!
+  (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
+  [255]
+
+  $ cd ..
+
 # Initial setup
 
   $ cat >> $HGRCPATH << EOF

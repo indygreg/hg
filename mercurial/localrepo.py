@@ -446,6 +446,9 @@ def makelocalrepository(baseui, path, intents=None):
     # process any new extensions that it may have pulled in.
     try:
         ui.readconfig(hgvfs.join(b'hgrc'), root=wdirvfs.base)
+        # Run this before extensions.loadall() so extensions can be
+        # automatically enabled.
+        afterhgrcload(ui, wdirvfs, hgvfs, requirements)
     except IOError:
         pass
     else:
@@ -571,6 +574,30 @@ def makelocalrepository(baseui, path, intents=None):
         cachevfs=cachevfs,
         features=features,
         intents=intents)
+
+def afterhgrcload(ui, wdirvfs, hgvfs, requirements):
+    """Perform additional actions after .hg/hgrc is loaded.
+
+    This function is called during repository loading immediately after
+    the .hg/hgrc file is loaded and before per-repo extensions are loaded.
+
+    The function can be used to validate configs, automatically add
+    options (including extensions) based on requirements, etc.
+    """
+
+    # Map of requirements to list of extensions to load automatically when
+    # requirement is present.
+    autoextensions = {
+        b'lfs': [b'lfs'],
+    }
+
+    for requirement, names in sorted(autoextensions.items()):
+        if requirement not in requirements:
+            continue
+
+        for name in names:
+            if not ui.hasconfig(b'extensions', name):
+                ui.setconfig(b'extensions', name, b'', source='autoload')
 
 def gathersupportedrequirements(ui):
     """Determine the complete set of recognized requirements."""

@@ -247,7 +247,7 @@ debugsub in clone
 
 verify subrepo is contained within the repo directory
 
-  $ "$PYTHON" -c "import os.path; print os.path.exists('s')"
+  $ "$PYTHON" -c "from __future__ import print_function; import os.path; print(os.path.exists('s'))"
   True
 
 update to nullrev (must delete the subrepo)

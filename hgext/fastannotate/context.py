@@ -299,7 +299,9 @@ class _annotatecontext(object):
             if self.ui.debugflag:
                 self.ui.debug('fastannotate: %s: using fast path '
                               '(resolved fctx: %s)\n'
-                              % (self.path, util.safehasattr(revfctx, 'node')))
+                              % (self.path,
+                                 stringutil.pprint(util.safehasattr(revfctx,
+                                                                    'node'))))
             return self.annotatedirectly(revfctx, showpath, showlines)
 
         # resolve master

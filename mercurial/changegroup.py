@@ -1120,9 +1120,6 @@ class cgpacker(object):
             commonctxs = [self._repo[c] for c in commonrevs]
             clrev = self._repo.changelog.rev
 
-            # Defining this function has a side-effect of overriding the
-            # function of the same name that was passed in as an argument.
-            # TODO have caller pass in appropriate function.
             def linknodes(flog, fname):
                 for c in commonctxs:
                     try:

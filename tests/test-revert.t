@@ -532,6 +532,7 @@ Script to make a simple text version of the content
 
   $ cat << EOF >> dircontent.py
   > # generate a simple text view of the directory for easy comparison
+  > from __future__ import print_function
   > import os
   > files = os.listdir('.')
   > files.sort()
@@ -539,7 +540,7 @@ Script to make a simple text version of the content
   >     if os.path.isdir(filename):
   >         continue
   >     content = open(filename).read()
-  >     print '%-6s %s' % (content.strip(), filename)
+  >     print('%-6s %s' % (content.strip(), filename))
   > EOF
 
 Generate appropriate repo state

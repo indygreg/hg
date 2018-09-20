@@ -471,6 +471,7 @@ test-resolve.t
 test-revert-flags.t
 test-revert-interactive.t
 test-revert-unknown.t
+test-revert.t
 test-revisions.t
 test-revlog-ancestry.py
 test-revlog-group-emptyiter.t

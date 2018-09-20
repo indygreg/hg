@@ -322,13 +322,13 @@ feature.
 
   $ cat > $TESTTMP/extlibroot/lsub1/lsub2/called.py <<EOF
   > def func():
-  >     return "this is extlibroot.lsub1.lsub2.called.func()"
+  >     return b"this is extlibroot.lsub1.lsub2.called.func()"
   > EOF
   $ cat > $TESTTMP/extlibroot/lsub1/lsub2/unused.py <<EOF
   > raise Exception("extlibroot.lsub1.lsub2.unused is loaded unintentionally")
   > EOF
   $ cat > $TESTTMP/extlibroot/lsub1/lsub2/used.py <<EOF
-  > detail = "this is extlibroot.lsub1.lsub2.used"
+  > detail = b"this is extlibroot.lsub1.lsub2.used"
   > EOF
 
 Setup sub-package of "external library", which causes instantiation of
@@ -338,7 +338,7 @@ importing with "absolute_import" feature isn't tested, because "level
 
   $ mkdir -p $TESTTMP/extlibroot/recursedown/abs
   $ cat > $TESTTMP/extlibroot/recursedown/abs/used.py <<EOF
-  > detail = "this is extlibroot.recursedown.abs.used"
+  > detail = b"this is extlibroot.recursedown.abs.used"
   > EOF
   $ cat > $TESTTMP/extlibroot/recursedown/abs/__init__.py <<EOF
   > from __future__ import absolute_import
@@ -347,7 +347,7 @@ importing with "absolute_import" feature isn't tested, because "level
 
   $ mkdir -p $TESTTMP/extlibroot/recursedown/legacy
   $ cat > $TESTTMP/extlibroot/recursedown/legacy/used.py <<EOF
-  > detail = "this is extlibroot.recursedown.legacy.used"
+  > detail = b"this is extlibroot.recursedown.legacy.used"
   > EOF
   $ cat > $TESTTMP/extlibroot/recursedown/legacy/__init__.py <<EOF
   > # legacy style (level == -1) import
@@ -366,7 +366,7 @@ the submodule 'used' should be somehow accessible. (issue5617)
 
   $ mkdir -p $TESTTMP/extlibroot/shadowing
   $ cat > $TESTTMP/extlibroot/shadowing/used.py <<EOF
-  > detail = "this is extlibroot.shadowing.used"
+  > detail = b"this is extlibroot.shadowing.used"
   > EOF
   $ cat > $TESTTMP/extlibroot/shadowing/proxied.py <<EOF
   > from __future__ import absolute_import
@@ -386,25 +386,25 @@ feature.
 
   $ cat > $TESTTMP/absextroot/xsub1/xsub2/called.py <<EOF
   > def func():
-  >     return "this is absextroot.xsub1.xsub2.called.func()"
+  >     return b"this is absextroot.xsub1.xsub2.called.func()"
   > EOF
   $ cat > $TESTTMP/absextroot/xsub1/xsub2/unused.py <<EOF
   > raise Exception("absextroot.xsub1.xsub2.unused is loaded unintentionally")
   > EOF
   $ cat > $TESTTMP/absextroot/xsub1/xsub2/used.py <<EOF
-  > detail = "this is absextroot.xsub1.xsub2.used"
+  > detail = b"this is absextroot.xsub1.xsub2.used"
   > EOF
 
 Setup extension local modules to examine whether demand importing
 works as expected in "level > 1" case.
 
   $ cat > $TESTTMP/absextroot/relimportee.py <<EOF
-  > detail = "this is absextroot.relimportee"
+  > detail = b"this is absextroot.relimportee"
   > EOF
   $ cat > $TESTTMP/absextroot/xsub1/xsub2/relimporter.py <<EOF
   > from __future__ import absolute_import
   > from ... import relimportee
-  > detail = "this relimporter imports %r" % (relimportee.detail)
+  > detail = b"this relimporter imports %r" % (relimportee.detail)
   > EOF
 
 Setup modules, which actually import extension local modules at

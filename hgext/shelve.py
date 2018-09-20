@@ -144,11 +144,17 @@ class shelvedfile(object):
             if not phases.supportinternal(self.repo):
                 targetphase = phases.secret
             gen = exchange.readbundle(self.repo.ui, fp, self.fname, self.vfs)
-            bundle2.applybundle(self.repo, gen, self.repo.currenttransaction(),
+            pretip = self.repo['tip']
+            tr = self.repo.currenttransaction()
+            bundle2.applybundle(self.repo, gen, tr,
                                 source='unshelve',
                                 url='bundle:' + self.vfs.join(self.fname),
                                 targetphase=targetphase)
-            return self.repo['tip']
+            shelvectx = self.repo['tip']
+            if pretip == shelvectx:
+                shelverev = tr.changes['revduplicates'][-1]
+                shelvectx = self.repo[shelverev]
+            return shelvectx
         finally:
             fp.close()
 

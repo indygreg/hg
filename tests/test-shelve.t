@@ -1858,16 +1858,34 @@ mercurial does not crash
 
 #if phasebased
 
-Unshelve without .shelve metadata:
+Unshelve with some metadata file missing
+----------------------------------------
 
   $ hg shelve
   shelved as default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo 3 > a
+
+Test with the `.shelve` missing, but the changeset still in the repo (non-natural case)
+
+  $ rm .hg/shelved/default.shelve
+  $ hg unshelve
+  unshelving change 'default'
+  temporarily committing pending changes (restore with 'hg unshelve --abort')
+  rebasing shelved changes
+  merging a
+  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
+  [1]
+  $ hg unshelve --abort
+  unshelve of 'default' aborted
+
+Unshelve without .shelve metadata (can happen when upgrading a repository with old shelve)
+
   $ cat .hg/shelved/default.shelve
   node=82e0cb9893247d12667017593ce1e5655860f1ac
   $ hg strip --hidden --rev 82e0cb989324 --no-backup
   $ rm .hg/shelved/default.shelve
-  $ echo 3 > a
   $ hg unshelve
   unshelving change 'default'
   temporarily committing pending changes (restore with 'hg unshelve --abort')
@@ -1878,6 +1896,8 @@ Unshelve without .shelve metadata:
   [1]
   $ cat .hg/shelved/default.shelve
   node=82e0cb9893247d12667017593ce1e5655860f1ac
+  $ hg unshelve --abort
+  unshelve of 'default' aborted
 
 #endif
 

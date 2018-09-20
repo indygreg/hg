@@ -160,6 +160,16 @@ def pullbundle2extraprepare(orig, pullop, kwargs):
 extensions.wrapfunction(exchange,'_pullbundle2extraprepare',
                         pullbundle2extraprepare)
 
+# This is an extension point for filesystems that need to do something other
+# than just blindly unlink the files. It's not clear what arguments would be
+# useful, so we're passing in a fair number of them, some of them redundant.
+def _narrowcleanupwdir(repo, oldincludes, oldexcludes, newincludes, newexcludes,
+                       oldmatch, newmatch):
+    for f in repo.dirstate:
+        if not newmatch(f):
+            repo.dirstate.drop(f)
+            repo.wvfs.unlinkpath(f)
+
 def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
             newincludes, newexcludes, force):
     oldmatch = narrowspec.match(repo.root, oldincludes, oldexcludes)
@@ -235,10 +245,8 @@ def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
                 util.unlinkpath(repo.svfs.join(f))
                 repo.store.markremoved(f)
 
-            for f in repo.dirstate:
-                if not newmatch(f):
-                    repo.dirstate.drop(f)
-                    repo.wvfs.unlinkpath(f)
+            _narrowcleanupwdir(repo, oldincludes, oldexcludes, newincludes,
+                               newexcludes, oldmatch, newmatch)
             repo.setnarrowpats(newincludes, newexcludes)
 
         repo.destroyed()

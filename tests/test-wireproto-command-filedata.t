@@ -284,11 +284,11 @@ Requesting revision data works
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     42\r\n
-  s>     :\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2DnodeT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccLrevisionsize\x03Ca1\n
+  s>     50\r\n
+  s>     H\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x01\xa2Ofieldsfollowing\x81\x82Hrevision\x03DnodeT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccCa1\n
   s>     \r\n
-  received frame(size=58; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=72; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -300,8 +300,13 @@ Requesting revision data works
       b'totalitems': 1
     },
     {
-      b'node': b'\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc',
-      b'revisionsize': 3
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          3
+        ]
+      ],
+      b'node': b'\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc'
     },
     b'a1\n'
   ]
@@ -338,11 +343,11 @@ haveparents=False should be same as above
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     42\r\n
-  s>     :\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2DnodeT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccLrevisionsize\x03Ca1\n
+  s>     50\r\n
+  s>     H\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x01\xa2Ofieldsfollowing\x81\x82Hrevision\x03DnodeT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccCa1\n
   s>     \r\n
-  received frame(size=58; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=72; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -354,8 +359,13 @@ haveparents=False should be same as above
       b'totalitems': 1
     },
     {
-      b'node': b'\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc',
-      b'revisionsize': 3
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          3
+        ]
+      ],
+      b'node': b'\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc'
     },
     b'a1\n'
   ]
@@ -392,12 +402,12 @@ haveparents=True should emit a delta
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     6e\r\n
-  s>     f\x00\x00\x01\x00\x02\x001
+  s>     7c\r\n
+  s>     t\x00\x00\x01\x00\x02\x001
   s>     \xa1Jtotalitems\x01\xa3MdeltabasenodeT+N\xb0s\x19\xbf\xa0w\xa4\n
-  s>     /\x04\x916Y\xae\xf0\xdaB\xdaIdeltasize\x0fDnodeT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccO\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x03a1\n
+  s>     /\x04\x916Y\xae\xf0\xdaB\xdaOfieldsfollowing\x81\x82Edelta\x0fDnodeT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccO\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x03a1\n
   s>     \r\n
-  received frame(size=102; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=116; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -410,7 +420,12 @@ haveparents=True should emit a delta
     },
     {
       b'deltabasenode': b'+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
-      b'deltasize': 15,
+      b'fieldsfollowing': [
+        [
+          b'delta',
+          15
+        ]
+      ],
       b'node': b'\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc'
     },
     b'\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x03a1\n'
@@ -449,14 +464,14 @@ Requesting multiple revisions works
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     9b\r\n
-  s>     \x93\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x02\xa2DnodeT+N\xb0s\x19\xbf\xa0w\xa4\n
-  s>     /\x04\x916Y\xae\xf0\xdaB\xdaLrevisionsize\x03Ca0\n
+  s>     b7\r\n
+  s>     \xaf\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x02\xa2Ofieldsfollowing\x81\x82Hrevision\x03DnodeT+N\xb0s\x19\xbf\xa0w\xa4\n
+  s>     /\x04\x916Y\xae\xf0\xdaB\xdaCa0\n
   s>     \xa3MdeltabasenodeT+N\xb0s\x19\xbf\xa0w\xa4\n
-  s>     /\x04\x916Y\xae\xf0\xdaB\xdaIdeltasize\x0fDnodeT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccO\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x03a1\n
+  s>     /\x04\x916Y\xae\xf0\xdaB\xdaOfieldsfollowing\x81\x82Edelta\x0fDnodeT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccO\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x03a1\n
   s>     \r\n
-  received frame(size=147; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=175; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -468,13 +483,23 @@ Requesting multiple revisions works
       b'totalitems': 2
     },
     {
-      b'node': b'+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
-      b'revisionsize': 3
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          3
+        ]
+      ],
+      b'node': b'+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda'
     },
     b'a0\n',
     {
       b'deltabasenode': b'+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
-      b'deltasize': 15,
+      b'fieldsfollowing': [
+        [
+          b'delta',
+          15
+        ]
+      ],
       b'node': b'\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc'
     },
     b'\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x03a1\n'
@@ -512,14 +537,14 @@ Revisions are sorted by DAG order, parents first
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     9b\r\n
-  s>     \x93\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x02\xa2DnodeT+N\xb0s\x19\xbf\xa0w\xa4\n
-  s>     /\x04\x916Y\xae\xf0\xdaB\xdaLrevisionsize\x03Ca0\n
+  s>     b7\r\n
+  s>     \xaf\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x02\xa2Ofieldsfollowing\x81\x82Hrevision\x03DnodeT+N\xb0s\x19\xbf\xa0w\xa4\n
+  s>     /\x04\x916Y\xae\xf0\xdaB\xdaCa0\n
   s>     \xa3MdeltabasenodeT+N\xb0s\x19\xbf\xa0w\xa4\n
-  s>     /\x04\x916Y\xae\xf0\xdaB\xdaIdeltasize\x0fDnodeT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccO\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x03a1\n
+  s>     /\x04\x916Y\xae\xf0\xdaB\xdaOfieldsfollowing\x81\x82Edelta\x0fDnodeT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccO\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x03a1\n
   s>     \r\n
-  received frame(size=147; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=175; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -531,13 +556,23 @@ Revisions are sorted by DAG order, parents first
       b'totalitems': 2
     },
     {
-      b'node': b'+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
-      b'revisionsize': 3
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          3
+        ]
+      ],
+      b'node': b'+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda'
     },
     b'a0\n',
     {
       b'deltabasenode': b'+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
-      b'deltasize': 15,
+      b'fieldsfollowing': [
+        [
+          b'delta',
+          15
+        ]
+      ],
       b'node': b'\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc'
     },
     b'\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x03a1\n'
@@ -574,12 +609,12 @@ Requesting parents and revision data works
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     75\r\n
-  s>     m\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa3DnodeT\x08y4^97r)cKB\x0cc\x94T\x15g&\xc6\xb6Gparents\x82T+N\xb0s\x19\xbf\xa0w\xa4\n
-  s>     /\x04\x916Y\xae\xf0\xdaB\xdaT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00Lrevisionsize\x03Ca2\n
+  s>     83\r\n
+  s>     {\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x01\xa3Ofieldsfollowing\x81\x82Hrevision\x03DnodeT\x08y4^97r)cKB\x0cc\x94T\x15g&\xc6\xb6Gparents\x82T+N\xb0s\x19\xbf\xa0w\xa4\n
+  s>     /\x04\x916Y\xae\xf0\xdaB\xdaT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00Ca2\n
   s>     \r\n
-  received frame(size=109; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=123; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -591,12 +626,17 @@ Requesting parents and revision data works
       b'totalitems': 1
     },
     {
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          3
+        ]
+      ],
       b'node': b'\x08y4^97r)cKB\x0cc\x94T\x15g&\xc6\xb6',
       b'parents': [
         b'+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-      ],
-      b'revisionsize': 3
+      ]
     },
     b'a2\n'
   ]

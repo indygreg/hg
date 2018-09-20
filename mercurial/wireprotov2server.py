@@ -752,19 +752,24 @@ def changesetdata(repo, proto, noderange, nodes, fields):
             d[b'bookmarks'] = sorted(nodebookmarks[node])
             del nodebookmarks[node]
 
-        revisiondata = None
+        followingmeta = []
+        followingdata = []
 
         if b'revision' in fields:
             revisiondata = cl.revision(node, raw=True)
-            d[b'revisionsize'] = len(revisiondata)
+            followingmeta.append((b'revision', len(revisiondata)))
+            followingdata.append(revisiondata)
 
         # TODO make it possible for extensions to wrap a function or register
         # a handler to service custom fields.
 
+        if followingmeta:
+            d[b'fieldsfollowing'] = followingmeta
+
         yield d
 
-        if revisiondata is not None:
-            yield revisiondata
+        for extra in followingdata:
+            yield extra
 
     # If requested, send bookmarks from nodes that didn't have revision
     # data sent so receiver is aware of any bookmark updates.
@@ -865,25 +870,29 @@ def filedata(repo, proto, haveparents, nodes, fields, path):
         if b'parents' in fields:
             d[b'parents'] = store.parents(node)
 
+        followingmeta = []
+        followingdata = []
+
         if b'revision' in fields:
             assert delta is not None
             assert delta.flags == 0
             assert d[b'node'] == delta.node
 
             if delta.revision is not None:
-                revisiondata = delta.revision
-                d[b'revisionsize'] = len(revisiondata)
+                followingmeta.append((b'revision', len(delta.revision)))
+                followingdata.append(delta.revision)
             else:
                 d[b'deltabasenode'] = delta.basenode
-                revisiondata = delta.delta
-                d[b'deltasize'] = len(revisiondata)
-        else:
-            revisiondata = None
+                followingmeta.append((b'delta', len(delta.delta)))
+                followingdata.append(delta.delta)
+
+        if followingmeta:
+            d[b'fieldsfollowing'] = followingmeta
 
         yield d
 
-        if revisiondata is not None:
-            yield revisiondata
+        for extra in followingdata:
+            yield extra
 
     if deltas is not None:
         try:
@@ -1020,25 +1029,29 @@ def manifestdata(repo, proto, haveparents, nodes, fields, tree):
         if b'parents' in fields:
             d[b'parents'] = store.parents(node)
 
+        followingmeta = []
+        followingdata = []
+
         if b'revision' in fields:
             assert delta is not None
             assert delta.flags == 0
             assert d[b'node'] == delta.node
 
             if delta.revision is not None:
-                revisiondata = delta.revision
-                d[b'revisionsize'] = len(revisiondata)
+                followingmeta.append((b'revision', len(delta.revision)))
+                followingdata.append(delta.revision)
             else:
                 d[b'deltabasenode'] = delta.basenode
-                revisiondata = delta.delta
-                d[b'deltasize'] = len(revisiondata)
-        else:
-            revisiondata = None
+                followingmeta.append((b'delta', len(delta.delta)))
+                followingdata.append(delta.delta)
+
+        if followingmeta:
+            d[b'fieldsfollowing'] = followingmeta
 
         yield d
 
-        if revisiondata is not None:
-            yield revisiondata
+        for extra in followingdata:
+            yield extra
 
     if deltas is not None:
         try:

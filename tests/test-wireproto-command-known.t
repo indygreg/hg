@@ -27,7 +27,7 @@ No arguments returns something reasonable
   > EOF
   creating http peer for wire protocol version 2
   sending known command
-  s>     POST /api/exp-http-v2-0001/ro/known HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/known HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -69,7 +69,7 @@ Single known node works
   > EOF
   creating http peer for wire protocol version 2
   sending known command
-  s>     POST /api/exp-http-v2-0001/ro/known HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/known HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -113,7 +113,7 @@ Multiple nodes works
   > EOF
   creating http peer for wire protocol version 2
   sending known command
-  s>     POST /api/exp-http-v2-0001/ro/known HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/known HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n

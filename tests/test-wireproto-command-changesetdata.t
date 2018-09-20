@@ -44,7 +44,7 @@ No arguments is an invalid request
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0001/ro/changesetdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -78,7 +78,7 @@ Empty noderange heads results in an error
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0001/ro/changesetdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -112,7 +112,7 @@ Sending just noderange heads sends all revisions
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0001/ro/changesetdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -170,7 +170,7 @@ Sending root nodes limits what data is sent
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0001/ro/changesetdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -222,7 +222,7 @@ Requesting data on a single node by node works
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0001/ro/changesetdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -272,7 +272,7 @@ Specifying a noderange and nodes takes union
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0001/ro/changesetdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -325,7 +325,7 @@ Parents data is transferred upon request
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0001/ro/changesetdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -379,7 +379,7 @@ Phase data is transferred upon request
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0001/ro/changesetdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -430,7 +430,7 @@ Revision data is transferred upon request
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0001/ro/changesetdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -451,16 +451,16 @@ Revision data is transferred upon request
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     7e\r\n
-  s>     v\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11Lrevisionsize\x18=X=1b74476799ec8318045db759b1b4bcc9b839d0aa\n
+  s>     8c\r\n
+  s>     \x84\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x01\xa2Ofieldsfollowing\x81\x82Hrevision\x18=DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11X=1b74476799ec8318045db759b1b4bcc9b839d0aa\n
   s>     test\n
   s>     0 0\n
   s>     a\n
   s>     \n
   s>     commit 3
   s>     \r\n
-  received frame(size=118; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=132; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -472,8 +472,13 @@ Revision data is transferred upon request
       b'totalitems': 1
     },
     {
-      b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11',
-      b'revisionsize': 61
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          61
+        ]
+      ],
+      b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
     },
     b'1b74476799ec8318045db759b1b4bcc9b839d0aa\ntest\n0 0\na\n\ncommit 3'
   ]
@@ -487,7 +492,7 @@ Bookmarks key isn't present if no bookmarks data
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0001/ro/changesetdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -550,7 +555,7 @@ Bookmarks are sent when requested
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0001/ro/changesetdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -616,7 +621,7 @@ Bookmarks are sent when we make a no-new-revisions request
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0001/ro/changesetdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -637,22 +642,22 @@ Bookmarks are sent when we make a no-new-revisions request
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     12f\r\n
-  s>     \'\x01\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x02\xa2DnodeTu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1Lrevisionsize\x18?X?7f144aea0ba742713887b564d57e9d12f12ff382\n
+  s>     14b\r\n
+  s>     C\x01\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x02\xa2Ofieldsfollowing\x81\x82Hrevision\x18?DnodeTu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1X?7f144aea0ba742713887b564d57e9d12f12ff382\n
   s>     test\n
   s>     0 0\n
   s>     a\n
   s>     b\n
   s>     \n
-  s>     commit 1\xa3Ibookmarks\x81Fbook-1DnodeT\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddLrevisionsize\x18=X=37f0a2d1c28ffe4b879109a7d1bbf8f07b3c763b\n
+  s>     commit 1\xa3Ibookmarks\x81Fbook-1Ofieldsfollowing\x81\x82Hrevision\x18=DnodeT\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddX=37f0a2d1c28ffe4b879109a7d1bbf8f07b3c763b\n
   s>     test\n
   s>     0 0\n
   s>     b\n
   s>     \n
   s>     commit 2\xa2Ibookmarks\x82Fbook-2Fbook-3DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11
   s>     \r\n
-  received frame(size=295; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=323; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -664,16 +669,26 @@ Bookmarks are sent when we make a no-new-revisions request
       b'totalitems': 2
     },
     {
-      b'node': b'u\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1',
-      b'revisionsize': 63
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          63
+        ]
+      ],
+      b'node': b'u\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1'
     },
     b'7f144aea0ba742713887b564d57e9d12f12ff382\ntest\n0 0\na\nb\n\ncommit 1',
     {
       b'bookmarks': [
         b'book-1'
       ],
-      b'node': b'\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd',
-      b'revisionsize': 61
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          61
+        ]
+      ],
+      b'node': b'\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd'
     },
     b'37f0a2d1c28ffe4b879109a7d1bbf8f07b3c763b\ntest\n0 0\nb\n\ncommit 2',
     {
@@ -694,7 +709,7 @@ Multiple fields can be transferred
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0001/ro/changesetdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -715,16 +730,16 @@ Multiple fields can be transferred
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     b1\r\n
-  s>     \xa9\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa3DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11Gparents\x82T3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00Lrevisionsize\x18=X=1b74476799ec8318045db759b1b4bcc9b839d0aa\n
+  s>     bf\r\n
+  s>     \xb7\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x01\xa3Ofieldsfollowing\x81\x82Hrevision\x18=DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11Gparents\x82T3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00X=1b74476799ec8318045db759b1b4bcc9b839d0aa\n
   s>     test\n
   s>     0 0\n
   s>     a\n
   s>     \n
   s>     commit 3
   s>     \r\n
-  received frame(size=169; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=183; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -736,12 +751,17 @@ Multiple fields can be transferred
       b'totalitems': 1
     },
     {
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          61
+        ]
+      ],
       b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11',
       b'parents': [
         b'3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:',
         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-      ],
-      b'revisionsize': 61
+      ]
     },
     b'1b74476799ec8318045db759b1b4bcc9b839d0aa\ntest\n0 0\na\n\ncommit 3'
   ]
@@ -755,7 +775,7 @@ Base nodes have just their metadata (e.g. phase) transferred
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0001/ro/changesetdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -776,27 +796,27 @@ Base nodes have just their metadata (e.g. phase) transferred
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     239\r\n
-  s>     1\x02\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x03\xa2DnodeT3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:EphaseFpublic\xa4DnodeTu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1Gparents\x82T3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00EphaseFpublicLrevisionsize\x18?X?7f144aea0ba742713887b564d57e9d12f12ff382\n
+  s>     263\r\n
+  s>     [\x02\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x03\xa2DnodeT3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:EphaseFpublic\xa4Ofieldsfollowing\x81\x82Hrevision\x18?DnodeTu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1Gparents\x82T3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00EphaseFpublicX?7f144aea0ba742713887b564d57e9d12f12ff382\n
   s>     test\n
   s>     0 0\n
   s>     a\n
   s>     b\n
   s>     \n
-  s>     commit 1\xa4DnodeT\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddGparents\x82Tu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00EphaseFpublicLrevisionsize\x18=X=37f0a2d1c28ffe4b879109a7d1bbf8f07b3c763b\n
+  s>     commit 1\xa4Ofieldsfollowing\x81\x82Hrevision\x18=DnodeT\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddGparents\x82Tu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00EphaseFpublicX=37f0a2d1c28ffe4b879109a7d1bbf8f07b3c763b\n
   s>     test\n
   s>     0 0\n
   s>     b\n
   s>     \n
-  s>     commit 2\xa4DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11Gparents\x82T3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00EphaseEdraftLrevisionsize\x18=X=1b74476799ec8318045db759b1b4bcc9b839d0aa\n
+  s>     commit 2\xa4Ofieldsfollowing\x81\x82Hrevision\x18=DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11Gparents\x82T3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00EphaseEdraftX=1b74476799ec8318045db759b1b4bcc9b839d0aa\n
   s>     test\n
   s>     0 0\n
   s>     a\n
   s>     \n
   s>     commit 3
   s>     \r\n
-  received frame(size=561; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=603; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -812,33 +832,48 @@ Base nodes have just their metadata (e.g. phase) transferred
       b'phase': b'public'
     },
     {
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          63
+        ]
+      ],
       b'node': b'u\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1',
       b'parents': [
         b'3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:',
         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
       ],
-      b'phase': b'public',
-      b'revisionsize': 63
+      b'phase': b'public'
     },
     b'7f144aea0ba742713887b564d57e9d12f12ff382\ntest\n0 0\na\nb\n\ncommit 1',
     {
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          61
+        ]
+      ],
       b'node': b'\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd',
       b'parents': [
         b'u\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1',
         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
       ],
-      b'phase': b'public',
-      b'revisionsize': 61
+      b'phase': b'public'
     },
     b'37f0a2d1c28ffe4b879109a7d1bbf8f07b3c763b\ntest\n0 0\nb\n\ncommit 2',
     {
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          61
+        ]
+      ],
       b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11',
       b'parents': [
         b'3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:',
         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
       ],
-      b'phase': b'draft',
-      b'revisionsize': 61
+      b'phase': b'draft'
     },
     b'1b74476799ec8318045db759b1b4bcc9b839d0aa\ntest\n0 0\na\n\ncommit 3'
   ]

@@ -1,4 +1,4 @@
-HTTPV2=exp-http-v2-0001
+HTTPV2=exp-http-v2-0002
 MEDIATYPE=application/mercurial-exp-framing-0005
 
 sendhttpraw() {

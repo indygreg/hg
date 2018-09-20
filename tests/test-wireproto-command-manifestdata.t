@@ -49,7 +49,7 @@ Missing arguments is an error
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0001/ro/manifestdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -81,7 +81,7 @@ Missing arguments is an error
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0001/ro/manifestdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -116,7 +116,7 @@ Unknown node is an error
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0001/ro/manifestdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -151,7 +151,7 @@ Fetching a single revision returns just metadata by default
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0001/ro/manifestdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -202,7 +202,7 @@ Requesting parents works
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0001/ro/manifestdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -258,7 +258,7 @@ Requesting revision data works
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0001/ro/manifestdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -279,16 +279,16 @@ Requesting revision data works
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     167\r\n
-  s>     _\x01\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2DnodeTF\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0Lrevisionsize\x19\x01$Y\x01$a\x000879345e39377229634b420c639454156726c6b6\n
+  s>     175\r\n
+  s>     m\x01\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x01\xa2Ofieldsfollowing\x81\x82Hrevision\x19\x01$DnodeTF\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0Y\x01$a\x000879345e39377229634b420c639454156726c6b6\n
   s>     b\x00819e258d31a5e1606629f365bb902a1b21ee4216\n
   s>     dir0/c\x00914445346a0ca0629bd47ceb5dfe07e4d4cf2501\n
   s>     dir0/child0/e\x00bbba6c06b30f443d34ff841bc985c4d0827c6be4\n
   s>     dir0/child1/f\x0012fc7dcd773b5a0a929ce195228083c6ddc9cec4\n
   s>     dir0/d\x00538206dc971e521540d6843abfe6d16032f6d426\n
   s>     \r\n
-  received frame(size=351; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=365; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -300,8 +300,13 @@ Requesting revision data works
       b'totalitems': 1
     },
     {
-      b'node': b'F\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0',
-      b'revisionsize': 292
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          292
+        ]
+      ],
+      b'node': b'F\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0'
     },
     b'a\x000879345e39377229634b420c639454156726c6b6\nb\x00819e258d31a5e1606629f365bb902a1b21ee4216\ndir0/c\x00914445346a0ca0629bd47ceb5dfe07e4d4cf2501\ndir0/child0/e\x00bbba6c06b30f443d34ff841bc985c4d0827c6be4\ndir0/child1/f\x0012fc7dcd773b5a0a929ce195228083c6ddc9cec4\ndir0/d\x00538206dc971e521540d6843abfe6d16032f6d426\n'
   ]
@@ -317,7 +322,7 @@ haveparents=False yields same output
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0001/ro/manifestdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -338,16 +343,16 @@ haveparents=False yields same output
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     167\r\n
-  s>     _\x01\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2DnodeTF\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0Lrevisionsize\x19\x01$Y\x01$a\x000879345e39377229634b420c639454156726c6b6\n
+  s>     175\r\n
+  s>     m\x01\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x01\xa2Ofieldsfollowing\x81\x82Hrevision\x19\x01$DnodeTF\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0Y\x01$a\x000879345e39377229634b420c639454156726c6b6\n
   s>     b\x00819e258d31a5e1606629f365bb902a1b21ee4216\n
   s>     dir0/c\x00914445346a0ca0629bd47ceb5dfe07e4d4cf2501\n
   s>     dir0/child0/e\x00bbba6c06b30f443d34ff841bc985c4d0827c6be4\n
   s>     dir0/child1/f\x0012fc7dcd773b5a0a929ce195228083c6ddc9cec4\n
   s>     dir0/d\x00538206dc971e521540d6843abfe6d16032f6d426\n
   s>     \r\n
-  received frame(size=351; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=365; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -359,8 +364,13 @@ haveparents=False yields same output
       b'totalitems': 1
     },
     {
-      b'node': b'F\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0',
-      b'revisionsize': 292
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          292
+        ]
+      ],
+      b'node': b'F\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0'
     },
     b'a\x000879345e39377229634b420c639454156726c6b6\nb\x00819e258d31a5e1606629f365bb902a1b21ee4216\ndir0/c\x00914445346a0ca0629bd47ceb5dfe07e4d4cf2501\ndir0/child0/e\x00bbba6c06b30f443d34ff841bc985c4d0827c6be4\ndir0/child1/f\x0012fc7dcd773b5a0a929ce195228083c6ddc9cec4\ndir0/d\x00538206dc971e521540d6843abfe6d16032f6d426\n'
   ]
@@ -376,7 +386,7 @@ haveparents=True will emit delta
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0001/ro/manifestdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -397,11 +407,11 @@ haveparents=True will emit delta
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     98\r\n
-  s>     \x90\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa3MdeltabasenodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Ideltasize\x187DnodeTF\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0X7\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n
+  s>     a6\r\n
+  s>     \x9e\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x01\xa3MdeltabasenodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Ofieldsfollowing\x81\x82Edelta\x187DnodeTF\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0X7\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n
   s>     \r\n
-  received frame(size=144; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=158; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -414,7 +424,12 @@ haveparents=True will emit delta
     },
     {
       b'deltabasenode': b'\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4',
-      b'deltasize': 55,
+      b'fieldsfollowing': [
+        [
+          b'delta',
+          55
+        ]
+      ],
       b'node': b'F\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0'
     },
     b'\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n'
@@ -432,7 +447,7 @@ has been emitted)
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0001/ro/manifestdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -453,17 +468,17 @@ has been emitted)
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     1ea\r\n
-  s>     \xe2\x01\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x02\xa2DnodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Lrevisionsize\x19\x01$Y\x01$a\x002b4eb07319bfa077a40a2f04913659aef0da42da\n
+  s>     206\r\n
+  s>     \xfe\x01\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x02\xa2Ofieldsfollowing\x81\x82Hrevision\x19\x01$DnodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Y\x01$a\x002b4eb07319bfa077a40a2f04913659aef0da42da\n
   s>     b\x00819e258d31a5e1606629f365bb902a1b21ee4216\n
   s>     dir0/c\x00914445346a0ca0629bd47ceb5dfe07e4d4cf2501\n
   s>     dir0/child0/e\x00bbba6c06b30f443d34ff841bc985c4d0827c6be4\n
   s>     dir0/child1/f\x0012fc7dcd773b5a0a929ce195228083c6ddc9cec4\n
   s>     dir0/d\x00538206dc971e521540d6843abfe6d16032f6d426\n
-  s>     \xa3MdeltabasenodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Ideltasize\x187DnodeTF\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0X7\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n
+  s>     \xa3MdeltabasenodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Ofieldsfollowing\x81\x82Edelta\x187DnodeTF\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0X7\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n
   s>     \r\n
-  received frame(size=482; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=510; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -475,13 +490,23 @@ has been emitted)
       b'totalitems': 2
     },
     {
-      b'node': b'\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4',
-      b'revisionsize': 292
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          292
+        ]
+      ],
+      b'node': b'\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4'
     },
     b'a\x002b4eb07319bfa077a40a2f04913659aef0da42da\nb\x00819e258d31a5e1606629f365bb902a1b21ee4216\ndir0/c\x00914445346a0ca0629bd47ceb5dfe07e4d4cf2501\ndir0/child0/e\x00bbba6c06b30f443d34ff841bc985c4d0827c6be4\ndir0/child1/f\x0012fc7dcd773b5a0a929ce195228083c6ddc9cec4\ndir0/d\x00538206dc971e521540d6843abfe6d16032f6d426\n',
     {
       b'deltabasenode': b'\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4',
-      b'deltasize': 55,
+      b'fieldsfollowing': [
+        [
+          b'delta',
+          55
+        ]
+      ],
       b'node': b'F\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0'
     },
     b'\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n'
@@ -498,7 +523,7 @@ With haveparents=True, first revision is a delta instead of fulltext
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0001/ro/manifestdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -519,17 +544,17 @@ With haveparents=True, first revision is a delta instead of fulltext
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     1ea\r\n
-  s>     \xe2\x01\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x02\xa2DnodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Lrevisionsize\x19\x01$Y\x01$a\x002b4eb07319bfa077a40a2f04913659aef0da42da\n
+  s>     206\r\n
+  s>     \xfe\x01\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x02\xa2Ofieldsfollowing\x81\x82Hrevision\x19\x01$DnodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Y\x01$a\x002b4eb07319bfa077a40a2f04913659aef0da42da\n
   s>     b\x00819e258d31a5e1606629f365bb902a1b21ee4216\n
   s>     dir0/c\x00914445346a0ca0629bd47ceb5dfe07e4d4cf2501\n
   s>     dir0/child0/e\x00bbba6c06b30f443d34ff841bc985c4d0827c6be4\n
   s>     dir0/child1/f\x0012fc7dcd773b5a0a929ce195228083c6ddc9cec4\n
   s>     dir0/d\x00538206dc971e521540d6843abfe6d16032f6d426\n
-  s>     \xa3MdeltabasenodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Ideltasize\x187DnodeTF\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0X7\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n
+  s>     \xa3MdeltabasenodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Ofieldsfollowing\x81\x82Edelta\x187DnodeTF\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0X7\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n
   s>     \r\n
-  received frame(size=482; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=510; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -541,13 +566,23 @@ With haveparents=True, first revision is a delta instead of fulltext
       b'totalitems': 2
     },
     {
-      b'node': b'\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4',
-      b'revisionsize': 292
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          292
+        ]
+      ],
+      b'node': b'\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4'
     },
     b'a\x002b4eb07319bfa077a40a2f04913659aef0da42da\nb\x00819e258d31a5e1606629f365bb902a1b21ee4216\ndir0/c\x00914445346a0ca0629bd47ceb5dfe07e4d4cf2501\ndir0/child0/e\x00bbba6c06b30f443d34ff841bc985c4d0827c6be4\ndir0/child1/f\x0012fc7dcd773b5a0a929ce195228083c6ddc9cec4\ndir0/d\x00538206dc971e521540d6843abfe6d16032f6d426\n',
     {
       b'deltabasenode': b'\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4',
-      b'deltasize': 55,
+      b'fieldsfollowing': [
+        [
+          b'delta',
+          55
+        ]
+      ],
       b'node': b'F\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0'
     },
     b'\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n'
@@ -563,7 +598,7 @@ Revisions are sorted by DAG order, parents first
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0001/ro/manifestdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -584,17 +619,17 @@ Revisions are sorted by DAG order, parents first
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     1ea\r\n
-  s>     \xe2\x01\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x02\xa2DnodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Lrevisionsize\x19\x01$Y\x01$a\x002b4eb07319bfa077a40a2f04913659aef0da42da\n
+  s>     206\r\n
+  s>     \xfe\x01\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x02\xa2Ofieldsfollowing\x81\x82Hrevision\x19\x01$DnodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Y\x01$a\x002b4eb07319bfa077a40a2f04913659aef0da42da\n
   s>     b\x00819e258d31a5e1606629f365bb902a1b21ee4216\n
   s>     dir0/c\x00914445346a0ca0629bd47ceb5dfe07e4d4cf2501\n
   s>     dir0/child0/e\x00bbba6c06b30f443d34ff841bc985c4d0827c6be4\n
   s>     dir0/child1/f\x0012fc7dcd773b5a0a929ce195228083c6ddc9cec4\n
   s>     dir0/d\x00538206dc971e521540d6843abfe6d16032f6d426\n
-  s>     \xa3MdeltabasenodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Ideltasize\x187DnodeTF\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0X7\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n
+  s>     \xa3MdeltabasenodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Ofieldsfollowing\x81\x82Edelta\x187DnodeTF\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0X7\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n
   s>     \r\n
-  received frame(size=482; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=510; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -606,13 +641,23 @@ Revisions are sorted by DAG order, parents first
       b'totalitems': 2
     },
     {
-      b'node': b'\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4',
-      b'revisionsize': 292
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          292
+        ]
+      ],
+      b'node': b'\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4'
     },
     b'a\x002b4eb07319bfa077a40a2f04913659aef0da42da\nb\x00819e258d31a5e1606629f365bb902a1b21ee4216\ndir0/c\x00914445346a0ca0629bd47ceb5dfe07e4d4cf2501\ndir0/child0/e\x00bbba6c06b30f443d34ff841bc985c4d0827c6be4\ndir0/child1/f\x0012fc7dcd773b5a0a929ce195228083c6ddc9cec4\ndir0/d\x00538206dc971e521540d6843abfe6d16032f6d426\n',
     {
       b'deltabasenode': b'\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4',
-      b'deltasize': 55,
+      b'fieldsfollowing': [
+        [
+          b'delta',
+          55
+        ]
+      ],
       b'node': b'F\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0'
     },
     b'\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n'
@@ -628,7 +673,7 @@ Requesting parents and revision data works
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0001/ro/manifestdata HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -649,17 +694,17 @@ Requesting parents and revision data works
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     250\r\n
-  s>     H\x02\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x02\xa3DnodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Gparents\x82T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00Lrevisionsize\x19\x01$Y\x01$a\x002b4eb07319bfa077a40a2f04913659aef0da42da\n
+  s>     26c\r\n
+  s>     d\x02\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x02\xa3Ofieldsfollowing\x81\x82Hrevision\x19\x01$DnodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Gparents\x82T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00Y\x01$a\x002b4eb07319bfa077a40a2f04913659aef0da42da\n
   s>     b\x00819e258d31a5e1606629f365bb902a1b21ee4216\n
   s>     dir0/c\x00914445346a0ca0629bd47ceb5dfe07e4d4cf2501\n
   s>     dir0/child0/e\x00bbba6c06b30f443d34ff841bc985c4d0827c6be4\n
   s>     dir0/child1/f\x0012fc7dcd773b5a0a929ce195228083c6ddc9cec4\n
   s>     dir0/d\x00538206dc971e521540d6843abfe6d16032f6d426\n
-  s>     \xa4MdeltabasenodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Ideltasize\x187DnodeTF\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0Gparents\x82T\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00X7\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n
+  s>     \xa4MdeltabasenodeT\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4Ofieldsfollowing\x81\x82Edelta\x187DnodeTF\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0Gparents\x82T\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00X7\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n
   s>     \r\n
-  received frame(size=584; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=612; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -671,17 +716,27 @@ Requesting parents and revision data works
       b'totalitems': 2
     },
     {
+      b'fieldsfollowing': [
+        [
+          b'revision',
+          292
+        ]
+      ],
       b'node': b'\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4',
       b'parents': [
         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-      ],
-      b'revisionsize': 292
+      ]
     },
     b'a\x002b4eb07319bfa077a40a2f04913659aef0da42da\nb\x00819e258d31a5e1606629f365bb902a1b21ee4216\ndir0/c\x00914445346a0ca0629bd47ceb5dfe07e4d4cf2501\ndir0/child0/e\x00bbba6c06b30f443d34ff841bc985c4d0827c6be4\ndir0/child1/f\x0012fc7dcd773b5a0a929ce195228083c6ddc9cec4\ndir0/d\x00538206dc971e521540d6843abfe6d16032f6d426\n',
     {
       b'deltabasenode': b'\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4',
-      b'deltasize': 55,
+      b'fieldsfollowing': [
+        [
+          b'delta',
+          55
+        ]
+      ],
       b'node': b'F\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0',
       b'parents': [
         b'\x1b\x17[Y_\x02,\xfa\xb5\xb8\t\xcc\x0e\xd5Q\xbd\x0b?\xf5\xe4',

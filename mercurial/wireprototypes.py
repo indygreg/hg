@@ -22,8 +22,8 @@ from .utils import (
 SSHV1 = 'ssh-v1'
 # These are advertised over the wire. Increment the counters at the end
 # to reflect BC breakages.
-SSHV2 = 'exp-ssh-v2-0001'
-HTTP_WIREPROTO_V2 = 'exp-http-v2-0001'
+SSHV2 = 'exp-ssh-v2-0002'
+HTTP_WIREPROTO_V2 = 'exp-http-v2-0002'
 
 # All available wire protocol transports.
 TRANSPORTS = {

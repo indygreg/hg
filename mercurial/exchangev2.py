@@ -167,11 +167,16 @@ def _processchangesetdata(repo, tr, objs):
             # TODO add mechanism for extensions to examine records so they
             # can siphon off custom data fields.
 
+            extrafields = {}
+
+            for field, size in cset.get(b'fieldsfollowing', []):
+                extrafields[field] = next(objs)
+
             # Some entries might only be metadata only updates.
-            if b'revisionsize' not in cset:
+            if b'revision' not in extrafields:
                 continue
 
-            data = next(objs)
+            data = extrafields[b'revision']
 
             yield (
                 node,
@@ -227,12 +232,17 @@ def _fetchmanifests(repo, tr, remote, manifestnodes):
         for manifest in objs:
             node = manifest[b'node']
 
-            if b'deltasize' in manifest:
+            extrafields = {}
+
+            for field, size in manifest.get(b'fieldsfollowing', []):
+                extrafields[field] = next(objs)
+
+            if b'delta' in extrafields:
                 basenode = manifest[b'deltabasenode']
-                delta = next(objs)
-            elif b'revisionsize' in manifest:
+                delta = extrafields[b'delta']
+            elif b'revision' in extrafields:
                 basenode = nullid
-                revision = next(objs)
+                revision = extrafields[b'revision']
                 delta = mdiff.trivialdiffheader(len(revision)) + revision
             else:
                 continue
@@ -331,12 +341,17 @@ def _fetchfiles(repo, tr, remote, fnodes, linkrevs):
         for filerevision in objs:
             node = filerevision[b'node']
 
-            if b'deltasize' in filerevision:
+            extrafields = {}
+
+            for field, size in filerevision.get(b'fieldsfollowing', []):
+                extrafields[field] = next(objs)
+
+            if b'delta' in extrafields:
                 basenode = filerevision[b'deltabasenode']
-                delta = next(objs)
-            elif b'revisionsize' in filerevision:
+                delta = extrafields[b'delta']
+            elif b'revision' in extrafields:
                 basenode = nullid
-                revision = next(objs)
+                revision = extrafields[b'revision']
                 delta = mdiff.trivialdiffheader(len(revision)) + revision
             else:
                 continue

@@ -35,7 +35,7 @@ All non-secret heads returned by default
   > EOF
   creating http peer for wire protocol version 2
   sending heads command
-  s>     POST /api/exp-http-v2-0001/ro/heads HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/heads HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n
@@ -81,7 +81,7 @@ Requesting just the public heads works
   > EOF
   creating http peer for wire protocol version 2
   sending heads command
-  s>     POST /api/exp-http-v2-0001/ro/heads HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0002/ro/heads HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0005\r\n
   s>     content-type: application/mercurial-exp-framing-0005\r\n

@@ -68,7 +68,7 @@ Test basic clone
     ]
   }
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  received frame(size=871; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=941; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   add changeset 3390ef850073
   add changeset 4432d83626e8
@@ -93,7 +93,7 @@ Test basic clone
     'tree': ''
   }
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  received frame(size=922; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=992; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   sending 2 commands
   sending command filedata: {
@@ -123,10 +123,10 @@ Test basic clone
     'path': 'b'
   }
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  received frame(size=389; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=431; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   received frame(size=11; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
-  received frame(size=389; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=431; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   new changesets 3390ef850073:caa2a465451d (3 drafts)
@@ -203,7 +203,7 @@ Cloning only a specific revision works
     ]
   }
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  received frame(size=353; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=381; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   add changeset 3390ef850073
   add changeset 4432d83626e8
@@ -222,7 +222,7 @@ Cloning only a specific revision works
     'tree': ''
   }
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  received frame(size=376; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=404; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   sending 2 commands
   sending command filedata: {
@@ -249,10 +249,10 @@ Cloning only a specific revision works
     'path': 'b'
   }
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  received frame(size=249; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=277; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   received frame(size=11; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
-  received frame(size=109; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=123; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   new changesets 3390ef850073:4432d83626e8
@@ -311,7 +311,7 @@ Incremental pull works
     ]
   }
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  received frame(size=571; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=613; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   add changeset cd2534766bec
   add changeset e96ae20f4188
@@ -332,7 +332,7 @@ Incremental pull works
     'tree': ''
   }
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  received frame(size=559; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=601; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   sending 2 commands
   sending command filedata: {
@@ -361,10 +361,10 @@ Incremental pull works
     'path': 'b'
   }
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  received frame(size=249; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=277; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   received frame(size=11; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
-  received frame(size=389; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=431; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   new changesets cd2534766bec:caa2a465451d (3 drafts)
@@ -491,7 +491,7 @@ Bookmarks are transferred on clone
     ]
   }
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  received frame(size=909; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=979; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   add changeset 3390ef850073
   add changeset 4432d83626e8
@@ -518,7 +518,7 @@ Bookmarks are transferred on clone
     'tree': ''
   }
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  received frame(size=922; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=992; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   sending 2 commands
   sending command filedata: {
@@ -548,10 +548,10 @@ Bookmarks are transferred on clone
     'path': 'b'
   }
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  received frame(size=389; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=431; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   received frame(size=11; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
-  received frame(size=389; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=431; request=3; stream=2; streamflags=; type=command-response; flags=continuation)
   received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   new changesets 3390ef850073:caa2a465451d (1 drafts)

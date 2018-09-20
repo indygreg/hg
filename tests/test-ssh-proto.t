@@ -954,7 +954,7 @@ Send an upgrade request to a server that doesn't support that command
   $ hg --config experimental.sshpeer.advertise-v2=true --debug debugpeer ssh://user@dummy/server
   running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
   running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
-  sending upgrade request: * proto=exp-ssh-v2-0001 (glob)
+  sending upgrade request: * proto=exp-ssh-v2-0002 (glob)
   devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
   sending hello command
@@ -984,7 +984,7 @@ Send an upgrade request to a server that supports upgrade
 
   $ hg debugwireproto --localssh --peer raw << EOF
   > raw
-  >     upgrade this-is-some-token proto=exp-ssh-v2-0001\n
+  >     upgrade this-is-some-token proto=exp-ssh-v2-0002\n
   >     hello\n
   >     between\n
   >     pairs 81\n
@@ -995,13 +995,13 @@ Send an upgrade request to a server that supports upgrade
   > EOF
   using raw connection to peer
   i> write(153) -> 153:
-  i>     upgrade this-is-some-token proto=exp-ssh-v2-0001\n
+  i>     upgrade this-is-some-token proto=exp-ssh-v2-0002\n
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   o> readline() -> 44:
-  o>     upgraded this-is-some-token exp-ssh-v2-0001\n
+  o>     upgraded this-is-some-token exp-ssh-v2-0002\n
   o> readline() -> 4:
   o>     426\n
   o> readline() -> 427:
@@ -1012,12 +1012,12 @@ Send an upgrade request to a server that supports upgrade
   $ hg --config experimental.sshpeer.advertise-v2=true --debug debugpeer ssh://user@dummy/server
   running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
   running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
-  sending upgrade request: * proto=exp-ssh-v2-0001 (glob)
+  sending upgrade request: * proto=exp-ssh-v2-0002 (glob)
   devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
   sending hello command
   sending between command
-  protocol upgraded to exp-ssh-v2-0001
+  protocol upgraded to exp-ssh-v2-0002
   remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   devel-peer-request: protocaps
   devel-peer-request:   caps: * bytes (glob)
@@ -1031,12 +1031,12 @@ Verify the peer has capabilities
   $ hg --config experimental.sshpeer.advertise-v2=true --debug debugcapabilities ssh://user@dummy/server
   running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
   running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
-  sending upgrade request: * proto=exp-ssh-v2-0001 (glob)
+  sending upgrade request: * proto=exp-ssh-v2-0002 (glob)
   devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
   sending hello command
   sending between command
-  protocol upgraded to exp-ssh-v2-0001
+  protocol upgraded to exp-ssh-v2-0002
   remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   devel-peer-request: protocaps
   devel-peer-request:   caps: * bytes (glob)
@@ -1087,7 +1087,7 @@ Command after upgrade to version 2 is processed
 
   $ hg debugwireproto --localssh --peer raw << EOF
   > raw
-  >      upgrade this-is-some-token proto=exp-ssh-v2-0001\n
+  >      upgrade this-is-some-token proto=exp-ssh-v2-0002\n
   >      hello\n
   >      between\n
   >      pairs 81\n
@@ -1102,13 +1102,13 @@ Command after upgrade to version 2 is processed
   > EOF
   using raw connection to peer
   i> write(153) -> 153:
-  i>     upgrade this-is-some-token proto=exp-ssh-v2-0001\n
+  i>     upgrade this-is-some-token proto=exp-ssh-v2-0002\n
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   o> readline() -> 44:
-  o>     upgraded this-is-some-token exp-ssh-v2-0001\n
+  o>     upgraded this-is-some-token exp-ssh-v2-0002\n
   o> readline() -> 4:
   o>     426\n
   o> readline() -> 427:
@@ -1124,7 +1124,7 @@ Multiple upgrades is not allowed
 
   $ hg debugwireproto --localssh --peer raw << EOF
   > raw
-  >     upgrade this-is-some-token proto=exp-ssh-v2-0001\n
+  >     upgrade this-is-some-token proto=exp-ssh-v2-0002\n
   >     hello\n
   >     between\n
   >     pairs 81\n
@@ -1140,13 +1140,13 @@ Multiple upgrades is not allowed
   > EOF
   using raw connection to peer
   i> write(153) -> 153:
-  i>     upgrade this-is-some-token proto=exp-ssh-v2-0001\n
+  i>     upgrade this-is-some-token proto=exp-ssh-v2-0002\n
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   o> readline() -> 44:
-  o>     upgraded this-is-some-token exp-ssh-v2-0001\n
+  o>     upgraded this-is-some-token exp-ssh-v2-0002\n
   o> readline() -> 4:
   o>     426\n
   o> readline() -> 427:
@@ -1236,14 +1236,14 @@ Upgrade request must be followed by hello + between
 
   $ hg debugwireproto --localssh --peer raw << EOF
   > raw
-  >     upgrade token proto=exp-ssh-v2-0001\n
+  >     upgrade token proto=exp-ssh-v2-0002\n
   >     invalid\n
   > readline
   > readavailable
   > EOF
   using raw connection to peer
   i> write(44) -> 44:
-  i>     upgrade token proto=exp-ssh-v2-0001\n
+  i>     upgrade token proto=exp-ssh-v2-0002\n
   i>     invalid\n
   o> readline() -> 1:
   o>     \n
@@ -1253,7 +1253,7 @@ Upgrade request must be followed by hello + between
 
   $ hg debugwireproto --localssh --peer raw << EOF
   > raw
-  >     upgrade token proto=exp-ssh-v2-0001\n
+  >     upgrade token proto=exp-ssh-v2-0002\n
   >     hello\n
   >     invalid\n
   > readline
@@ -1261,7 +1261,7 @@ Upgrade request must be followed by hello + between
   > EOF
   using raw connection to peer
   i> write(50) -> 50:
-  i>     upgrade token proto=exp-ssh-v2-0001\n
+  i>     upgrade token proto=exp-ssh-v2-0002\n
   i>     hello\n
   i>     invalid\n
   o> readline() -> 1:
@@ -1272,7 +1272,7 @@ Upgrade request must be followed by hello + between
 
   $ hg debugwireproto --localssh --peer raw << EOF
   > raw
-  >     upgrade token proto=exp-ssh-v2-0001\n
+  >     upgrade token proto=exp-ssh-v2-0002\n
   >     hello\n
   >     between\n
   >     invalid\n
@@ -1281,7 +1281,7 @@ Upgrade request must be followed by hello + between
   > EOF
   using raw connection to peer
   i> write(58) -> 58:
-  i>     upgrade token proto=exp-ssh-v2-0001\n
+  i>     upgrade token proto=exp-ssh-v2-0002\n
   i>     hello\n
   i>     between\n
   i>     invalid\n
@@ -1368,14 +1368,14 @@ Test listkeys for listing namespaces
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o>     upgraded * exp-ssh-v2-0002\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -1448,14 +1448,14 @@ With no bookmarks set
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o>     upgraded * exp-ssh-v2-0002\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -1512,14 +1512,14 @@ With a single bookmark set
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o>     upgraded * exp-ssh-v2-0002\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -1582,14 +1582,14 @@ With multiple bookmarks set
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o>     upgraded * exp-ssh-v2-0002\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -1661,14 +1661,14 @@ Test pushkey for bookmarks
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o>     upgraded * exp-ssh-v2-0002\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -1746,14 +1746,14 @@ Phases on empty repo
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o>     upgraded * exp-ssh-v2-0002\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -1834,14 +1834,14 @@ Two draft heads
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o>     upgraded * exp-ssh-v2-0002\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -1909,14 +1909,14 @@ Single draft head
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o>     upgraded * exp-ssh-v2-0002\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -1979,14 +1979,14 @@ All public heads
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o>     upgraded * exp-ssh-v2-0002\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -2058,14 +2058,14 @@ Setting public phase via pushkey
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o>     upgraded * exp-ssh-v2-0002\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -2164,14 +2164,14 @@ Test batching of requests
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o>     upgraded * exp-ssh-v2-0002\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash

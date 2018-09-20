@@ -161,11 +161,17 @@ totalitems
 
 Following the map header is a series of 0 or more CBOR values. If values
 are present, the first value will always be a map describing a single changeset
-revision. If revision data is requested, the raw revision data (encoded as
-a CBOR bytestring) will follow the map describing it. Otherwise, another CBOR
-map describing the next changeset revision will occur.
+revision.
 
-Each map has the following bytestring keys:
+If the ``fieldsfollowing`` key is present, the map will immediately be followed
+by N CBOR bytestring values, where N is the number of elements in
+``fieldsfollowing``. Each bytestring value corresponds to a field denoted
+by ``fieldsfollowing``.
+
+Following the optional bytestring field values is the next revision descriptor
+map, or end of stream.
+
+Each revision descriptor map has the following bytestring keys:
 
 node
    (bytestring) The node value for this revision. This is the SHA-1 hash of
@@ -176,6 +182,22 @@ bookmarks (optional)
    if ``bookmarks`` data is being requested and the revision has bookmarks
    attached.
 
+fieldsfollowing (optional)
+   (array of 2-array) Denotes what fields immediately follow this map. Each
+   value is an array with 2 elements: the bytestring field name and an unsigned
+   integer describing the length of the data, in bytes.
+
+   If this key isn't present, no special fields will follow this map.
+
+   The following fields may be present:
+
+   revision
+      Raw, revision data for the changelog entry. Contains a serialized form
+      of the changeset data, including the author, date, commit message, set
+      of changed files, manifest node, and other metadata.
+
+      Only present if the ``revision`` field was requested.
+
 parents (optional)
    (array of bytestrings) The nodes representing the parent revisions of this
    revision. Only present if ``parents`` data is being requested.
@@ -184,15 +206,6 @@ phase (optional)
    (bytestring) The phase that a revision is in. Recognized values are
    ``secret``, ``draft``, and ``public``. Only present if ``phase`` data
    is being requested.
-
-revisionsize (optional)
-   (unsigned integer) Indicates the size of raw revision data that follows this
-   map. The following data contains a serialized form of the changeset data,
-   including the author, date, commit message, set of changed files, manifest
-   node, and other metadata.
-
-   Only present if ``revision`` data was requested and the data follows this
-   map.
 
 If nodes are requested via ``noderange``, they will be emitted in DAG order,
 parents always before children.
@@ -261,11 +274,19 @@ totalitems
    (unsigned integer) Total number of file revisions whose data is
    being returned.
 
-Following the header map is a series of 0 or more CBOR values. The first
-value is always a map describing a file revision. If this map has the
-``deltasize`` or ``revisionsize`` keys, a bytestring containing the delta
-or revision, respectively, will immediately follow the map. Otherwise
-the next value will be a map describing the next file revision.
+Following the map header is a series of 0 or more CBOR values. If values
+are present, the first value will always be a map describing a single changeset
+revision.
+
+If the ``fieldsfollowing`` key is present, the map will immediately be followed
+by N CBOR bytestring values, where N is the number of elements in
+``fieldsfollowing``. Each bytestring value corresponds to a field denoted
+by ``fieldsfollowing``.
+
+Following the optional bytestring field values is the next revision descriptor
+map, or end of stream.
+
+Each revision descriptor map has the following bytestring keys:
 
 Each map has the following bytestring keys:
 
@@ -278,28 +299,32 @@ deltabasenode
    Only present if the ``revision`` field is requested and delta data
    follows this map.
 
-deltasize
-   (unsigned integer) The size of the delta data that follows this map.
+fieldsfollowing
+   (array of 2-array) Denotes extra bytestring fields that following this map.
+   See the documentation for ``changesetdata`` for semantics.
 
-   Only present if the ``revision`` field is requested and delta data
-   follows this map.
+   The following named fields may be present:
+
+   ``delta``
+      The delta data to use to construct the fulltext revision.
+
+      Only present if the ``revision`` field is requested and a delta is
+      being emitted. The ``deltabasenode`` top-level key will also be
+      present if this field is being emitted.
+
+   ``revision``
+      The fulltext revision data for this manifest. Only present if the
+      ``revision`` field is requested and a fulltext revision is being emitted.
 
 parents
    (array of bytestring) The nodes of the parents of this file revision.
 
    Only present if the ``parents`` field is requested.
 
-revisionsize
-   (unsigned integer) The size of the fulltext revision data that follows
-   this map.
-
-   Only present if the ``revision`` field is requested and fulltext revision
-   data follows this map.
-
 When ``revision`` data is requested, the server chooses to emit either fulltext
 revision data or a delta. What the server decides can be inferred by looking
-for the presence of the ``deltasize`` or ``revisionsize`` keys in the map.
-Servers MUST NOT define both keys.
+for the presence of the ``delta`` or ``revision`` keys in the
+``fieldsfollowing`` array.
 
 heads
 -----
@@ -409,13 +434,19 @@ totalitems
    (unsigned integer) Total number of manifest revisions whose data is
    being returned.
 
-Following the header map is a series of 0 or more CBOR values. The first
-value is always a map describing a manifest revision. If this map has the
-``deltasize`` or ``revisionsize`` keys, a bytestring containing the delta
-or revision, respectively, will immediately follow the map. Otherwise
-the next value will be a map describing the next manifest revision.
+Following the map header is a series of 0 or more CBOR values. If values
+are present, the first value will always be a map describing a single manifest
+revision.
 
-Each map has the following bytestring keys:
+If the ``fieldsfollowing`` key is present, the map will immediately be followed
+by N CBOR bytestring values, where N is the number of elements in
+``fieldsfollowing``. Each bytestring value corresponds to a field denoted
+by ``fieldsfollowing``.
+
+Following the optional bytestring field values is the next revision descriptor
+map, or end of stream.
+
+Each revision descriptor map has the following bytestring keys:
 
 node
    (bytestring) The node of the manifest revision whose data is represented.
@@ -425,24 +456,30 @@ deltabasenode
    computed against. Only present if the ``revision`` field is requested and
    a delta is being emitted.
 
-deltasize
-   (unsigned integer) The size of the delta data that follows this map.
-   Only present if the ``revision`` field is requested and a delta is
-   being emitted.
+fieldsfollowing
+   (array of 2-array) Denotes extra bytestring fields that following this map.
+   See the documentation for ``changesetdata`` for semantics.
+
+   The following named fields may be present:
+
+   ``delta``
+      The delta data to use to construct the fulltext revision.
+
+      Only present if the ``revision`` field is requested and a delta is
+      being emitted. The ``deltabasenode`` top-level key will also be
+      present if this field is being emitted.
+
+   ``revision``
+      The fulltext revision data for this manifest. Only present if the
+      ``revision`` field is requested and a fulltext revision is being emitted.
 
 parents
    (array of bytestring) The nodes of the parents of this manifest revision.
    Only present if the ``parents`` field is requested.
 
-revisionsize
-   (unsigned integer) The size of the fulltext revision data that follows
-   this map. Only present if the ``revision`` field is requested and a fulltext
-   revision is being emitted.
-
 When ``revision`` data is requested, the server chooses to emit either fulltext
 revision data or a delta. What the server decides can be inferred by looking
-for the presence of the ``deltasize`` or ``revisionsize`` keys in the map.
-Servers MUST NOT define both keys.
+for the presence of ``delta`` or ``revision`` in the ``fieldsfollowing`` array.
 
 pushkey
 -------

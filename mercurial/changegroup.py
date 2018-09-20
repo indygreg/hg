@@ -1073,10 +1073,7 @@ class cgpacker(object):
             if not self._filematcher.visitdir(store.tree[:-1] or '.'):
                 prunednodes = []
             else:
-                frev, flr = store.rev, store.linkrev
-                prunednodes = [n for n in nodes
-                               if flr(frev(n)) not in commonrevs]
-
+                prunednodes = self._prunemanifests(store, nodes, commonrevs)
             if tree and not prunednodes:
                 continue
 
@@ -1092,6 +1089,16 @@ class cgpacker(object):
                 precomputedellipsis=self._precomputedellipsis)
 
             yield tree, deltas
+
+    def _prunemanifests(self, store, nodes, commonrevs):
+        # This is split out as a separate method to allow filtering
+        # commonrevs in extension code.
+        #
+        # TODO(augie): this shouldn't be required, instead we should
+        # make filtering of revisions to send delegated to the store
+        # layer.
+        frev, flr = store.rev, store.linkrev
+        return [n for n in nodes if flr(frev(n)) not in commonrevs]
 
     # The 'source' parameter is useful for extensions
     def generatefiles(self, changedfiles, commonrevs, source,

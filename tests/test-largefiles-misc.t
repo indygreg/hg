@@ -1,6 +1,53 @@
 This file contains testcases that tend to be related to special cases or less
 common commands affecting largefile.
 
+  $ hg init requirements
+  $ cd requirements
+
+# largefiles not loaded by default.
+
+  $ hg config extensions
+  [1]
+
+# Adding largefiles to requires file will auto-load largefiles extension.
+
+  $ echo largefiles >> .hg/requires
+  $ hg config extensions
+  extensions.largefiles=
+
+# But only if there is no config entry for the extension already.
+
+  $ cat > .hg/hgrc << EOF
+  > [extensions]
+  > largefiles=!
+  > EOF
+
+  $ hg config extensions
+  abort: repository requires features unknown to this Mercurial: largefiles!
+  (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
+  [255]
+
+  $ cat > .hg/hgrc << EOF
+  > [extensions]
+  > largefiles=
+  > EOF
+
+  $ hg config extensions
+  extensions.largefiles=
+
+  $ cat > .hg/hgrc << EOF
+  > [extensions]
+  > largefiles = missing.py
+  > EOF
+
+  $ hg config extensions
+  *** failed to import extension largefiles from missing.py: [Errno 2] $ENOENT$: 'missing.py'
+  abort: repository requires features unknown to this Mercurial: largefiles!
+  (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
+  [255]
+
+  $ cd ..
+
 Each sections should be independent of each others.
 
   $ USERCACHE="$TESTTMP/cache"; export USERCACHE
@@ -220,10 +267,8 @@ sharing a largefile repo automatically enables largefiles on the share
   getting changed largefiles
   1 largefiles updated, 0 removed
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cat ../shared_lfrepo/.hg/hgrc
-  
-  [extensions]
-  largefiles=
+  $ grep largefiles ../shared_lfrepo/.hg/requires
+  largefiles
 
 verify that large files in subrepos handled properly
   $ hg init subrepo

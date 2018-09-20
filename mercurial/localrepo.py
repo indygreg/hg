@@ -588,6 +588,7 @@ def afterhgrcload(ui, wdirvfs, hgvfs, requirements):
     # Map of requirements to list of extensions to load automatically when
     # requirement is present.
     autoextensions = {
+        b'largefiles': [b'largefiles'],
         b'lfs': [b'lfs'],
     }
 

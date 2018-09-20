@@ -184,6 +184,10 @@ if sys.version_info > (3, 5, 0):
 
         osenvironb = environbytes(os.environ)
 
+    getcwdb = getattr(os, 'getcwdb')
+    if not getcwdb or os.name == 'nt':
+        getcwdb = lambda: _bytespath(os.getcwd())
+
 elif sys.version_info >= (3, 0, 0):
     print('%s is only supported on Python 3.5+ and 2.7, not %s' %
           (sys.argv[0], '.'.join(str(v) for v in sys.version_info[:3])))
@@ -200,6 +204,7 @@ else:
 
     _strpath = _bytespath
     osenvironb = os.environ
+    getcwdb = os.getcwd
 
 # For Windows support
 wifexited = getattr(os, "WIFEXITED", lambda x: False)
@@ -2519,8 +2524,7 @@ class TestRunner(object):
             os.umask(oldmask)
 
     def _run(self, testdescs):
-        self._testdir = osenvironb[b'TESTDIR'] = getattr(
-            os, 'getcwdb', os.getcwd)()
+        self._testdir = osenvironb[b'TESTDIR'] = getcwdb()
         # assume all tests in same folder for now
         if testdescs:
             pathname = os.path.dirname(testdescs[0]['path'])

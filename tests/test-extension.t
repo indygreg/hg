@@ -105,13 +105,14 @@ Check that extensions are loaded in phases:
   > def reposetup(ui, repo):
   >    print("4) %s reposetup" % name)
   > 
+  > bytesname = name.encode('utf-8')
   > # custom predicate to check registration of functions at loading
   > from mercurial import (
   >     registrar,
   >     smartset,
   > )
   > revsetpredicate = registrar.revsetpredicate()
-  > @revsetpredicate(name, safe=True) # safe=True for query via hgweb
+  > @revsetpredicate(bytesname, safe=True) # safe=True for query via hgweb
   > def custompredicate(repo, subset, x):
   >     return smartset.baseset([r for r in subset if r in {0}])
   > EOF

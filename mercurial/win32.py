@@ -579,10 +579,11 @@ def spawndetached(args):
         env = '\0'
     env += '\0'
 
-    args = subprocess.list2cmdline(args)
+    args = subprocess.list2cmdline(pycompat.rapply(encoding.strfromlocal, args))
 
+    # TODO: CreateProcessW on py3?
     res = _kernel32.CreateProcessA(
-        None, args, None, None, False, _CREATE_NO_WINDOW,
+        None, encoding.strtolocal(args), None, None, False, _CREATE_NO_WINDOW,
         env, pycompat.getcwd(), ctypes.byref(si), ctypes.byref(pi))
     if not res:
         raise ctypes.WinError()

@@ -523,7 +523,7 @@ def rename(src, dst):
         os.rename(src, dst)
 
 def gethgcmd():
-    return [sys.executable] + sys.argv[:1]
+    return [encoding.strtolocal(arg) for arg in [sys.executable] + sys.argv[:1]]
 
 def groupmembers(name):
     # Don't support groups on Windows for now

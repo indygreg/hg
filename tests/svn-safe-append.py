@@ -9,14 +9,18 @@ import os
 import stat
 import sys
 
-text = sys.argv[1]
-fname = sys.argv[2]
+if sys.version_info[0] >= 3:
+    text = os.fsencode(sys.argv[1])
+    fname = os.fsencode(sys.argv[2])
+else:
+    text = sys.argv[1]
+    fname = sys.argv[2]
 
 f = open(fname, "ab")
 try:
     before = os.fstat(f.fileno())[stat.ST_MTIME]
     f.write(text)
-    f.write("\n")
+    f.write(b"\n")
 finally:
     f.close()
 inc = 1

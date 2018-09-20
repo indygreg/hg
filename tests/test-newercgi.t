@@ -39,7 +39,7 @@ This is a rudimentary test of the CGI files as of d74fc8dec2b4.
   > from mercurial.hgweb import hgwebdir
   > from mercurial.hgweb import wsgicgi
   > 
-  > application = hgwebdir("hgweb.config")
+  > application = hgwebdir(b"hgweb.config")
   > wsgicgi.launch(application)
   > HGWEBDIR
 

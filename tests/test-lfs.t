@@ -295,8 +295,6 @@ enabled adds the lfs requirement
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd repo7
-  $ hg config extensions --debug | grep lfs
-  $TESTTMP/repo7/.hg/hgrc:*: extensions.lfs= (glob)
   $ cat large
   LARGE-BECAUSE-IT-IS-MORE-THAN-30-BYTES
   $ cat small
@@ -307,8 +305,8 @@ enabled adds the lfs requirement
   $ hg --config extensions.share= share repo7 sharedrepo
   updating working directory
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ hg -R sharedrepo config extensions --debug | grep lfs
-  $TESTTMP/sharedrepo/.hg/hgrc:*: extensions.lfs= (glob)
+  $ grep lfs sharedrepo/.hg/requires
+  lfs
 
 # Test rename and status
 

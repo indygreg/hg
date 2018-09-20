@@ -344,9 +344,6 @@ def extsetup(ui):
         ),
     )
 
-    wrapfunction(hg, 'clone', wrapper.hgclone)
-    wrapfunction(hg, 'postshare', wrapper.hgpostshare)
-
     scmutil.fileprefetchhooks.add('lfs', wrapper._prefetchfiles)
 
     # Make bundle choose changegroup3 instead of changegroup2. This affects

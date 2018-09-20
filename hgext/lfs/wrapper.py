@@ -228,32 +228,6 @@ def vfsinit(orig, self, othervfs):
         if util.safehasattr(othervfs, name):
             setattr(self, name, getattr(othervfs, name))
 
-def hgclone(orig, ui, opts, *args, **kwargs):
-    result = orig(ui, opts, *args, **kwargs)
-
-    if result is not None:
-        sourcerepo, destrepo = result
-        repo = destrepo.local()
-
-        # When cloning to a remote repo (like through SSH), no repo is available
-        # from the peer.  Therefore the hgrc can't be updated.
-        if not repo:
-            return result
-
-        # If lfs is required for this repo, permanently enable it locally
-        if 'lfs' in repo.requirements:
-            repo.vfs.append('hgrc',
-                            util.tonativeeol('\n[extensions]\nlfs=\n'))
-
-    return result
-
-def hgpostshare(orig, sourcerepo, destrepo, defaultpath=None):
-    orig(sourcerepo, destrepo, defaultpath=defaultpath)
-
-    # If lfs is required for this repo, permanently enable it locally
-    if 'lfs' in destrepo.requirements:
-        destrepo.vfs.append('hgrc', util.tonativeeol('\n[extensions]\nlfs=\n'))
-
 def _prefetchfiles(repo, revs, match):
     """Ensure that required LFS blobs are present, fetching them as a group if
     needed."""

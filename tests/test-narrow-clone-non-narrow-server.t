@@ -31,9 +31,9 @@ Verify that narrow is advertised in the bundle2 capabilities:
   > print(unquote(list(sys.stdin)[1]))
   > EOF
   $ echo hello | hg -R . serve --stdio | \
-  >   "$PYTHON" unquote.py | grep narrow
+  >   "$PYTHON" unquote.py | tr ' ' '\n' | grep narrow
   narrow=v0
-  rev-branch-cache changegroupsubset exp-narrow-1 getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  exp-narrow-1
 
   $ cd ..
 

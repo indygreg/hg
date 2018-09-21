@@ -304,10 +304,10 @@ lfs content, and the extension enabled.
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
   $TESTTMP/server/.hg/requires:lfs
 
-TODO: fail more gracefully.
-
-  $ hg clone -q http://localhost:$HGPORT $TESTTMP/client4_clone
-  abort: HTTP Error 500: Internal Server Error
+  $ hg clone http://localhost:$HGPORT $TESTTMP/client4_clone
+  (remote is using large file support (lfs), but it is explicitly disabled in the local configuration)
+  abort: repository requires features unknown to this Mercurial: lfs!
+  (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
   $ grep 'lfs' $TESTTMP/client4_clone/.hg/requires $SERVER_REQUIRES
   grep: $TESTTMP/client4_clone/.hg/requires: $ENOENT$
@@ -659,8 +659,6 @@ Only the files required by diff are prefetched
 
 #if lfsremote-on
   $ cat $TESTTMP/errors.log | grep '^[A-Z]'
-  Traceback (most recent call last):
-  ValueError: no common changegroup version
   Traceback (most recent call last):
   ValueError: no common changegroup version
 #else

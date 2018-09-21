@@ -46,7 +46,13 @@ def _capabilities(orig, repo, proto):
     '''Wrap server command to announce lfs server capability'''
     caps = orig(repo, proto)
     if util.safehasattr(repo.svfs, 'lfslocalblobstore'):
-        # XXX: change to 'lfs=serve' when separate git server isn't required?
+        # Advertise a slightly different capability when lfs is *required*, so
+        # that the client knows it MUST load the extension.  If lfs is not
+        # required on the server, there's no reason to autoload the extension
+        # on the client.
+        if b'lfs' in repo.requirements:
+            caps.append('lfs-serve')
+
         caps.append('lfs')
     return caps
 

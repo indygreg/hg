@@ -42,6 +42,7 @@ default cache, so it attempts to download.
 Downloads fail...
 
   $ hg clone http://localhost:$HGPORT httpclone
+  (remote is using large file support (lfs); lfs will be enabled for this repository)
   requesting all changes
   adding changesets
   adding manifests
@@ -76,6 +77,7 @@ Blob URIs are correct when --prefix is used
   $ hg clone --debug http://localhost:$HGPORT/subdir/mount/point cloned2
   using http://localhost:$HGPORT/subdir/mount/point
   sending capabilities command
+  (remote is using large file support (lfs); lfs will be enabled for this repository)
   query 1; heads
   sending batch command
   requesting all changes
@@ -88,7 +90,6 @@ Blob URIs are correct when --prefix is used
   adding file changes
   adding lfs.bin revisions
   added 1 changesets with 1 changes to 1 files
-  calling hook pretxnchangegroup.lfs: hgext.lfs.checkrequireslfs
   bundle2-input-part: total payload size 648
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-part: "phase-heads" supported
@@ -239,6 +240,7 @@ though the client doesn't send the blob.
 Test an I/O error in localstore.verify() (Batch API) with GET
 
   $ hg clone http://localhost:$HGPORT1 httpclone2
+  (remote is using large file support (lfs); lfs will be enabled for this repository)
   requesting all changes
   adding changesets
   adding manifests

@@ -2895,6 +2895,9 @@ def newreporequirements(ui, createopts):
     if createopts.get('narrowfiles'):
         requirements.add(repository.NARROW_REQUIREMENT)
 
+    if createopts.get('lfs'):
+        requirements.add('lfs')
+
     return requirements
 
 def filterknowncreateopts(ui, createopts):
@@ -2913,6 +2916,7 @@ def filterknowncreateopts(ui, createopts):
     """
     known = {
         'backend',
+        'lfs',
         'narrowfiles',
         'sharedrepo',
         'sharedrelative',
@@ -2931,6 +2935,9 @@ def createrepository(ui, path, createopts=None):
 
     backend
        The storage backend to use.
+    lfs
+       Repository will be created with ``lfs`` requirement. The lfs extension
+       will automatically be loaded when the repository is accessed.
     narrowfiles
        Set up repository to support narrow file storage.
     sharedrepo

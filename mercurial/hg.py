@@ -578,6 +578,23 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
 
         createopts['narrowfiles'] = True
 
+    if srcpeer.capable(b'lfs-serve'):
+        # Repository creation honors the config if it disabled the extension, so
+        # we can't just announce that lfs will be enabled.  This check avoids
+        # saying that lfs will be enabled, and then saying it's an unknown
+        # feature.  The lfs creation option is set in either case so that a
+        # requirement is added.  If the extension is explicitly disabled but the
+        # requirement is set, the clone aborts early, before transferring any
+        # data.
+        createopts['lfs'] = True
+
+        if extensions.disabledext('lfs'):
+            ui.status(_('(remote is using large file support (lfs), but it is '
+                        'explicitly disabled in the local configuration)\n'))
+        else:
+            ui.status(_('(remote is using large file support (lfs); lfs will '
+                        'be enabled for this repository)\n'))
+
     shareopts = shareopts or {}
     sharepool = shareopts.get('pool')
     sharenamemode = shareopts.get('mode')

@@ -1136,6 +1136,14 @@ class imanifeststorage(interfaceutil.Interface):
         See the documentation in ``ifilemutation`` for more.
         """
 
+    def rawsize(rev):
+        """Obtain the size of tracked data.
+
+        Is equivalent to ``len(m.revision(node, raw=True))``.
+
+        TODO this method is only used by upgrade code and may be removed.
+        """
+
     def getstrippoint(minlink):
         """Find minimum revision that must be stripped to strip a linkrev.
 

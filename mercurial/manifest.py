@@ -1569,6 +1569,9 @@ class manifestrevlog(object):
         return self._revlog.addgroup(deltas, linkmapper, transaction,
                                      addrevisioncb=addrevisioncb)
 
+    def rawsize(self, rev):
+        return self._revlog.rawsize(rev)
+
     def getstrippoint(self, minlink):
         return self._revlog.getstrippoint(minlink)
 

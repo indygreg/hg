@@ -25,8 +25,6 @@ class filelog(object):
         # Full name of the user visible file, relative to the repository root.
         # Used by LFS.
         self._revlog.filename = path
-        # Used by repo upgrade.
-        self.index = self._revlog.index
         # Used by changegroup generation.
         self._generaldelta = self._revlog._generaldelta
 

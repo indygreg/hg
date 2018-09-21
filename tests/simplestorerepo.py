@@ -103,7 +103,7 @@ class filestorage(object):
         self._indexdata = indexdata or []
         self._indexbynode = {}
         self._indexbyrev = {}
-        self.index = []
+        self._index = []
         self._refreshindex()
 
         # This is used by changegroup code :/
@@ -112,7 +112,7 @@ class filestorage(object):
     def _refreshindex(self):
         self._indexbynode.clear()
         self._indexbyrev.clear()
-        self.index = []
+        self._index = []
 
         for i, entry in enumerate(self._indexdata):
             self._indexbynode[entry[b'node']] = entry
@@ -138,10 +138,10 @@ class filestorage(object):
             p1rev, p2rev = self.parentrevs(self.rev(entry[b'node']))
 
             # start, length, rawsize, chainbase, linkrev, p1, p2, node
-            self.index.append((0, 0, 0, -1, entry[b'linkrev'], p1rev, p2rev,
-                               entry[b'node']))
+            self._index.append((0, 0, 0, -1, entry[b'linkrev'], p1rev, p2rev,
+                                entry[b'node']))
 
-        self.index.append((0, 0, 0, -1, -1, -1, -1, nullid))
+        self._index.append((0, 0, 0, -1, -1, -1, -1, nullid))
 
     def __len__(self):
         return len(self._indexdata)

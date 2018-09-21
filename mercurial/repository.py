@@ -485,9 +485,6 @@ class ifileindex(interfaceutil.Interface):
     * DAG data (storing and querying the relationship between nodes).
     * Metadata to facilitate storage.
     """
-    index = interfaceutil.Attribute(
-        """An ``ifilerevisionssequence`` instance.""")
-
     def __len__():
         """Obtain the number of revisions stored for this file."""
 

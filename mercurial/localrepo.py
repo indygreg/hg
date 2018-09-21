@@ -1032,11 +1032,7 @@ class localrepository(object):
 
         A tuple of (includes, excludes).
         """
-        source = self
-        if self.shared():
-            from . import hg
-            source = hg.sharedreposource(self)
-        return narrowspec.load(source)
+        return narrowspec.load(self)
 
     @storecache(narrowspec.FILENAME)
     def _narrowmatch(self):

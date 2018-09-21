@@ -127,6 +127,18 @@ def match(root, include=None, exclude=None):
     return matchmod.match(root, '', [], include=include or [],
                           exclude=exclude or [])
 
+def parseconfig(ui, spec):
+    # maybe we should care about the profiles returned too
+    includepats, excludepats, profiles = sparse.parseconfig(ui, spec, 'narrow')
+    if profiles:
+        raise error.Abort(_("including other spec files using '%include' is not"
+                            " supported in narrowspec"))
+
+    validatepatterns(includepats)
+    validatepatterns(excludepats)
+
+    return includepats, excludepats
+
 def load(repo):
     try:
         spec = repo.svfs.read(FILENAME)
@@ -136,17 +148,8 @@ def load(repo):
         if e.errno == errno.ENOENT:
             return set(), set()
         raise
-    # maybe we should care about the profiles returned too
-    includepats, excludepats, profiles = sparse.parseconfig(repo.ui, spec,
-                                                            'narrow')
-    if profiles:
-        raise error.Abort(_("including other spec files using '%include' is not"
-                            " supported in narrowspec"))
 
-    validatepatterns(includepats)
-    validatepatterns(excludepats)
-
-    return includepats, excludepats
+    return parseconfig(repo.ui, spec)
 
 def save(repo, includepats, excludepats):
     validatepatterns(includepats)

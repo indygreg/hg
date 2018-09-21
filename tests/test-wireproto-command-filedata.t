@@ -3,7 +3,11 @@
   $ hg init server
   $ enablehttpv2 server
   $ cd server
-  $ echo a0 > a
+  $ cat > a << EOF
+  > a0
+  > 00000000000000000000000000000000000000
+  > 11111111111111111111111111111111111111
+  > EOF
   $ echo b0 > b
   $ mkdir -p dir0/child0 dir0/child1 dir1
   $ echo c0 > dir0/c
@@ -12,7 +16,7 @@
   $ echo f0 > dir0/child1/f
   $ hg -q commit -A -m 'commit 0'
 
-  $ echo a1 > a
+  $ echo a1 >> a
   $ echo d1 > dir0/d
   $ hg commit -m 'commit 1'
   $ echo f0 > dir0/child1/f
@@ -21,23 +25,23 @@
   [1]
 
   $ hg -q up -r 0
-  $ echo a2 > a
+  $ echo a2 >> a
   $ hg commit -m 'commit 3'
   created new head
 
   $ hg log -G -T '{rev}:{node} {desc}\n'
-  @  2:c8757a2ffe552850d1e0dfe60d295ebf64c196d9 commit 3
+  @  2:5ce944d7fece1252dae06c34422b573c191b9489 commit 3
   |
-  | o  1:650165e803375748a94df471e5b58d85763e0b29 commit 1
+  | o  1:3ef5e551f219ba505481d34d6b0316b017fa3f00 commit 1
   |/
-  o  0:6d85ca1270b377d320098556ba5bfad34a9ee12d commit 0
+  o  0:91b232a2253ce0638496f67bdfd7a4933fb51b25 commit 0
   
 
   $ hg --debug debugindex a
      rev linkrev nodeid                                   p1                                       p2
-       0       0 2b4eb07319bfa077a40a2f04913659aef0da42da 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000
-       1       1 9a38122997b3ac97be2a9aa2e556838341fdf2cc 2b4eb07319bfa077a40a2f04913659aef0da42da 0000000000000000000000000000000000000000
-       2       2 0879345e39377229634b420c639454156726c6b6 2b4eb07319bfa077a40a2f04913659aef0da42da 0000000000000000000000000000000000000000
+       0       0 649d149df43d83882523b7fb1e6a3af6f1907b39 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000
+       1       1 0a86321f1379d1a9ecd0579a22977af7a5acaf11 649d149df43d83882523b7fb1e6a3af6f1907b39 0000000000000000000000000000000000000000
+       2       2 7e5801b6d5f03a5a54f3c47b583f7567aad43e5b 649d149df43d83882523b7fb1e6a3af6f1907b39 0000000000000000000000000000000000000000
 
   $ hg --debug debugindex dir0/child0/e
      rev linkrev nodeid                                   p1                                       p2
@@ -150,7 +154,7 @@ Fetching a single revision returns just metadata by default
 
   $ sendhttpv2peer << EOF
   > command filedata
-  >     nodes eval:[b'\x9a\x38\x12\x29\x97\xb3\xac\x97\xbe\x2a\x9a\xa2\xe5\x56\x83\x83\x41\xfd\xf2\xcc']
+  >     nodes eval:[b'\x0a\x86\x32\x1f\x13\x79\xd1\xa9\xec\xd0\x57\x9a\x22\x97\x7a\xf7\xa5\xac\xaf\x11']
   >     path eval:b'a'
   > EOF
   creating http peer for wire protocol version 2
@@ -163,7 +167,8 @@ Fetching a single revision returns just metadata by default
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
   s>     \r\n
-  s>     8\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Enodes\x81T\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccDpathAaDnameHfiledata
+  s>     8\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Enodes\x81T\n
+  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11DpathAaDnameHfiledata
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
@@ -178,7 +183,8 @@ Fetching a single revision returns just metadata by default
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
   s>     30\r\n
   s>     (\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa1DnodeT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc
+  s>     \xa1Jtotalitems\x01\xa1DnodeT\n
+  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11
   s>     \r\n
   received frame(size=40; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
@@ -192,7 +198,7 @@ Fetching a single revision returns just metadata by default
       b'totalitems': 1
     },
     {
-      b'node': b'\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc'
+      b'node': b'\n\x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11'
     }
   ]
 
@@ -200,7 +206,7 @@ Requesting parents works
 
   $ sendhttpv2peer << EOF
   > command filedata
-  >     nodes eval:[b'\x9a\x38\x12\x29\x97\xb3\xac\x97\xbe\x2a\x9a\xa2\xe5\x56\x83\x83\x41\xfd\xf2\xcc']
+  >     nodes eval:[b'\x0a\x86\x32\x1f\x13\x79\xd1\xa9\xec\xd0\x57\x9a\x22\x97\x7a\xf7\xa5\xac\xaf\x11']
   >     path eval:b'a'
   >     fields eval:[b'parents']
   > EOF
@@ -214,7 +220,8 @@ Requesting parents works
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
   s>     \r\n
-  s>     H\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81GparentsEnodes\x81T\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccDpathAaDnameHfiledata
+  s>     H\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81GparentsEnodes\x81T\n
+  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11DpathAaDnameHfiledata
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
@@ -229,8 +236,8 @@ Requesting parents works
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
   s>     63\r\n
   s>     [\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2DnodeT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccGparents\x82T+N\xb0s\x19\xbf\xa0w\xa4\n
-  s>     /\x04\x916Y\xae\xf0\xdaB\xdaT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
+  s>     \xa1Jtotalitems\x01\xa2DnodeT\n
+  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11Gparents\x82Td\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
   s>     \r\n
   received frame(size=91; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
@@ -244,9 +251,9 @@ Requesting parents works
       b'totalitems': 1
     },
     {
-      b'node': b'\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc',
+      b'node': b'\n\x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11',
       b'parents': [
-        b'+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
+        b'd\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9',
         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
       ]
     }
@@ -257,7 +264,7 @@ Requesting revision data works
 
   $ sendhttpv2peer << EOF
   > command filedata
-  >     nodes eval:[b'\x9a\x38\x12\x29\x97\xb3\xac\x97\xbe\x2a\x9a\xa2\xe5\x56\x83\x83\x41\xfd\xf2\xcc']
+  >     nodes eval:[b'\x0a\x86\x32\x1f\x13\x79\xd1\xa9\xec\xd0\x57\x9a\x22\x97\x7a\xf7\xa5\xac\xaf\x11']
   >     path eval:b'a'
   >     fields eval:[b'revision']
   > EOF
@@ -271,7 +278,8 @@ Requesting revision data works
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
   s>     \r\n
-  s>     I\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81HrevisionEnodes\x81T\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccDpathAaDnameHfiledata
+  s>     I\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81HrevisionEnodes\x81T\n
+  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11DpathAaDnameHfiledata
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
@@ -284,11 +292,15 @@ Requesting revision data works
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     50\r\n
-  s>     H\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2Ofieldsfollowing\x81\x82Hrevision\x03DnodeT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccCa1\n
+  s>     a3\r\n
+  s>     \x9b\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x01\xa2Ofieldsfollowing\x81\x82Hrevision\x18TDnodeT\n
+  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11XTa0\n
+  s>     00000000000000000000000000000000000000\n
+  s>     11111111111111111111111111111111111111\n
+  s>     a1\n
   s>     \r\n
-  received frame(size=72; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=155; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -303,19 +315,19 @@ Requesting revision data works
       b'fieldsfollowing': [
         [
           b'revision',
-          3
+          84
         ]
       ],
-      b'node': b'\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc'
+      b'node': b'\n\x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11'
     },
-    b'a1\n'
+    b'a0\n00000000000000000000000000000000000000\n11111111111111111111111111111111111111\na1\n'
   ]
 
 haveparents=False should be same as above
 
   $ sendhttpv2peer << EOF
   > command filedata
-  >     nodes eval:[b'\x9a\x38\x12\x29\x97\xb3\xac\x97\xbe\x2a\x9a\xa2\xe5\x56\x83\x83\x41\xfd\xf2\xcc']
+  >     nodes eval:[b'\x0a\x86\x32\x1f\x13\x79\xd1\xa9\xec\xd0\x57\x9a\x22\x97\x7a\xf7\xa5\xac\xaf\x11']
   >     path eval:b'a'
   >     fields eval:[b'revision']
   >     haveparents eval:False
@@ -330,7 +342,8 @@ haveparents=False should be same as above
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
   s>     \r\n
-  s>     V\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa4Ffields\x81HrevisionKhaveparents\xf4Enodes\x81T\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccDpathAaDnameHfiledata
+  s>     V\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa4Ffields\x81HrevisionKhaveparents\xf4Enodes\x81T\n
+  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11DpathAaDnameHfiledata
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
@@ -343,11 +356,15 @@ haveparents=False should be same as above
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     50\r\n
-  s>     H\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2Ofieldsfollowing\x81\x82Hrevision\x03DnodeT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccCa1\n
+  s>     a3\r\n
+  s>     \x9b\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x01\xa2Ofieldsfollowing\x81\x82Hrevision\x18TDnodeT\n
+  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11XTa0\n
+  s>     00000000000000000000000000000000000000\n
+  s>     11111111111111111111111111111111111111\n
+  s>     a1\n
   s>     \r\n
-  received frame(size=72; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=155; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -362,19 +379,19 @@ haveparents=False should be same as above
       b'fieldsfollowing': [
         [
           b'revision',
-          3
+          84
         ]
       ],
-      b'node': b'\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc'
+      b'node': b'\n\x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11'
     },
-    b'a1\n'
+    b'a0\n00000000000000000000000000000000000000\n11111111111111111111111111111111111111\na1\n'
   ]
 
 haveparents=True should emit a delta
 
   $ sendhttpv2peer << EOF
   > command filedata
-  >     nodes eval:[b'\x9a\x38\x12\x29\x97\xb3\xac\x97\xbe\x2a\x9a\xa2\xe5\x56\x83\x83\x41\xfd\xf2\xcc']
+  >     nodes eval:[b'\x0a\x86\x32\x1f\x13\x79\xd1\xa9\xec\xd0\x57\x9a\x22\x97\x7a\xf7\xa5\xac\xaf\x11']
   >     path eval:b'a'
   >     fields eval:[b'revision']
   >     haveparents eval:True
@@ -389,7 +406,8 @@ haveparents=True should emit a delta
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
   s>     \r\n
-  s>     V\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa4Ffields\x81HrevisionKhaveparents\xf5Enodes\x81T\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccDpathAaDnameHfiledata
+  s>     V\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa4Ffields\x81HrevisionKhaveparents\xf5Enodes\x81T\n
+  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11DpathAaDnameHfiledata
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
@@ -404,8 +422,8 @@ haveparents=True should emit a delta
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
   s>     7c\r\n
   s>     t\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa3MdeltabasenodeT+N\xb0s\x19\xbf\xa0w\xa4\n
-  s>     /\x04\x916Y\xae\xf0\xdaB\xdaOfieldsfollowing\x81\x82Edelta\x0fDnodeT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccO\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x03a1\n
+  s>     \xa1Jtotalitems\x01\xa3MdeltabasenodeTd\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9Ofieldsfollowing\x81\x82Edelta\x0fDnodeT\n
+  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11O\x00\x00\x00Q\x00\x00\x00Q\x00\x00\x00\x03a1\n
   s>     \r\n
   received frame(size=116; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
@@ -419,16 +437,16 @@ haveparents=True should emit a delta
       b'totalitems': 1
     },
     {
-      b'deltabasenode': b'+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
+      b'deltabasenode': b'd\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9',
       b'fieldsfollowing': [
         [
           b'delta',
           15
         ]
       ],
-      b'node': b'\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc'
+      b'node': b'\n\x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11'
     },
-    b'\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x03a1\n'
+    b'\x00\x00\x00Q\x00\x00\x00Q\x00\x00\x00\x03a1\n'
   ]
 
 Requesting multiple revisions works
@@ -436,7 +454,7 @@ Requesting multiple revisions works
 
   $ sendhttpv2peer << EOF
   > command filedata
-  >     nodes eval:[b'\x2b\x4e\xb0\x73\x19\xbf\xa0\x77\xa4\x0a\x2f\x04\x91\x36\x59\xae\xf0\xda\x42\xda', b'\x9a\x38\x12\x29\x97\xb3\xac\x97\xbe\x2a\x9a\xa2\xe5\x56\x83\x83\x41\xfd\xf2\xcc']
+  >     nodes eval:[b'\x64\x9d\x14\x9d\xf4\x3d\x83\x88\x25\x23\xb7\xfb\x1e\x6a\x3a\xf6\xf1\x90\x7b\x39', b'\x0a\x86\x32\x1f\x13\x79\xd1\xa9\xec\xd0\x57\x9a\x22\x97\x7a\xf7\xa5\xac\xaf\x11']
   >     path eval:b'a'
   >     fields eval:[b'revision']
   > EOF
@@ -450,8 +468,8 @@ Requesting multiple revisions works
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
   s>     \r\n
-  s>     ^\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81HrevisionEnodes\x82T+N\xb0s\x19\xbf\xa0w\xa4\n
-  s>     /\x04\x916Y\xae\xf0\xdaB\xdaT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccDpathAaDnameHfiledata
+  s>     ^\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81HrevisionEnodes\x82Td\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9T\n
+  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11DpathAaDnameHfiledata
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
@@ -464,14 +482,15 @@ Requesting multiple revisions works
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     b7\r\n
-  s>     \xaf\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x02\xa2Ofieldsfollowing\x81\x82Hrevision\x03DnodeT+N\xb0s\x19\xbf\xa0w\xa4\n
-  s>     /\x04\x916Y\xae\xf0\xdaB\xdaCa0\n
-  s>     \xa3MdeltabasenodeT+N\xb0s\x19\xbf\xa0w\xa4\n
-  s>     /\x04\x916Y\xae\xf0\xdaB\xdaOfieldsfollowing\x81\x82Edelta\x0fDnodeT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccO\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x03a1\n
+  s>     107\r\n
+  s>     \xff\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x02\xa2Ofieldsfollowing\x81\x82Hrevision\x18QDnodeTd\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9XQa0\n
+  s>     00000000000000000000000000000000000000\n
+  s>     11111111111111111111111111111111111111\n
+  s>     \xa3MdeltabasenodeTd\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9Ofieldsfollowing\x81\x82Edelta\x0fDnodeT\n
+  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11O\x00\x00\x00Q\x00\x00\x00Q\x00\x00\x00\x03a1\n
   s>     \r\n
-  received frame(size=175; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=255; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -486,30 +505,30 @@ Requesting multiple revisions works
       b'fieldsfollowing': [
         [
           b'revision',
-          3
+          81
         ]
       ],
-      b'node': b'+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda'
+      b'node': b'd\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9'
     },
-    b'a0\n',
+    b'a0\n00000000000000000000000000000000000000\n11111111111111111111111111111111111111\n',
     {
-      b'deltabasenode': b'+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
+      b'deltabasenode': b'd\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9',
       b'fieldsfollowing': [
         [
           b'delta',
           15
         ]
       ],
-      b'node': b'\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc'
+      b'node': b'\n\x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11'
     },
-    b'\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x03a1\n'
+    b'\x00\x00\x00Q\x00\x00\x00Q\x00\x00\x00\x03a1\n'
   ]
 
 Revisions are sorted by DAG order, parents first
 
   $ sendhttpv2peer << EOF
   > command filedata
-  >     nodes eval:[b'\x9a\x38\x12\x29\x97\xb3\xac\x97\xbe\x2a\x9a\xa2\xe5\x56\x83\x83\x41\xfd\xf2\xcc', b'\x2b\x4e\xb0\x73\x19\xbf\xa0\x77\xa4\x0a\x2f\x04\x91\x36\x59\xae\xf0\xda\x42\xda']
+  >     nodes eval:[b'\x0a\x86\x32\x1f\x13\x79\xd1\xa9\xec\xd0\x57\x9a\x22\x97\x7a\xf7\xa5\xac\xaf\x11', b'\x64\x9d\x14\x9d\xf4\x3d\x83\x88\x25\x23\xb7\xfb\x1e\x6a\x3a\xf6\xf1\x90\x7b\x39']
   >     path eval:b'a'
   >     fields eval:[b'revision']
   > EOF
@@ -523,8 +542,8 @@ Revisions are sorted by DAG order, parents first
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
   s>     \r\n
-  s>     ^\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81HrevisionEnodes\x82T\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccT+N\xb0s\x19\xbf\xa0w\xa4\n
-  s>     /\x04\x916Y\xae\xf0\xdaB\xdaDpathAaDnameHfiledata
+  s>     ^\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81HrevisionEnodes\x82T\n
+  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11Td\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9DpathAaDnameHfiledata
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
@@ -537,14 +556,15 @@ Revisions are sorted by DAG order, parents first
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     b7\r\n
-  s>     \xaf\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x02\xa2Ofieldsfollowing\x81\x82Hrevision\x03DnodeT+N\xb0s\x19\xbf\xa0w\xa4\n
-  s>     /\x04\x916Y\xae\xf0\xdaB\xdaCa0\n
-  s>     \xa3MdeltabasenodeT+N\xb0s\x19\xbf\xa0w\xa4\n
-  s>     /\x04\x916Y\xae\xf0\xdaB\xdaOfieldsfollowing\x81\x82Edelta\x0fDnodeT\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xccO\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x03a1\n
+  s>     107\r\n
+  s>     \xff\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x02\xa2Ofieldsfollowing\x81\x82Hrevision\x18QDnodeTd\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9XQa0\n
+  s>     00000000000000000000000000000000000000\n
+  s>     11111111111111111111111111111111111111\n
+  s>     \xa3MdeltabasenodeTd\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9Ofieldsfollowing\x81\x82Edelta\x0fDnodeT\n
+  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11O\x00\x00\x00Q\x00\x00\x00Q\x00\x00\x00\x03a1\n
   s>     \r\n
-  received frame(size=175; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=255; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -559,30 +579,30 @@ Revisions are sorted by DAG order, parents first
       b'fieldsfollowing': [
         [
           b'revision',
-          3
+          81
         ]
       ],
-      b'node': b'+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda'
+      b'node': b'd\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9'
     },
-    b'a0\n',
+    b'a0\n00000000000000000000000000000000000000\n11111111111111111111111111111111111111\n',
     {
-      b'deltabasenode': b'+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
+      b'deltabasenode': b'd\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9',
       b'fieldsfollowing': [
         [
           b'delta',
           15
         ]
       ],
-      b'node': b'\x9a8\x12)\x97\xb3\xac\x97\xbe*\x9a\xa2\xe5V\x83\x83A\xfd\xf2\xcc'
+      b'node': b'\n\x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11'
     },
-    b'\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x03a1\n'
+    b'\x00\x00\x00Q\x00\x00\x00Q\x00\x00\x00\x03a1\n'
   ]
 
 Requesting parents and revision data works
 
   $ sendhttpv2peer << EOF
   > command filedata
-  >     nodes eval:[b'\x08\x79\x34\x5e\x39\x37\x72\x29\x63\x4b\x42\x0c\x63\x94\x54\x15\x67\x26\xc6\xb6']
+  >     nodes eval:[b'\x7e\x58\x01\xb6\xd5\xf0\x3a\x5a\x54\xf3\xc4\x7b\x58\x3f\x75\x67\xaa\xd4\x3e\x5b']
   >     path eval:b'a'
   >     fields eval:[b'parents', b'revision']
   > EOF
@@ -596,7 +616,7 @@ Requesting parents and revision data works
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
   s>     \r\n
-  s>     Q\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x82GparentsHrevisionEnodes\x81T\x08y4^97r)cKB\x0cc\x94T\x15g&\xc6\xb6DpathAaDnameHfiledata
+  s>     Q\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x82GparentsHrevisionEnodes\x81T~X\x01\xb6\xd5\xf0:ZT\xf3\xc4{X?ug\xaa\xd4>[DpathAaDnameHfiledata
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
@@ -609,12 +629,14 @@ Requesting parents and revision data works
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     83\r\n
-  s>     {\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa3Ofieldsfollowing\x81\x82Hrevision\x03DnodeT\x08y4^97r)cKB\x0cc\x94T\x15g&\xc6\xb6Gparents\x82T+N\xb0s\x19\xbf\xa0w\xa4\n
-  s>     /\x04\x916Y\xae\xf0\xdaB\xdaT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00Ca2\n
+  s>     d6\r\n
+  s>     \xce\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x01\xa3Ofieldsfollowing\x81\x82Hrevision\x18TDnodeT~X\x01\xb6\xd5\xf0:ZT\xf3\xc4{X?ug\xaa\xd4>[Gparents\x82Td\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00XTa0\n
+  s>     00000000000000000000000000000000000000\n
+  s>     11111111111111111111111111111111111111\n
+  s>     a2\n
   s>     \r\n
-  received frame(size=123; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=206; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -629,16 +651,16 @@ Requesting parents and revision data works
       b'fieldsfollowing': [
         [
           b'revision',
-          3
+          84
         ]
       ],
-      b'node': b'\x08y4^97r)cKB\x0cc\x94T\x15g&\xc6\xb6',
+      b'node': b'~X\x01\xb6\xd5\xf0:ZT\xf3\xc4{X?ug\xaa\xd4>[',
       b'parents': [
-        b'+N\xb0s\x19\xbf\xa0w\xa4\n/\x04\x916Y\xae\xf0\xdaB\xda',
+        b'd\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9',
         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
       ]
     },
-    b'a2\n'
+    b'a0\n00000000000000000000000000000000000000\n11111111111111111111111111111111111111\na2\n'
   ]
 
   $ cat error.log

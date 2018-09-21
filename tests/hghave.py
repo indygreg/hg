@@ -16,6 +16,22 @@ checks = {
     "false": (lambda: False, "nail clipper"),
 }
 
+if sys.version_info[0] >= 3:
+    def _bytespath(p):
+        if p is None:
+            return p
+        return p.encode('utf-8')
+
+    def _strpath(p):
+        if p is None:
+            return p
+        return p.decode('utf-8')
+else:
+    def _bytespath(p):
+        return p
+
+    _strpath = _bytespath
+
 def check(name, desc):
     """Registers a check function for a feature."""
     def decorator(func):
@@ -360,7 +376,7 @@ def has_hardlink():
     os.close(fh)
     name = tempfile.mktemp(dir='.', prefix=tempprefix)
     try:
-        util.oslink(fn, name)
+        util.oslink(_bytespath(fn), _bytespath(name))
         os.unlink(name)
         return True
     except OSError:

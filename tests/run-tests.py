@@ -3082,7 +3082,7 @@ class TestRunner(object):
         if self._hgpath is not None:
             return self._hgpath
 
-        cmd = b'"%s" -c "import mercurial; print (mercurial.__path__[0])"'
+        cmd = b'%s -c "import mercurial; print (mercurial.__path__[0])"'
         cmd = cmd % PYTHON
         if PYTHON3:
             cmd = _strpath(cmd)

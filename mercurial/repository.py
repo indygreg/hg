@@ -654,6 +654,59 @@ class ifiledata(interfaceutil.Interface):
         delta against a censored revision.
         """
 
+    def emitrevisions(nodes,
+                      nodesorder=None,
+                      revisiondata=False,
+                      assumehaveparentrevisions=False,
+                      deltaprevious=False):
+        """Produce ``irevisiondelta`` for revisions.
+
+        Given an iterable of nodes, emits objects conforming to the
+        ``irevisiondelta`` interface that describe revisions in storage.
+
+        This method is a generator.
+
+        The input nodes may be unordered. Implementations must ensure that a
+        node's parents are emitted before the node itself. Transitively, this
+        means that a node may only be emitted once all its ancestors in
+        ``nodes`` have also been emitted.
+
+        By default, emits "index" data (the ``node``, ``p1node``, and
+        ``p2node`` attributes). If ``revisiondata`` is set, revision data
+        will also be present on the emitted objects.
+
+        With default argument values, implementations can choose to emit
+        either fulltext revision data or a delta. When emitting deltas,
+        implementations must consider whether the delta's base revision
+        fulltext is available to the receiver.
+
+        The base revision fulltext is guaranteed to be available if any of
+        the following are met:
+
+        * Its fulltext revision was emitted by this method call.
+        * A delta for that revision was emitted by this method call.
+        * ``assumehaveparentrevisions`` is True and the base revision is a
+          parent of the node.
+
+        ``nodesorder`` can be used to control the order that revisions are
+        emitted. By default, revisions can be reordered as long as they are
+        in DAG topological order (see above). If the value is ``nodes``,
+        the iteration order from ``nodes`` should be used. If the value is
+        ``storage``, then the native order from the backing storage layer
+        is used. (Not all storage layers will have strong ordering and behavior
+        of this mode is storage-dependent.) ``nodes`` ordering can force
+        revisions to be emitted before their ancestors, so consumers should
+        use it with care.
+
+        The ``linknode`` attribute on the returned ``irevisiondelta`` may not
+        be set and it is the caller's responsibility to resolve it, if needed.
+
+        If ``deltaprevious`` is True and revision data is requested, all
+        revision data should be emitted as deltas against the revision
+        emitted just prior. The initial revision should be a delta against
+        its 1st parent.
+        """
+
 class ifilemutation(interfaceutil.Interface):
     """Storage interface for mutation events of a tracked file."""
 
@@ -1123,6 +1176,15 @@ class imanifeststorage(interfaceutil.Interface):
 
     def emitrevisiondeltas(requests):
         """Produce ``irevisiondelta`` from ``irevisiondeltarequest``s.
+
+        See the documentation for ``ifiledata`` for more.
+        """
+
+    def emitrevisions(nodes,
+                      nodesorder=None,
+                      revisiondata=False,
+                      assumehaveparentrevisions=False):
+        """Produce ``irevisiondelta`` describing revisions.
 
         See the documentation for ``ifiledata`` for more.
         """

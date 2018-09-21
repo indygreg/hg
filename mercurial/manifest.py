@@ -1565,6 +1565,14 @@ class manifestrevlog(object):
     def emitrevisiondeltas(self, requests):
         return self._revlog.emitrevisiondeltas(requests)
 
+    def emitrevisions(self, nodes, nodesorder=None,
+                      revisiondata=False, assumehaveparentrevisions=False,
+                      deltaprevious=False):
+        return self._revlog.emitrevisions(
+            nodes, nodesorder=nodesorder, revisiondata=revisiondata,
+            assumehaveparentrevisions=assumehaveparentrevisions,
+            deltaprevious=deltaprevious)
+
     def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None):
         return self._revlog.addgroup(deltas, linkmapper, transaction,
                                      addrevisioncb=addrevisioncb)

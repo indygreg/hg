@@ -500,6 +500,20 @@ class ifiledatatests(basetestcase):
         with self.assertRaises(StopIteration):
             next(gen)
 
+        # Emitting empty list is an empty generator.
+        gen = f.emitrevisions([])
+        with self.assertRaises(StopIteration):
+            next(gen)
+
+        # Emitting null node yields nothing.
+        gen = f.emitrevisions([nullid])
+        with self.assertRaises(StopIteration):
+            next(gen)
+
+        # Requesting unknown node fails.
+        with self.assertRaises(error.LookupError):
+            list(f.emitrevisions([b'\x01' * 20]))
+
     def testsinglerevision(self):
         fulltext = b'initial'
 
@@ -565,6 +579,42 @@ class ifiledatatests(basetestcase):
 
         with self.assertRaises(StopIteration):
             next(gen)
+
+        # Emitting a single revision works.
+        gen = f.emitrevisions([node])
+        rev = next(gen)
+
+        self.assertEqual(rev.node, node)
+        self.assertEqual(rev.p1node, nullid)
+        self.assertEqual(rev.p2node, nullid)
+        self.assertIsNone(rev.linknode)
+        self.assertEqual(rev.basenode, nullid)
+        self.assertIsNone(rev.baserevisionsize)
+        self.assertIsNone(rev.revision)
+        self.assertIsNone(rev.delta)
+
+        with self.assertRaises(StopIteration):
+            next(gen)
+
+        # Requesting revision data works.
+        gen = f.emitrevisions([node], revisiondata=True)
+        rev = next(gen)
+
+        self.assertEqual(rev.node, node)
+        self.assertEqual(rev.p1node, nullid)
+        self.assertEqual(rev.p2node, nullid)
+        self.assertIsNone(rev.linknode)
+        self.assertEqual(rev.basenode, nullid)
+        self.assertIsNone(rev.baserevisionsize)
+        self.assertEqual(rev.revision, fulltext)
+        self.assertIsNone(rev.delta)
+
+        with self.assertRaises(StopIteration):
+            next(gen)
+
+        # Emitting an unknown node after a known revision results in error.
+        with self.assertRaises(error.LookupError):
+            list(f.emitrevisions([node, b'\x01' * 20]))
 
     def testmultiplerevisions(self):
         fulltext0 = b'x' * 1024
@@ -693,6 +743,208 @@ class ifiledatatests(basetestcase):
         self.assertEqual(delta.delta,
                          b'\x00\x00\x00\x00\x00\x00\x04\x01\x00\x00\x04\x02' +
                          fulltext2)
+
+        with self.assertRaises(StopIteration):
+            next(gen)
+
+        # Nodes should be emitted in order.
+        gen = f.emitrevisions([node0, node1, node2], revisiondata=True)
+
+        rev = next(gen)
+
+        self.assertEqual(rev.node, node0)
+        self.assertEqual(rev.p1node, nullid)
+        self.assertEqual(rev.p2node, nullid)
+        self.assertIsNone(rev.linknode)
+        self.assertEqual(rev.basenode, nullid)
+        self.assertIsNone(rev.baserevisionsize)
+        self.assertEqual(rev.revision, fulltext0)
+        self.assertIsNone(rev.delta)
+
+        rev = next(gen)
+
+        self.assertEqual(rev.node, node1)
+        self.assertEqual(rev.p1node, node0)
+        self.assertEqual(rev.p2node, nullid)
+        self.assertIsNone(rev.linknode)
+        self.assertEqual(rev.basenode, node0)
+        self.assertIsNone(rev.baserevisionsize)
+        self.assertIsNone(rev.revision)
+        self.assertEqual(rev.delta,
+                         b'\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x04\x01' +
+                         fulltext1)
+
+        rev = next(gen)
+
+        self.assertEqual(rev.node, node2)
+        self.assertEqual(rev.p1node, node1)
+        self.assertEqual(rev.p2node, nullid)
+        self.assertIsNone(rev.linknode)
+        self.assertEqual(rev.basenode, node1)
+        self.assertIsNone(rev.baserevisionsize)
+        self.assertIsNone(rev.revision)
+        self.assertEqual(rev.delta,
+                         b'\x00\x00\x00\x00\x00\x00\x04\x01\x00\x00\x04\x02' +
+                         fulltext2)
+
+        with self.assertRaises(StopIteration):
+            next(gen)
+
+        # Request not in DAG order is reordered to be in DAG order.
+        gen = f.emitrevisions([node2, node1, node0], revisiondata=True)
+
+        rev = next(gen)
+
+        self.assertEqual(rev.node, node0)
+        self.assertEqual(rev.p1node, nullid)
+        self.assertEqual(rev.p2node, nullid)
+        self.assertIsNone(rev.linknode)
+        self.assertEqual(rev.basenode, nullid)
+        self.assertIsNone(rev.baserevisionsize)
+        self.assertEqual(rev.revision, fulltext0)
+        self.assertIsNone(rev.delta)
+
+        rev = next(gen)
+
+        self.assertEqual(rev.node, node1)
+        self.assertEqual(rev.p1node, node0)
+        self.assertEqual(rev.p2node, nullid)
+        self.assertIsNone(rev.linknode)
+        self.assertEqual(rev.basenode, node0)
+        self.assertIsNone(rev.baserevisionsize)
+        self.assertIsNone(rev.revision)
+        self.assertEqual(rev.delta,
+                         b'\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x04\x01' +
+                         fulltext1)
+
+        rev = next(gen)
+
+        self.assertEqual(rev.node, node2)
+        self.assertEqual(rev.p1node, node1)
+        self.assertEqual(rev.p2node, nullid)
+        self.assertIsNone(rev.linknode)
+        self.assertEqual(rev.basenode, node1)
+        self.assertIsNone(rev.baserevisionsize)
+        self.assertIsNone(rev.revision)
+        self.assertEqual(rev.delta,
+                         b'\x00\x00\x00\x00\x00\x00\x04\x01\x00\x00\x04\x02' +
+                         fulltext2)
+
+        with self.assertRaises(StopIteration):
+            next(gen)
+
+        # Unrecognized nodesorder value raises ProgrammingError.
+        with self.assertRaises(error.ProgrammingError):
+            list(f.emitrevisions([], nodesorder='bad'))
+
+        # nodesorder=storage is recognized. But we can't test it thoroughly
+        # because behavior is storage-dependent.
+        res = list(f.emitrevisions([node2, node1, node0],
+                                         nodesorder='storage'))
+        self.assertEqual(len(res), 3)
+        self.assertEqual({o.node for o in res}, {node0, node1, node2})
+
+        # nodesorder=nodes forces the order.
+        gen = f.emitrevisions([node2, node0], nodesorder='nodes',
+                              revisiondata=True)
+
+        rev = next(gen)
+        self.assertEqual(rev.node, node2)
+        self.assertEqual(rev.p1node, node1)
+        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.basenode, nullid)
+        self.assertIsNone(rev.baserevisionsize)
+        self.assertEqual(rev.revision, fulltext2)
+        self.assertIsNone(rev.delta)
+
+        rev = next(gen)
+        self.assertEqual(rev.node, node0)
+        self.assertEqual(rev.p1node, nullid)
+        self.assertEqual(rev.p2node, nullid)
+        # Delta behavior is storage dependent, so we can't easily test it.
+
+        with self.assertRaises(StopIteration):
+            next(gen)
+
+        # assumehaveparentrevisions=False (the default) won't send a delta for
+        # the first revision.
+        gen = f.emitrevisions({node2, node1}, revisiondata=True)
+
+        rev = next(gen)
+        self.assertEqual(rev.node, node1)
+        self.assertEqual(rev.p1node, node0)
+        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.basenode, nullid)
+        self.assertIsNone(rev.baserevisionsize)
+        self.assertEqual(rev.revision, fulltext1)
+        self.assertIsNone(rev.delta)
+
+        rev = next(gen)
+        self.assertEqual(rev.node, node2)
+        self.assertEqual(rev.p1node, node1)
+        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.basenode, node1)
+        self.assertIsNone(rev.baserevisionsize)
+        self.assertIsNone(rev.revision)
+        self.assertEqual(rev.delta,
+                         b'\x00\x00\x00\x00\x00\x00\x04\x01\x00\x00\x04\x02' +
+                         fulltext2)
+
+        with self.assertRaises(StopIteration):
+            next(gen)
+
+        # assumehaveparentrevisions=True allows delta against initial revision.
+        gen = f.emitrevisions([node2, node1],
+                              revisiondata=True, assumehaveparentrevisions=True)
+
+        rev = next(gen)
+        self.assertEqual(rev.node, node1)
+        self.assertEqual(rev.p1node, node0)
+        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.basenode, node0)
+        self.assertIsNone(rev.baserevisionsize)
+        self.assertIsNone(rev.revision)
+        self.assertEqual(rev.delta,
+                         b'\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x04\x01' +
+                         fulltext1)
+
+        # forceprevious=True forces a delta against the previous revision.
+        # Special case for initial revision.
+        gen = f.emitrevisions([node0], revisiondata=True, deltaprevious=True)
+
+        rev = next(gen)
+        self.assertEqual(rev.node, node0)
+        self.assertEqual(rev.p1node, nullid)
+        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.basenode, nullid)
+        self.assertIsNone(rev.baserevisionsize)
+        self.assertIsNone(rev.revision)
+        self.assertEqual(rev.delta,
+                         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00' +
+                         fulltext0)
+
+        with self.assertRaises(StopIteration):
+            next(gen)
+
+        gen = f.emitrevisions([node0, node2], revisiondata=True,
+                              deltaprevious=True)
+
+        rev = next(gen)
+        self.assertEqual(rev.node, node0)
+        self.assertEqual(rev.p1node, nullid)
+        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.basenode, nullid)
+        self.assertIsNone(rev.baserevisionsize)
+        self.assertIsNone(rev.revision)
+        self.assertEqual(rev.delta,
+                         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00' +
+                         fulltext0)
+
+        rev = next(gen)
+        self.assertEqual(rev.node, node2)
+        self.assertEqual(rev.p1node, node1)
+        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.basenode, node0)
 
         with self.assertRaises(StopIteration):
             next(gen)

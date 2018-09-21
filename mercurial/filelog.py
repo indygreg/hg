@@ -96,6 +96,14 @@ class filelog(object):
     def emitrevisiondeltas(self, requests):
         return self._revlog.emitrevisiondeltas(requests)
 
+    def emitrevisions(self, nodes, nodesorder=None,
+                      revisiondata=False, assumehaveparentrevisions=False,
+                      deltaprevious=False):
+        return self._revlog.emitrevisions(
+            nodes, nodesorder=nodesorder, revisiondata=revisiondata,
+            assumehaveparentrevisions=assumehaveparentrevisions,
+            deltaprevious=deltaprevious)
+
     def addrevision(self, revisiondata, transaction, linkrev, p1, p2,
                     node=None, flags=revlog.REVIDX_DEFAULT_FLAGS,
                     cachedelta=None):

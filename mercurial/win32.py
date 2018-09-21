@@ -584,7 +584,7 @@ def spawndetached(args):
     # TODO: CreateProcessW on py3?
     res = _kernel32.CreateProcessA(
         None, encoding.strtolocal(args), None, None, False, _CREATE_NO_WINDOW,
-        env, pycompat.getcwd(), ctypes.byref(si), ctypes.byref(pi))
+        env, encoding.getcwd(), ctypes.byref(si), ctypes.byref(pi))
     if not res:
         raise ctypes.WinError()
 

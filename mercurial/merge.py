@@ -27,6 +27,7 @@ from .thirdparty import (
 )
 from . import (
     copies,
+    encoding,
     error,
     filemerge,
     match as matchmod,
@@ -1436,7 +1437,7 @@ def calculateupdates(repo, wctx, mctx, ancestors, branchmerge, force,
 
 def _getcwd():
     try:
-        return pycompat.getcwd()
+        return encoding.getcwd()
     except OSError as err:
         if err.errno == errno.ENOENT:
             return None

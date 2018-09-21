@@ -12,6 +12,7 @@ import os
 from mercurial.i18n import _
 from mercurial import (
     commands,
+    encoding,
     error,
     extensions,
     patch,
@@ -41,7 +42,7 @@ def _matchpaths(repo, rev, pats, opts, aopts=facontext.defaultopts):
     if perfhack:
         # cwd related to reporoot
         reporoot = os.path.dirname(repo.path)
-        reldir = os.path.relpath(pycompat.getcwd(), reporoot)
+        reldir = os.path.relpath(encoding.getcwd(), reporoot)
         if reldir == '.':
             reldir = ''
         if any(opts.get(o[1]) for o in commands.walkopts): # a)

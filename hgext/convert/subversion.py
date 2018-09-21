@@ -1127,7 +1127,7 @@ class svn_sink(converter_sink, commandline):
         self.delexec = []
         self.copies = []
         self.wc = None
-        self.cwd = pycompat.getcwd()
+        self.cwd = encoding.getcwd()
 
         created = False
         if os.path.isfile(os.path.join(path, '.svn', 'entries')):
@@ -1147,7 +1147,7 @@ class svn_sink(converter_sink, commandline):
                         path = '/' + path
                     path = 'file://' + path
 
-            wcpath = os.path.join(pycompat.getcwd(), os.path.basename(path) +
+            wcpath = os.path.join(encoding.getcwd(), os.path.basename(path) +
                                 '-wc')
             ui.status(_('initializing svn working copy %r\n')
                       % os.path.basename(wcpath))

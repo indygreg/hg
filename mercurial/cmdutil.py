@@ -581,7 +581,7 @@ def _conflictsmsg(repo):
     unresolvedlist = [f for f in mergestate.unresolved() if m(f)]
     if unresolvedlist:
         mergeliststr = '\n'.join(
-            ['    %s' % util.pathto(repo.root, pycompat.getcwd(), path)
+            ['    %s' % util.pathto(repo.root, encoding.getcwd(), path)
              for path in unresolvedlist])
         msg = _('''Unresolved merge conflicts:
 
@@ -1110,7 +1110,7 @@ def openstorage(repo, cmd, file_, opts, returnrevlog=False):
             raise error.CommandError(cmd, _('invalid arguments'))
         if not os.path.isfile(file_):
             raise error.Abort(_("revlog '%s' not found") % file_)
-        r = revlog.revlog(vfsmod.vfs(pycompat.getcwd(), audit=False),
+        r = revlog.revlog(vfsmod.vfs(encoding.getcwd(), audit=False),
                           file_[:-2] + ".i")
     return r
 
@@ -2629,7 +2629,7 @@ def commitforceeditor(repo, ctx, subs, finishdesc=None, extramsg=None,
         committext = buildcommittext(repo, ctx, subs, extramsg)
 
     # run editor in the repository root
-    olddir = pycompat.getcwd()
+    olddir = encoding.getcwd()
     os.chdir(repo.root)
 
     # make in-memory changes visible to external process

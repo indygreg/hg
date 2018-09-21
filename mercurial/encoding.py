@@ -233,6 +233,13 @@ if not _nativeenviron:
     environ = dict((tolocal(k.encode(u'utf-8')), tolocal(v.encode(u'utf-8')))
                    for k, v in os.environ.items())  # re-exports
 
+if pycompat.ispy3:
+    # os.getcwd() on Python 3 returns string, but it has os.getcwdb() which
+    # returns bytes.
+    getcwd = os.getcwdb  # re-exports
+else:
+    getcwd = os.getcwd  # re-exports
+
 # How to treat ambiguous-width characters. Set to 'wide' to treat as wide.
 _wide = _sysstr(environ.get("HGENCODINGAMBIGUOUS", "narrow") == "wide"
                 and "WFA" or "WF")

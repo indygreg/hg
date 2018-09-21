@@ -15,7 +15,6 @@ from mercurial.i18n import _
 from mercurial import (
     encoding,
     error,
-    pycompat,
     util,
 )
 from mercurial.utils import (
@@ -74,7 +73,7 @@ class convert_cvs(converter_source):
                 raise error.Abort(_('revision %s is not a patchset number')
                                  % self.revs[0])
 
-        d = pycompat.getcwd()
+        d = encoding.getcwd()
         try:
             os.chdir(self.path)
             id = None

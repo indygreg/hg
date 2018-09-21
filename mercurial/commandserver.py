@@ -26,7 +26,6 @@ from .i18n import _
 from . import (
     encoding,
     error,
-    pycompat,
     util,
 )
 from .utils import (
@@ -161,7 +160,7 @@ class server(object):
     based stream to fout.
     """
     def __init__(self, ui, repo, fin, fout):
-        self.cwd = pycompat.getcwd()
+        self.cwd = encoding.getcwd()
 
         # developer config: cmdserver.log
         logpath = ui.config("cmdserver", "log")

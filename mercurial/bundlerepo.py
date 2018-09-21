@@ -25,6 +25,7 @@ from . import (
     changelog,
     cmdutil,
     discovery,
+    encoding,
     error,
     exchange,
     filelog,
@@ -432,7 +433,7 @@ class bundlerepository(object):
         return bundlepeer(self)
 
     def getcwd(self):
-        return pycompat.getcwd() # always outside the repo
+        return encoding.getcwd() # always outside the repo
 
     # Check if parents exist in localrepo before setting
     def setparents(self, p1, p2=nullid):
@@ -452,13 +453,13 @@ def instance(ui, path, create, intents=None, createopts=None):
     parentpath = ui.config("bundle", "mainreporoot")
     if not parentpath:
         # try to find the correct path to the working directory repo
-        parentpath = cmdutil.findrepo(pycompat.getcwd())
+        parentpath = cmdutil.findrepo(encoding.getcwd())
         if parentpath is None:
             parentpath = ''
     if parentpath:
         # Try to make the full path relative so we get a nice, short URL.
         # In particular, we don't want temp dir names in test outputs.
-        cwd = pycompat.getcwd()
+        cwd = encoding.getcwd()
         if parentpath == cwd:
             parentpath = ''
         else:

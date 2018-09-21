@@ -503,7 +503,7 @@ py3pats = [
   [
     (r'os\.environ', "use encoding.environ instead (py3)", r'#.*re-exports'),
     (r'os\.name', "use pycompat.osname instead (py3)"),
-    (r'os\.getcwd', "use pycompat.getcwd instead (py3)"),
+    (r'os\.getcwd', "use encoding.getcwd instead (py3)", r'#.*re-exports'),
     (r'os\.sep', "use pycompat.ossep instead (py3)"),
     (r'os\.pathsep', "use pycompat.ospathsep instead (py3)"),
     (r'os\.altsep', "use pycompat.osaltsep instead (py3)"),

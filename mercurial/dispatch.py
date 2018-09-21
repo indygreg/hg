@@ -748,7 +748,7 @@ def _getlocal(ui, rpath, wd=None):
     """
     if wd is None:
         try:
-            wd = pycompat.getcwd()
+            wd = encoding.getcwd()
         except OSError as e:
             raise error.Abort(_("error getting current working directory: %s") %
                               encoding.strtolocal(e.strerror))
@@ -968,7 +968,7 @@ def _dispatch(req):
                         if not path:
                             raise error.RepoError(_("no repository found in"
                                                     " '%s' (.hg not found)")
-                                                  % pycompat.getcwd())
+                                                  % encoding.getcwd())
                         raise
             if repo:
                 ui = repo.ui

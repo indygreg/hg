@@ -97,9 +97,7 @@ if ispy3:
     osaltsep = os.altsep
     if osaltsep:
         osaltsep = osaltsep.encode('ascii')
-    # os.getcwd() on Python 3 returns string, but it has os.getcwdb() which
-    # returns bytes.
-    getcwd = os.getcwdb
+
     sysplatform = sys.platform.encode('ascii')
     sysexecutable = sys.executable
     if sysexecutable:
@@ -393,7 +391,6 @@ else:
     if getattr(sys, 'argv', None) is not None:
         sysargv = sys.argv
     sysplatform = sys.platform
-    getcwd = os.getcwd
     sysexecutable = sys.executable
     shlexsplit = shlex.split
     bytesio = cStringIO.StringIO

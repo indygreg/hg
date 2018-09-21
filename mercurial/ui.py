@@ -447,7 +447,7 @@ class ui(object):
         if section in (None, 'paths'):
             # expand vars and ~
             # translate paths relative to root (or home) into absolute paths
-            root = root or pycompat.getcwd()
+            root = root or encoding.getcwd()
             for c in self._tcfg, self._ucfg, self._ocfg:
                 for n, p in c.items('paths'):
                     # Ignore sub-options.

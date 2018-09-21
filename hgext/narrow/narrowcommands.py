@@ -69,7 +69,7 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
     narrowspecfile = opts['narrowspec']
 
     if narrowspecfile:
-        filepath = os.path.join(pycompat.getcwd(), narrowspecfile)
+        filepath = os.path.join(encoding.getcwd(), narrowspecfile)
         ui.status(_("reading narrowspec from '%s'\n") % filepath)
         try:
             fdata = util.readfile(filepath)
@@ -349,7 +349,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     newrules = opts.get('import_rules')
     if newrules:
         try:
-            filepath = os.path.join(pycompat.getcwd(), newrules)
+            filepath = os.path.join(encoding.getcwd(), newrules)
             fdata = util.readfile(filepath)
         except IOError as inst:
             raise error.Abort(_("cannot read narrowspecs from '%s': %s") %

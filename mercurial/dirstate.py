@@ -210,7 +210,7 @@ class dirstate(object):
         forcecwd = self._ui.config('ui', 'forcecwd')
         if forcecwd:
             return forcecwd
-        return pycompat.getcwd()
+        return encoding.getcwd()
 
     def getcwd(self):
         '''Return the path from which a canonical path is calculated.

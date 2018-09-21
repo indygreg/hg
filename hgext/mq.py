@@ -3585,7 +3585,7 @@ def mqinit(orig, ui, *args, **kwargs):
             raise error.Abort(_('only a local queue repository '
                                'may be initialized'))
     else:
-        repopath = cmdutil.findrepo(pycompat.getcwd())
+        repopath = cmdutil.findrepo(encoding.getcwd())
         if not repopath:
             raise error.Abort(_('there is no Mercurial repository here '
                                '(.hg not found)'))

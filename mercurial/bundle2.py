@@ -1672,7 +1672,7 @@ def _formatrequirementsparams(requirements):
     return params
 
 def addpartbundlestream2(bundler, repo, **kwargs):
-    if not kwargs.get('stream', False):
+    if not kwargs.get(r'stream', False):
         return
 
     if not streamclone.allowservergeneration(repo):

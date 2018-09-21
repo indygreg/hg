@@ -361,6 +361,7 @@ test-narrow-widen.t
 test-narrow.t
 test-nested-repo.t
 test-newbranch.t
+test-newercgi.t
 test-nointerrupt.t
 test-obshistory.t
 test-obsmarker-template.t

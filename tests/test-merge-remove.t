@@ -20,7 +20,7 @@
   1 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
-  $ hg debugstate --nodates
+  $ hg debugstate --no-dates
   m   0         -2 unset               bar
   m   0         -2 unset               foo1
   copy: foo -> foo1
@@ -36,7 +36,7 @@ Removing foo1 and bar:
   $ cp bar B
   $ hg rm -f foo1 bar
 
-  $ hg debugstate --nodates
+  $ hg debugstate --no-dates
   r   0         -1 set                 bar
   r   0         -1 set                 foo1
   copy: foo -> foo1
@@ -54,7 +54,7 @@ Re-adding foo1 and bar:
   adding bar
   adding foo1
 
-  $ hg debugstate --nodates
+  $ hg debugstate --no-dates
   n   0         -2 unset               bar
   n   0         -2 unset               foo1
   copy: foo -> foo1
@@ -73,7 +73,7 @@ Reverting foo1 and bar:
   reverting bar
   reverting foo1
 
-  $ hg debugstate --nodates
+  $ hg debugstate --no-dates
   n   0         -2 unset               bar
   n   0         -2 unset               foo1
   copy: foo -> foo1

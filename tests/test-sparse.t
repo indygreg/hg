@@ -385,10 +385,10 @@ dirstate
   $ cp ../dirstateallexcluded .hg/dirstate
   $ touch includedadded
   $ hg add includedadded
-  $ hg debugdirstate --nodates
+  $ hg debugdirstate --no-dates
   a   0         -1 unset               includedadded
   $ hg debugrebuilddirstate --minimal
-  $ hg debugdirstate --nodates
+  $ hg debugdirstate --no-dates
   n   0         -1 unset               included
   a   0         -1 * includedadded (glob)
 
@@ -410,13 +410,13 @@ manifest
   included
 We have files in the dirstate that are included and excluded. Some are in the
 manifest and some are not.
-  $ hg debugdirstate --nodates
+  $ hg debugdirstate --no-dates
   n 644          0 * excluded (glob)
   a   0         -1 * excludednomanifest (glob)
   n 644          0 * included (glob)
   a   0         -1 * includedadded (glob)
   $ hg debugrebuilddirstate --minimal
-  $ hg debugdirstate --nodates
+  $ hg debugdirstate --no-dates
   n 644          0 * included (glob)
   a   0         -1 * includedadded (glob)
 

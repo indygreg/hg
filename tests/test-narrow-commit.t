@@ -103,5 +103,5 @@ dirstate file, and therefore we'll be able to get stable output from
 debugdirstate. If we don't do this, the test can be slightly flaky.
   $ sleep 3
   $ hg status
-  $ hg debugdirstate --nodates
+  $ hg debugdirstate --no-dates
   n 644         10 set                 inside/f1

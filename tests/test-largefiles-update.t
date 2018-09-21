@@ -412,7 +412,7 @@ Test a linear merge to a revision containing same-name normal file
   $ hg update -q 5
   remote turned local largefile large2 into a normal file
   keep (l)argefile or use (n)ormal file? l
-  $ hg debugdirstate --nodates | grep large2
+  $ hg debugdirstate --no-dates | grep large2
   a   0         -1 unset               .hglf/large2
   r   0          0 set                 large2
   $ hg status -A large2
@@ -428,7 +428,7 @@ Test a linear merge to a revision containing same-name normal file
   $ hg update -q 5
   remote turned local largefile large3 into a normal file
   keep (l)argefile or use (n)ormal file? l
-  $ hg debugdirstate --nodates | grep large3
+  $ hg debugdirstate --no-dates | grep large3
   a   0         -1 unset               .hglf/large3
   r   0          0 set                 large3
   $ hg status -A large3

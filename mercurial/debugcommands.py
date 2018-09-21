@@ -733,13 +733,16 @@ def debugdeltachain(ui, repo, file_=None, **opts):
     fm.end()
 
 @command('debugdirstate|debugstate',
-    [('', 'nodates', None, _('do not display the saved mtime')),
-    ('', 'datesort', None, _('sort by saved mtime'))],
+    [('', 'nodates', None, _('do not display the saved mtime (DEPRECATED)')),
+     ('', 'dates', True, _('display the saved mtime')),
+     ('', 'datesort', None, _('sort by saved mtime'))],
     _('[OPTION]...'))
 def debugstate(ui, repo, **opts):
     """show the contents of the current dirstate"""
 
-    nodates = opts.get(r'nodates')
+    nodates = not opts[r'dates']
+    if opts.get(r'nodates') is not None:
+        nodates = True
     datesort = opts.get(r'datesort')
 
     timestr = ""

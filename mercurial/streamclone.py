@@ -10,7 +10,6 @@ from __future__ import absolute_import
 import contextlib
 import os
 import struct
-import warnings
 
 from .i18n import _
 from . import (
@@ -568,12 +567,13 @@ def generatev2(repo):
 
 @contextlib.contextmanager
 def nested(*ctxs):
-    with warnings.catch_warnings():
-        # For some reason, Python decided 'nested' was deprecated without
-        # replacement. They officially advertised for filtering the deprecation
-        # warning for people who actually need the feature.
-        warnings.filterwarnings("ignore",category=DeprecationWarning)
-        with contextlib.nested(*ctxs):
+    this = ctxs[0]
+    rest = ctxs[1:]
+    with this:
+        if rest:
+            with nested(*rest):
+                yield
+        else:
             yield
 
 def consumev2(repo, fp, filecount, filesize):

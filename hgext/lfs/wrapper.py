@@ -115,19 +115,19 @@ def _islfs(rlog, node=None, rev=None):
         if node is None:
             # both None - likely working copy content where node is not ready
             return False
-        rev = rlog.rev(node)
+        rev = rlog._revlog.rev(node)
     else:
-        node = rlog.node(rev)
+        node = rlog._revlog.node(rev)
     if node == nullid:
         return False
-    flags = rlog.flags(rev)
+    flags = rlog._revlog.flags(rev)
     return bool(flags & revlog.REVIDX_EXTSTORED)
 
 def filelogaddrevision(orig, self, text, transaction, link, p1, p2,
                        cachedelta=None, node=None,
                        flags=revlog.REVIDX_DEFAULT_FLAGS, **kwds):
     # The matcher isn't available if reposetup() wasn't called.
-    lfstrack = self.opener.options.get('lfstrack')
+    lfstrack = self._revlog.opener.options.get('lfstrack')
 
     if lfstrack:
         textlen = len(text)
@@ -144,7 +144,7 @@ def filelogaddrevision(orig, self, text, transaction, link, p1, p2,
 
 def filelogrenamed(orig, self, node):
     if _islfs(self, node):
-        rawtext = self.revision(node, raw=True)
+        rawtext = self._revlog.revision(node, raw=True)
         if not rawtext:
             return False
         metadata = pointer.deserialize(rawtext)
@@ -157,7 +157,7 @@ def filelogrenamed(orig, self, node):
 def filelogsize(orig, self, rev):
     if _islfs(self, rev=rev):
         # fast path: use lfs metadata to answer size
-        rawtext = self.revision(rev, raw=True)
+        rawtext = self._revlog.revision(rev, raw=True)
         metadata = pointer.deserialize(rawtext)
         return int(metadata['size'])
     return orig(self, rev)

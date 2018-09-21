@@ -57,7 +57,7 @@ class filelog(object):
     def linkrev(self, rev):
         return self._revlog.linkrev(rev)
 
-    # Used by LFS, verify.
+    # Used by verify.
     def flags(self, rev):
         return self._revlog.flags(rev)
 
@@ -207,7 +207,7 @@ class filelog(object):
     def indexfile(self, value):
         self._revlog.indexfile = value
 
-    # Used by LFS, repo upgrade.
+    # Used by repo upgrade.
     @property
     def opener(self):
         return self._revlog.opener

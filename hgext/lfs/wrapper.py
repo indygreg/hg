@@ -136,7 +136,7 @@ def filelogaddrevision(orig, self, text, transaction, link, p1, p2,
         if offset:
             textlen -= offset
 
-        if lfstrack(self.filename, textlen):
+        if lfstrack(self._revlog.filename, textlen):
             flags |= revlog.REVIDX_EXTSTORED
 
     return orig(self, text, transaction, link, p1, p2, cachedelta=cachedelta,

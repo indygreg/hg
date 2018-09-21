@@ -24,7 +24,7 @@ class filelog(object):
                                      censorable=True)
         # Full name of the user visible file, relative to the repository root.
         # Used by LFS.
-        self.filename = path
+        self._revlog.filename = path
         # Used by repo upgrade.
         self.index = self._revlog.index
         # Used by changegroup generation.
@@ -188,15 +188,6 @@ class filelog(object):
 
     # TODO these aren't part of the interface and aren't internal methods.
     # Callers should be fixed to not use them.
-
-    # Used by LFS.
-    @property
-    def filename(self):
-        return self._revlog.filename
-
-    @filename.setter
-    def filename(self, value):
-        self._revlog.filename = value
 
     # Used by bundlefilelog, unionfilelog.
     @property

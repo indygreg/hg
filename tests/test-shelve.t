@@ -532,6 +532,15 @@ ensure that metadata-only changes are shelved
   M a/a
   $ hg revert a/a
 
+#else
+
+Dummy shelve op, to keep rev numbers aligned
+
+  $ echo foo > a/a
+  $ hg shelve -q -n dummy a/a
+  $ hg unshelve -q dummy
+  $ hg revert a/a
+
 #endif
 
 #if symlink
@@ -543,6 +552,15 @@ ensure that metadata-only changes are shelved
   $ hg unshelve -q -n symlink
   $ hg status a/a
   M a/a
+  $ hg revert a/a
+
+#else
+
+Dummy shelve op, to keep rev numbers aligned
+
+  $ echo bar > a/a
+  $ hg shelve -q -n dummy a/a
+  $ hg unshelve -q dummy
   $ hg revert a/a
 
 #endif

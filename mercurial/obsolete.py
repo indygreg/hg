@@ -959,7 +959,7 @@ def createmarkers(repo, relations, flag=0, date=None, metadata=None,
                   operation=None):
     """Add obsolete markers between changesets in a repo
 
-    <relations> must be an iterable of (<old>, (<new>, ...)[,{metadata}])
+    <relations> must be an iterable of ((<old>,...), (<new>, ...)[,{metadata}])
     tuple. `old` and `news` are changectx. metadata is an optional dictionary
     containing metadata for this marker only. It is merged with the global
     metadata specified through the `metadata` argument of this function.
@@ -993,8 +993,14 @@ def createmarkers(repo, relations, flag=0, date=None, metadata=None,
     with repo.transaction('add-obsolescence-marker') as tr:
         markerargs = []
         for rel in relations:
-            prec = rel[0]
-            if True:
+            predecessors = rel[0]
+            if not isinstance(predecessors, tuple):
+                # preserve compat with old API until all caller are migrated
+                predecessors = (predecessors,)
+            if 1 < len(predecessors) and len(rel[1]) != 1:
+                msg = 'Fold markers can only have 1 successors, not %d'
+                raise error.ProgrammingError(msg % len(rel[1]))
+            for prec in predecessors:
                 sucs = rel[1]
                 localmetadata = metadata.copy()
                 if 2 < len(rel):

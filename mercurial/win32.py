@@ -307,8 +307,8 @@ def _raiseoserror(name):
     if code > 0x7fffffff:
         code -= 2**32
     err = ctypes.WinError(code=code)
-    raise OSError(err.errno, '%s: %s' % (name,
-                                         encoding.strtolocal(err.strerror)))
+    raise OSError(err.errno, r'%s: %s' % (encoding.strfromlocal(name),
+                                          err.strerror))
 
 def _getfileinfo(name):
     fh = _kernel32.CreateFileA(name, 0,
@@ -597,7 +597,8 @@ def unlink(f):
         # use EPERM because it is POSIX prescribed value, even though
         # unlink(2) on directories returns EISDIR on Linux
         raise IOError(errno.EPERM,
-                      "Unlinking directory not permitted: '%s'" % f)
+                      r"Unlinking directory not permitted: '%s'"
+                      % encoding.strfromlocal(f))
 
     # POSIX allows to unlink and rename open files. Windows has serious
     # problems with doing that:
@@ -625,7 +626,7 @@ def unlink(f):
             if e.errno != errno.EEXIST:
                 raise
     else:
-        raise IOError(errno.EEXIST, "No usable temporary filename found")
+        raise IOError(errno.EEXIST, r"No usable temporary filename found")
 
     try:
         os.unlink(temp)

@@ -67,9 +67,11 @@ except ImportError:
 try:
     from mercurial import pycompat
     getargspec = pycompat.getargspec  # added to module after 4.5
+    _sysstr = pycompat.sysstr         # since 4.0 (or 2219f4f82ede)
 except (ImportError, AttributeError):
     import inspect
     getargspec = inspect.getargspec
+    _sysstr = lambda x: x             # no py3 support
 
 try:
     # 4.7+
@@ -95,7 +97,7 @@ except (AttributeError, ImportError):
 # available since 1.9.3 (or 94b200a11cf7)
 _undefined = object()
 def safehasattr(thing, attr):
-    return getattr(thing, attr, _undefined) is not _undefined
+    return getattr(thing, _sysstr(attr), _undefined) is not _undefined
 setattr(util, 'safehasattr', safehasattr)
 
 # for "historical portability":
@@ -340,12 +342,12 @@ def safeattrsetter(obj, name, ignoremissing=False):
         raise error.Abort((b"missing attribute %s of %s might break assumption"
                            b" of performance measurement") % (name, obj))
 
-    origvalue = getattr(obj, name)
+    origvalue = getattr(obj, _sysstr(name))
     class attrutil(object):
         def set(self, newvalue):
-            setattr(obj, name, newvalue)
+            setattr(obj, _sysstr(name), newvalue)
         def restore(self):
-            setattr(obj, name, origvalue)
+            setattr(obj, _sysstr(name), origvalue)
 
     return attrutil()
 

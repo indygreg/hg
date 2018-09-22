@@ -921,11 +921,11 @@ def perfstartup(ui, repo, **opts):
     timer, fm = gettimer(ui, opts)
     cmd = sys.argv[0]
     def d():
-        if os.name != b'nt':
+        if os.name != r'nt':
             os.system(b"HGRCPATH= %s version -q > /dev/null" % cmd)
         else:
-            os.environ[b'HGRCPATH'] = b' '
-            os.system(b"%s version -q > NUL" % cmd)
+            os.environ[r'HGRCPATH'] = r' '
+            os.system(r"%s version -q > NUL" % cmd)
     timer(d)
     fm.end()
 
@@ -1059,7 +1059,7 @@ def perftemplating(ui, repo, testedtemplate=None, **opts):
                           hint=b"use 4.3 or later")
 
     nullui = ui.copy()
-    nullui.fout = open(os.devnull, b'wb')
+    nullui.fout = open(os.devnull, r'wb')
     nullui.disablepager()
     revs = opts.get(b'rev')
     if not revs:

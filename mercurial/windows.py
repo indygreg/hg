@@ -123,10 +123,35 @@ class mixedfilemodewrapper(object):
         object.__setattr__(self, r'_lastop', self.OPREAD)
         return self._fp.readlines(*args, **kwargs)
 
+class fdproxy(object):
+    """Wraps osutil.posixfile() to override the name attribute to reflect the
+    underlying file name.
+    """
+    def __init__(self, name, fp):
+        self.name = name
+        self._fp = fp
+
+    def __enter__(self):
+        return self._fp.__enter__()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._fp.__exit__(exc_type, exc_value, traceback)
+
+    def __iter__(self):
+        return iter(self._fp)
+
+    def __getattr__(self, name):
+        return getattr(self._fp, name)
+
 def posixfile(name, mode='r', buffering=-1):
     '''Open a file with even more POSIX-like semantics'''
     try:
         fp = osutil.posixfile(name, mode, buffering) # may raise WindowsError
+
+        # PyFile_FromFd() ignores the name, and seems to report fp.name as the
+        # underlying file descriptor.
+        if pycompat.ispy3:
+            fp = fdproxy(name, fp)
 
         # The position when opening in append mode is implementation defined, so
         # make it consistent with other platforms, which position at EOF.

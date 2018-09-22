@@ -24,13 +24,13 @@ from .thirdparty import (
 )
 
 from . import (
-    dagop,
     error,
     match as matchmod,
     mdiff,
     phases,
     pycompat,
     repository,
+    revlog,
     util,
 )
 
@@ -536,18 +536,8 @@ def _revisiondeltatochunks(delta, headerfn):
         yield prefix
     yield data
 
-def _sortnodesnormal(store, nodes):
-    """Sort nodes for changegroup generation and turn into revnums."""
-    # for generaldelta revlogs, we linearize the revs; this will both be
-    # much quicker and generate a much smaller bundle
-    if store._generaldelta:
-        revs = set(store.rev(n) for n in nodes)
-        return dagop.linearize(revs, store.parentrevs)
-    else:
-        return sorted([store.rev(n) for n in nodes])
-
 def _sortnodesellipsis(store, nodes, cl, lookup):
-    """Sort nodes for changegroup generation and turn into revnums."""
+    """Sort nodes for changegroup generation."""
     # Ellipses serving mode.
     #
     # In a perfect world, we'd generate better ellipsis-ified graphs
@@ -565,11 +555,11 @@ def _sortnodesellipsis(store, nodes, cl, lookup):
     # changelog, so what we do is we sort the non-changelog histories
     # by the order in which they are used by the changelog.
     key = lambda n: cl.rev(lookup(n))
-    return [store.rev(n) for n in sorted(nodes, key=key)]
+    return sorted(nodes, key=key)
 
-def _makenarrowdeltarequest(cl, store, ischangelog, rev, node, linkrev,
-                            linknode, clrevtolocalrev, fullclnodes,
-                            precomputedellipsis):
+def _resolvenarrowrevisioninfo(cl, store, ischangelog, rev, linkrev,
+                               linknode, clrevtolocalrev, fullclnodes,
+                               precomputedellipsis):
     linkparents = precomputedellipsis[linkrev]
     def local(clrev):
         """Turn a changelog revnum into a local revnum.
@@ -644,15 +634,7 @@ def _makenarrowdeltarequest(cl, store, ischangelog, rev, node, linkrev,
 
     p1node, p2node = store.node(p1), store.node(p2)
 
-    # TODO: try and actually send deltas for ellipsis data blocks
-    return revisiondeltarequest(
-        node=node,
-        p1node=p1node,
-        p2node=p2node,
-        linknode=linknode,
-        basenode=nullid,
-        ellipsis=True,
-    )
+    return p1node, p2node, linknode
 
 def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
                topic=None,
@@ -668,87 +650,97 @@ def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
     if not nodes:
         return
 
-    # We perform two passes over the revisions whose data we will emit.
-    #
-    # In the first pass, we obtain information about the deltas that will
-    # be generated. This involves computing linknodes and adjusting the
-    # request to take shallow fetching into account. The end result of
-    # this pass is a list of "request" objects stating which deltas
-    # to obtain.
-    #
-    # The second pass is simply resolving the requested deltas.
-
     cl = repo.changelog
 
     if ischangelog:
-        # Changelog doesn't benefit from reordering revisions. So send
-        # out revisions in store order.
-        # TODO the API would be cleaner if this were controlled by the
-        # store producing the deltas.
-        revs = sorted(cl.rev(n) for n in nodes)
+        # `hg log` shows changesets in storage order. To preserve order
+        # across clones, send out changesets in storage order.
+        nodesorder = 'storage'
     elif ellipses:
-        revs = _sortnodesellipsis(store, nodes, cl, lookup)
+        nodes = _sortnodesellipsis(store, nodes, cl, lookup)
+        nodesorder = 'nodes'
     else:
-        revs = _sortnodesnormal(store, nodes)
+        nodesorder = None
 
-    # In the first pass, collect info about the deltas we'll be
-    # generating.
-    requests = []
+    # Perform ellipses filtering and revision massaging. We do this before
+    # emitrevisions() because a) filtering out revisions creates less work
+    # for emitrevisions() b) dropping revisions would break emitrevisions()'s
+    # assumptions about delta choices and we would possibly send a delta
+    # referencing a missing base revision.
+    #
+    # Also, calling lookup() has side-effects with regards to populating
+    # data structures. If we don't call lookup() for each node or if we call
+    # lookup() after the first pass through each node, things can break -
+    # possibly intermittently depending on the python hash seed! For that
+    # reason, we store a mapping of all linknodes during the initial node
+    # pass rather than use lookup() on the output side.
+    if ellipses:
+        filtered = []
+        adjustedparents = {}
+        linknodes = {}
 
-    # Add the parent of the first rev.
-    revs.insert(0, store.parentrevs(revs[0])[0])
-
-    for i in pycompat.xrange(len(revs) - 1):
-        prev = revs[i]
-        curr = revs[i + 1]
-
-        node = store.node(curr)
-        linknode = lookup(node)
-        p1node, p2node = store.parents(node)
-
-        if ellipses:
+        for node in nodes:
+            rev = store.rev(node)
+            linknode = lookup(node)
             linkrev = cl.rev(linknode)
-            clrevtolocalrev[linkrev] = curr
+            clrevtolocalrev[linkrev] = rev
 
-            # This is a node to send in full, because the changeset it
-            # corresponds to was a full changeset.
+            # If linknode is in fullclnodes, it means the corresponding
+            # changeset was a full changeset and is being sent unaltered.
             if linknode in fullclnodes:
-                requests.append(revisiondeltarequest(
-                    node=node,
-                    p1node=p1node,
-                    p2node=p2node,
-                    linknode=linknode,
-                    basenode=None,
-                ))
+                linknodes[node] = linknode
 
+            # If the corresponding changeset wasn't in the set computed
+            # as relevant to us, it should be dropped outright.
             elif linkrev not in precomputedellipsis:
-                pass
+                continue
+
             else:
-                requests.append(_makenarrowdeltarequest(
-                    cl, store, ischangelog, curr, node, linkrev, linknode,
-                    clrevtolocalrev, fullclnodes,
-                    precomputedellipsis))
-        else:
-            requests.append(revisiondeltarequest(
-                node=node,
-                p1node=p1node,
-                p2node=p2node,
-                linknode=linknode,
-                basenode=store.node(prev) if forcedeltaparentprev else None,
-            ))
+                # We could probably do this later and avoid the dict
+                # holding state. But it likely doesn't matter.
+                p1node, p2node, linknode = _resolvenarrowrevisioninfo(
+                    cl, store, ischangelog, rev, linkrev, linknode,
+                    clrevtolocalrev, fullclnodes, precomputedellipsis)
+
+                adjustedparents[node] = (p1node, p2node)
+                linknodes[node] = linknode
+
+            filtered.append(node)
+
+        nodes = filtered
 
     # We expect the first pass to be fast, so we only engage the progress
     # meter for constructing the revision deltas.
     progress = None
     if topic is not None:
         progress = repo.ui.makeprogress(topic, unit=_('chunks'),
-                                        total=len(requests))
+                                        total=len(nodes))
 
-    for i, delta in enumerate(store.emitrevisiondeltas(requests)):
+    revisions = store.emitrevisions(
+        nodes,
+        nodesorder=nodesorder,
+        revisiondata=True,
+        assumehaveparentrevisions=not ellipses,
+        deltaprevious=forcedeltaparentprev)
+
+    for i, revision in enumerate(revisions):
         if progress:
             progress.update(i + 1)
 
-        yield delta
+        if ellipses:
+            linknode = linknodes[revision.node]
+
+            if revision.node in adjustedparents:
+                p1node, p2node = adjustedparents[revision.node]
+                revision.p1node = p1node
+                revision.p2node = p2node
+                revision.flags |= revlog.REVIDX_ELLIPSIS
+
+        else:
+            linknode = lookup(revision.node)
+
+        revision.linknode = linknode
+        yield revision
 
     if progress:
         progress.complete()

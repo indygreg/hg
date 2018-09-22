@@ -69,9 +69,14 @@ try:
     getargspec = pycompat.getargspec  # added to module after 4.5
     _sysstr = pycompat.sysstr         # since 4.0 (or 2219f4f82ede)
     _xrange = pycompat.xrange         # since 4.8 (or 7eba8f83129b)
+    if pycompat.ispy3:
+        _maxint = sys.maxsize  # per py3 docs for replacing maxint
+    else:
+        _maxint = sys.maxint
 except (ImportError, AttributeError):
     import inspect
     getargspec = inspect.getargspec
+    _maxint = sys.maxint              # no py3 support
     _sysstr = lambda x: x             # no py3 support
     _xrange = xrange
 
@@ -1894,7 +1899,7 @@ def perflrucache(ui, mincost=0, maxcost=100, costlimit=0, size=4,
 
     values = []
     for i in _xrange(size):
-        values.append(random.randint(0, sys.maxint))
+        values.append(random.randint(0, _maxint))
 
     # Get mode fills the cache and tests raw lookup performance with no
     # eviction.
@@ -1925,7 +1930,7 @@ def perflrucache(ui, mincost=0, maxcost=100, costlimit=0, size=4,
     setseq = []
     costs = []
     for i in _xrange(sets):
-        setseq.append(random.randint(0, sys.maxint))
+        setseq.append(random.randint(0, _maxint))
         costs.append(random.choice(costrange))
 
     def doinserts():

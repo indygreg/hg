@@ -68,10 +68,12 @@ try:
     from mercurial import pycompat
     getargspec = pycompat.getargspec  # added to module after 4.5
     _sysstr = pycompat.sysstr         # since 4.0 (or 2219f4f82ede)
+    _xrange = pycompat.xrange         # since 4.8 (or 7eba8f83129b)
 except (ImportError, AttributeError):
     import inspect
     getargspec = inspect.getargspec
     _sysstr = lambda x: x             # no py3 support
+    _xrange = xrange
 
 try:
     # 4.7+
@@ -931,7 +933,7 @@ def perfparents(ui, repo, **opts):
     if len(repo.changelog) < count:
         raise error.Abort(b"repo needs %d commits for this test" % count)
     repo = repo.unfiltered()
-    nl = [repo.changelog.node(i) for i in xrange(count)]
+    nl = [repo.changelog.node(i) for i in _xrange(count)]
     def d():
         for n in nl:
             repo.changelog.parents(n)
@@ -978,7 +980,7 @@ def perflinelogedits(ui, **opts):
     randint = random.randint
     currentlines = 0
     arglist = []
-    for rev in xrange(edits):
+    for rev in _xrange(edits):
         a1 = randint(0, currentlines)
         a2 = randint(a1, min(currentlines, a1 + maxhunklines))
         b1 = randint(0, maxb1)
@@ -1216,18 +1218,18 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
                     mdiff.textdiff(*pair)
     else:
         q = queue()
-        for i in xrange(threads):
+        for i in _xrange(threads):
             q.put(None)
         ready = threading.Condition()
         done = threading.Event()
-        for i in xrange(threads):
+        for i in _xrange(threads):
             threading.Thread(target=_bdiffworker,
                              args=(q, blocks, xdiff, ready, done)).start()
         q.join()
         def d():
             for pair in textpairs:
                 q.put(pair)
-            for i in xrange(threads):
+            for i in _xrange(threads):
                 q.put(None)
             with ready:
                 ready.notify_all()
@@ -1238,7 +1240,7 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
 
     if withthreads:
         done.set()
-        for i in xrange(threads):
+        for i in _xrange(threads):
             q.put(None)
         with ready:
             ready.notify_all()
@@ -1472,7 +1474,7 @@ def perfrevlogrevisions(ui, repo, file_=None, startrev=0, reverse=False,
             beginrev, endrev = endrev, beginrev
             dist = -1 * dist
 
-        for x in xrange(beginrev, endrev, dist):
+        for x in _xrange(beginrev, endrev, dist):
             # Old revisions don't support passing int.
             n = rl.node(x)
             rl.revision(n)
@@ -1885,19 +1887,19 @@ def perfloadmarkers(ui, repo):
 def perflrucache(ui, mincost=0, maxcost=100, costlimit=0, size=4,
                  gets=10000, sets=10000, mixed=10000, mixedgetfreq=50, **opts):
     def doinit():
-        for i in xrange(10000):
+        for i in _xrange(10000):
             util.lrucachedict(size)
 
     costrange = list(range(mincost, maxcost + 1))
 
     values = []
-    for i in xrange(size):
+    for i in _xrange(size):
         values.append(random.randint(0, sys.maxint))
 
     # Get mode fills the cache and tests raw lookup performance with no
     # eviction.
     getseq = []
-    for i in xrange(gets):
+    for i in _xrange(gets):
         getseq.append(random.choice(values))
 
     def dogets():
@@ -1922,7 +1924,7 @@ def perflrucache(ui, mincost=0, maxcost=100, costlimit=0, size=4,
     # Set mode tests insertion speed with cache eviction.
     setseq = []
     costs = []
-    for i in xrange(sets):
+    for i in _xrange(sets):
         setseq.append(random.randint(0, sys.maxint))
         costs.append(random.choice(costrange))
 
@@ -1943,7 +1945,7 @@ def perflrucache(ui, mincost=0, maxcost=100, costlimit=0, size=4,
 
     # Mixed mode randomly performs gets and sets with eviction.
     mixedops = []
-    for i in xrange(mixed):
+    for i in _xrange(mixed):
         r = random.randint(0, 100)
         if r < mixedgetfreq:
             op = 0

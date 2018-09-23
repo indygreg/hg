@@ -12,6 +12,7 @@ from mercurial import (
     context,
     error,
     fancyopts,
+    pycompat,
     simplemerge,
     ui as uimod,
 )
@@ -71,7 +72,7 @@ try:
                                      context.arbitraryfilectx(local),
                                      context.arbitraryfilectx(base),
                                      context.arbitraryfilectx(other),
-                                     **opts))
+                                     **pycompat.strkwargs(opts)))
 except ParseError as e:
     sys.stdout.write(b"%s: %s\n" % (sys.argv[0], e))
     showhelp()

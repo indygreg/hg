@@ -294,7 +294,7 @@ def _search(web):
 
         for ctx in searchfunc[0](funcarg):
             count += 1
-            n = ctx.node()
+            n = scmutil.binnode(ctx)
             showtags = webutil.showtag(web.repo, 'changelogtag', n)
             files = webutil.listfilediffs(ctx.files(), n, web.maxfiles)
 
@@ -521,7 +521,7 @@ def manifest(web):
         symrev = 'tip'
     path = webutil.cleanpath(web.repo, web.req.qsparams.get('file', ''))
     mf = ctx.manifest()
-    node = ctx.node()
+    node = scmutil.binnode(ctx)
 
     files = {}
     dirs = {}
@@ -868,7 +868,7 @@ def comparison(web):
     leftrev = parent.rev()
     leftnode = parent.node()
     rightrev = ctx.rev()
-    rightnode = ctx.node()
+    rightnode = scmutil.binnode(ctx)
     if path in ctx:
         fctx = ctx[path]
         rightlines = filelines(fctx)

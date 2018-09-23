@@ -416,7 +416,7 @@ def _kwfunc(f):
     return f
 
 def commonentry(repo, ctx):
-    node = ctx.node()
+    node = scmutil.binnode(ctx)
     return {
         # TODO: perhaps ctx.changectx() should be assigned if ctx is a
         # filectx, but I'm not pretty sure if that would always work because
@@ -451,7 +451,7 @@ def changelistentry(web, ctx):
     '''
     repo = web.repo
     rev = ctx.rev()
-    n = ctx.node()
+    n = scmutil.binnode(ctx)
     showtags = showtag(repo, 'changelogtag', n)
     files = listfilediffs(ctx.files(), n, web.maxfiles)
 
@@ -485,7 +485,7 @@ def symrevorshortnode(req, ctx):
     if 'node' in req.qsparams:
         return templatefilters.revescape(req.qsparams['node'])
     else:
-        return short(ctx.node())
+        return short(scmutil.binnode(ctx))
 
 def _listfilesgen(context, ctx, stripecount):
     parity = paritygen(stripecount)
@@ -501,8 +501,9 @@ def _listfilesgen(context, ctx, stripecount):
 def changesetentry(web, ctx):
     '''Obtain a dictionary to be used to render the "changeset" template.'''
 
-    showtags = showtag(web.repo, 'changesettag', ctx.node())
-    showbookmarks = showbookmark(web.repo, 'changesetbookmark', ctx.node())
+    showtags = showtag(web.repo, 'changesettag', scmutil.binnode(ctx))
+    showbookmarks = showbookmark(web.repo, 'changesetbookmark',
+                                 scmutil.binnode(ctx))
     showbranch = nodebranchnodefault(ctx)
 
     basectx = basechangectx(web.repo, web.req)

@@ -49,6 +49,9 @@ from __future__ import absolute_import
 
 import os
 from mercurial.i18n import _
+from mercurial.utils import (
+    procutil,
+)
 from mercurial import (
     error,
     httpconnection,
@@ -83,7 +86,7 @@ def auth_getkey(self, params):
     if 'user=' not in params:
         params = '%s user?' % params
     params = '%s !password?' % params
-    os.system("%s -g '%s'" % (_executable, params))
+    os.system(procutil.tonativestr("%s -g '%s'" % (_executable, params)))
 
 def auth_getuserpasswd(self, getkey, params):
     params = 'proto=pass %s' % params

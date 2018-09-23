@@ -3074,7 +3074,8 @@ def debugwireproto(ui, repo, path=None, **opts):
             '-R', repo.root,
             'debugserve', '--sshstdio',
         ]
-        proc = subprocess.Popen(args, stdin=subprocess.PIPE,
+        proc = subprocess.Popen(pycompat.rapply(procutil.tonativestr, args),
+                                stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                 bufsize=0)
 

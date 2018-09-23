@@ -58,6 +58,10 @@ from mercurial.i18n import _
 from mercurial.node import nullrev
 from mercurial.node import wdirrev
 
+from mercurial.utils import (
+    procutil,
+)
+
 from mercurial import (
     cmdutil,
     context,
@@ -448,9 +452,9 @@ def fixfile(ui, opts, fixers, fixctx, path, basectxs):
                 continue
             ui.debug('subprocess: %s\n' % (command,))
             proc = subprocess.Popen(
-                command,
+                pycompat.rapply(procutil.tonativestr, command),
                 shell=True,
-                cwd='/',
+                cwd=procutil.tonativestr(b'/'),
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)

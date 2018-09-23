@@ -1182,5 +1182,6 @@ def _asyncsavemetadata(root, nodes):
         cmdline = [util.hgexecutable(), 'debugfillinfinitepushmetadata',
                    '-R', root] + nodesargs
         # Process will run in background. We don't care about the return code
-        subprocess.Popen(cmdline, close_fds=True, shell=False,
+        subprocess.Popen(pycompat.rapply(procutil.tonativestr, cmdline),
+                         close_fds=True, shell=False,
                          stdin=devnull, stdout=devnull, stderr=devnull)

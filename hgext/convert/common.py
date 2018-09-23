@@ -402,7 +402,8 @@ class commandline(object):
 
     def _run(self, cmd, *args, **kwargs):
         def popen(cmdline):
-            p = subprocess.Popen(cmdline, shell=True, bufsize=-1,
+            p = subprocess.Popen(pycompat.rapply(procutil.tonativestr, cmdline),
+                                 shell=True, bufsize=-1,
                                  close_fds=procutil.closefds,
                                  stdout=subprocess.PIPE)
             return p

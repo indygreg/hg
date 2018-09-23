@@ -11,6 +11,13 @@ import os
 import subprocess
 import tempfile
 
+from mercurial import (
+    pycompat,
+)
+from mercurial.utils import (
+    procutil,
+)
+
 NamedTemporaryFile = tempfile.NamedTemporaryFile
 
 class BundleWriteException(Exception):
@@ -111,7 +118,8 @@ class externalbundlestore(abstractbundlestore):
 
     def _call_binary(self, args):
         p = subprocess.Popen(
-            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            pycompat.rapply(procutil.tonativestr, args),
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             close_fds=True)
         stdout, stderr = p.communicate()
         returncode = p.returncode

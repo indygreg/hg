@@ -17,6 +17,7 @@ from mercurial.i18n import _
 from mercurial import (
     encoding,
     error,
+    pycompat,
 )
 from mercurial.utils import (
     dateutil,
@@ -201,7 +202,7 @@ class gnuarch_source(common.converter_source, common.commandline):
         cmdline += ['>', os.devnull, '2>', os.devnull]
         cmdline = procutil.quotecommand(' '.join(cmdline))
         self.ui.debug(cmdline, '\n')
-        return os.system(cmdline)
+        return os.system(pycompat.rapply(procutil.tonativestr, cmdline))
 
     def _update(self, rev):
         self.ui.debug('applying revision %s...\n' % rev)

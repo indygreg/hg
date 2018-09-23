@@ -44,6 +44,10 @@ from mercurial import (
     pycompat,
 )
 
+from mercurial.utils import (
+    procutil,
+)
+
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
@@ -62,7 +66,8 @@ def uisetup(ui):
             # we can't use close_fds *and* redirect stdin. I'm not sure that we
             # need to because the detached process has no console connection.
             subprocess.Popen(
-                script, shell=True, env=env, close_fds=True,
+                pycompat.rapply(procutil.tonativestr, script),
+                shell=True, env=procutil.tonativeenv(env), close_fds=True,
                 creationflags=_creationflags)
     else:
         def runshellcommand(script, env):
@@ -82,7 +87,9 @@ def uisetup(ui):
                 # connect stdin to devnull to make sure the subprocess can't
                 # muck up that stream for mercurial.
                 subprocess.Popen(
-                    script, shell=True, stdin=open(os.devnull, 'r'), env=env,
+                    pycompat.rapply(procutil.tonativestr, script),
+                    shell=True, stdin=open(os.devnull, 'r'),
+                    env=procutil.tonativeenv(env),
                     close_fds=True, **newsession)
             finally:
                 # mission accomplished, this child needs to exit and not

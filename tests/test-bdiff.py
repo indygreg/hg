@@ -117,8 +117,8 @@ class BdiffTests(unittest.TestCase):
 
     def test_nice_diff_for_trivial_change(self):
         self.assertEqual(self.showdiff(
-            b''.join(b'<%s\n-\n' % i for i in range(5)),
-            b''.join(b'>%s\n-\n' % i for i in range(5))),
+            b''.join(b'<%d\n-\n' % i for i in range(5)),
+            b''.join(b'>%d\n-\n' % i for i in range(5))),
                          [diffreplace(0, 3, b'<0\n', b'>0\n'),
                           b'-\n',
                           diffreplace(5, 8, b'<1\n', b'>1\n'),

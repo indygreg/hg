@@ -99,9 +99,9 @@ class BdiffTests(unittest.TestCase):
                      diffreplace(12, 12, b'', b'b\nc\n.\n'),
                      b'd\ne\n',
                      diffreplace(16, 18, b'.\n', b''), b'f\n']
-        self.assert_(got in (want_c, want_pure),
-                     'got: %r, wanted either %r or %r' % (
-                         got, want_c, want_pure))
+        self.assertTrue(got in (want_c, want_pure),
+                        'got: %r, wanted either %r or %r' % (
+                            got, want_c, want_pure))
 
     def test_fixws(self):
         cases = [

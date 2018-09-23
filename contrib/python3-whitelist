@@ -22,6 +22,7 @@ test-backout.t
 test-backwards-remove.t
 test-bad-pull.t
 test-basic.t
+test-bdiff.py
 test-bheads.t
 test-bisect.t
 test-bisect2.t

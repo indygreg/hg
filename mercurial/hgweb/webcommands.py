@@ -1221,7 +1221,7 @@ def static(web):
     fname = web.req.qsparams['file']
     # a repo owner may set web.static in .hg/hgrc to get any file
     # readable by the user running the CGI script
-    static = web.config("web", "static", None, untrusted=False)
+    static = web.config("web", "static", untrusted=False)
     if not static:
         tp = web.templatepath or templater.templatepaths()
         if isinstance(tp, str):

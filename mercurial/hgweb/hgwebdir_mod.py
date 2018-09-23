@@ -383,8 +383,7 @@ class hgwebdir(object):
                     fname = virtual[7:]
                 else:
                     fname = req.qsparams['static']
-                static = self.ui.config("web", "static", None,
-                                        untrusted=False)
+                static = self.ui.config("web", "static", untrusted=False)
                 if not static:
                     tp = self.templatepath or templater.templatepaths()
                     if isinstance(tp, str):

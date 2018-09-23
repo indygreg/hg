@@ -1352,6 +1352,9 @@ coreconfigitem('web', 'refreshinterval',
 coreconfigitem('web', 'server-header',
     default=None,
 )
+coreconfigitem('web', 'static',
+    default=None,
+)
 coreconfigitem('web', 'staticurl',
     default=None,
 )

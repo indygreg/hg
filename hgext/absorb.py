@@ -972,6 +972,7 @@ def absorbcmd(ui, repo, *pats, **opts):
 
     Returns 0 on success, 1 if all chunks were ignored and nothing amended.
     """
+    opts = pycompat.byteskwargs(opts)
     state = absorb(ui, repo, pats=pats, opts=opts)
     if sum(s[0] for s in state.chunkstats.values()) == 0:
         return 1

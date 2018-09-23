@@ -1,7 +1,9 @@
 test-abort-checkin.t
 test-absorb-filefixupstate.py
 test-absorb-phase.t
+test-absorb-rename.t
 test-absorb-strip.t
+test-absorb.t
 test-add.t
 test-addremove-similar.t
 test-addremove.t

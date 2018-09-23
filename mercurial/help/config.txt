@@ -2626,6 +2626,9 @@ The full set of options is:
 ``server-header``
     Value for HTTP ``Server`` response header.
 
+``static``
+    Directory where static files are served from.
+
 ``staticurl``
     Base URL to use for static files. If unset, static files (e.g. the
     hgicon.png favicon) will be served by the CGI script itself. Use

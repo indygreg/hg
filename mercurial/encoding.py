@@ -236,7 +236,12 @@ if not _nativeenviron:
 if pycompat.ispy3:
     # os.getcwd() on Python 3 returns string, but it has os.getcwdb() which
     # returns bytes.
-    getcwd = os.getcwdb  # re-exports
+    if pycompat.iswindows:
+        # Python 3 on Windows issues a DeprecationWarning about using the bytes
+        # API when os.getcwdb() is called.
+        getcwd = lambda: strtolocal(os.getcwd())  # re-exports
+    else:
+        getcwd = os.getcwdb  # re-exports
 else:
     getcwd = os.getcwd  # re-exports
 

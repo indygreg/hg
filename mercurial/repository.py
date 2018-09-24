@@ -741,13 +741,6 @@ class ifilemutation(interfaceutil.Interface):
 class ifilestorage(ifileindex, ifiledata, ifilemutation):
     """Complete storage interface for a single tracked file."""
 
-    _generaldelta = interfaceutil.Attribute(
-        """Whether deltas can be against any parent revision.
-
-        TODO this is used by changegroup code and it could probably be
-        folded into another API.
-        """)
-
     def files():
         """Obtain paths that are backing storage for this file.
 

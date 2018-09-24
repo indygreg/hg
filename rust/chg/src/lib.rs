@@ -12,6 +12,7 @@ extern crate tokio_hglib;
 extern crate tokio_process;
 
 pub mod attachio;
+pub mod locator;
 pub mod message;
 pub mod procutil;
 pub mod runcommand;

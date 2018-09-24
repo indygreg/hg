@@ -15,6 +15,11 @@ extern "C" {
     fn sendfds(sockfd: c_int, fds: *const c_int, fdlen: size_t) -> ssize_t;
 }
 
+/// Returns the effective uid of the current process.
+pub fn get_effective_uid() -> u32 {
+    unsafe { libc::geteuid() }
+}
+
 /// Changes the given fd to blocking mode.
 pub fn set_blocking_fd(fd: RawFd) -> io::Result<()> {
     let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };

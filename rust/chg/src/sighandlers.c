@@ -11,16 +11,8 @@
 #include <errno.h>
 #include <signal.h>
 #include <string.h>
-#include <sys/wait.h>
 #include <unistd.h>
 
-#ifdef __GNUC__
-#define UNUSED_ __attribute__((unused))
-#else
-#define UNUSED_
-#endif
-
-static pid_t pagerpid = 0;
 static pid_t peerpgid = 0;
 static pid_t peerpid = 0;
 
@@ -63,17 +55,6 @@ static void handlestopsignal(int sig)
 		return;
 	if (sigaction(sig, &oldsa, NULL) < 0)
 		return;
-}
-
-static void handlechildsignal(int sig UNUSED_)
-{
-	if (peerpid == 0 || pagerpid == 0)
-		return;
-	/* if pager exits, notify the server with SIGPIPE immediately.
-	 * otherwise the server won't get SIGPIPE if it does not write
-	 * anything. (issue5278) */
-	if (waitpid(pagerpid, NULL, WNOHANG) == pagerpid)
-		kill(peerpid, SIGPIPE);
 }
 
 /*
@@ -131,11 +112,6 @@ int setupsignalhandler(pid_t pid, pid_t pgid)
 	sa.sa_flags = SA_RESTART;
 	if (sigaction(SIGTSTP, &sa, NULL) < 0)
 		return -1;
-	/* get notified when pager exits */
-	sa.sa_handler = handlechildsignal;
-	sa.sa_flags = SA_RESTART;
-	if (sigaction(SIGCHLD, &sa, NULL) < 0)
-		return -1;
 
 	return 0;
 }
@@ -163,8 +139,6 @@ int restoresignalhandler(void)
 	if (sigaction(SIGCONT, &sa, NULL) < 0)
 		return -1;
 	if (sigaction(SIGTSTP, &sa, NULL) < 0)
-		return -1;
-	if (sigaction(SIGCHLD, &sa, NULL) < 0)
 		return -1;
 
 	/* ignore Ctrl+C while shutting down to make pager exits cleanly */

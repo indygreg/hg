@@ -53,6 +53,10 @@ impl SystemHandler for ChgUiHandler {
             .spawn_async()?;
         let pin = pager.stdin().take().unwrap();
         procutil::set_blocking_fd(pin.as_raw_fd())?;
+        // TODO: if pager exits, notify the server with SIGPIPE immediately.
+        // otherwise the server won't get SIGPIPE if it does not write
+        // anything. (issue5278)
+        // kill(peerpid, SIGPIPE);
         tokio::spawn(pager.map(|_| ()).map_err(|_| ()));  // just ignore errors
         Ok((self, pin))
     }

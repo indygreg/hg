@@ -515,17 +515,7 @@ class revlog(object):
         return iter(pycompat.xrange(len(self)))
     def revs(self, start=0, stop=None):
         """iterate over all rev in this revlog (from start to stop)"""
-        step = 1
-        length = len(self)
-        if stop is not None:
-            if start > stop:
-                step = -1
-            stop += step
-            if stop > length:
-                stop = length
-        else:
-            stop = length
-        return pycompat.xrange(start, stop, step)
+        return storageutil.iterrevs(len(self), start=start, stop=stop)
 
     @util.propertycache
     def nodemap(self):

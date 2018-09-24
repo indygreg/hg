@@ -13,6 +13,9 @@ import re
 from ..node import (
     nullid,
 )
+from .. import (
+    pycompat,
+)
 
 _nullhash = hashlib.sha1(nullid)
 
@@ -81,3 +84,18 @@ def filtermetadata(text):
 
     offset = text.index(b'\x01\n', 2)
     return text[offset + 2:]
+
+def iterrevs(storelen, start=0, stop=None):
+    """Iterate over revision numbers in a store."""
+    step = 1
+
+    if stop is not None:
+        if start > stop:
+            step = -1
+        stop += step
+        if stop > storelen:
+            stop = storelen
+    else:
+        stop = storelen
+
+    return pycompat.xrange(start, stop, step)

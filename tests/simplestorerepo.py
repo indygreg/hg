@@ -233,12 +233,6 @@ class filestorage(object):
 
         return self._indexbyrev[rev][b'flags']
 
-    def deltaparent(self, rev):
-        validaterev(rev)
-
-        p1node = self.parents(self.node(rev))[0]
-        return self.rev(p1node)
-
     def _candelta(self, baserev, rev):
         validaterev(baserev)
         validaterev(rev)

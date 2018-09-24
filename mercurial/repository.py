@@ -533,9 +533,6 @@ class ifileindex(interfaceutil.Interface):
         Returns a list of nodes.
         """
 
-    def deltaparent(rev):
-        """"Return the revision that is a suitable parent to delta against."""
-
 class ifiledata(interfaceutil.Interface):
     """Storage interface for data storage of a specific file.
 

@@ -122,15 +122,6 @@ class ifileindextests(basetestcase):
         with self.assertRaises(error.LookupError):
             f.children(b'\x01' * 20)
 
-        self.assertEqual(f.deltaparent(nullrev), nullrev)
-
-        for i in range(-5, 5):
-            if i == nullrev:
-                continue
-
-            with self.assertRaises(IndexError):
-                f.deltaparent(i)
-
     def testsinglerevision(self):
         f = self._makefilefn()
         with self._maketransactionfn() as tr:
@@ -199,8 +190,6 @@ class ifileindextests(basetestcase):
             f.heads(stop=[b'\x01' * 20])
 
         self.assertEqual(f.children(node), [])
-
-        self.assertEqual(f.deltaparent(0), nullrev)
 
     def testmultiplerevisions(self):
         fulltext0 = b'x' * 1024
@@ -312,10 +301,6 @@ class ifileindextests(basetestcase):
         self.assertEqual(f.children(node0), [node1])
         self.assertEqual(f.children(node1), [node2])
         self.assertEqual(f.children(node2), [])
-
-        self.assertEqual(f.deltaparent(0), nullrev)
-        self.assertEqual(f.deltaparent(1), 0)
-        self.assertEqual(f.deltaparent(2), 1)
 
     def testmultipleheads(self):
         f = self._makefilefn()

@@ -67,9 +67,6 @@ class filelog(object):
     def children(self, node):
         return self._revlog.children(node)
 
-    def deltaparent(self, rev):
-        return self._revlog.deltaparent(rev)
-
     def iscensored(self, rev):
         return self._revlog.iscensored(rev)
 

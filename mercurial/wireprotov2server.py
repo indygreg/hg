@@ -12,11 +12,8 @@ from .i18n import _
 from .node import (
     hex,
     nullid,
-    nullrev,
 )
 from . import (
-    changegroup,
-    dagop,
     discovery,
     encoding,
     error,
@@ -463,86 +460,6 @@ def _capabilitiesv2(repo, proto):
 
     return proto.addcapabilities(repo, caps)
 
-def builddeltarequests(store, nodes, haveparents):
-    """Build a series of revision delta requests against a backend store.
-
-    Returns a list of revision numbers in the order they should be sent
-    and a list of ``irevisiondeltarequest`` instances to be made against
-    the backend store.
-    """
-    # We sort and send nodes in DAG order because this is optimal for
-    # storage emission.
-    # TODO we may want a better storage API here - one where we can throw
-    # a list of nodes and delta preconditions over a figurative wall and
-    # have the storage backend figure it out for us.
-    revs = dagop.linearize({store.rev(n) for n in nodes}, store.parentrevs)
-
-    requests = []
-    seenrevs = set()
-
-    for rev in revs:
-        node = store.node(rev)
-        parentnodes = store.parents(node)
-        parentrevs = [store.rev(n) for n in parentnodes]
-        deltabaserev = store.deltaparent(rev)
-        deltabasenode = store.node(deltabaserev)
-
-        # The choice of whether to send a fulltext revision or a delta and
-        # what delta to send is governed by a few factors.
-        #
-        # To send a delta, we need to ensure the receiver is capable of
-        # decoding it. And that requires the receiver to have the base
-        # revision the delta is against.
-        #
-        # We can only guarantee the receiver has the base revision if
-        # a) we've already sent the revision as part of this group
-        # b) the receiver has indicated they already have the revision.
-        # And the mechanism for "b" is the client indicating they have
-        # parent revisions. So this means we can only send the delta if
-        # it is sent before or it is against a delta and the receiver says
-        # they have a parent.
-
-        # We can send storage delta if it is against a revision we've sent
-        # in this group.
-        if deltabaserev != nullrev and deltabaserev in seenrevs:
-            basenode = deltabasenode
-
-        # We can send storage delta if it is against a parent revision and
-        # the receiver indicates they have the parents.
-        elif (deltabaserev != nullrev and deltabaserev in parentrevs
-              and haveparents):
-            basenode = deltabasenode
-
-        # Otherwise the storage delta isn't appropriate. Fall back to
-        # using another delta, if possible.
-
-        # Use p1 if we've emitted it or receiver says they have it.
-        elif parentrevs[0] != nullrev and (
-            parentrevs[0] in seenrevs or haveparents):
-            basenode = parentnodes[0]
-
-        # Use p2 if we've emitted it or receiver says they have it.
-        elif parentrevs[1] != nullrev and (
-            parentrevs[1] in seenrevs or haveparents):
-            basenode = parentnodes[1]
-
-        # Nothing appropriate to delta against. Send the full revision.
-        else:
-            basenode = nullid
-
-        requests.append(changegroup.revisiondeltarequest(
-            node=node,
-            p1node=parentnodes[0],
-            p2node=parentnodes[1],
-            # Receiver deals with linknode resolution.
-            linknode=nullid,
-            basenode=basenode,
-        ))
-
-        seenrevs.add(rev)
-
-    return revs, requests
-
 def wireprotocommand(name, args=None, permission='push'):
     """Decorator to declare a wire protocol command.
 
@@ -860,47 +777,33 @@ def filedata(repo, proto, haveparents, nodes, fields, path):
             raise error.WireprotoCommandError('unknown file node: %s',
                                               (hex(node),))
 
-    revs, requests = builddeltarequests(store, nodes, haveparents)
+    revisions = store.emitrevisions(nodes,
+                                    revisiondata=b'revision' in fields,
+                                    assumehaveparentrevisions=haveparents)
 
     yield {
-        b'totalitems': len(revs),
+        b'totalitems': len(nodes),
     }
 
-    if b'revision' in fields:
-        deltas = store.emitrevisiondeltas(requests)
-    else:
-        deltas = None
-
-    for rev in revs:
-        node = store.node(rev)
-
-        if deltas is not None:
-            delta = next(deltas)
-        else:
-            delta = None
-
+    for revision in revisions:
         d = {
-            b'node': node,
+            b'node': revision.node,
         }
 
         if b'parents' in fields:
-            d[b'parents'] = store.parents(node)
+            d[b'parents'] = [revision.p1node, revision.p2node]
 
         followingmeta = []
         followingdata = []
 
         if b'revision' in fields:
-            assert delta is not None
-            assert delta.flags == 0
-            assert d[b'node'] == delta.node
-
-            if delta.revision is not None:
-                followingmeta.append((b'revision', len(delta.revision)))
-                followingdata.append(delta.revision)
+            if revision.revision is not None:
+                followingmeta.append((b'revision', len(revision.revision)))
+                followingdata.append(revision.revision)
             else:
-                d[b'deltabasenode'] = delta.basenode
-                followingmeta.append((b'delta', len(delta.delta)))
-                followingdata.append(delta.delta)
+                d[b'deltabasenode'] = revision.basenode
+                followingmeta.append((b'delta', len(revision.delta)))
+                followingdata.append(revision.delta)
 
         if followingmeta:
             d[b'fieldsfollowing'] = followingmeta
@@ -909,13 +812,6 @@ def filedata(repo, proto, haveparents, nodes, fields, path):
 
         for extra in followingdata:
             yield extra
-
-    if deltas is not None:
-        try:
-            next(deltas)
-            raise error.ProgrammingError('should not have more deltas')
-        except GeneratorExit:
-            pass
 
 @wireprotocommand(
     'heads',
@@ -1019,47 +915,33 @@ def manifestdata(repo, proto, haveparents, nodes, fields, tree):
             raise error.WireprotoCommandError(
                 'unknown node: %s', (node,))
 
-    revs, requests = builddeltarequests(store, nodes, haveparents)
+    revisions = store.emitrevisions(nodes,
+                                    revisiondata=b'revision' in fields,
+                                    assumehaveparentrevisions=haveparents)
 
     yield {
-        b'totalitems': len(revs),
+        b'totalitems': len(nodes),
     }
 
-    if b'revision' in fields:
-        deltas = store.emitrevisiondeltas(requests)
-    else:
-        deltas = None
-
-    for rev in revs:
-        node = store.node(rev)
-
-        if deltas is not None:
-            delta = next(deltas)
-        else:
-            delta = None
-
+    for revision in revisions:
         d = {
-            b'node': node,
+            b'node': revision.node,
         }
 
         if b'parents' in fields:
-            d[b'parents'] = store.parents(node)
+            d[b'parents'] = [revision.p1node, revision.p2node]
 
         followingmeta = []
         followingdata = []
 
         if b'revision' in fields:
-            assert delta is not None
-            assert delta.flags == 0
-            assert d[b'node'] == delta.node
-
-            if delta.revision is not None:
-                followingmeta.append((b'revision', len(delta.revision)))
-                followingdata.append(delta.revision)
+            if revision.revision is not None:
+                followingmeta.append((b'revision', len(revision.revision)))
+                followingdata.append(revision.revision)
             else:
-                d[b'deltabasenode'] = delta.basenode
-                followingmeta.append((b'delta', len(delta.delta)))
-                followingdata.append(delta.delta)
+                d[b'deltabasenode'] = revision.basenode
+                followingmeta.append((b'delta', len(revision.delta)))
+                followingdata.append(revision.delta)
 
         if followingmeta:
             d[b'fieldsfollowing'] = followingmeta
@@ -1068,13 +950,6 @@ def manifestdata(repo, proto, haveparents, nodes, fields, tree):
 
         for extra in followingdata:
             yield extra
-
-    if deltas is not None:
-        try:
-            next(deltas)
-            raise error.ProgrammingError('should not have more deltas')
-        except GeneratorExit:
-            pass
 
 @wireprotocommand(
     'pushkey',

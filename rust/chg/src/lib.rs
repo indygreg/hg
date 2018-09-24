@@ -4,8 +4,12 @@
 // GNU General Public License version 2 or any later version.
 
 extern crate bytes;
+#[macro_use]
+extern crate futures;
 extern crate libc;
+extern crate tokio;
 extern crate tokio_hglib;
 
+pub mod attachio;
 pub mod message;
 pub mod procutil;

@@ -6,8 +6,11 @@
 //! cHg extensions to command server client.
 
 use std::ffi::OsStr;
+use std::os::unix::ffi::OsStrExt;
 use std::os::unix::io::AsRawFd;
+use std::path::Path;
 use tokio_hglib::{Client, Connection};
+use tokio_hglib::protocol::OneShotRequest;
 
 use super::attachio::AttachIo;
 use super::message;
@@ -22,6 +25,10 @@ pub trait ChgClientExt<C>
         where I: AsRawFd,
               O: AsRawFd,
               E: AsRawFd;
+
+    /// Changes the working directory of the server.
+    fn set_current_dir<P>(self, dir: P) -> OneShotRequest<C>
+        where P: AsRef<Path>;
 
     /// Runs the specified Mercurial command with cHg extension.
     fn run_command_chg<I, P, H>(self, handler: H, args: I) -> ChgRunCommand<C, H>
@@ -39,6 +46,12 @@ impl<C> ChgClientExt<C> for Client<C>
               E: AsRawFd,
     {
         AttachIo::with_client(self, stdin, stdout, Some(stderr))
+    }
+
+    fn set_current_dir<P>(self, dir: P) -> OneShotRequest<C>
+        where P: AsRef<Path>,
+    {
+        OneShotRequest::start_with_args(self, b"chdir", dir.as_ref().as_os_str().as_bytes())
     }
 
     fn run_command_chg<I, P, H>(self, handler: H, args: I) -> ChgRunCommand<C, H>

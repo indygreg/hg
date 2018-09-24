@@ -77,7 +77,7 @@ class filelog(object):
     def iscensored(self, rev):
         return self._revlog.iscensored(rev)
 
-    # Used by repo upgrade, verify.
+    # Used by repo verify.
     def rawsize(self, rev):
         return self._revlog.rawsize(rev)
 
@@ -207,7 +207,7 @@ class filelog(object):
     def indexfile(self, value):
         self._revlog.indexfile = value
 
-    # Used by repo upgrade.
+    # Unused.
     @property
     def opener(self):
         return self._revlog.opener

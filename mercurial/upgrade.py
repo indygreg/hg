@@ -483,15 +483,13 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, deltabothparents):
             continue
 
         rl = _revlogfrompath(srcrepo, unencoded)
-        revcount += len(rl)
 
-        datasize = 0
-        rawsize = 0
+        info = rl.storageinfo(exclusivefiles=True, revisionscount=True,
+                              trackedsize=True, storedsize=True)
 
-        for path in rl.files():
-            datasize += rl.opener.stat(path).st_size
-
-        rawsize += sum(map(rl.rawsize, iter(rl)))
+        revcount += info['revisionscount'] or 0
+        datasize = info['storedsize'] or 0
+        rawsize = info['trackedsize'] or 0
 
         srcsize += datasize
         srcrawsize += rawsize
@@ -581,9 +579,8 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, deltabothparents):
                     deltareuse=deltareuse,
                     deltabothparents=deltabothparents)
 
-        datasize = 0
-        for path in newrl.files():
-            datasize += newrl.opener.stat(path).st_size
+        info = newrl.storageinfo(storedsize=True)
+        datasize = info['storedsize'] or 0
 
         dstsize += datasize
 

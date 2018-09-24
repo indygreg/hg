@@ -53,7 +53,7 @@ class filelog(object):
     def linkrev(self, rev):
         return self._revlog.linkrev(rev)
 
-    # Used by verify.
+    # Unused.
     def flags(self, rev):
         return self._revlog.flags(rev)
 
@@ -77,7 +77,7 @@ class filelog(object):
     def iscensored(self, rev):
         return self._revlog.iscensored(rev)
 
-    # Used by repo verify.
+    # Unused.
     def rawsize(self, rev):
         return self._revlog.rawsize(rev)
 

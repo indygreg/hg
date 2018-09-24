@@ -341,6 +341,12 @@ class iverifyproblem(interfaceutil.Interface):
     error = interfaceutil.Attribute(
         """Message indicating a fatal problem.""")
 
+    node = interfaceutil.Attribute(
+        """Revision encountering the problem.
+
+        ``None`` means the problem doesn't apply to a single revision.
+        """)
+
 class irevisiondelta(interfaceutil.Interface):
     """Represents a delta between one revision and another.
 
@@ -789,6 +795,10 @@ class ifilestorage(ifileindex, ifiledata, ifilemutation):
         ``state`` is a dict holding state of the verifier process. It can be
         used to communicate data between invocations of multiple storage
         primitives.
+
+        If individual revisions cannot have their revision content resolved,
+        the method is expected to set the ``skipread`` key to a set of nodes
+        that encountered problems.
 
         The method yields objects conforming to the ``iverifyproblem``
         interface.

@@ -187,6 +187,14 @@ class filelog(object):
     def verifyintegrity(self, state):
         return self._revlog.verifyintegrity(state)
 
+    def storageinfo(self, exclusivefiles=False, sharedfiles=False,
+                    revisionscount=False, trackedsize=False,
+                    storedsize=False):
+        return self._revlog.storageinfo(
+            exclusivefiles=exclusivefiles, sharedfiles=sharedfiles,
+            revisionscount=revisionscount, trackedsize=trackedsize,
+            storedsize=storedsize)
+
     # TODO these aren't part of the interface and aren't internal methods.
     # Callers should be fixed to not use them.
 

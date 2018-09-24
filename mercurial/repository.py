@@ -748,6 +748,41 @@ class ifilestorage(ifileindex, ifiledata, ifilemutation):
         be a better API for that.
         """
 
+    def storageinfo(exclusivefiles=False, sharedfiles=False,
+                    revisionscount=False, trackedsize=False,
+                    storedsize=False):
+        """Obtain information about storage for this file's data.
+
+        Returns a dict describing storage for this tracked path. The keys
+        in the dict map to arguments of the same. The arguments are bools
+        indicating whether to calculate and obtain that data.
+
+        exclusivefiles
+           Iterable of (vfs, path) describing files that are exclusively
+           used to back storage for this tracked path.
+
+        sharedfiles
+           Iterable of (vfs, path) describing files that are used to back
+           storage for this tracked path. Those files may also provide storage
+           for other stored entities.
+
+        revisionscount
+           Number of revisions available for retrieval.
+
+        trackedsize
+           Total size in bytes of all tracked revisions. This is a sum of the
+           length of the fulltext of all revisions.
+
+        storedsize
+           Total size in bytes used to store data for all tracked revisions.
+           This is commonly less than ``trackedsize`` due to internal usage
+           of deltas rather than fulltext revisions.
+
+        Not all storage backends may support all queries are have a reasonable
+        value to use. In that case, the value should be set to ``None`` and
+        callers are expected to handle this special value.
+        """
+
     def verifyintegrity(state):
         """Verifies the integrity of file storage.
 
@@ -1197,6 +1232,15 @@ class imanifeststorage(interfaceutil.Interface):
         paths must be inspected; this is an optimization and can be safely
         ignored. Note that the storage must still be able to reproduce a full
         manifest including files that did not match.
+        """
+
+    def storageinfo(exclusivefiles=False, sharedfiles=False,
+                    revisionscount=False, trackedsize=False,
+                    storedsize=False):
+        """Obtain information about storage for this manifest's data.
+
+        See ``ifilestorage.storageinfo()`` for a description of this method.
+        This one behaves the same way, except for manifest data.
         """
 
 class imanifestlog(interfaceutil.Interface):

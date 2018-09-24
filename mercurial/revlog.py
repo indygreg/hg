@@ -2643,3 +2643,28 @@ class revlog(object):
             yield revlogproblem(
                 warning=_("warning: '%s' uses revlog format %d; expected %d") %
                         (self.indexfile, version, state['expectedversion']))
+
+    def storageinfo(self, exclusivefiles=False, sharedfiles=False,
+                    revisionscount=False, trackedsize=False,
+                    storedsize=False):
+        d = {}
+
+        if exclusivefiles:
+            d['exclusivefiles'] = [(self.opener, self.indexfile)]
+            if not self._inline:
+                d['exclusivefiles'].append((self.opener, self.datafile))
+
+        if sharedfiles:
+            d['sharedfiles'] = []
+
+        if revisionscount:
+            d['revisionscount'] = len(self)
+
+        if trackedsize:
+            d['trackedsize'] = sum(map(self.rawsize, iter(self)))
+
+        if storedsize:
+            d['storedsize'] = sum(self.opener.stat(path).st_size
+                                  for path in self.files())
+
+        return d

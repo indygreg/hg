@@ -388,6 +388,10 @@ class ifiledatatests(basetestcase):
     def testempty(self):
         f = self._makefilefn()
 
+        self.assertEqual(f.storageinfo(), {})
+        self.assertEqual(f.storageinfo(revisionscount=True, trackedsize=True),
+                         {'revisionscount': 0, 'trackedsize': 0})
+
         self.assertEqual(f.rawsize(nullrev), 0)
 
         for i in range(-5, 5):
@@ -465,6 +469,10 @@ class ifiledatatests(basetestcase):
         f = self._makefilefn()
         with self._maketransactionfn() as tr:
             node = f.add(fulltext, None, tr, 0, nullid, nullid)
+
+        self.assertEqual(f.storageinfo(), {})
+        self.assertEqual(f.storageinfo(revisionscount=True, trackedsize=True),
+                         {'revisionscount': 1, 'trackedsize': len(fulltext)})
 
         self.assertEqual(f.rawsize(0), len(fulltext))
 
@@ -552,6 +560,14 @@ class ifiledatatests(basetestcase):
             node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
             node1 = f.add(fulltext1, None, tr, 1, node0, nullid)
             node2 = f.add(fulltext2, None, tr, 3, node1, nullid)
+
+        self.assertEqual(f.storageinfo(), {})
+        self.assertEqual(
+            f.storageinfo(revisionscount=True, trackedsize=True),
+            {
+                'revisionscount': 3,
+                'trackedsize': len(fulltext0) + len(fulltext1) + len(fulltext2),
+            })
 
         self.assertEqual(f.rawsize(0), len(fulltext0))
         self.assertEqual(f.rawsize(1), len(fulltext1))

@@ -1592,6 +1592,14 @@ class manifestrevlog(object):
 
         return self._revlog.clone(tr, destrevlog._revlog, **kwargs)
 
+    def storageinfo(self, exclusivefiles=False, sharedfiles=False,
+                    revisionscount=False, trackedsize=False,
+                    storedsize=False):
+        return self._revlog.storageinfo(
+            exclusivefiles=exclusivefiles, sharedfiles=sharedfiles,
+            revisionscount=revisionscount, trackedsize=trackedsize,
+            storedsize=storedsize)
+
     @property
     def indexfile(self):
         return self._revlog.indexfile

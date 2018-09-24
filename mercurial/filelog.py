@@ -113,11 +113,7 @@ class filelog(object):
         return self._revlog.files()
 
     def read(self, node):
-        t = self.revision(node)
-        if not t.startswith('\1\n'):
-            return t
-        s = t.index('\1\n', 2)
-        return t[s + 2:]
+        return storageutil.filtermetadata(self.revision(node))
 
     def add(self, text, meta, transaction, link, p1=None, p2=None):
         if meta or text.startswith('\1\n'):

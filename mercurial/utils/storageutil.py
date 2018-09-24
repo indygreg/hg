@@ -69,3 +69,15 @@ def packmeta(meta, text):
 def iscensoredtext(text):
     meta = parsemeta(text)[0]
     return meta and b'censored' in meta
+
+def filtermetadata(text):
+    """Extract just the revision data from source text.
+
+    Returns ``text`` unless it has a metadata header, in which case we return
+    a new buffer without hte metadata.
+    """
+    if not text.startswith(b'\x01\n'):
+        return text
+
+    offset = text.index(b'\x01\n', 2)
+    return text[offset + 2:]

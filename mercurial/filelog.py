@@ -14,6 +14,7 @@ from . import (
 )
 from .utils import (
     interfaceutil,
+    storageutil,
 )
 
 @interfaceutil.implementer(repository.ifilestorage)
@@ -120,14 +121,14 @@ class filelog(object):
 
     def add(self, text, meta, transaction, link, p1=None, p2=None):
         if meta or text.startswith('\1\n'):
-            text = revlog.packmeta(meta, text)
+            text = storageutil.packmeta(meta, text)
         return self.addrevision(text, transaction, link, p1, p2)
 
     def renamed(self, node):
         if self.parents(node)[0] != revlog.nullid:
             return False
         t = self.revision(node)
-        m = revlog.parsemeta(t)[0]
+        m = storageutil.parsemeta(t)[0]
         # copy and copyrev occur in pairs. In rare cases due to bugs,
         # one can occur without the other.
         if m and "copy" in m and "copyrev" in m:

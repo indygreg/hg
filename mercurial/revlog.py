@@ -17,7 +17,6 @@ import collections
 import contextlib
 import errno
 import os
-import re
 import struct
 import zlib
 
@@ -127,27 +126,8 @@ ellipsisprocessor = (
     ellipsisrawprocessor,
 )
 
-_mdre = re.compile('\1\n')
-def parsemeta(text):
-    """return (metadatadict, metadatasize)"""
-    # text can be buffer, so we can't use .startswith or .index
-    if text[:2] != '\1\n':
-        return None, None
-    s = _mdre.search(text, 2).start()
-    mtext = text[2:s]
-    meta = {}
-    for l in mtext.splitlines():
-        k, v = l.split(": ", 1)
-        meta[k] = v
-    return meta, (s + 2)
-
-def packmeta(meta, text):
-    keys = sorted(meta)
-    metatext = "".join("%s: %s\n" % (k, meta[k]) for k in keys)
-    return "\1\n%s\1\n%s" % (metatext, text)
-
 def _censoredtext(text):
-    m, offs = parsemeta(text)
+    m, offs = storageutil.parsemeta(text)
     return m and "censored" in m
 
 def addflagprocessor(flag, processor):
@@ -2516,7 +2496,7 @@ class revlog(object):
                                     self.version)
 
         rev = self.rev(node)
-        tombstone = packmeta({b'censored': tombstone}, b'')
+        tombstone = storageutil.packmeta({b'censored': tombstone}, b'')
 
         if len(tombstone) > self.rawsize(rev):
             raise error.Abort(_('censor tombstone must be no longer than '

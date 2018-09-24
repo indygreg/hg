@@ -8,6 +8,7 @@
 from __future__ import absolute_import
 
 import hashlib
+import re
 
 from ..node import (
     nullid,
@@ -39,3 +40,28 @@ def hashrevisionsha1(text, p1, p2):
         s.update(b)
     s.update(text)
     return s.digest()
+
+METADATA_RE = re.compile(b'\x01\n')
+
+def parsemeta(text):
+    """Parse metadata header from revision data.
+
+    Returns a 2-tuple of (metadata, offset), where both can be None if there
+    is no metadata.
+    """
+    # text can be buffer, so we can't use .startswith or .index
+    if text[:2] != b'\x01\n':
+        return None, None
+    s = METADATA_RE.search(text, 2).start()
+    mtext = text[2:s]
+    meta = {}
+    for l in mtext.splitlines():
+        k, v = l.split(b': ', 1)
+        meta[k] = v
+    return meta, s + 2
+
+def packmeta(meta, text):
+    """Add metadata to fulltext to produce revision text."""
+    keys = sorted(meta)
+    metatext = b''.join(b'%s: %s\n' % (k, meta[k]) for k in keys)
+    return b'\x01\n%s\x01\n%s' % (metatext, text)

@@ -19,6 +19,9 @@ from .. import (
     mdiff,
     revlog,
 )
+from ..utils import (
+    storageutil,
+)
 
 class basetestcase(unittest.TestCase):
     if not getattr(unittest.TestCase, r'assertRaisesRegex', False):
@@ -882,7 +885,7 @@ class ifiledatatests(basetestcase):
     def testcensored(self):
         f = self._makefilefn()
 
-        stored1 = revlog.packmeta({
+        stored1 = storageutil.packmeta({
             b'censored': b'tombstone',
         }, b'')
 

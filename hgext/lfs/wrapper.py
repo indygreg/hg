@@ -20,6 +20,7 @@ from mercurial import (
 )
 
 from mercurial.utils import (
+    storageutil,
     stringutil,
 )
 
@@ -76,13 +77,13 @@ def readfromstore(self, text):
             name = k[len('x-hg-'):]
             hgmeta[name] = p[k]
     if hgmeta or text.startswith('\1\n'):
-        text = revlog.packmeta(hgmeta, text)
+        text = storageutil.packmeta(hgmeta, text)
 
     return (text, True)
 
 def writetostore(self, text):
     # hg filelog metadata (includes rename, etc)
-    hgmeta, offset = revlog.parsemeta(text)
+    hgmeta, offset = storageutil.parsemeta(text)
     if offset and offset > 0:
         # lfs blob does not contain hg filelog metadata
         text = text[offset:]
@@ -132,7 +133,7 @@ def filelogaddrevision(orig, self, text, transaction, link, p1, p2,
     if lfstrack:
         textlen = len(text)
         # exclude hg rename meta from file size
-        meta, offset = revlog.parsemeta(text)
+        meta, offset = storageutil.parsemeta(text)
         if offset:
             textlen -= offset
 

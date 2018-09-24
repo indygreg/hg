@@ -326,7 +326,7 @@ class filestorage(object):
             return False
 
         fulltext = self.revision(node)
-        m = revlog.parsemeta(fulltext)[0]
+        m = storageutil.parsemeta(fulltext)[0]
 
         if m and 'copy' in m:
             return m['copy'], bin(m['copyrev'])
@@ -411,7 +411,7 @@ class filestorage(object):
 
     def add(self, text, meta, transaction, linkrev, p1, p2):
         if meta or text.startswith(b'\1\n'):
-            text = revlog.packmeta(meta, text)
+            text = storageutil.packmeta(meta, text)
 
         return self.addrevision(text, transaction, linkrev, p1, p2)
 

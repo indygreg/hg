@@ -228,7 +228,7 @@ class filestorage(object):
 
         return self._indexbyrev[rev][b'linkrev']
 
-    def flags(self, rev):
+    def _flags(self, rev):
         validaterev(rev)
 
         return self._indexbyrev[rev][b'flags']
@@ -243,8 +243,8 @@ class filestorage(object):
         validaterev(baserev)
         validaterev(rev)
 
-        if ((self.flags(baserev) & revlog.REVIDX_RAWTEXT_CHANGING_FLAGS)
-            or (self.flags(rev) & revlog.REVIDX_RAWTEXT_CHANGING_FLAGS)):
+        if ((self._flags(baserev) & revlog.REVIDX_RAWTEXT_CHANGING_FLAGS)
+            or (self._flags(rev) & revlog.REVIDX_RAWTEXT_CHANGING_FLAGS)):
             return False
 
         return True
@@ -307,7 +307,7 @@ class filestorage(object):
             return b''
 
         rev = self.rev(node)
-        flags = self.flags(rev)
+        flags = self._flags(rev)
 
         path = b'/'.join([self._storepath, hex(node)])
         rawtext = self._svfs.read(path)
@@ -381,7 +381,7 @@ class filestorage(object):
     def iscensored(self, rev):
         validaterev(rev)
 
-        return self.flags(rev) & revlog.REVIDX_ISCENSORED
+        return self._flags(rev) & revlog.REVIDX_ISCENSORED
 
     def commonancestorsheads(self, a, b):
         validatenode(a)

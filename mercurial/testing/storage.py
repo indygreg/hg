@@ -96,15 +96,6 @@ class ifileindextests(basetestcase):
             with self.assertRaises(IndexError):
                 f.linkrev(i)
 
-        self.assertEqual(f.flags(nullrev), 0)
-
-        for i in range(-5, 5):
-            if i == nullrev:
-                continue
-
-            with self.assertRaises(IndexError):
-                f.flags(i)
-
         self.assertFalse(f.iscensored(nullrev))
 
         for i in range(-5, 5):
@@ -192,11 +183,6 @@ class ifileindextests(basetestcase):
 
         with self.assertRaises(IndexError):
             f.linkrev(1)
-
-        self.assertEqual(f.flags(0), 0)
-
-        with self.assertRaises(IndexError):
-            f.flags(1)
 
         self.assertFalse(f.iscensored(0))
 
@@ -289,13 +275,6 @@ class ifileindextests(basetestcase):
 
         with self.assertRaises(IndexError):
             f.linkrev(3)
-
-        self.assertEqual(f.flags(0), 0)
-        self.assertEqual(f.flags(1), 0)
-        self.assertEqual(f.flags(2), 0)
-
-        with self.assertRaises(IndexError):
-            f.flags(3)
 
         self.assertFalse(f.iscensored(0))
         self.assertFalse(f.iscensored(1))
@@ -957,7 +936,6 @@ class ifiledatatests(basetestcase):
             f.addrevision(stored1, tr, 1, node0, nullid,
                           flags=revlog.REVIDX_ISCENSORED)
 
-        self.assertEqual(f.flags(1), revlog.REVIDX_ISCENSORED)
         self.assertTrue(f.iscensored(1))
 
         self.assertEqual(f.revision(1), stored1)

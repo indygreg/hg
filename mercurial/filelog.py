@@ -53,10 +53,6 @@ class filelog(object):
     def linkrev(self, rev):
         return self._revlog.linkrev(rev)
 
-    # Unused.
-    def flags(self, rev):
-        return self._revlog.flags(rev)
-
     def commonancestorsheads(self, node1, node2):
         return self._revlog.commonancestorsheads(node1, node2)
 

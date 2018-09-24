@@ -502,9 +502,6 @@ class ifileindex(interfaceutil.Interface):
     def linkrev(rev):
         """Obtain the changeset revision number a revision is linked to."""
 
-    def flags(rev):
-        """Obtain flags used to affect storage of a revision."""
-
     def iscensored(rev):
         """Return whether a revision's content has been censored."""
 

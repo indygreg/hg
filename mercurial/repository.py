@@ -542,14 +542,10 @@ class ifiledata(interfaceutil.Interface):
     This complements ``ifileindex`` and provides an interface for accessing
     data for a tracked file.
     """
-    def rawsize(rev):
-        """The size of the fulltext data for a revision as stored."""
-
     def size(rev):
         """Obtain the fulltext size of file data.
 
-        Any metadata is excluded from size measurements. Use ``rawsize()`` if
-        metadata size is important.
+        Any metadata is excluded from size measurements.
         """
 
     def checkhash(fulltext, node, p1=None, p2=None, rev=None):

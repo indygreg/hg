@@ -371,15 +371,6 @@ class ifiledatatests(basetestcase):
         self.assertEqual(f.storageinfo(revisionscount=True, trackedsize=True),
                          {'revisionscount': 0, 'trackedsize': 0})
 
-        self.assertEqual(f.rawsize(nullrev), 0)
-
-        for i in range(-5, 5):
-            if i == nullrev:
-                continue
-
-            with self.assertRaises(IndexError):
-                f.rawsize(i)
-
         self.assertEqual(f.size(nullrev), 0)
 
         for i in range(-5, 5):
@@ -452,11 +443,6 @@ class ifiledatatests(basetestcase):
         self.assertEqual(f.storageinfo(), {})
         self.assertEqual(f.storageinfo(revisionscount=True, trackedsize=True),
                          {'revisionscount': 1, 'trackedsize': len(fulltext)})
-
-        self.assertEqual(f.rawsize(0), len(fulltext))
-
-        with self.assertRaises(IndexError):
-            f.rawsize(1)
 
         self.assertEqual(f.size(0), len(fulltext))
 
@@ -547,13 +533,6 @@ class ifiledatatests(basetestcase):
                 'revisionscount': 3,
                 'trackedsize': len(fulltext0) + len(fulltext1) + len(fulltext2),
             })
-
-        self.assertEqual(f.rawsize(0), len(fulltext0))
-        self.assertEqual(f.rawsize(1), len(fulltext1))
-        self.assertEqual(f.rawsize(2), len(fulltext2))
-
-        with self.assertRaises(IndexError):
-            f.rawsize(3)
 
         self.assertEqual(f.size(0), len(fulltext0))
         self.assertEqual(f.size(1), len(fulltext1))
@@ -853,9 +832,6 @@ class ifiledatatests(basetestcase):
             node1 = f.add(fulltext1, meta1, tr, 1, node0, nullid)
             node2 = f.add(fulltext2, meta2, tr, 2, nullid, nullid)
 
-        self.assertEqual(f.rawsize(1), len(stored1))
-        self.assertEqual(f.rawsize(2), len(stored2))
-
         # Metadata header isn't recognized when parent isn't nullid.
         self.assertEqual(f.size(1), len(stored1))
         self.assertEqual(f.size(2), len(fulltext2))
@@ -897,9 +873,6 @@ class ifiledatatests(basetestcase):
         with self._maketransactionfn() as tr:
             node0 = f.add(fulltext0, {}, tr, 0, nullid, nullid)
             node1 = f.add(fulltext1, meta1, tr, 1, nullid, nullid)
-
-        self.assertEqual(f.rawsize(0), len(stored0))
-        self.assertEqual(f.rawsize(1), len(stored1))
 
         # TODO this is buggy.
         self.assertEqual(f.size(0), len(fulltext0) + 4)

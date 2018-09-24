@@ -249,11 +249,6 @@ class filestorage(object):
 
         return True
 
-    def rawsize(self, rev):
-        validaterev(rev)
-        node = self.node(rev)
-        return len(self.revision(node, raw=True))
-
     def _processflags(self, text, flags, operation, raw=False):
         if flags == 0:
             return text, True

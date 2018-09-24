@@ -690,7 +690,7 @@ absence doesn't cause an abort.)
   >         fl = repo.file(name)
   >         if len(fl) == 0:
   >             continue
-  >         sizes = [fl.rawsize(i) for i in fl]
+  >         sizes = [fl._revlog.rawsize(i) for i in fl]
   >         texts = [fl.revision(i, raw=True) for i in fl]
   >         flags = [int(fl._revlog.flags(i)) for i in fl]
   >         hashes = [hash(t) for t in texts]

@@ -391,37 +391,6 @@ class irevisiondelta(interfaceutil.Interface):
         Stored in the bdiff delta format.
         """)
 
-class irevisiondeltarequest(interfaceutil.Interface):
-    """Represents a request to generate an ``irevisiondelta``."""
-
-    node = interfaceutil.Attribute(
-        """20 byte node of revision being requested.""")
-
-    p1node = interfaceutil.Attribute(
-        """20 byte node of 1st parent of revision.""")
-
-    p2node = interfaceutil.Attribute(
-        """20 byte node of 2nd parent of revision.""")
-
-    linknode = interfaceutil.Attribute(
-        """20 byte node to store in ``linknode`` attribute.""")
-
-    basenode = interfaceutil.Attribute(
-        """Base revision that delta should be generated against.
-
-        If ``nullid``, the derived ``irevisiondelta`` should have its
-        ``revision`` field populated and no delta should be generated.
-
-        If ``None``, the delta may be generated against any revision that
-        is an ancestor of this revision. Or a full revision may be used.
-
-        If any other value, the delta should be produced against that
-        revision.
-        """)
-
-    ellipsis = interfaceutil.Attribute(
-        """Boolean on whether the ellipsis flag should be set.""")
-
 class ifilerevisionssequence(interfaceutil.Interface):
     """Contains index data for all revisions of a file.
 
@@ -628,30 +597,6 @@ class ifiledata(interfaceutil.Interface):
 
         The returned data is the result of ``bdiff.bdiff`` on the raw
         revision data.
-        """
-
-    def emitrevisiondeltas(requests):
-        """Produce ``irevisiondelta`` from ``irevisiondeltarequest``s.
-
-        Given an iterable of objects conforming to the ``irevisiondeltarequest``
-        interface, emits objects conforming to the ``irevisiondelta``
-        interface.
-
-        This method is a generator.
-
-        ``irevisiondelta`` should be emitted in the same order of
-        ``irevisiondeltarequest`` that was passed in.
-
-        The emitted objects MUST conform by the results of
-        ``irevisiondeltarequest``. Namely, they must respect any requests
-        for building a delta from a specific ``basenode`` if defined.
-
-        When sending deltas, implementations must take into account whether
-        the client has the base delta before encoding a delta against that
-        revision. A revision encountered previously in ``requests`` is
-        always a suitable base revision. An example of a bad delta is a delta
-        against a non-ancestor revision. Another example of a bad delta is a
-        delta against a censored revision.
         """
 
     def emitrevisions(nodes,
@@ -1172,12 +1117,6 @@ class imanifeststorage(interfaceutil.Interface):
         """Compare fulltext to another revision.
 
         Returns True if the fulltext is different from what is stored.
-        """
-
-    def emitrevisiondeltas(requests):
-        """Produce ``irevisiondelta`` from ``irevisiondeltarequest``s.
-
-        See the documentation for ``ifiledata`` for more.
         """
 
     def emitrevisions(nodes,

@@ -21,7 +21,6 @@ from mercurial.thirdparty.zope.interface import (
     verify as ziverify,
 )
 from mercurial import (
-    changegroup,
     bundlerepo,
     filelog,
     httppeer,
@@ -206,8 +205,6 @@ def main():
 
     ziverify.verifyClass(repository.irevisiondelta,
                          revlog.revlogrevisiondelta)
-    ziverify.verifyClass(repository.irevisiondeltarequest,
-                         changegroup.revisiondeltarequest)
 
     rd = revlog.revlogrevisiondelta(
         node=b'',
@@ -220,14 +217,6 @@ def main():
         revision=b'',
         delta=None)
     checkzobject(rd)
-
-    rdr = changegroup.revisiondeltarequest(
-        node=b'',
-        linknode=b'',
-        p1node=b'',
-        p2node=b'',
-        basenode=b'')
-    checkzobject(rdr)
 
     ziverify.verifyClass(repository.iverifyproblem,
                          revlog.revlogproblem)

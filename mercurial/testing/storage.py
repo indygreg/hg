@@ -25,15 +25,6 @@ class basetestcase(unittest.TestCase):
         assertRaisesRegex = (# camelcase-required
             unittest.TestCase.assertRaisesRegexp)
 
-class revisiondeltarequest(object):
-    def __init__(self, node, p1, p2, linknode, basenode, ellipsis):
-        self.node = node
-        self.p1node = p1
-        self.p2node = p2
-        self.linknode = linknode
-        self.basenode = basenode
-        self.ellipsis = ellipsis
-
 class ifileindextests(basetestcase):
     """Generic tests for the ifileindex interface.
 
@@ -454,52 +445,6 @@ class ifiledatatests(basetestcase):
         with self.assertRaises(IndexError):
             f.revdiff(0, 0)
 
-        gen = f.emitrevisiondeltas([])
-        with self.assertRaises(StopIteration):
-            next(gen)
-
-        requests = [
-            revisiondeltarequest(nullid, nullid, nullid, nullid, nullid, False),
-        ]
-        gen = f.emitrevisiondeltas(requests)
-
-        delta = next(gen)
-
-        self.assertEqual(delta.node, nullid)
-        self.assertEqual(delta.p1node, nullid)
-        self.assertEqual(delta.p2node, nullid)
-        self.assertEqual(delta.linknode, nullid)
-        self.assertEqual(delta.basenode, nullid)
-        self.assertIsNone(delta.baserevisionsize)
-        self.assertEqual(delta.revision, b'')
-        self.assertIsNone(delta.delta)
-
-        with self.assertRaises(StopIteration):
-            next(gen)
-
-        requests = [
-            revisiondeltarequest(nullid, nullid, nullid, nullid, nullid, False),
-            revisiondeltarequest(nullid, b'\x01' * 20, b'\x02' * 20,
-                                 b'\x03' * 20, nullid, False)
-        ]
-
-        gen = f.emitrevisiondeltas(requests)
-
-        next(gen)
-        delta = next(gen)
-
-        self.assertEqual(delta.node, nullid)
-        self.assertEqual(delta.p1node, b'\x01' * 20)
-        self.assertEqual(delta.p2node, b'\x02' * 20)
-        self.assertEqual(delta.linknode, b'\x03' * 20)
-        self.assertEqual(delta.basenode, nullid)
-        self.assertIsNone(delta.baserevisionsize)
-        self.assertEqual(delta.revision, b'')
-        self.assertIsNone(delta.delta)
-
-        with self.assertRaises(StopIteration):
-            next(gen)
-
         # Emitting empty list is an empty generator.
         gen = f.emitrevisions([])
         with self.assertRaises(StopIteration):
@@ -560,25 +505,6 @@ class ifiledatatests(basetestcase):
 
         self.assertEqual(f.revdiff(0, nullrev),
                          b'\x00\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00\x00')
-
-        requests = [
-            revisiondeltarequest(node, nullid, nullid, nullid, nullid, False),
-        ]
-        gen = f.emitrevisiondeltas(requests)
-
-        delta = next(gen)
-
-        self.assertEqual(delta.node, node)
-        self.assertEqual(delta.p1node, nullid)
-        self.assertEqual(delta.p2node, nullid)
-        self.assertEqual(delta.linknode, nullid)
-        self.assertEqual(delta.basenode, nullid)
-        self.assertIsNone(delta.baserevisionsize)
-        self.assertEqual(delta.revision, fulltext)
-        self.assertIsNone(delta.delta)
-
-        with self.assertRaises(StopIteration):
-            next(gen)
 
         # Emitting a single revision works.
         gen = f.emitrevisions([node])
@@ -696,56 +622,6 @@ class ifiledatatests(basetestcase):
         self.assertEqual(f.revdiff(0, 2),
                          b'\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x04\x02' +
                          fulltext2)
-
-        requests = [
-            revisiondeltarequest(node0, nullid, nullid, b'\x01' * 20, nullid,
-                                 False),
-            revisiondeltarequest(node1, node0, nullid, b'\x02' * 20, node0,
-                                 False),
-            revisiondeltarequest(node2, node1, nullid, b'\x03' * 20, node1,
-                                 False),
-        ]
-        gen = f.emitrevisiondeltas(requests)
-
-        delta = next(gen)
-
-        self.assertEqual(delta.node, node0)
-        self.assertEqual(delta.p1node, nullid)
-        self.assertEqual(delta.p2node, nullid)
-        self.assertEqual(delta.linknode, b'\x01' * 20)
-        self.assertEqual(delta.basenode, nullid)
-        self.assertIsNone(delta.baserevisionsize)
-        self.assertEqual(delta.revision, fulltext0)
-        self.assertIsNone(delta.delta)
-
-        delta = next(gen)
-
-        self.assertEqual(delta.node, node1)
-        self.assertEqual(delta.p1node, node0)
-        self.assertEqual(delta.p2node, nullid)
-        self.assertEqual(delta.linknode, b'\x02' * 20)
-        self.assertEqual(delta.basenode, node0)
-        self.assertIsNone(delta.baserevisionsize)
-        self.assertIsNone(delta.revision)
-        self.assertEqual(delta.delta,
-                         b'\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x04\x01' +
-                         fulltext1)
-
-        delta = next(gen)
-
-        self.assertEqual(delta.node, node2)
-        self.assertEqual(delta.p1node, node1)
-        self.assertEqual(delta.p2node, nullid)
-        self.assertEqual(delta.linknode, b'\x03' * 20)
-        self.assertEqual(delta.basenode, node1)
-        self.assertIsNone(delta.baserevisionsize)
-        self.assertIsNone(delta.revision)
-        self.assertEqual(delta.delta,
-                         b'\x00\x00\x00\x00\x00\x00\x04\x01\x00\x00\x04\x02' +
-                         fulltext2)
-
-        with self.assertRaises(StopIteration):
-            next(gen)
 
         # Nodes should be emitted in order.
         gen = f.emitrevisions([node0, node1, node2], revisiondata=True)

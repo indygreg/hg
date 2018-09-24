@@ -1562,9 +1562,6 @@ class manifestrevlog(object):
     def deltaparent(self, rev):
         return self._revlog.deltaparent(rev)
 
-    def emitrevisiondeltas(self, requests):
-        return self._revlog.emitrevisiondeltas(requests)
-
     def emitrevisions(self, nodes, nodesorder=None,
                       revisiondata=False, assumehaveparentrevisions=False,
                       deltaprevious=False):

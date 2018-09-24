@@ -19,10 +19,6 @@ from .node import (
     short,
 )
 
-from .thirdparty import (
-    attr,
-)
-
 from . import (
     error,
     match as matchmod,
@@ -32,10 +28,6 @@ from . import (
     repository,
     revlog,
     util,
-)
-
-from .utils import (
-    interfaceutil,
 )
 
 _CHANGEGROUPV1_DELTA_HEADER = struct.Struct("20s20s20s20s")
@@ -498,16 +490,6 @@ class headerlessfixup(object):
                 d += readexactly(self._fh, n - len(d))
             return d
         return readexactly(self._fh, n)
-
-@interfaceutil.implementer(repository.irevisiondeltarequest)
-@attr.s(slots=True, frozen=True)
-class revisiondeltarequest(object):
-    node = attr.ib()
-    linknode = attr.ib()
-    p1node = attr.ib()
-    p2node = attr.ib()
-    basenode = attr.ib()
-    ellipsis = attr.ib(default=False)
 
 def _revisiondeltatochunks(delta, headerfn):
     """Serialize a revisiondelta to changegroup chunks."""

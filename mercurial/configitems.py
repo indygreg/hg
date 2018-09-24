@@ -161,10 +161,6 @@ coreconfigitem('bookmarks', 'pushing',
 coreconfigitem('bundle', 'mainreporoot',
     default='',
 )
-# bundle.reorder: experimental config
-coreconfigitem('bundle', 'reorder',
-    default='auto',
-)
 coreconfigitem('censor', 'policy',
     default='abort',
 )

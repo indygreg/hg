@@ -36,7 +36,6 @@ from . import (
 
 from .utils import (
     interfaceutil,
-    stringutil,
 )
 
 _CHANGEGROUPV1_DELTA_HEADER = struct.Struct("20s20s20s20s")
@@ -537,11 +536,11 @@ def _revisiondeltatochunks(delta, headerfn):
         yield prefix
     yield data
 
-def _sortnodesnormal(store, nodes, reorder):
+def _sortnodesnormal(store, nodes):
     """Sort nodes for changegroup generation and turn into revnums."""
     # for generaldelta revlogs, we linearize the revs; this will both be
     # much quicker and generate a much smaller bundle
-    if (store._generaldelta and reorder is None) or reorder:
+    if store._generaldelta:
         revs = set(store.rev(n) for n in nodes)
         return dagop.linearize(revs, store.parentrevs)
     else:
@@ -656,7 +655,6 @@ def _makenarrowdeltarequest(cl, store, ischangelog, rev, node, linkrev,
     )
 
 def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
-               allowreorder,
                topic=None,
                ellipses=False, clrevtolocalrev=None, fullclnodes=None,
                precomputedellipsis=None):
@@ -691,7 +689,7 @@ def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
     elif ellipses:
         revs = _sortnodesellipsis(store, nodes, cl, lookup)
     else:
-        revs = _sortnodesnormal(store, nodes, allowreorder)
+        revs = _sortnodesnormal(store, nodes)
 
     # In the first pass, collect info about the deltas we'll be
     # generating.
@@ -756,7 +754,7 @@ def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
         progress.complete()
 
 class cgpacker(object):
-    def __init__(self, repo, filematcher, version, allowreorder,
+    def __init__(self, repo, filematcher, version,
                  builddeltaheader, manifestsend,
                  forcedeltaparentprev=False,
                  bundlecaps=None, ellipses=False,
@@ -765,10 +763,6 @@ class cgpacker(object):
 
         filematcher is a matcher that matches on files to include in the
         changegroup. Used to facilitate sparse changegroups.
-
-        allowreorder controls whether reordering of revisions is allowed.
-        This value is used when ``bundle.reorder`` is ``auto`` or isn't
-        set.
 
         forcedeltaparentprev indicates whether delta parents must be against
         the previous revision in a delta group. This should only be used for
@@ -813,13 +807,6 @@ class cgpacker(object):
         # Maps ellipsis revs to their roots at the changelog level.
         self._precomputedellipsis = ellipsisroots
 
-        # experimental config: bundle.reorder
-        reorder = repo.ui.config('bundle', 'reorder')
-        if reorder == 'auto':
-            self._reorder = allowreorder
-        else:
-            self._reorder = stringutil.parsebool(reorder)
-
         self._repo = repo
 
         if self._repo.ui.verbose and not self._repo.ui.debugflag:
@@ -862,17 +849,16 @@ class cgpacker(object):
         # The fastpath is usually safer than the slowpath, because the filelogs
         # are walked in revlog order.
         #
-        # When taking the slowpath with reorder=None and the manifest revlog
-        # uses generaldelta, the manifest may be walked in the "wrong" order.
-        # Without 'clrevorder', we would get an incorrect linkrev (see fix in
-        # cc0ff93d0c0c).
+        # When taking the slowpath when the manifest revlog uses generaldelta,
+        # the manifest may be walked in the "wrong" order. Without 'clrevorder',
+        # we would get an incorrect linkrev (see fix in cc0ff93d0c0c).
         #
         # When taking the fastpath, we are only vulnerable to reordering
-        # of the changelog itself. The changelog never uses generaldelta, so
-        # it is only reordered when reorder=True. To handle this case, we
-        # simply take the slowpath, which already has the 'clrevorder' logic.
-        # This was also fixed in cc0ff93d0c0c.
-        fastpathlinkrev = fastpathlinkrev and not self._reorder
+        # of the changelog itself. The changelog never uses generaldelta and is
+        # never reordered. To handle this case, we simply take the slowpath,
+        # which already has the 'clrevorder' logic. This was also fixed in
+        # cc0ff93d0c0c.
+
         # Treemanifests don't work correctly with fastpathlinkrev
         # either, because we don't discover which directory nodes to
         # send along with files. This could probably be fixed.
@@ -1003,8 +989,6 @@ class cgpacker(object):
         gen = deltagroup(
             self._repo, cl, nodes, True, lookupcl,
             self._forcedeltaparentprev,
-            # Reorder settings are currently ignored for changelog.
-            True,
             ellipses=self._ellipses,
             topic=_('changesets'),
             clrevtolocalrev={},
@@ -1087,7 +1071,7 @@ class cgpacker(object):
 
             deltas = deltagroup(
                 self._repo, store, prunednodes, False, lookupfn,
-                self._forcedeltaparentprev, self._reorder,
+                self._forcedeltaparentprev,
                 ellipses=self._ellipses,
                 topic=_('manifests'),
                 clrevtolocalrev=clrevtolocalrev,
@@ -1184,7 +1168,7 @@ class cgpacker(object):
 
             deltas = deltagroup(
                 self._repo, filerevlog, filenodes, False, lookupfilelog,
-                self._forcedeltaparentprev, self._reorder,
+                self._forcedeltaparentprev,
                 ellipses=self._ellipses,
                 clrevtolocalrev=clrevtolocalrev,
                 fullclnodes=self._fullclnodes,
@@ -1200,7 +1184,6 @@ def _makecg1packer(repo, filematcher, bundlecaps, ellipses=False,
         d.node, d.p1node, d.p2node, d.linknode)
 
     return cgpacker(repo, filematcher, b'01',
-                    allowreorder=None,
                     builddeltaheader=builddeltaheader,
                     manifestsend=b'',
                     forcedeltaparentprev=True,
@@ -1215,11 +1198,7 @@ def _makecg2packer(repo, filematcher, bundlecaps, ellipses=False,
     builddeltaheader = lambda d: _CHANGEGROUPV2_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode)
 
-    # Since generaldelta is directly supported by cg2, reordering
-    # generally doesn't help, so we disable it by default (treating
-    # bundle.reorder=auto just like bundle.reorder=False).
     return cgpacker(repo, filematcher, b'02',
-                    allowreorder=False,
                     builddeltaheader=builddeltaheader,
                     manifestsend=b'',
                     bundlecaps=bundlecaps,
@@ -1234,7 +1213,6 @@ def _makecg3packer(repo, filematcher, bundlecaps, ellipses=False,
         d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags)
 
     return cgpacker(repo, filematcher, b'03',
-                    allowreorder=False,
                     builddeltaheader=builddeltaheader,
                     manifestsend=closechunk(),
                     bundlecaps=bundlecaps,

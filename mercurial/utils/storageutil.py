@@ -65,3 +65,7 @@ def packmeta(meta, text):
     keys = sorted(meta)
     metatext = b''.join(b'%s: %s\n' % (k, meta[k]) for k in keys)
     return b'\x01\n%s\x01\n%s' % (metatext, text)
+
+def iscensoredtext(text):
+    meta = parsemeta(text)[0]
+    return meta and b'censored' in meta

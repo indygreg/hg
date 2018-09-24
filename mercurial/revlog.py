@@ -126,10 +126,6 @@ ellipsisprocessor = (
     ellipsisrawprocessor,
 )
 
-def _censoredtext(text):
-    m, offs = storageutil.parsemeta(text)
-    return m and "censored" in m
-
 def addflagprocessor(flag, processor):
     """Register a flag processor on a revision data flag.
 
@@ -1706,7 +1702,7 @@ class revlog(object):
                 raise error.RevlogError(_("integrity check failed on %s:%s")
                     % (self.indexfile, pycompat.bytestr(revornode)))
         except error.RevlogError:
-            if self._censorable and _censoredtext(text):
+            if self._censorable and storageutil.iscensoredtext(text):
                 raise error.CensoredNodeError(self.indexfile, node, text)
             raise
 

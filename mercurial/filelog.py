@@ -203,11 +203,6 @@ class filelog(object):
     def indexfile(self, value):
         self._revlog.indexfile = value
 
-    # Unused.
-    @property
-    def opener(self):
-        return self._revlog.opener
-
     # Used by repo upgrade.
     def clone(self, tr, destrevlog, **kwargs):
         if not isinstance(destrevlog, filelog):

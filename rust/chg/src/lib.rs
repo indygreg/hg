@@ -14,6 +14,7 @@ extern crate tokio_process;
 pub mod attachio;
 pub mod message;
 pub mod procutil;
+pub mod runcommand;
 mod uihandler;
 
 pub use uihandler::{ChgUiHandler, SystemHandler};

@@ -219,10 +219,6 @@ class unionrepository(object):
         node = self.repo2.changelog.node(rev2)
         return self.changelog.rev(node)
 
-    def _constructmanifest(self):
-        return unionmanifest(self.svfs, self.repo2.svfs,
-                             self.unfiltered()._clrev)
-
     def url(self):
         return self._url
 

@@ -114,12 +114,12 @@ non-lfs content, and the extension enabled.
   creating temporary repository to stage migrated data: * (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 3 total revisions (1 in filelogs, 1 in manifests, 1 in changelog)
-  migrating 132 bytes in store; 129 bytes tracked data
-  migrating 1 filelogs containing 1 revisions (9 bytes in store; 8 bytes tracked data)
+  migrating 324 bytes in store; 129 bytes tracked data
+  migrating 1 filelogs containing 1 revisions (73 bytes in store; 8 bytes tracked data)
   finished migrating 1 filelog revisions across 1 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 1 revisions (53 bytes in store; 52 bytes tracked data)
+  migrating 1 manifests containing 1 revisions (117 bytes in store; 52 bytes tracked data)
   finished migrating 1 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 1 revisions (70 bytes in store; 69 bytes tracked data)
+  migrating changelog containing 1 revisions (134 bytes in store; 69 bytes tracked data)
   finished migrating 1 changelog revisions; change in size: 0 bytes
   finished migrating 3 total revisions; total change in store size: 0 bytes
   copying phaseroots

@@ -491,10 +491,7 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, deltabothparents):
         for path in rl.files():
             datasize += rl.opener.stat(path).st_size
 
-        idx = rl.index
-        for rev in rl:
-            e = idx[rev]
-            rawsize += e[2]
+        rawsize += sum(map(rl.rawsize, iter(rl)))
 
         srcsize += datasize
         srcrawsize += rawsize

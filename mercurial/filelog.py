@@ -81,7 +81,7 @@ class filelog(object):
     def iscensored(self, rev):
         return self._revlog.iscensored(rev)
 
-    # Used by verify.
+    # Used by repo upgrade, verify.
     def rawsize(self, rev):
         return self._revlog.rawsize(rev)
 

@@ -16,7 +16,6 @@ from __future__ import absolute_import
 import collections
 import contextlib
 import errno
-import hashlib
 import os
 import re
 import struct
@@ -74,6 +73,7 @@ from .revlogutils import (
 )
 from .utils import (
     interfaceutil,
+    storageutil,
     stringutil,
 )
 
@@ -196,33 +196,6 @@ def offset_type(offset, type):
     if (type & ~REVIDX_KNOWN_FLAGS) != 0:
         raise ValueError('unknown revlog index flags')
     return int(int(offset) << 16 | type)
-
-_nullhash = hashlib.sha1(nullid)
-
-def hash(text, p1, p2):
-    """generate a hash from the given text and its parent hashes
-
-    This hash combines both the current file contents and its history
-    in a manner that makes it easy to distinguish nodes with the same
-    content in the revision graph.
-    """
-    # As of now, if one of the parent node is null, p2 is null
-    if p2 == nullid:
-        # deep copy of a hash is faster than creating one
-        s = _nullhash.copy()
-        s.update(p1)
-    else:
-        # none of the parent nodes are nullid
-        if p1 < p2:
-            a = p1
-            b = p2
-        else:
-            a = p2
-            b = p1
-        s = hashlib.sha1(a)
-        s.update(b)
-    s.update(text)
-    return s.digest()
 
 @attr.s(slots=True, frozen=True)
 class _revisioninfo(object):
@@ -1383,7 +1356,7 @@ class revlog(object):
         returns True if text is different than what is stored.
         """
         p1, p2 = self.parents(node)
-        return hash(text, p1, p2) != node
+        return storageutil.hashrevisionsha1(text, p1, p2) != node
 
     def _cachesegment(self, offset, data):
         """Add a segment to the revlog cache.
@@ -1672,7 +1645,7 @@ class revlog(object):
         Available as a function so that subclasses can replace the hash
         as needed.
         """
-        return hash(text, p1, p2)
+        return storageutil.hashrevisionsha1(text, p1, p2)
 
     def _processflags(self, text, flags, operation, raw=False):
         """Inspect revision data flags and applies transforms defined by

@@ -40,6 +40,7 @@ from mercurial import (
 )
 from mercurial.utils import (
     interfaceutil,
+    storageutil,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -285,7 +286,7 @@ class filestorage(object):
     def checkhash(self, text, node, p1=None, p2=None, rev=None):
         if p1 is None and p2 is None:
             p1, p2 = self.parents(node)
-        if node != revlog.hash(text, p1, p2):
+        if node != storageutil.hashrevisionsha1(text, p1, p2):
             raise simplestoreerror(_("integrity check failed on %s") %
                 self._path)
 
@@ -342,7 +343,7 @@ class filestorage(object):
 
         p1, p2 = self.parents(node)
 
-        if revlog.hash(t, p1, p2) == node:
+        if storageutil.hashrevisionsha1(t, p1, p2) == node:
             return False
 
         if self.iscensored(self.rev(node)):
@@ -420,11 +421,11 @@ class filestorage(object):
         validatenode(p2)
 
         if flags:
-            node = node or revlog.hash(text, p1, p2)
+            node = node or storageutil.hashrevisionsha1(text, p1, p2)
 
         rawtext, validatehash = self._processflags(text, flags, 'write')
 
-        node = node or revlog.hash(text, p1, p2)
+        node = node or storageutil.hashrevisionsha1(text, p1, p2)
 
         if node in self._indexbynode:
             return node

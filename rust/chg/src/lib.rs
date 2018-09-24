@@ -11,11 +11,13 @@ extern crate tokio;
 extern crate tokio_hglib;
 extern crate tokio_process;
 
-pub mod attachio;
+mod attachio;
+mod clientext;
 pub mod locator;
 pub mod message;
 pub mod procutil;
-pub mod runcommand;
+mod runcommand;
 mod uihandler;
 
+pub use clientext::ChgClientExt;
 pub use uihandler::{ChgUiHandler, SystemHandler};

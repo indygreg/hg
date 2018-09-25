@@ -1325,7 +1325,7 @@ class revlog(object):
         def isvalid(prefix):
             try:
                 node = self._partialmatch(prefix)
-            except error.RevlogError:
+            except error.AmbiguousPrefixLookupError:
                 return False
             except error.WdirUnsupported:
                 # single 'ff...' match

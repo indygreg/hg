@@ -1069,7 +1069,6 @@ test common ancestors
   2
   4
   8
-  9
 
 test ancestor variants of empty revision
 

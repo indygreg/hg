@@ -631,13 +631,11 @@ def commonancestors(repo, subset, x):
     in the repo (whereas we want "::x *and* ::y").
 
     """
-    # only wants the heads of the set passed in
-    h = heads(repo, fullreposet(repo), x, anyorder)
-    if not h:
+    startrevs = getset(repo, fullreposet(repo), x, order=anyorder)
+    if not startrevs:
         return baseset()
-    for r in h:
+    for r in startrevs:
         subset &= dagop.revancestors(repo, baseset([r]))
-
     return subset
 
 @predicate('contains(pattern)', weight=100)

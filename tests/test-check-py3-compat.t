@@ -37,7 +37,8 @@
   mercurial/scmwindows.py: error importing: <ValueError> _type_ 'v' not supported (error at win32.py:*) (no-windows !)
   mercurial/win32.py: error importing: <ValueError> _type_ 'v' not supported (error at win32.py:*) (no-windows !)
   mercurial/windows.py: error importing: <ModuleNotFoundError> No module named 'msvcrt' (error at windows.py:*) (no-windows !)
-
+  mercurial/posix.py: error importing: <ModuleNotFoundError> No module named 'fcntl' (error at posix.py:*) (windows !)
+  mercurial/scmposix.py: error importing: <ModuleNotFoundError> No module named 'fcntl' (error at scmposix.py:*) (windows !)
 #endif
 
 #if py3k pygments

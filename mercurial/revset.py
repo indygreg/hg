@@ -614,11 +614,11 @@ def _commonancestorheads(repo, subset, x):
     # This is an internal method is for quickly calculating "heads(::x and
     # ::y)"
 
-    # These greatest common ancestors are the same ones that the consesus bid
+    # These greatest common ancestors are the same ones that the consensus bid
     # merge will find.
-    h = heads(repo, fullreposet(repo), x, anyorder)
+    startrevs = getset(repo, fullreposet(repo), x, order=anyorder)
 
-    ancs = repo.changelog._commonancestorsheads(*list(h))
+    ancs = repo.changelog._commonancestorsheads(*list(startrevs))
     return subset & baseset(ancs)
 
 @predicate('commonancestors(set)', safe=True)

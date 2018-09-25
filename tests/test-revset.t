@@ -1080,7 +1080,7 @@ test the specialized implementation of heads(commonancestors(..))
   $ hg log -T '{rev}\n' -r 'heads(commonancestors(9))'
   9
   $ hg log -T '{rev}\n' -r 'heads(commonancestors(8 + 9))'
-  9
+  8
 
 test ancestor variants of empty revision
 

@@ -1049,7 +1049,7 @@ test common ancestors
   2
   4
 
-  $ hg log -T '{rev}\n' -r 'commonancestors(head())'
+  $ hg log -T '{rev}\n' -r 'commonancestors(heads(all()))'
   0
   1
   2

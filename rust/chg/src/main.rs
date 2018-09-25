@@ -10,6 +10,7 @@ extern crate tokio_hglib;
 
 use chg::{ChgClientExt, ChgUiHandler};
 use chg::locator;
+use chg::procutil;
 use futures::sync::oneshot;
 use std::env;
 use std::io;
@@ -38,9 +39,16 @@ fn run() -> io::Result<i32> {
             client.attach_io(io::stdin(), io::stdout(), io::stderr())
         })
         .and_then(|client| {
+            let pid = client.server_spec().process_id.unwrap();
+            let pgid = client.server_spec().process_group_id;
+            procutil::setup_signal_handler_once(pid, pgid)?;
+            Ok(client)
+        })
+        .and_then(|client| {
             client.run_command_chg(handler, env::args_os().skip(1))
         })
         .map(|(_client, _handler, code)| {
+            procutil::restore_signal_handler_once()?;
             Ok(code)
         })
         .or_else(|err| Ok(Err(err)))  // pass back error to caller

@@ -417,9 +417,12 @@ class HTTPResponse(httplib.HTTPResponse):
                 s = self._rbuf[:amt]
                 self._rbuf = self._rbuf[amt:]
                 return s
-
-        s = self._rbuf + self._raw_read(amt)
+        # Careful! http.client.HTTPResponse.read() on Python 3 is
+        # implemented using readinto(), which can duplicate self._rbuf
+        # if it's not empty.
+        s = self._rbuf
         self._rbuf = ''
+        s += self._raw_read(amt)
         return s
 
     # stolen from Python SVN #68532 to fix issue1088

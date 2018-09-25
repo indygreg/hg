@@ -623,7 +623,7 @@ def _commonancestorheads(repo, subset, x):
 
 @predicate('commonancestors(set)', safe=True)
 def commonancestors(repo, subset, x):
-    """Returns all common ancestors of the set.
+    """Changesets that are ancestors of every changeset in set.
     """
     startrevs = getset(repo, fullreposet(repo), x, order=anyorder)
     if not startrevs:

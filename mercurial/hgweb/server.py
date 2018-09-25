@@ -101,8 +101,8 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         try:
             self.do_write()
         except Exception:
-            self._start_response("500 Internal Server Error", [])
-            self._write("Internal Server Error")
+            self._start_response(r"500 Internal Server Error", [])
+            self._write(b"Internal Server Error")
             self._done()
             tb = r"".join(traceback.format_exception(*sys.exc_info()))
             # We need a native-string newline to poke in the log

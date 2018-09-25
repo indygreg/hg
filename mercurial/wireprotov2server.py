@@ -339,7 +339,7 @@ def dispatch(repo, proto, command):
     func, spec = COMMANDS[command]
     args = proto.getargs(spec)
 
-    return func(repo, proto, **args)
+    return func(repo, proto, **pycompat.strkwargs(args))
 
 @interfaceutil.implementer(wireprototypes.baseprotocolhandler)
 class httpv2protocolhandler(object):

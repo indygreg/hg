@@ -1063,6 +1063,14 @@ test common ancestors
   8
   9
 
+  $ hg log -T '{rev}\n' -r 'commonancestors(8 + 9)'
+  0
+  1
+  2
+  4
+  8
+  9
+
 test ancestor variants of empty revision
 
   $ log 'ancestor(none())'

@@ -68,21 +68,21 @@ else:
     environ = dict((k.encode(u'utf-8'), v.encode(u'utf-8'))
                    for k, v in os.environ.items())  # re-exports
 
-_encodingfixers = {
-    '646': lambda: 'ascii',
-    'ANSI_X3.4-1968': lambda: 'ascii',
+_encodingrewrites = {
+    '646': 'ascii',
+    'ANSI_X3.4-1968': 'ascii',
 }
 # cp65001 is a Windows variant of utf-8, which isn't supported on Python 2.
 # No idea if it should be rewritten to the canonical name 'utf-8' on Python 3.
 # https://bugs.python.org/issue13216
 if pycompat.iswindows and not pycompat.ispy3:
-    _encodingfixers['cp65001'] = lambda: 'utf-8'
+    _encodingrewrites['cp65001'] = 'utf-8'
 
 try:
     encoding = environ.get("HGENCODING")
     if not encoding:
         encoding = locale.getpreferredencoding().encode('ascii') or 'ascii'
-        encoding = _encodingfixers.get(encoding, lambda: encoding)()
+        encoding = _encodingrewrites.get(encoding, encoding)
 except locale.Error:
     encoding = 'ascii'
 encodingmode = environ.get("HGENCODINGMODE", "strict")

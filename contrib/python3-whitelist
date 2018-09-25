@@ -67,6 +67,7 @@ test-children.t
 test-clone-cgi.t
 test-clone-pull-corruption.t
 test-clone-r.t
+test-clone-uncompressed.t
 test-clone-update-order.t
 test-clonebundles.t
 test-commit-amend.t
@@ -520,6 +521,7 @@ test-stack.t
 test-status-inprocess.py
 test-status-rev.t
 test-status-terse.t
+test-stream-bundle-v2.t
 test-strict.t
 test-strip-cross.t
 test-strip.t

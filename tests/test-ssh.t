@@ -317,6 +317,22 @@ push should succeed even though it has an unexpected response
   summary:     z
   
 
+#if chg
+
+try again with remote chg, which should succeed as well
+
+  $ hg rollback -R ../remote
+  repository tip rolled back to revision 4 (undo serve)
+
+  $ hg push --config ui.remotecmd=chg
+  pushing to ssh://user@dummy/remote
+  searching for changes
+  remote has heads on branch 'default' that are not known locally: 6c0482d977a3
+  abort: not a Mercurial bundle
+  [255]
+
+#endif
+
 clone bookmarks
 
   $ hg -R ../remote bookmark test
@@ -558,6 +574,8 @@ debug output
   Got arguments 1:user@dummy 2:hg -R remote serve --stdio
   Got arguments 1:user@dummy 2:hg -R remote serve --stdio
   changegroup-in-remote hook: HG_BUNDLE2=1 HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=1383141674ec756a6056f6a9097618482fe0f4a6 HG_NODE_LAST=1383141674ec756a6056f6a9097618482fe0f4a6 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:ssh:$LOCALIP
+  Got arguments 1:user@dummy 2:chg -R remote serve --stdio (chg !)
+  changegroup-in-remote hook: HG_BUNDLE2=1 HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=1383141674ec756a6056f6a9097618482fe0f4a6 HG_NODE_LAST=1383141674ec756a6056f6a9097618482fe0f4a6 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:ssh:$LOCALIP (chg !)
   Got arguments 1:user@dummy 2:hg -R remote serve --stdio
   Got arguments 1:user@dummy 2:hg init 'a repo'
   Got arguments 1:user@dummy 2:hg -R 'a repo' serve --stdio

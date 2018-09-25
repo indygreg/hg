@@ -29,6 +29,7 @@ from . import (
 )
 from .utils import (
     interfaceutil,
+    stringutil,
 )
 
 FRAMINGTYPE = b'application/mercurial-exp-framing-0005'
@@ -319,7 +320,8 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
     except Exception as e:
         action, meta = reactor.onservererror(
             outstream, command['requestid'],
-            _('exception when invoking command: %s') % e)
+            _('exception when invoking command: %s') %
+            stringutil.forcebytestr(e))
 
     if action == 'sendframes':
         res.setbodygen(meta['framegen'])

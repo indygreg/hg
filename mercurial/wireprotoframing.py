@@ -827,9 +827,10 @@ class serverreactor(object):
                     break
 
                 except Exception as e:
-                    for frame in createerrorframe(stream, requestid,
-                                                  '%s' % e,
-                                                  errtype='server'):
+                    for frame in createerrorframe(
+                        stream, requestid, '%s' % stringutil.forcebytestr(e),
+                        errtype='server'):
+
                         yield frame
 
                     break

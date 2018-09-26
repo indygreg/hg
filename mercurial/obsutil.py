@@ -413,15 +413,13 @@ def _cmpdiff(leftctx, rightctx):
             return False
     return True
 
-def geteffectflag(relation):
+def geteffectflag(source, successors):
     """ From an obs-marker relation, compute what changed between the
     predecessor and the successor.
     """
     effects = 0
 
-    source = relation[0]
-
-    for changectx in relation[1]:
+    for changectx in successors:
         # Check if description has changed
         if changectx.description() != source.description():
             effects |= DESCCHANGED

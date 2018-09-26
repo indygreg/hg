@@ -1016,7 +1016,7 @@ def createmarkers(repo, relations, flag=0, date=None, metadata=None,
             if saveeffectflag:
                 # The effect flag is saved in a versioned field name for future
                 # evolution
-                effectflag = obsutil.geteffectflag(rel)
+                effectflag = obsutil.geteffectflag(prec, sucs)
                 localmetadata[obsutil.EFFECTFLAGFIELD] = "%d" % effectflag
 
             # Creating the marker causes the hidden cache to become invalid,

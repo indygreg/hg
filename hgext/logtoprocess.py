@@ -40,7 +40,6 @@ import subprocess
 import sys
 
 from mercurial import (
-    encoding,
     pycompat,
 )
 
@@ -128,7 +127,7 @@ def uisetup(ui):
                 optpairs = (
                     ('OPT_{0}'.format(key.upper()), str(value))
                     for key, value in opts.iteritems())
-                env = dict(itertools.chain(encoding.environ.items(),
+                env = dict(itertools.chain(procutil.shellenviron().items(),
                                            msgpairs, optpairs),
                            EVENT=event, HGPID=str(os.getpid()))
                 runshellcommand(script, env)

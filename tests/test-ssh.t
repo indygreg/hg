@@ -328,6 +328,10 @@ try again with remote chg, which should succeed as well
   pushing to ssh://user@dummy/remote
   searching for changes
   remote has heads on branch 'default' that are not known locally: 6c0482d977a3
+  remote: adding changesets
+  remote: adding manifests
+  remote: adding file changes
+  remote: added 1 changesets with 1 changes to 1 files
   abort: not a Mercurial bundle
   [255]
 

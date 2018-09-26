@@ -273,13 +273,13 @@ def protectstdio(uin, uout):
     """
     uout.flush()
     fin, fout = uin, uout
-    if uin is stdin:
+    if _testfileno(uin, stdin):
         newfd = os.dup(uin.fileno())
         nullfd = os.open(os.devnull, os.O_RDONLY)
         os.dup2(nullfd, uin.fileno())
         os.close(nullfd)
         fin = os.fdopen(newfd, r'rb')
-    if uout is stdout:
+    if _testfileno(uout, stdout):
         newfd = os.dup(uout.fileno())
         os.dup2(stderr.fileno(), uout.fileno())
         fout = os.fdopen(newfd, r'wb')

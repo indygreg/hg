@@ -994,36 +994,37 @@ def createmarkers(repo, relations, flag=0, date=None, metadata=None,
         markerargs = []
         for rel in relations:
             prec = rel[0]
-            sucs = rel[1]
-            localmetadata = metadata.copy()
-            if 2 < len(rel):
-                localmetadata.update(rel[2])
+            if True:
+                sucs = rel[1]
+                localmetadata = metadata.copy()
+                if 2 < len(rel):
+                    localmetadata.update(rel[2])
 
-            if not prec.mutable():
-                raise error.Abort(_("cannot obsolete public changeset: %s")
-                                 % prec,
-                                 hint="see 'hg help phases' for details")
-            nprec = prec.node()
-            nsucs = tuple(s.node() for s in sucs)
-            npare = None
-            if not nsucs:
-                npare = tuple(p.node() for p in prec.parents())
-            if nprec in nsucs:
-                raise error.Abort(_("changeset %s cannot obsolete itself")
-                                  % prec)
+                if not prec.mutable():
+                    raise error.Abort(_("cannot obsolete public changeset: %s")
+                                     % prec,
+                                     hint="see 'hg help phases' for details")
+                nprec = prec.node()
+                nsucs = tuple(s.node() for s in sucs)
+                npare = None
+                if not nsucs:
+                    npare = tuple(p.node() for p in prec.parents())
+                if nprec in nsucs:
+                    raise error.Abort(_("changeset %s cannot obsolete itself")
+                                      % prec)
 
-            # Effect flag can be different by relation
-            if saveeffectflag:
-                # The effect flag is saved in a versioned field name for future
-                # evolution
-                effectflag = obsutil.geteffectflag(prec, sucs)
-                localmetadata[obsutil.EFFECTFLAGFIELD] = "%d" % effectflag
+                # Effect flag can be different by relation
+                if saveeffectflag:
+                    # The effect flag is saved in a versioned field name for
+                    # future evolution
+                    effectflag = obsutil.geteffectflag(prec, sucs)
+                    localmetadata[obsutil.EFFECTFLAGFIELD] = "%d" % effectflag
 
-            # Creating the marker causes the hidden cache to become invalid,
-            # which causes recomputation when we ask for prec.parents() above.
-            # Resulting in n^2 behavior.  So let's prepare all of the args
-            # first, then create the markers.
-            markerargs.append((nprec, nsucs, npare, localmetadata))
+                # Creating the marker causes the hidden cache to become
+                # invalid, which causes recomputation when we ask for
+                # prec.parents() above.  Resulting in n^2 behavior.  So let's
+                # prepare all of the args first, then create the markers.
+                markerargs.append((nprec, nsucs, npare, localmetadata))
 
         for args in markerargs:
             nprec, nsucs, npare, localmetadata = args

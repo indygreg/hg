@@ -66,7 +66,7 @@ def uisetup(ui):
             # we can't use close_fds *and* redirect stdin. I'm not sure that we
             # need to because the detached process has no console connection.
             subprocess.Popen(
-                pycompat.rapply(procutil.tonativestr, script),
+                procutil.tonativestr(script),
                 shell=True, env=procutil.tonativeenv(env), close_fds=True,
                 creationflags=_creationflags)
     else:
@@ -87,7 +87,7 @@ def uisetup(ui):
                 # connect stdin to devnull to make sure the subprocess can't
                 # muck up that stream for mercurial.
                 subprocess.Popen(
-                    pycompat.rapply(procutil.tonativestr, script),
+                    procutil.tonativestr(script),
                     shell=True, stdin=open(os.devnull, 'r'),
                     env=procutil.tonativeenv(env),
                     close_fds=True, **newsession)

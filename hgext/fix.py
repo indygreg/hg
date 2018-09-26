@@ -452,7 +452,7 @@ def fixfile(ui, opts, fixers, fixctx, path, basectxs):
                 continue
             ui.debug('subprocess: %s\n' % (command,))
             proc = subprocess.Popen(
-                pycompat.rapply(procutil.tonativestr, command),
+                procutil.tonativestr(command),
                 shell=True,
                 cwd=procutil.tonativestr(b'/'),
                 stdin=subprocess.PIPE,

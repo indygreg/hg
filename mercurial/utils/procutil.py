@@ -137,7 +137,7 @@ def popen2(cmd, env=None):
     # Setting bufsize to -1 lets the system decide the buffer size.
     # The default for bufsize is 0, meaning unbuffered. This leads to
     # poor performance on Mac OS X: http://bugs.python.org/issue4194
-    p = subprocess.Popen(pycompat.rapply(tonativestr, cmd),
+    p = subprocess.Popen(tonativestr(cmd),
                          shell=True, bufsize=-1,
                          close_fds=closefds,
                          stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -149,7 +149,7 @@ def popen3(cmd, env=None):
     return stdin, stdout, stderr
 
 def popen4(cmd, env=None, bufsize=-1):
-    p = subprocess.Popen(pycompat.rapply(tonativestr, cmd),
+    p = subprocess.Popen(tonativestr(cmd),
                          shell=True, bufsize=bufsize,
                          close_fds=closefds,
                          stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -159,7 +159,7 @@ def popen4(cmd, env=None, bufsize=-1):
 
 def pipefilter(s, cmd):
     '''filter string S through command CMD, returning its output'''
-    p = subprocess.Popen(pycompat.rapply(tonativestr, cmd),
+    p = subprocess.Popen(tonativestr(cmd),
                          shell=True, close_fds=closefds,
                          stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     pout, perr = p.communicate(s)
@@ -351,12 +351,12 @@ def system(cmd, environ=None, cwd=None, out=None):
     cmd = quotecommand(cmd)
     env = shellenviron(environ)
     if out is None or isstdout(out):
-        rc = subprocess.call(pycompat.rapply(tonativestr, cmd),
+        rc = subprocess.call(tonativestr(cmd),
                              shell=True, close_fds=closefds,
                              env=tonativeenv(env),
                              cwd=pycompat.rapply(tonativestr, cwd))
     else:
-        proc = subprocess.Popen(pycompat.rapply(tonativestr, cmd),
+        proc = subprocess.Popen(tonativestr(cmd),
                                 shell=True, close_fds=closefds,
                                 env=tonativeenv(env),
                                 cwd=pycompat.rapply(tonativestr, cwd),

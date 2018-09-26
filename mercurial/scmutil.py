@@ -1339,7 +1339,7 @@ def extdatasource(repo, source):
         if spec.startswith("shell:"):
             # external commands should be run relative to the repo root
             cmd = spec[6:]
-            proc = subprocess.Popen(pycompat.rapply(procutil.tonativestr, cmd),
+            proc = subprocess.Popen(procutil.tonativestr(cmd),
                                     shell=True, bufsize=-1,
                                     close_fds=procutil.closefds,
                                     stdout=subprocess.PIPE,

@@ -785,6 +785,8 @@ class sshserver(object):
         self._ui = ui
         self._repo = repo
         self._fin, self._fout = procutil.protectstdio(ui.fin, ui.fout)
+        # TODO: manage the redirection flag internally by ui
+        ui._finoutredirected = (self._fin, self._fout) != (ui.fin, ui.fout)
 
         # Log write I/O to stdout and stderr if configured.
         if logfh:

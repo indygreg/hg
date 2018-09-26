@@ -332,8 +332,8 @@ try again with remote chg, which should succeed as well
   remote: adding manifests
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
-  abort: not a Mercurial bundle
-  [255]
+  remote: KABOOM
+  remote: KABOOM IN PROCESS
 
 #endif
 

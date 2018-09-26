@@ -200,11 +200,13 @@ def _newchgui(srcui, csystem, attachio):
         def _runsystem(self, cmd, environ, cwd, out):
             # fallback to the original system method if
             #  a. the output stream is not stdout (e.g. stderr, cStringIO),
+            #  b. or stdout is redirected by protectstdio(),
             # because the chg client is not aware of these situations and
             # will behave differently (i.e. write to stdout).
             if (out is not self.fout
                 or not util.safehasattr(self.fout, 'fileno')
-                or self.fout.fileno() != procutil.stdout.fileno()):
+                or self.fout.fileno() != procutil.stdout.fileno()
+                or self._finoutredirected):
                 return procutil.system(cmd, environ=environ, cwd=cwd, out=out)
             self.flush()
             return self._csystem(cmd, procutil.shellenviron(environ), cwd)

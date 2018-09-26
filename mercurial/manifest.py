@@ -701,15 +701,22 @@ class treemanifest(object):
         return self._dir + path
 
     def _loadalllazy(self):
-        for k, (path, node, readsubtree) in self._lazydirs.iteritems():
-            self._dirs[k] = readsubtree(path, node)
+        selfdirs = self._dirs
+        for d, (path, node, readsubtree, docopy) in self._lazydirs.iteritems():
+            if docopy:
+                selfdirs[d] = readsubtree(path, node).copy()
+            else:
+                selfdirs[d] = readsubtree(path, node)
         self._lazydirs = {}
 
     def _loadlazy(self, d):
         v = self._lazydirs.get(d)
         if v:
-            path, node, readsubtree = v
-            self._dirs[d] = readsubtree(path, node)
+            path, node, readsubtree, docopy = v
+            if docopy:
+                self._dirs[d] = readsubtree(path, node).copy()
+            else:
+                self._dirs[d] = readsubtree(path, node)
             del self._lazydirs[d]
 
     def _loadchildrensetlazy(self, visit):
@@ -1170,7 +1177,9 @@ class treemanifest(object):
         for f, n, fl in _parse(text):
             if fl == 't':
                 f = f + '/'
-                selflazy[f] = (subpath(f), n, readsubtree)
+                # False below means "doesn't need to be copied" and can use the
+                # cached value from readsubtree directly.
+                selflazy[f] = (subpath(f), n, readsubtree, False)
             elif '/' in f:
                 # This is a flat manifest, so use __setitem__ and setflag rather
                 # than assigning directly to _files and _flags, so we can
@@ -1197,8 +1206,7 @@ class treemanifest(object):
         """
         self._load()
         flags = self.flags
-        lazydirs = [(d[:-1], node, 't') for
-                    d, (path, node, readsubtree) in self._lazydirs.iteritems()]
+        lazydirs = [(d[:-1], v[1], 't') for d, v in self._lazydirs.iteritems()]
         dirs = [(d[:-1], self._dirs[d]._node, 't') for d in self._dirs]
         files = [(f, self._files[f], flags(f)) for f in self._files]
         return _text(sorted(dirs + files + lazydirs))

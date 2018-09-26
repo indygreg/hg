@@ -595,3 +595,39 @@ def open(ui, url_, data=None):
         url_ = 'file://' + pycompat.bytesurl(urlreq.pathname2url(path))
         authinfo = None
     return opener(ui, authinfo).open(pycompat.strurl(url_), data)
+
+def wrapresponse(resp):
+    """Wrap a response object with common error handlers.
+
+    This ensures that any I/O from any consumer raises the appropriate
+    error and messaging.
+    """
+    origread = resp.read
+
+    class readerproxy(resp.__class__):
+        def read(self, size=None):
+            try:
+                return origread(size)
+            except httplib.IncompleteRead as e:
+                # e.expected is an integer if length known or None otherwise.
+                if e.expected:
+                    got = len(e.partial)
+                    total = e.expected + got
+                    msg = _('HTTP request error (incomplete response; '
+                            'expected %d bytes got %d)') % (total, got)
+                else:
+                    msg = _('HTTP request error (incomplete response)')
+
+                raise error.PeerTransportError(
+                    msg,
+                    hint=_('this may be an intermittent network failure; '
+                           'if the error persists, consider contacting the '
+                           'network or server operator'))
+            except httplib.HTTPException as e:
+                raise error.PeerTransportError(
+                    _('HTTP request error (%s)') % e,
+                    hint=_('this may be an intermittent network failure; '
+                           'if the error persists, consider contacting the '
+                           'network or server operator'))
+
+    resp.__class__ = readerproxy

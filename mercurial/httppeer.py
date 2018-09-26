@@ -69,42 +69,6 @@ def encodevalueinheaders(value, header, limit):
 
     return result
 
-def _wraphttpresponse(resp):
-    """Wrap an HTTPResponse with common error handlers.
-
-    This ensures that any I/O from any consumer raises the appropriate
-    error and messaging.
-    """
-    origread = resp.read
-
-    class readerproxy(resp.__class__):
-        def read(self, size=None):
-            try:
-                return origread(size)
-            except httplib.IncompleteRead as e:
-                # e.expected is an integer if length known or None otherwise.
-                if e.expected:
-                    got = len(e.partial)
-                    total = e.expected + got
-                    msg = _('HTTP request error (incomplete response; '
-                            'expected %d bytes got %d)') % (total, got)
-                else:
-                    msg = _('HTTP request error (incomplete response)')
-
-                raise error.PeerTransportError(
-                    msg,
-                    hint=_('this may be an intermittent network failure; '
-                           'if the error persists, consider contacting the '
-                           'network or server operator'))
-            except httplib.HTTPException as e:
-                raise error.PeerTransportError(
-                    _('HTTP request error (%s)') % e,
-                    hint=_('this may be an intermittent network failure; '
-                           'if the error persists, consider contacting the '
-                           'network or server operator'))
-
-    resp.__class__ = readerproxy
-
 class _multifile(object):
     def __init__(self, *fileobjs):
         for f in fileobjs:
@@ -325,7 +289,7 @@ def sendrequest(ui, opener, req):
                 % (util.timer() - start, code))
 
     # Insert error handlers for common I/O failures.
-    _wraphttpresponse(res)
+    urlmod.wrapresponse(res)
 
     return res
 

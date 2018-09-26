@@ -198,10 +198,10 @@ def _newchgui(srcui, csystem, attachio):
                 self._csystem = csystem
 
         def _runsystem(self, cmd, environ, cwd, out):
-            # fallback to the original system method if the output needs to be
-            # captured (to self._buffers), or the output stream is not stdout
-            # (e.g. stderr, cStringIO), because the chg client is not aware of
-            # these situations and will behave differently (write to stdout).
+            # fallback to the original system method if
+            #  a. the output stream is not stdout (e.g. stderr, cStringIO),
+            # because the chg client is not aware of these situations and
+            # will behave differently (i.e. write to stdout).
             if (out is not self.fout
                 or not util.safehasattr(self.fout, 'fileno')
                 or self.fout.fileno() != procutil.stdout.fileno()):

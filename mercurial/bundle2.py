@@ -1687,7 +1687,18 @@ def addpartbundlestream2(bundler, repo, **kwargs):
     # to avoid compression to consumers of the bundle.
     bundler.prefercompressed = False
 
-    filecount, bytecount, it = streamclone.generatev2(repo)
+    # get the includes and excludes
+    includepats = kwargs.get(r'includepats')
+    excludepats = kwargs.get(r'excludepats')
+
+    narrowstream = repo.ui.configbool('experimental.server',
+                                      'stream-narrow-clones')
+
+    if (includepats or excludepats) and not narrowstream:
+        raise error.Abort(_('server does not support narrow stream clones'))
+
+    filecount, bytecount, it = streamclone.generatev2(repo, includepats,
+                                                      excludepats)
     requirements = _formatrequirementsspec(repo.requirements)
     part = bundler.newpart('stream2', data=it)
     part.addparam('bytecount', '%d' % bytecount, mandatory=True)

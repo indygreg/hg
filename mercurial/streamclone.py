@@ -531,7 +531,7 @@ def _emit2(repo, entries, totalfilesize):
             finally:
                 fp.close()
 
-def generatev2(repo):
+def generatev2(repo, includes, excludes):
     """Emit content for version 2 of a streaming clone.
 
     the data stream consists the following entries:
@@ -543,6 +543,10 @@ def generatev2(repo):
 
     Returns a 3-tuple of (file count, file size, data iterator).
     """
+
+    # temporarily raise error until we add storage level logic
+    if includes or excludes:
+        raise error.Abort(_("server does not support narrow stream clones"))
 
     with repo.lock():
 

@@ -610,6 +610,9 @@ coreconfigitem('experimental', 'server.filesdata.recommended-batch-size',
 coreconfigitem('experimental', 'server.manifestdata.recommended-batch-size',
     default=100000,
 )
+coreconfigitem('experimental.server', 'stream-narrow-clones',
+    default=False,
+)
 coreconfigitem('experimental', 'single-head-per-branch',
     default=False,
 )

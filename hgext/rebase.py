@@ -1777,15 +1777,16 @@ def clearrebased(ui, repo, destmap, state, skipped, collapsedas=None,
                 else:
                     succs = (newnode,)
                 if succs is not None:
-                    replacements[oldnode] = succs
+                    replacements[(oldnode,)] = succs
     scmutil.cleanupnodes(repo, replacements, 'rebase', moves, backup=backup)
     if fm:
         hf = fm.hexfunc
         fl = fm.formatlist
         fd = fm.formatdict
         changes = {}
-        for oldn, newn in replacements.iteritems():
-            changes[hf(oldn)] = fl([hf(n) for n in newn], name='node')
+        for oldns, newn in replacements.iteritems():
+            for oldn in oldns:
+                changes[hf(oldn)] = fl([hf(n) for n in newn], name='node')
         nodechanges = fd(changes, key="oldnode", value="newnodes")
         fm.data(nodechanges=nodechanges)
 

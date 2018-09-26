@@ -980,15 +980,13 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
             # Also sort the node in topology order, that might be useful for
             # some obsstore logic.
             # NOTE: the filtering and sorting might belong to createmarkers.
-            isobs = unfi.obsstore.successors.__contains__
             torev = unfi.changelog.rev
             sortfunc = lambda ns: torev(ns[0][0])
             rels = []
             for ns, s in sorted(replacements.items(), key=sortfunc):
                 for n in ns:
-                    if s or not isobs(n):
-                        rel = (unfi[n], tuple(unfi[m] for m in s))
-                        rels.append(rel)
+                    rel = (unfi[n], tuple(unfi[m] for m in s))
+                    rels.append(rel)
             if rels:
                 obsolete.createmarkers(repo, rels, operation=operation,
                                        metadata=metadata)

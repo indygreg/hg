@@ -1246,7 +1246,7 @@ Test high-level scmutil.cleanupnodes API
   >                            node(b'D'): [node(b'D2')],
   >                            node(b'G'): [node(b'G2')]}
   >                 scmutil.cleanupnodes(repo, mapping, b'replace')
-  >                 scmutil.cleanupnodes(repo, nodes(b'((B::)+I+Z)-D2'),
+  >                 scmutil.cleanupnodes(repo, nodes(b'((B::)+I+Z)-D2-obsolete()'),
   >                                      b'replace')
   > EOF
   $ hg testnodescleanup --config extensions.t=$TESTTMP/scmutilcleanup.py

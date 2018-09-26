@@ -712,7 +712,7 @@ class httpv2executor(object):
     def _handleresponse(self, handler, resp):
         # Called in a thread to read the response.
 
-        while handler.readframe(resp):
+        while handler.readdata(resp):
             pass
 
 # TODO implement interface for version 2 peers

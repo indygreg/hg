@@ -148,6 +148,7 @@ class clienthandler(object):
         self._requests = {}
         self._futures = {}
         self._responses = {}
+        self._frameseof = False
 
     def callcommand(self, command, args, f):
         """Register a request to call a command.
@@ -180,18 +181,23 @@ class clienthandler(object):
 
         return meta['framegen']
 
-    def readframe(self, fh):
-        """Attempt to read and process a frame.
+    def readdata(self, framefh):
+        """Attempt to read data and do work.
 
-        Returns None if no frame was read. Presumably this means EOF.
+        Returns None if no data was read. Presumably this means we're
+        done with all read I/O.
         """
-        frame = wireprotoframing.readframe(fh)
-        if frame is None:
-            # TODO tell reactor?
-            return
+        if not self._frameseof:
+            frame = wireprotoframing.readframe(framefh)
+            if frame is None:
+                # TODO tell reactor?
+                self._frameseof = True
+            else:
+                self._ui.note(_('received %r\n') % frame)
+                self._processframe(frame)
 
-        self._ui.note(_('received %r\n') % frame)
-        self._processframe(frame)
+        if self._frameseof:
+            return None
 
         return True
 

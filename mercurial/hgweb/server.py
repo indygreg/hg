@@ -174,8 +174,12 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         env[r'wsgi.errors'] = _error_logger(self)
         env[r'wsgi.multithread'] = isinstance(self.server,
                                              socketserver.ThreadingMixIn)
-        env[r'wsgi.multiprocess'] = isinstance(self.server,
-                                              socketserver.ForkingMixIn)
+        if util.safehasattr(socketserver, 'ForkingMixIn'):
+            env[r'wsgi.multiprocess'] = isinstance(self.server,
+                                                   socketserver.ForkingMixIn)
+        else:
+            env[r'wsgi.multiprocess'] = False
+
         env[r'wsgi.run_once'] = 0
 
         wsgiref.validate.check_environ(env)

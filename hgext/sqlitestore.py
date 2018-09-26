@@ -615,7 +615,12 @@ class sqlitefilestore(object):
         self._revisioncache[node] = revisiondata
         return node
 
-    def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None):
+    def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None,
+                 maybemissingparents=False):
+        if maybemissingparents:
+            raise error.Abort(_('SQLite storage does not support missing '
+                                'parents write mode'))
+
         nodes = []
 
         for node, p1, p2, linknode, deltabase, delta, wireflags in deltas:

@@ -459,7 +459,12 @@ class filestorage(object):
         self._refreshindex()
         self._svfs.write(self._indexpath, cbor.dumps(self._indexdata))
 
-    def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None):
+    def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None,
+                 maybemissingparents=False):
+        if maybemissingparents:
+            raise error.Abort(_('simple store does not support missing parents '
+                                'write mode'))
+
         nodes = []
 
         transaction.addbackup(self._indexpath)

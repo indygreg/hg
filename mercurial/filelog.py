@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+from .i18n import _
 from .node import (
     nullid,
     nullrev,
@@ -104,9 +105,14 @@ class filelog(object):
                                     p1, p2, node=node, flags=flags,
                                     cachedelta=cachedelta)
 
-    def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None):
+    def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None,
+                 maybemissingparents=False):
+        if maybemissingparents:
+            raise error.Abort(_('revlog storage does not support missing '
+                                'parents write mode'))
+
         return self._revlog.addgroup(deltas, linkmapper, transaction,
-                                 addrevisioncb=addrevisioncb)
+                                     addrevisioncb=addrevisioncb)
 
     def getstrippoint(self, minlink):
         return self._revlog.getstrippoint(minlink)

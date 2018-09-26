@@ -693,7 +693,8 @@ class ifilemutation(interfaceutil.Interface):
         applying raw data from a peer repo.
         """
 
-    def addgroup(deltas, linkmapper, transaction, addrevisioncb=None):
+    def addgroup(deltas, linkmapper, transaction, addrevisioncb=None,
+                 maybemissingparents=False):
         """Process a series of deltas for storage.
 
         ``deltas`` is an iterable of 7-tuples of
@@ -706,6 +707,11 @@ class ifilemutation(interfaceutil.Interface):
         and the delta used as the fulltext.
 
         ``addrevisioncb`` should be called for each node as it is committed.
+
+        ``maybemissingparents`` is a bool indicating whether the incoming
+        data may reference parents/ancestor revisions that aren't present.
+        This flag is set when receiving data into a "shallow" store that
+        doesn't hold all history.
 
         Returns a list of nodes that were processed. A node will be in the list
         even if it existed in the store previously.

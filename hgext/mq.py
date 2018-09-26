@@ -980,10 +980,10 @@ class queue(object):
                 files += mergedsubstate.keys()
 
             match = scmutil.matchfiles(repo, files or [])
-            oldtip = repo['tip']
+            oldtip = repo.changelog.tip()
             n = newcommit(repo, None, message, ph.user, ph.date, match=match,
                           force=True)
-            if repo['tip'] == oldtip:
+            if repo.changelog.tip() == oldtip:
                 raise error.Abort(_("qpush exactly duplicates child changeset"))
             if n is None:
                 raise error.Abort(_("repository commit failed"))

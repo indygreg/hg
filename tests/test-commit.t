@@ -650,7 +650,7 @@ verify pathauditor blocks evil filepaths
   > def filectxfn(repo, memctx, path):
   >     return context.memfilectx(repo, memctx, path,
   >         b'[hooks]\nupdate = echo owned')
-  > c = context.memctx(r, [r[b'tip'].node(), node.nullid],
+  > c = context.memctx(r, [r.changelog.tip(), node.nullid],
   >                    b'evil', [notrc], filectxfn, 0)
   > r.commitctx(c)
   > EOF

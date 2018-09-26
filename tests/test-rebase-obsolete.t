@@ -356,9 +356,9 @@ collapse rebase
   $ hg id --debug -r tip
   4dc2197e807bae9817f09905b50ab288be2dbbcf tip
   $ hg debugobsolete
-  42ccdea3bb16d28e1848c95fe2e44c000f3f21b1 4dc2197e807bae9817f09905b50ab288be2dbbcf 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '13', 'operation': 'rebase', 'user': 'test'}
-  5fddd98957c8a54a4d436dfe1da9d87f21a1b97b 4dc2197e807bae9817f09905b50ab288be2dbbcf 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '13', 'operation': 'rebase', 'user': 'test'}
-  32af7686d403cf45b5d95f2d70cebea587ac806a 4dc2197e807bae9817f09905b50ab288be2dbbcf 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '13', 'operation': 'rebase', 'user': 'test'}
+  42ccdea3bb16d28e1848c95fe2e44c000f3f21b1 4dc2197e807bae9817f09905b50ab288be2dbbcf 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '13', 'fold-id': '6fb65cdc', 'fold-idx': '1', 'fold-size': '3', 'operation': 'rebase', 'user': 'test'}
+  5fddd98957c8a54a4d436dfe1da9d87f21a1b97b 4dc2197e807bae9817f09905b50ab288be2dbbcf 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '13', 'fold-id': '6fb65cdc', 'fold-idx': '2', 'fold-size': '3', 'operation': 'rebase', 'user': 'test'}
+  32af7686d403cf45b5d95f2d70cebea587ac806a 4dc2197e807bae9817f09905b50ab288be2dbbcf 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '13', 'fold-id': '6fb65cdc', 'fold-idx': '3', 'fold-size': '3', 'operation': 'rebase', 'user': 'test'}
 
   $ cd ..
 

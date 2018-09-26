@@ -70,6 +70,7 @@ comment associated with each format for details.
 from __future__ import absolute_import
 
 import errno
+import hashlib
 import struct
 
 from .i18n import _
@@ -954,6 +955,15 @@ def _computecontentdivergentset(repo):
             toprocess.update(obsstore.predecessors.get(prec, ()))
     return divergent
 
+def makefoldid(relation, user):
+
+    folddigest = hashlib.sha1(user)
+    for p in relation[0] + relation[1]:
+        folddigest.update('%d' % p.rev())
+        folddigest.update(p.node())
+    # Since fold only has to compete against fold for the same successors, it
+    # seems fine to use a small ID. Smaller ID save space.
+    return node.hex(folddigest.digest())[:8]
 
 def createmarkers(repo, relations, flag=0, date=None, metadata=None,
                   operation=None):
@@ -1000,11 +1010,19 @@ def createmarkers(repo, relations, flag=0, date=None, metadata=None,
             if len(predecessors) > 1 and len(rel[1]) != 1:
                 msg = 'Fold markers can only have 1 successors, not %d'
                 raise error.ProgrammingError(msg % len(rel[1]))
-            for prec in predecessors:
+            foldid = None
+            foldsize = len(predecessors)
+            if 1 < foldsize:
+                foldid = makefoldid(rel, metadata['user'])
+            for foldidx, prec in enumerate(predecessors, 1):
                 sucs = rel[1]
                 localmetadata = metadata.copy()
                 if len(rel) > 2:
                     localmetadata.update(rel[2])
+                if foldid is not None:
+                    localmetadata['fold-id'] = foldid
+                    localmetadata['fold-idx'] = '%d' % foldidx
+                    localmetadata['fold-size'] = '%d' % foldsize
 
                 if not prec.mutable():
                     raise error.Abort(_("cannot obsolete public changeset: %s")

@@ -206,7 +206,7 @@ class abstractvfs(object):
         return util.rename(srcpath, dstpath)
 
     def readlink(self, path):
-        return os.readlink(self.join(path))
+        return util.readlink(self.join(path))
 
     def removedirs(self, path=None):
         """Remove a leaf directory and all empty intermediate ones

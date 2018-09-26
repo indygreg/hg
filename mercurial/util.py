@@ -112,6 +112,7 @@ parsepatchoutput = platform.parsepatchoutput
 pconvert = platform.pconvert
 poll = platform.poll
 posixfile = platform.posixfile
+readlink = platform.readlink
 rename = platform.rename
 removedirs = platform.removedirs
 samedevice = platform.samedevice
@@ -1841,7 +1842,7 @@ def makelock(info, pathname):
 
 def readlock(pathname):
     try:
-        return os.readlink(pathname)
+        return readlink(pathname)
     except OSError as why:
         if why.errno not in (errno.EINVAL, errno.ENOSYS):
             raise

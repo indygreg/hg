@@ -223,7 +223,7 @@ class gnuarch_source(common.converter_source, common.commandline):
     def _getfile(self, name, rev):
         mode = os.lstat(os.path.join(self.tmppath, name)).st_mode
         if stat.S_ISLNK(mode):
-            data = os.readlink(os.path.join(self.tmppath, name))
+            data = util.readlink(os.path.join(self.tmppath, name))
             if mode:
                 mode = 'l'
             else:

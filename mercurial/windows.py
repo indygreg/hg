@@ -519,6 +519,9 @@ def groupname(gid=None):
     If gid is None, return the name of the current group."""
     return None
 
+def readlink(pathname):
+    return pycompat.fsencode(os.readlink(pycompat.fsdecode(pathname)))
+
 def removedirs(name):
     """special version of os.removedirs that does not remove symlinked
     directories or junction points if they actually contain files"""

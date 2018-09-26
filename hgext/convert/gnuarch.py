@@ -18,6 +18,7 @@ from mercurial import (
     encoding,
     error,
     pycompat,
+    util,
 )
 from mercurial.utils import (
     dateutil,
@@ -228,7 +229,7 @@ class gnuarch_source(common.converter_source, common.commandline):
             else:
                 mode = ''
         else:
-            data = open(os.path.join(self.tmppath, name), 'rb').read()
+            data = util.readfile(os.path.join(self.tmppath, name))
             mode = (mode & 0o111) and 'x' or ''
         return data, mode
 

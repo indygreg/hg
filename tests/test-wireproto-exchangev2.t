@@ -619,3 +619,347 @@ Server-side bookmark moves are reflected during `hg pull`
   $ hg -R client-bookmarks bookmarks
      book-1                    2:cd2534766bec
      book-2                    2:cd2534766bec
+
+  $ killdaemons.py
+
+Let's set up a slightly more complicated server
+
+  $ hg init server-2
+  $ enablehttpv2 server-2
+  $ cd server-2
+  $ mkdir dir0 dir1
+  $ echo a0 > a
+  $ echo b0 > b
+  $ hg -q commit -A -m 'commit 0'
+  $ echo c0 > dir0/c
+  $ echo d0 > dir0/d
+  $ hg -q commit -A -m 'commit 1'
+  $ echo e0 > dir1/e
+  $ echo f0 > dir1/f
+  $ hg -q commit -A -m 'commit 2'
+  $ echo c1 > dir0/c
+  $ echo e1 > dir1/e
+  $ hg commit -m 'commit 3'
+  $ hg serve -p $HGPORT -d --pid-file hg.pid -E error.log
+  $ cat hg.pid > $DAEMON_PIDS
+
+  $ cd ..
+
+Narrow clone only fetches some files
+
+  $ hg --config extensions.pullext=$TESTDIR/pullext.py --debug clone -U --include dir0/ http://localhost:$HGPORT/ client-narrow-0
+  using http://localhost:$HGPORT/
+  sending capabilities command
+  query 1; heads
+  sending 2 commands
+  sending command heads: {}
+  sending command known: {
+    'nodes': []
+  }
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  sending 1 commands
+  sending command changesetdata: {
+    'fields': set([
+      'bookmarks',
+      'parents',
+      'phase',
+      'revision'
+    ]),
+    'revisions': [
+      {
+        'heads': [
+          '\x97v_\xc3\xcdbO\xd1\xfa\x01v\x93,!\xff\xd1j\xdfC.'
+        ],
+        'roots': [],
+        'type': 'changesetdagrange'
+      }
+    ]
+  }
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=783; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  add changeset 3390ef850073
+  add changeset b709380892b1
+  add changeset 47fe012ab237
+  add changeset 97765fc3cd62
+  checking for updated bookmarks
+  sending 1 commands
+  sending command manifestdata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'haveparents': True,
+    'nodes': [
+      '\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&A',
+      '|2 \x1a\xa3\xa1R\xa9\xe6\xa9"+?\xa8\xd0\xe3\x0f\xc2V\xe8',
+      '\x8d\xd0W<\x7f\xaf\xe2\x04F\xcc\xea\xac\x05N\xea\xa4x\x91M\xdb',
+      '113\x85\xf2!\x8b\x08^\xb2Z\x821\x1e*\xdd\x0e\xeb\x8c3'
+    ],
+    'tree': ''
+  }
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=967; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  sending 1 commands
+  sending command filesdata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'haveparents': True,
+    'pathfilter': {
+      'include': [
+        'path:dir0'
+      ]
+    },
+    'revisions': [
+      {
+        'nodes': [
+          '3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:',
+          '\xb7\t8\x08\x92\xb1\x93\xc1\t\x1d:\x81\x7fp`R\xe3F\x82\x1b',
+          'G\xfe\x01*\xb27\xa8\xc7\xfc\x0cx\xf9\xf2mXf\xee\xf3\xf8%',
+          '\x97v_\xc3\xcdbO\xd1\xfa\x01v\x93,!\xff\xd1j\xdfC.'
+        ],
+        'type': 'changesetexplicit'
+      }
+    ]
+  }
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=449; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  updating the branch cache
+  new changesets 3390ef850073:97765fc3cd62
+  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+#if reporevlogstore
+  $ find client-narrow-0/.hg/store -type f -name '*.i' | sort
+  client-narrow-0/.hg/store/00changelog.i
+  client-narrow-0/.hg/store/00manifest.i
+  client-narrow-0/.hg/store/data/dir0/c.i
+  client-narrow-0/.hg/store/data/dir0/d.i
+#endif
+
+--exclude by itself works
+
+  $ hg --config extensions.pullext=$TESTDIR/pullext.py --debug clone -U --exclude dir0/ http://localhost:$HGPORT/ client-narrow-1
+  using http://localhost:$HGPORT/
+  sending capabilities command
+  query 1; heads
+  sending 2 commands
+  sending command heads: {}
+  sending command known: {
+    'nodes': []
+  }
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  sending 1 commands
+  sending command changesetdata: {
+    'fields': set([
+      'bookmarks',
+      'parents',
+      'phase',
+      'revision'
+    ]),
+    'revisions': [
+      {
+        'heads': [
+          '\x97v_\xc3\xcdbO\xd1\xfa\x01v\x93,!\xff\xd1j\xdfC.'
+        ],
+        'roots': [],
+        'type': 'changesetdagrange'
+      }
+    ]
+  }
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=783; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  add changeset 3390ef850073
+  add changeset b709380892b1
+  add changeset 47fe012ab237
+  add changeset 97765fc3cd62
+  checking for updated bookmarks
+  sending 1 commands
+  sending command manifestdata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'haveparents': True,
+    'nodes': [
+      '\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&A',
+      '|2 \x1a\xa3\xa1R\xa9\xe6\xa9"+?\xa8\xd0\xe3\x0f\xc2V\xe8',
+      '\x8d\xd0W<\x7f\xaf\xe2\x04F\xcc\xea\xac\x05N\xea\xa4x\x91M\xdb',
+      '113\x85\xf2!\x8b\x08^\xb2Z\x821\x1e*\xdd\x0e\xeb\x8c3'
+    ],
+    'tree': ''
+  }
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=967; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  sending 1 commands
+  sending command filesdata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'haveparents': True,
+    'pathfilter': {
+      'exclude': [
+        'path:dir0'
+      ],
+      'include': [
+        'path:.'
+      ]
+    },
+    'revisions': [
+      {
+        'nodes': [
+          '3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:',
+          '\xb7\t8\x08\x92\xb1\x93\xc1\t\x1d:\x81\x7fp`R\xe3F\x82\x1b',
+          'G\xfe\x01*\xb27\xa8\xc7\xfc\x0cx\xf9\xf2mXf\xee\xf3\xf8%',
+          '\x97v_\xc3\xcdbO\xd1\xfa\x01v\x93,!\xff\xd1j\xdfC.'
+        ],
+        'type': 'changesetexplicit'
+      }
+    ]
+  }
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=709; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  updating the branch cache
+  new changesets 3390ef850073:97765fc3cd62
+  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+#if reporevlogstore
+  $ find client-narrow-1/.hg/store -type f -name '*.i' | sort
+  client-narrow-1/.hg/store/00changelog.i
+  client-narrow-1/.hg/store/00manifest.i
+  client-narrow-1/.hg/store/data/a.i
+  client-narrow-1/.hg/store/data/b.i
+  client-narrow-1/.hg/store/data/dir1/e.i
+  client-narrow-1/.hg/store/data/dir1/f.i
+#endif
+
+Mixing --include and --exclude works
+
+  $ hg --config extensions.pullext=$TESTDIR/pullext.py --debug clone -U --include dir0/ --exclude dir0/c http://localhost:$HGPORT/ client-narrow-2
+  using http://localhost:$HGPORT/
+  sending capabilities command
+  query 1; heads
+  sending 2 commands
+  sending command heads: {}
+  sending command known: {
+    'nodes': []
+  }
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  sending 1 commands
+  sending command changesetdata: {
+    'fields': set([
+      'bookmarks',
+      'parents',
+      'phase',
+      'revision'
+    ]),
+    'revisions': [
+      {
+        'heads': [
+          '\x97v_\xc3\xcdbO\xd1\xfa\x01v\x93,!\xff\xd1j\xdfC.'
+        ],
+        'roots': [],
+        'type': 'changesetdagrange'
+      }
+    ]
+  }
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=783; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  add changeset 3390ef850073
+  add changeset b709380892b1
+  add changeset 47fe012ab237
+  add changeset 97765fc3cd62
+  checking for updated bookmarks
+  sending 1 commands
+  sending command manifestdata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'haveparents': True,
+    'nodes': [
+      '\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&A',
+      '|2 \x1a\xa3\xa1R\xa9\xe6\xa9"+?\xa8\xd0\xe3\x0f\xc2V\xe8',
+      '\x8d\xd0W<\x7f\xaf\xe2\x04F\xcc\xea\xac\x05N\xea\xa4x\x91M\xdb',
+      '113\x85\xf2!\x8b\x08^\xb2Z\x821\x1e*\xdd\x0e\xeb\x8c3'
+    ],
+    'tree': ''
+  }
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=967; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  sending 1 commands
+  sending command filesdata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'haveparents': True,
+    'pathfilter': {
+      'exclude': [
+        'path:dir0/c'
+      ],
+      'include': [
+        'path:dir0'
+      ]
+    },
+    'revisions': [
+      {
+        'nodes': [
+          '3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:',
+          '\xb7\t8\x08\x92\xb1\x93\xc1\t\x1d:\x81\x7fp`R\xe3F\x82\x1b',
+          'G\xfe\x01*\xb27\xa8\xc7\xfc\x0cx\xf9\xf2mXf\xee\xf3\xf8%',
+          '\x97v_\xc3\xcdbO\xd1\xfa\x01v\x93,!\xff\xd1j\xdfC.'
+        ],
+        'type': 'changesetexplicit'
+      }
+    ]
+  }
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=160; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  updating the branch cache
+  new changesets 3390ef850073:97765fc3cd62
+  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+#if reporevlogstore
+  $ find client-narrow-2/.hg/store -type f -name '*.i' | sort
+  client-narrow-2/.hg/store/00changelog.i
+  client-narrow-2/.hg/store/00manifest.i
+  client-narrow-2/.hg/store/data/dir0/d.i
+#endif

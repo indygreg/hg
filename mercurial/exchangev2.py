@@ -19,6 +19,7 @@ from . import (
     bookmarks,
     error,
     mdiff,
+    narrowspec,
     phases,
     pycompat,
     setdiscovery,
@@ -29,6 +30,23 @@ def pull(pullop):
     repo = pullop.repo
     remote = pullop.remote
     tr = pullop.trmanager.transaction()
+
+    # We don't use the repo's narrow matcher here because the patterns passed
+    # to exchange.pull() could be different.
+    narrowmatcher = narrowspec.match(repo.root,
+                                     # Empty maps to nevermatcher. So always
+                                     # set includes if missing.
+                                     pullop.includepats or {'path:.'},
+                                     pullop.excludepats)
+
+    if pullop.includepats or pullop.excludepats:
+        pathfilter = {}
+        if pullop.includepats:
+            pathfilter[b'include'] = sorted(pullop.includepats)
+        if pullop.excludepats:
+            pathfilter[b'exclude'] = sorted(pullop.excludepats)
+    else:
+        pathfilter = None
 
     # Figure out what needs to be fetched.
     common, fetch, remoteheads = _pullchangesetdiscovery(
@@ -63,8 +81,8 @@ def pull(pullop):
 
     # Find all file nodes referenced by added manifests and fetch those
     # revisions.
-    fnodes = _derivefilesfrommanifests(repo, manres['added'])
-    _fetchfilesfromcsets(repo, tr, remote, fnodes, csetres['added'],
+    fnodes = _derivefilesfrommanifests(repo, narrowmatcher, manres['added'])
+    _fetchfilesfromcsets(repo, tr, remote, pathfilter, fnodes, csetres['added'],
                          manres['linkrevs'])
 
 def _pullchangesetdiscovery(repo, remote, heads, abortwhenunrelated=True):
@@ -315,7 +333,7 @@ def _fetchmanifests(repo, tr, remote, manifestnodes):
         'linkrevs': linkrevs,
     }
 
-def _derivefilesfrommanifests(repo, manifestnodes):
+def _derivefilesfrommanifests(repo, matcher, manifestnodes):
     """Determine what file nodes are relevant given a set of manifest nodes.
 
     Returns a dict mapping file paths to dicts of file node to first manifest
@@ -340,7 +358,8 @@ def _derivefilesfrommanifests(repo, manifestnodes):
             md = m.readfast()
 
             for path, fnode in md.items():
-                fnodes[path].setdefault(fnode, manifestnode)
+                if matcher(path):
+                    fnodes[path].setdefault(fnode, manifestnode)
 
             progress.increment()
 
@@ -421,7 +440,8 @@ def _fetchfiles(repo, tr, remote, fnodes, linkrevs):
                     locallinkrevs[path].__getitem__,
                     weakref.proxy(tr))
 
-def _fetchfilesfromcsets(repo, tr, remote, fnodes, csets, manlinkrevs):
+def _fetchfilesfromcsets(repo, tr, remote, pathfilter, fnodes, csets,
+                         manlinkrevs):
     """Fetch file data from explicit changeset revisions."""
 
     def iterrevisions(objs, remaining, progress):
@@ -480,6 +500,9 @@ def _fetchfilesfromcsets(repo, tr, remote, fnodes, csets, manlinkrevs):
                 b'fields': {b'parents', b'revision'},
                 b'haveparents': True,
             }
+
+            if pathfilter:
+                args[b'pathfilter'] = pathfilter
 
             objs = e.callcommand(b'filesdata', args).result()
 

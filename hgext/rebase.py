@@ -1763,17 +1763,21 @@ def clearrebased(ui, repo, destmap, state, skipped, collapsedas=None,
     tonode = repo.changelog.node
     replacements = {}
     moves = {}
+    stripcleanup = not obsolete.isenabled(repo, obsolete.createmarkersopt)
     for rev, newrev in sorted(state.items()):
         if newrev >= 0 and newrev != rev:
             oldnode = tonode(rev)
             newnode = collapsedas or tonode(newrev)
             moves[oldnode] = newnode
             if not keepf:
+                succs = None
                 if rev in skipped:
-                    succs = ()
+                    if stripcleanup or not repo[rev].obsolete():
+                        succs = ()
                 else:
                     succs = (newnode,)
-                replacements[oldnode] = succs
+                if succs is not None:
+                    replacements[oldnode] = succs
     scmutil.cleanupnodes(repo, replacements, 'rebase', moves, backup=backup)
     if fm:
         hf = fm.hexfunc

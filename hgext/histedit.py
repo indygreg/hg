@@ -1202,7 +1202,8 @@ def _finishhistedit(ui, repo, state, fm):
         mapping = {}
 
     for n in tmpnodes:
-        mapping[n] = ()
+        if n in repo:
+            mapping[n] = ()
 
     # remove entries about unknown nodes
     nodemap = repo.unfiltered().changelog.nodemap

@@ -139,6 +139,29 @@ class StreamTests(unittest.TestCase):
             ffs(b'%d 0 0 command-response eos bar' % request.requestid))
         self.assertEqual(action, b'responsedata')
 
+class RedirectTests(unittest.TestCase):
+    def testredirect(self):
+        reactor = framing.clientreactor(buffersends=False)
+
+        redirect = {
+            b'targets': [b'a', b'b'],
+            b'hashes': [b'sha256'],
+        }
+
+        request, action, meta = reactor.callcommand(
+            b'foo', {}, redirect=redirect)
+
+        self.assertEqual(action, b'sendframes')
+
+        frames = list(meta[b'framegen'])
+        self.assertEqual(len(frames), 1)
+
+        self.assertEqual(frames[0],
+                         ffs(b'1 1 stream-begin command-request new '
+                             b"cbor:{b'name': b'foo', "
+                             b"b'redirect': {b'targets': [b'a', b'b'], "
+                             b"b'hashes': [b'sha256']}}"))
+
 if __name__ == '__main__':
     import silenttestrunner
     silenttestrunner.main(__name__)

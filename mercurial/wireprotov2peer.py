@@ -13,6 +13,7 @@ from .i18n import _
 from . import (
     encoding,
     error,
+    sslutil,
     wireprotoframing,
 )
 from .utils import (
@@ -33,6 +34,74 @@ def formatrichmessage(atoms):
         chunks.append(msg)
 
     return b''.join(chunks)
+
+SUPPORTED_REDIRECT_PROTOCOLS = {
+    b'http',
+    b'https',
+}
+
+SUPPORTED_CONTENT_HASHES = {
+    b'sha1',
+    b'sha256',
+}
+
+def redirecttargetsupported(ui, target):
+    """Determine whether a redirect target entry is supported.
+
+    ``target`` should come from the capabilities data structure emitted by
+    the server.
+    """
+    if target.get(b'protocol') not in SUPPORTED_REDIRECT_PROTOCOLS:
+        ui.note(_('(remote redirect target %s uses unsupported protocol: %s)\n')
+                % (target[b'name'], target.get(b'protocol', b'')))
+        return False
+
+    if target.get(b'snirequired') and not sslutil.hassni:
+        ui.note(_('(redirect target %s requires SNI, which is unsupported)\n') %
+                target[b'name'])
+        return False
+
+    if b'tlsversions' in target:
+        tlsversions = set(target[b'tlsversions'])
+        supported = set()
+
+        for v in sslutil.supportedprotocols:
+            assert v.startswith(b'tls')
+            supported.add(v[3:])
+
+        if not tlsversions & supported:
+            ui.note(_('(remote redirect target %s requires unsupported TLS '
+                      'versions: %s)\n') % (
+                target[b'name'], b', '.join(sorted(tlsversions))))
+            return False
+
+    ui.note(_('(remote redirect target %s is compatible)\n') % target[b'name'])
+
+    return True
+
+def supportedredirects(ui, apidescriptor):
+    """Resolve the "redirect" command request key given an API descriptor.
+
+    Given an API descriptor returned by the server, returns a data structure
+    that can be used in hte "redirect" field of command requests to advertise
+    support for compatible redirect targets.
+
+    Returns None if no redirect targets are remotely advertised or if none are
+    supported.
+    """
+    if not apidescriptor or b'redirect' not in apidescriptor:
+        return None
+
+    targets = [t[b'name'] for t in apidescriptor[b'redirect'][b'targets']
+               if redirecttargetsupported(ui, t)]
+
+    hashes = [h for h in apidescriptor[b'redirect'][b'hashes']
+              if h in SUPPORTED_CONTENT_HASHES]
+
+    return {
+        b'targets': targets,
+        b'hashes': hashes,
+    }
 
 class commandresponse(object):
     """Represents the response to a command request.
@@ -87,8 +156,11 @@ class commandresponse(object):
 
     def _handleinitial(self, o):
         self._seeninitial = True
-        if o[b'status'] == 'ok':
+        if o[b'status'] == b'ok':
             return
+
+        elif o[b'status'] == b'redirect':
+            raise error.Abort(_('redirect responses not yet supported'))
 
         atoms = [{'msg': o[b'error'][b'message']}]
         if b'args' in o[b'error']:
@@ -150,12 +222,13 @@ class clienthandler(object):
         self._responses = {}
         self._frameseof = False
 
-    def callcommand(self, command, args, f):
+    def callcommand(self, command, args, f, redirect=None):
         """Register a request to call a command.
 
         Returns an iterable of frames that should be sent over the wire.
         """
-        request, action, meta = self._reactor.callcommand(command, args)
+        request, action, meta = self._reactor.callcommand(command, args,
+                                                          redirect=redirect)
 
         if action != 'noop':
             raise error.ProgrammingError('%s not yet supported' % action)

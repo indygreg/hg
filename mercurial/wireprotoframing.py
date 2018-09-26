@@ -280,7 +280,8 @@ def readframe(fh):
                  payload)
 
 def createcommandframes(stream, requestid, cmd, args, datafh=None,
-                        maxframesize=DEFAULT_MAX_FRAME_SIZE):
+                        maxframesize=DEFAULT_MAX_FRAME_SIZE,
+                        redirect=None):
     """Create frames necessary to transmit a request to run a command.
 
     This is a generator of bytearrays. Each item represents a frame
@@ -289,6 +290,9 @@ def createcommandframes(stream, requestid, cmd, args, datafh=None,
     data = {b'name': cmd}
     if args:
         data[b'args'] = args
+
+    if redirect:
+        data[b'redirect'] = redirect
 
     data = b''.join(cborutil.streamencode(data))
 
@@ -1135,11 +1139,12 @@ class serverreactor(object):
 class commandrequest(object):
     """Represents a request to run a command."""
 
-    def __init__(self, requestid, name, args, datafh=None):
+    def __init__(self, requestid, name, args, datafh=None, redirect=None):
         self.requestid = requestid
         self.name = name
         self.args = args
         self.datafh = datafh
+        self.redirect = redirect
         self.state = 'pending'
 
 class clientreactor(object):
@@ -1178,7 +1183,7 @@ class clientreactor(object):
         self._activerequests = {}
         self._incomingstreams = {}
 
-    def callcommand(self, name, args, datafh=None):
+    def callcommand(self, name, args, datafh=None, redirect=None):
         """Request that a command be executed.
 
         Receives the command name, a dict of arguments to pass to the command,
@@ -1192,7 +1197,8 @@ class clientreactor(object):
         requestid = self._nextrequestid
         self._nextrequestid += 2
 
-        request = commandrequest(requestid, name, args, datafh=datafh)
+        request = commandrequest(requestid, name, args, datafh=datafh,
+                                 redirect=redirect)
 
         if self._buffersends:
             self._pendingrequests.append(request)
@@ -1256,7 +1262,8 @@ class clientreactor(object):
                                   request.requestid,
                                   request.name,
                                   request.args,
-                                  request.datafh)
+                                  datafh=request.datafh,
+                                  redirect=request.redirect)
 
         for frame in res:
             yield frame

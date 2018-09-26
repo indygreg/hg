@@ -508,7 +508,8 @@ class httppeer(wireprotov1peer.wirepeer):
     def _abort(self, exception):
         raise exception
 
-def sendv2request(ui, opener, requestbuilder, apiurl, permission, requests):
+def sendv2request(ui, opener, requestbuilder, apiurl, permission, requests,
+                  redirect):
     reactor = wireprotoframing.clientreactor(hasmultiplesend=False,
                                              buffersends=True)
 
@@ -525,7 +526,8 @@ def sendv2request(ui, opener, requestbuilder, apiurl, permission, requests):
     for command, args, f in requests:
         ui.debug('sending command %s: %s\n' % (
             command, stringutil.pprint(args, indent=2)))
-        assert not list(handler.callcommand(command, args, f))
+        assert not list(handler.callcommand(command, args, f,
+                                            redirect=redirect))
 
     # TODO stream this.
     body = b''.join(map(bytes, handler.flushcommands()))
@@ -567,12 +569,14 @@ class queuedcommandfuture(pycompat.futures.Future):
 
 @interfaceutil.implementer(repository.ipeercommandexecutor)
 class httpv2executor(object):
-    def __init__(self, ui, opener, requestbuilder, apiurl, descriptor):
+    def __init__(self, ui, opener, requestbuilder, apiurl, descriptor,
+                 redirect):
         self._ui = ui
         self._opener = opener
         self._requestbuilder = requestbuilder
         self._apiurl = apiurl
         self._descriptor = descriptor
+        self._redirect = redirect
         self._sent = False
         self._closed = False
         self._neededpermissions = set()
@@ -672,7 +676,7 @@ class httpv2executor(object):
 
         handler, resp = sendv2request(
             self._ui, self._opener, self._requestbuilder, self._apiurl,
-            permission, calls)
+            permission, calls, self._redirect)
 
         # TODO we probably want to validate the HTTP code, media type, etc.
 
@@ -734,6 +738,8 @@ class httpv2peer(object):
         self._requestbuilder = requestbuilder
         self._descriptor = apidescriptor
 
+        self._redirect = wireprotov2peer.supportedredirects(ui, apidescriptor)
+
     # Start of ipeerconnection.
 
     def url(self):
@@ -791,7 +797,7 @@ class httpv2peer(object):
 
     def commandexecutor(self):
         return httpv2executor(self.ui, self._opener, self._requestbuilder,
-                              self._apiurl, self._descriptor)
+                              self._apiurl, self._descriptor, self._redirect)
 
 # Registry of API service names to metadata about peers that handle it.
 #

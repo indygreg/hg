@@ -616,30 +616,22 @@ def _commonancestorheads(repo, subset, x):
     # This is an internal method is for quickly calculating "heads(::x and
     # ::y)"
 
-    # These greatest common ancestors are the same ones that the consesus bid
+    # These greatest common ancestors are the same ones that the consensus bid
     # merge will find.
-    h = heads(repo, fullreposet(repo), x, anyorder)
+    startrevs = getset(repo, fullreposet(repo), x, order=anyorder)
 
-    ancs = repo.changelog._commonancestorsheads(*list(h))
+    ancs = repo.changelog._commonancestorsheads(*list(startrevs))
     return subset & baseset(ancs)
 
 @predicate('commonancestors(set)', safe=True)
 def commonancestors(repo, subset, x):
-    """Returns all common ancestors of the set.
-
-    This method is for calculating "::x and ::y" (i.e. all the ancestors that
-    are common to both x and y) in an easy and optimized way. We can't quite
-    use "::head()" because that revset returns "::x + ::y + ..." for each head
-    in the repo (whereas we want "::x *and* ::y").
-
+    """Changesets that are ancestors of every changeset in set.
     """
-    # only wants the heads of the set passed in
-    h = heads(repo, fullreposet(repo), x, anyorder)
-    if not h:
+    startrevs = getset(repo, fullreposet(repo), x, order=anyorder)
+    if not startrevs:
         return baseset()
-    for r in h:
+    for r in startrevs:
         subset &= dagop.revancestors(repo, baseset([r]))
-
     return subset
 
 @predicate('contains(pattern)', weight=100)

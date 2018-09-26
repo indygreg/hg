@@ -1049,7 +1049,7 @@ test common ancestors
   2
   4
 
-  $ hg log -T '{rev}\n' -r 'commonancestors(head())'
+  $ hg log -T '{rev}\n' -r 'commonancestors(heads(all()))'
   0
   1
   2
@@ -1063,11 +1063,31 @@ test common ancestors
   8
   9
 
+  $ hg log -T '{rev}\n' -r 'commonancestors(8 + 9)'
+  0
+  1
+  2
+  4
+  8
+
+test the specialized implementation of heads(commonancestors(..))
+(2 gcas is tested in test-merge-criss-cross.t)
+
+  $ hg log -T '{rev}\n' -r 'heads(commonancestors(7 + 9))'
+  4
+  $ hg log -T '{rev}\n' -r 'heads(commonancestors(heads(all())))'
+  4
+  $ hg log -T '{rev}\n' -r 'heads(commonancestors(9))'
+  9
+  $ hg log -T '{rev}\n' -r 'heads(commonancestors(8 + 9))'
+  8
+
 test ancestor variants of empty revision
 
   $ log 'ancestor(none())'
   $ log 'ancestors(none())'
   $ log 'commonancestors(none())'
+  $ log 'heads(commonancestors(none()))'
 
 test ancestors with depth limit
 

@@ -137,7 +137,6 @@ from mercurial import (
     extensions,
     filelog,
     filesetlang,
-    hg,
     localrepo,
     minifileset,
     node,

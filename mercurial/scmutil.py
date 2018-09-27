@@ -968,9 +968,11 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
             isobs = unfi.obsstore.successors.__contains__
             torev = unfi.changelog.rev
             sortfunc = lambda ns: torev(ns[0])
-            rels = [(unfi[n], tuple(unfi[m] for m in s))
-                    for n, s in sorted(replacements.items(), key=sortfunc)
-                    if s or not isobs(n)]
+            rels = []
+            for n, s in sorted(replacements.items(), key=sortfunc):
+                if s or not isobs(n):
+                    rel = (unfi[n], tuple(unfi[m] for m in s))
+                    rels.append(rel)
             if rels:
                 obsolete.createmarkers(repo, rels, operation=operation,
                                        metadata=metadata)

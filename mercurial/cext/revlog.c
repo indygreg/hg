@@ -2290,6 +2290,152 @@ bail:
 	return NULL;
 }
 
+#ifdef WITH_RUST
+
+/* rustlazyancestors: iteration over ancestors implemented in Rust
+ *
+ * This class holds a reference to an index and to the Rust iterator.
+ */
+typedef struct rustlazyancestorsObjectStruct rustlazyancestorsObject;
+
+struct rustlazyancestorsObjectStruct {
+	PyObject_HEAD
+	/* Type-specific fields go here. */
+	indexObject *index;    /* Ref kept to avoid GC'ing the index */
+	void *iter;        /* Rust iterator */
+};
+
+/* FFI exposed from Rust code */
+rustlazyancestorsObject *rustlazyancestors_init(
+	indexObject *index,
+	/* to pass index_get_parents() */
+	int (*)(indexObject *, Py_ssize_t, int*, int),
+	/* intrevs vector */
+	int initrevslen, long *initrevs,
+	long stoprev,
+	int inclusive);
+void rustlazyancestors_drop(rustlazyancestorsObject *self);
+int rustlazyancestors_next(rustlazyancestorsObject *self);
+
+/* CPython instance methods */
+static int rustla_init(rustlazyancestorsObject *self,
+                       PyObject *args) {
+	PyObject *initrevsarg = NULL;
+	PyObject *inclusivearg = NULL;
+	long stoprev = 0;
+	long *initrevs = NULL;
+	int inclusive = 0;
+	Py_ssize_t i;
+
+	indexObject *index;
+	if (!PyArg_ParseTuple(args, "O!O!lO!",
+			      &indexType, &index,
+                              &PyList_Type, &initrevsarg,
+                              &stoprev,
+                              &PyBool_Type, &inclusivearg))
+	return -1;
+
+	Py_INCREF(index);
+	self->index = index;
+
+	if (inclusivearg == Py_True)
+		inclusive = 1;
+
+	Py_ssize_t linit = PyList_GET_SIZE(initrevsarg);
+
+	initrevs = (long*)calloc(linit, sizeof(long));
+
+	if (initrevs == NULL) {
+		PyErr_NoMemory();
+		goto bail;
+	}
+
+	for (i=0; i<linit; i++) {
+		initrevs[i] = PyInt_AsLong(PyList_GET_ITEM(initrevsarg, i));
+	}
+	if (PyErr_Occurred())
+		goto bail;
+
+	self->iter = rustlazyancestors_init(index,
+		                            index_get_parents,
+		                            linit, initrevs,
+		                            stoprev, inclusive);
+	if (self->iter == NULL) {
+		/* if this is because of GraphError::ParentOutOfRange
+		 * index_get_parents() has already set the proper ValueError */
+		goto bail;
+	}
+
+	free(initrevs);
+	return 0;
+
+bail:
+	free(initrevs);
+	return -1;
+};
+
+static void rustla_dealloc(rustlazyancestorsObject *self)
+{
+	Py_XDECREF(self->index);
+	if (self->iter != NULL) { /* can happen if rustla_init failed */
+		rustlazyancestors_drop(self->iter);
+	}
+	PyObject_Del(self);
+}
+
+static PyObject *rustla_next(rustlazyancestorsObject *self) {
+	int res = rustlazyancestors_next(self->iter);
+	if (res == -1) {
+		/* Setting an explicit exception seems unnecessary
+		 * as examples from Python source code (Objects/rangeobjets.c and
+		 * Modules/_io/stringio.c) seem to demonstrate.
+		 */
+		return NULL;
+	}
+	return PyInt_FromLong(res);
+}
+
+static PyTypeObject rustlazyancestorsType = {
+	PyVarObject_HEAD_INIT(NULL, 0) /* header */
+	"parsers.rustlazyancestors",           /* tp_name */
+	sizeof(rustlazyancestorsObject),       /* tp_basicsize */
+	0,                         /* tp_itemsize */
+	(destructor)rustla_dealloc, /* tp_dealloc */
+	0,                         /* tp_print */
+	0,                         /* tp_getattr */
+	0,                         /* tp_setattr */
+	0,                         /* tp_compare */
+	0,                         /* tp_repr */
+	0,                         /* tp_as_number */
+	0,                         /* tp_as_sequence */
+	0,                         /* tp_as_mapping */
+	0,                         /* tp_hash */
+	0,                         /* tp_call */
+	0,                         /* tp_str */
+	0,                         /* tp_getattro */
+	0,                         /* tp_setattro */
+	0,                         /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,        /* tp_flags */
+	"Iterator over ancestors, implemented in Rust", /* tp_doc */
+	0,                         /* tp_traverse */
+	0,                         /* tp_clear */
+	0,                         /* tp_richcompare */
+	0,                         /* tp_weaklistoffset */
+	0,                         /* tp_iter */
+	(iternextfunc)rustla_next, /* tp_iternext */
+	0,                         /* tp_methods */
+	0,                         /* tp_members */
+	0,                         /* tp_getset */
+	0,                         /* tp_base */
+	0,                         /* tp_dict */
+	0,                         /* tp_descr_get */
+	0,                         /* tp_descr_set */
+	0,                         /* tp_dictoffset */
+	(initproc)rustla_init,     /* tp_init */
+	0,                         /* tp_alloc */
+};
+#endif /* WITH_RUST */
+
 void revlog_module_init(PyObject *mod)
 {
 	indexType.tp_new = PyType_GenericNew;
@@ -2310,4 +2456,14 @@ void revlog_module_init(PyObject *mod)
 	}
 	if (nullentry)
 		PyObject_GC_UnTrack(nullentry);
+
+#ifdef WITH_RUST
+	rustlazyancestorsType.tp_new = PyType_GenericNew;
+	if (PyType_Ready(&rustlazyancestorsType) < 0)
+		return;
+	Py_INCREF(&rustlazyancestorsType);
+	PyModule_AddObject(mod, "rustlazyancestors",
+		(PyObject *)&rustlazyancestorsType);
+#endif
+
 }

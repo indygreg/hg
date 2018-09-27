@@ -132,6 +132,8 @@ else:
 
 ispypy = "PyPy" in sys.version
 
+iswithrustextensions = 'HGWITHRUSTEXT' in os.environ
+
 import ctypes
 import stat, subprocess, time
 import re
@@ -460,6 +462,8 @@ class hgbuildext(build_ext):
         return build_ext.build_extensions(self)
 
     def build_extension(self, ext):
+        if isinstance(ext, RustExtension):
+            ext.rustbuild()
         try:
             build_ext.build_extension(self, ext)
         except CCompilerError:
@@ -884,6 +888,54 @@ xdiff_headers = [
     'mercurial/thirdparty/xdiff/xutils.h',
 ]
 
+class RustExtension(Extension):
+    """A C Extension, conditionnally enhanced with Rust code.
+
+    if iswithrustextensions is False, does nothing else than plain Extension
+    """
+
+    rusttargetdir = os.path.join('rust', 'target', 'release')
+
+    def __init__(self, mpath, sources, rustlibname, subcrate, **kw):
+        Extension.__init__(self, mpath, sources, **kw)
+        if not iswithrustextensions:
+            return
+        srcdir = self.rustsrcdir = os.path.join('rust', subcrate)
+        self.libraries.append(rustlibname)
+        self.extra_compile_args.append('-DWITH_RUST')
+
+        # adding Rust source and control files to depends so that the extension
+        # gets rebuilt if they've changed
+        self.depends.append(os.path.join(srcdir, 'Cargo.toml'))
+        cargo_lock = os.path.join(srcdir, 'Cargo.lock')
+        if os.path.exists(cargo_lock):
+            self.depends.append(cargo_lock)
+        for dirpath, subdir, fnames in os.walk(os.path.join(srcdir, 'src')):
+            self.depends.extend(os.path.join(dirpath, fname)
+                                for fname in fnames
+                                if os.path.splitext(fname)[1] == '.rs')
+
+    def rustbuild(self):
+        if not iswithrustextensions:
+            return
+        env = os.environ.copy()
+        if 'HGTEST_RESTOREENV' in env:
+            # Mercurial tests change HOME to a temporary directory,
+            # but, if installed with rustup, the Rust toolchain needs
+            # HOME to be correct (otherwise the 'no default toolchain'
+            # error message is issued and the build fails).
+            # This happens currently with test-hghave.t, which does
+            # invoke this build.
+
+            # Unix only fix (os.path.expanduser not really reliable if
+            # HOME is shadowed like this)
+            import pwd
+            env['HOME'] = pwd.getpwuid(os.getuid()).pw_dir
+
+        subprocess.check_call(['cargo', 'build', '-vv', '--release'],
+                              env=env, cwd=self.rustsrcdir)
+        self.library_dirs.append(self.rusttargetdir)
+
 extmodules = [
     Extension('mercurial.cext.base85', ['mercurial/cext/base85.c'],
               include_dirs=common_include_dirs,
@@ -896,14 +948,19 @@ extmodules = [
                                         'mercurial/cext/mpatch.c'],
               include_dirs=common_include_dirs,
               depends=common_depends),
-    Extension('mercurial.cext.parsers', ['mercurial/cext/charencode.c',
-                                         'mercurial/cext/dirs.c',
-                                         'mercurial/cext/manifest.c',
-                                         'mercurial/cext/parsers.c',
-                                         'mercurial/cext/pathencode.c',
-                                         'mercurial/cext/revlog.c'],
-              include_dirs=common_include_dirs,
-              depends=common_depends + ['mercurial/cext/charencode.h']),
+    RustExtension('mercurial.cext.parsers', ['mercurial/cext/charencode.c',
+                                             'mercurial/cext/dirs.c',
+                                             'mercurial/cext/manifest.c',
+                                             'mercurial/cext/parsers.c',
+                                             'mercurial/cext/pathencode.c',
+                                             'mercurial/cext/revlog.c'],
+                  'hgdirectffi',
+                  'hg-direct-ffi',
+                  include_dirs=common_include_dirs,
+                  depends=common_depends + ['mercurial/cext/charencode.h',
+                                            'mercurial/rust/src/lib.rs',
+                                            'mercurial/rust/src/ancestors.rs',
+                                            'mercurial/rust/src/cpython.rs']),
     Extension('mercurial.cext.osutil', ['mercurial/cext/osutil.c'],
               include_dirs=common_include_dirs,
               extra_compile_args=osutil_cflags,

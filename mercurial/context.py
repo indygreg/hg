@@ -242,7 +242,7 @@ class basectx(object):
         parents = self._parents
         if len(parents) == 2:
             return parents[1]
-        return changectx(self._repo, nullrev)
+        return self._repo[nullrev]
 
     def _fileinfo(self, path):
         if r'_manifest' in self.__dict__:
@@ -482,8 +482,8 @@ class changectx(basectx):
         repo = self._repo
         p1, p2 = repo.changelog.parentrevs(self._rev)
         if p2 == nullrev:
-            return [changectx(repo, p1)]
-        return [changectx(repo, p1), changectx(repo, p2)]
+            return [repo[p1]]
+        return [repo[p1], repo[p2]]
 
     def changeset(self):
         c = self._changeset
@@ -534,11 +534,11 @@ class changectx(basectx):
         recursively walk children.
         """
         c = self._repo.changelog.children(self._node)
-        return [changectx(self._repo, x) for x in c]
+        return [self._repo[x] for x in c]
 
     def ancestors(self):
         for a in self._repo.changelog.ancestors([self._rev]):
-            yield changectx(self._repo, a)
+            yield self._repo[a]
 
     def descendants(self):
         """Recursively yield all children of the changeset.
@@ -546,7 +546,7 @@ class changectx(basectx):
         For just the immediate children, use children()
         """
         for d in self._repo.changelog.descendants([self._rev]):
-            yield changectx(self._repo, d)
+            yield self._repo[d]
 
     def filectx(self, path, fileid=None, filelog=None):
         """get a file context from this changeset"""
@@ -589,7 +589,7 @@ class changectx(basectx):
                     ''.join(_("      alternatively, use --config "
                               "merge.preferancestor=%s\n") %
                             short(n) for n in sorted(cahs) if n != anc))
-        return changectx(self._repo, anc)
+        return self._repo[anc]
 
     def isancestorof(self, other):
         """True if this changeset is an ancestor of other"""
@@ -992,7 +992,7 @@ class filectx(basefilectx):
     @propertycache
     def _changectx(self):
         try:
-            return changectx(self._repo, self._changeid)
+            return self._repo[self._changeid]
         except error.FilteredRepoLookupError:
             # Linkrev may point to any revision in the repository.  When the
             # repository is filtered this may lead to `filectx` trying to build
@@ -1010,7 +1010,7 @@ class filectx(basefilectx):
             # Linkrevs have several serious troubles with filtering that are
             # complicated to solve. Proper handling of the issue here should be
             # considered when solving linkrev issue are on the table.
-            return changectx(self._repo.unfiltered(), self._changeid)
+            return self._repo.unfiltered()[self._changeid]
 
     def filectx(self, fileid, changeid=None):
         '''opens an arbitrary revision of the file without
@@ -1244,7 +1244,7 @@ class committablectx(basectx):
             yield p
         for a in self._repo.changelog.ancestors(
             [p.rev() for p in self._parents]):
-            yield changectx(self._repo, a)
+            yield self._repo[a]
 
     def markcommitted(self, node):
         """Perform post-commit cleanup necessary after committing this ctx
@@ -1301,7 +1301,7 @@ class workingctx(committablectx):
         p = self._repo.dirstate.parents()
         if p[1] == nullid:
             p = p[:-1]
-        return [changectx(self._repo, x) for x in p]
+        return [self._repo[x] for x in p]
 
     def _fileinfo(self, path):
         # populate __dict__['_manifest'] as workingctx has no _manifestdelta

@@ -1210,7 +1210,7 @@ class localrepository(object):
             return changeid
         if isinstance(changeid, slice):
             # wdirrev isn't contiguous so the slice shouldn't include it
-            return [context.changectx(self, i)
+            return [self[i]
                     for i in pycompat.xrange(*changeid.indices(len(self)))
                     if i not in self.changelog.filteredrevs]
         try:

@@ -875,39 +875,52 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
 
     # translate mapping's other forms
     if not util.safehasattr(replacements, 'items'):
-        replacements = {n: () for n in replacements}
+        replacements = {(n,): () for n in replacements}
+    else:
+        # upgrading non tuple "source" to tuple ones for BC
+        repls = {}
+        for key, value in replacements.items():
+            if not isinstance(key, tuple):
+                key = (key,)
+            repls[key] = value
+        replacements = repls
 
     # Calculate bookmark movements
     if moves is None:
         moves = {}
     # Unfiltered repo is needed since nodes in replacements might be hidden.
     unfi = repo.unfiltered()
-    for oldnode, newnodes in replacements.items():
-        if oldnode in moves:
-            continue
-        if len(newnodes) > 1:
-            # usually a split, take the one with biggest rev number
-            newnode = next(unfi.set('max(%ln)', newnodes)).node()
-        elif len(newnodes) == 0:
-            # move bookmark backwards
-            roots = list(unfi.set('max((::%n) - %ln)', oldnode,
-                                  list(replacements)))
-            if roots:
-                newnode = roots[0].node()
+    for oldnodes, newnodes in replacements.items():
+        for oldnode in oldnodes:
+            if oldnode in moves:
+                continue
+            if len(newnodes) > 1:
+                # usually a split, take the one with biggest rev number
+                newnode = next(unfi.set('max(%ln)', newnodes)).node()
+            elif len(newnodes) == 0:
+                # move bookmark backwards
+                allreplaced = []
+                for rep in replacements:
+                    allreplaced.extend(rep)
+                roots = list(unfi.set('max((::%n) - %ln)', oldnode,
+                                      allreplaced))
+                if roots:
+                    newnode = roots[0].node()
+                else:
+                    newnode = nullid
             else:
-                newnode = nullid
-        else:
-            newnode = newnodes[0]
-        moves[oldnode] = newnode
+                newnode = newnodes[0]
+            moves[oldnode] = newnode
 
     allnewnodes = [n for ns in replacements.values() for n in ns]
     toretract = {}
     toadvance = {}
     if fixphase:
         precursors = {}
-        for oldnode, newnodes in replacements.items():
-            for newnode in newnodes:
-                precursors.setdefault(newnode, []).append(oldnode)
+        for oldnodes, newnodes in replacements.items():
+            for oldnode in oldnodes:
+                for newnode in newnodes:
+                    precursors.setdefault(newnode, []).append(oldnode)
 
         allnewnodes.sort(key=lambda n: unfi[n].rev())
         newphases = {}
@@ -967,18 +980,19 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
             # NOTE: the filtering and sorting might belong to createmarkers.
             isobs = unfi.obsstore.successors.__contains__
             torev = unfi.changelog.rev
-            sortfunc = lambda ns: torev(ns[0])
+            sortfunc = lambda ns: torev(ns[0][0])
             rels = []
-            for n, s in sorted(replacements.items(), key=sortfunc):
-                if s or not isobs(n):
-                    rel = (unfi[n], tuple(unfi[m] for m in s))
-                    rels.append(rel)
+            for ns, s in sorted(replacements.items(), key=sortfunc):
+                for n in ns:
+                    if s or not isobs(n):
+                        rel = (unfi[n], tuple(unfi[m] for m in s))
+                        rels.append(rel)
             if rels:
                 obsolete.createmarkers(repo, rels, operation=operation,
                                        metadata=metadata)
         else:
             from . import repair # avoid import cycle
-            tostrip = list(replacements)
+            tostrip = list(n for ns in replacements for n in ns)
             if tostrip:
                 repair.delayedstrip(repo.ui, repo, tostrip, operation,
                                     backup=backup)

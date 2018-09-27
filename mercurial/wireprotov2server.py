@@ -7,6 +7,7 @@
 from __future__ import absolute_import
 
 import contextlib
+import hashlib
 
 from .i18n import _
 from .node import (
@@ -25,6 +26,7 @@ from . import (
     wireprototypes,
 )
 from .utils import (
+    cborutil,
     interfaceutil,
     stringutil,
 )
@@ -34,6 +36,11 @@ FRAMINGTYPE = b'application/mercurial-exp-framing-0005'
 HTTP_WIREPROTO_V2 = wireprototypes.HTTP_WIREPROTO_V2
 
 COMMANDS = wireprototypes.commanddict()
+
+# Value inserted into cache key computation function. Change the value to
+# force new cache keys for every command request. This should be done when
+# there is a change to how caching works, etc.
+GLOBAL_CACHE_VERSION = 1
 
 def handlehttpv2request(rctx, req, res, checkperm, urlparts):
     from .hgweb import common as hgwebcommon
@@ -333,12 +340,64 @@ def getdispatchrepo(repo, proto, command):
     return repo.filtered('served')
 
 def dispatch(repo, proto, command):
+    """Run a wire protocol command.
+
+    Returns an iterable of objects that will be sent to the client.
+    """
     repo = getdispatchrepo(repo, proto, command)
 
-    func, spec = COMMANDS[command]
+    entry = COMMANDS[command]
+    func = entry.func
+    spec = entry.args
+
     args = proto.getargs(spec)
 
-    return func(repo, proto, **pycompat.strkwargs(args))
+    # There is some duplicate boilerplate code here for calling the command and
+    # emitting objects. It is either that or a lot of indented code that looks
+    # like a pyramid (since there are a lot of code paths that result in not
+    # using the cacher).
+    callcommand = lambda: func(repo, proto, **pycompat.strkwargs(args))
+
+    # Request is not cacheable. Don't bother instantiating a cacher.
+    if not entry.cachekeyfn:
+        for o in callcommand():
+            yield o
+        return
+
+    cacher = makeresponsecacher(repo, proto, command, args,
+                                cborutil.streamencode)
+
+    # But we have no cacher. Do default handling.
+    if not cacher:
+        for o in callcommand():
+            yield o
+        return
+
+    with cacher:
+        cachekey = entry.cachekeyfn(repo, proto, cacher, **args)
+
+        # No cache key or the cacher doesn't like it. Do default handling.
+        if cachekey is None or not cacher.setcachekey(cachekey):
+            for o in callcommand():
+                yield o
+            return
+
+        # Serve it from the cache, if possible.
+        cached = cacher.lookup()
+
+        if cached:
+            for o in cached['objs']:
+                yield o
+            return
+
+        # Else call the command and feed its output into the cacher, allowing
+        # the cacher to buffer/mutate objects as it desires.
+        for o in callcommand():
+            for o in cacher.onobject(o):
+                yield o
+
+        for o in cacher.onfinished():
+            yield o
 
 @interfaceutil.implementer(wireprototypes.baseprotocolhandler)
 class httpv2protocolhandler(object):
@@ -460,7 +519,7 @@ def _capabilitiesv2(repo, proto):
 
     return proto.addcapabilities(repo, caps)
 
-def wireprotocommand(name, args=None, permission='push'):
+def wireprotocommand(name, args=None, permission='push', cachekeyfn=None):
     """Decorator to declare a wire protocol command.
 
     ``name`` is the name of the wire protocol command being provided.
@@ -489,11 +548,21 @@ def wireprotocommand(name, args=None, permission='push'):
     because otherwise commands not declaring their permissions could modify
     a repository that is supposed to be read-only.
 
+    ``cachekeyfn`` defines an optional callable that can derive the
+    cache key for this request.
+
     Wire protocol commands are generators of objects to be serialized and
     sent to the client.
 
     If a command raises an uncaught exception, this will be translated into
     a command error.
+
+    All commands can opt in to being cacheable by defining a function
+    (``cachekeyfn``) that is called to derive a cache key. This function
+    receives the same arguments as the command itself plus a ``cacher``
+    argument containing the active cacher for the request and returns a bytes
+    containing the key in a cache the response to this command may be cached
+    under.
     """
     transports = {k for k, v in wireprototypes.TRANSPORTS.items()
                   if v['version'] == 2}
@@ -543,11 +612,96 @@ def wireprotocommand(name, args=None, permission='push'):
                                          'for version 2' % name)
 
         COMMANDS[name] = wireprototypes.commandentry(
-            func, args=args, transports=transports, permission=permission)
+            func, args=args, transports=transports, permission=permission,
+            cachekeyfn=cachekeyfn)
 
         return func
 
     return register
+
+def makecommandcachekeyfn(command, localversion=None, allargs=False):
+    """Construct a cache key derivation function with common features.
+
+    By default, the cache key is a hash of:
+
+    * The command name.
+    * A global cache version number.
+    * A local cache version number (passed via ``localversion``).
+    * All the arguments passed to the command.
+    * The media type used.
+    * Wire protocol version string.
+    * The repository path.
+    """
+    if not allargs:
+        raise error.ProgrammingError('only allargs=True is currently supported')
+
+    if localversion is None:
+        raise error.ProgrammingError('must set localversion argument value')
+
+    def cachekeyfn(repo, proto, cacher, **args):
+        spec = COMMANDS[command]
+
+        # Commands that mutate the repo can not be cached.
+        if spec.permission == 'push':
+            return None
+
+        # TODO config option to disable caching.
+
+        # Our key derivation strategy is to construct a data structure
+        # holding everything that could influence cacheability and to hash
+        # the CBOR representation of that. Using CBOR seems like it might
+        # be overkill. However, simpler hashing mechanisms are prone to
+        # duplicate input issues. e.g. if you just concatenate two values,
+        # "foo"+"bar" is identical to "fo"+"obar". Using CBOR provides
+        # "padding" between values and prevents these problems.
+
+        # Seed the hash with various data.
+        state = {
+            # To invalidate all cache keys.
+            b'globalversion': GLOBAL_CACHE_VERSION,
+            # More granular cache key invalidation.
+            b'localversion': localversion,
+            # Cache keys are segmented by command.
+            b'command': pycompat.sysbytes(command),
+            # Throw in the media type and API version strings so changes
+            # to exchange semantics invalid cache.
+            b'mediatype': FRAMINGTYPE,
+            b'version': HTTP_WIREPROTO_V2,
+            # So same requests for different repos don't share cache keys.
+            b'repo': repo.root,
+        }
+
+        # The arguments passed to us will have already been normalized.
+        # Default values will be set, etc. This is important because it
+        # means that it doesn't matter if clients send an explicit argument
+        # or rely on the default value: it will all normalize to the same
+        # set of arguments on the server and therefore the same cache key.
+        #
+        # Arguments by their very nature must support being encoded to CBOR.
+        # And the CBOR encoder is deterministic. So we hash the arguments
+        # by feeding the CBOR of their representation into the hasher.
+        if allargs:
+            state[b'args'] = pycompat.byteskwargs(args)
+
+        cacher.adjustcachekeystate(state)
+
+        hasher = hashlib.sha1()
+        for chunk in cborutil.streamencode(state):
+            hasher.update(chunk)
+
+        return pycompat.sysbytes(hasher.hexdigest())
+
+    return cachekeyfn
+
+def makeresponsecacher(repo, proto, command, args, objencoderfn):
+    """Construct a cacher for a cacheable command.
+
+    Returns an ``iwireprotocolcommandcacher`` instance.
+
+    Extensions can monkeypatch this function to provide custom caching
+    backends.
+    """
+    return None
 
 @wireprotocommand('branchmap', permission='pull')
 def branchmapv2(repo, proto):
@@ -755,7 +909,11 @@ def getfilestore(repo, proto, path):
             'example': b'foo.txt',
         }
     },
-    permission='pull')
+    permission='pull',
+    # TODO censoring a file revision won't invalidate the cache.
+    # Figure out a way to take censoring into account when deriving
+    # the cache key.
+    cachekeyfn=makecommandcachekeyfn('filedata', 1, allargs=True))
 def filedata(repo, proto, haveparents, nodes, fields, path):
     try:
         # Extensions may wish to access the protocol handler.
@@ -893,7 +1051,8 @@ def lookupv2(repo, proto, key):
             'example': b'',
         },
     },
-    permission='pull')
+    permission='pull',
+    cachekeyfn=makecommandcachekeyfn('manifestdata', 1, allargs=True))
 def manifestdata(repo, proto, haveparents, nodes, fields, tree):
     store = repo.manifestlog.getstorage(tree)
 

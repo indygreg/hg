@@ -1657,3 +1657,160 @@ class ilocalrepositorymain(interfaceutil.Interface):
 class completelocalrepository(ilocalrepositorymain,
                               ilocalrepositoryfilestorage):
     """Complete interface for a local repository."""
+
+class iwireprotocolcommandcacher(interfaceutil.Interface):
+    """Represents a caching backend for wire protocol commands.
+
+    Wire protocol version 2 supports transparent caching of many commands.
+    To leverage this caching, servers can activate objects that cache
+    command responses. Objects handle both cache writing and reading.
+    This interface defines how that response caching mechanism works.
+
+    Wire protocol version 2 commands emit a series of objects that are
+    serialized and sent to the client. The caching layer exists between
+    the invocation of the command function and the sending of its output
+    objects to an output layer.
+
+    Instances of this interface represent a binding to a cache that
+    can serve a response (in place of calling a command function) and/or
+    write responses to a cache for subsequent use.
+
+    When a command request arrives, the following happens with regards
+    to this interface:
+
+    1. The server determines whether the command request is cacheable.
+    2. If it is, an instance of this interface is spawned.
+    3. The cacher is activated in a context manager (``__enter__`` is called).
+    4. A cache *key* for that request is derived. This will call the
+       instance's ``adjustcachekeystate()`` method so the derivation
+       can be influenced.
+    5. The cacher is informed of the derived cache key via a call to
+       ``setcachekey()``.
+    6. The cacher's ``lookup()`` method is called to test for presence of
+       the derived key in the cache.
+    7. If ``lookup()`` returns a hit, that cached result is used in place
+       of invoking the command function. ``__exit__`` is called and the instance
+       is discarded.
+    8. The command function is invoked.
+    9. ``onobject()`` is called for each object emitted by the command
+       function.
+    10. After the final object is seen, ``onoutputfinished()`` is called.
+    11. ``__exit__`` is called to signal the end of use of the instance.
+
+    Cache *key* derivation can be influenced by the instance.
+
+    Cache keys are initially derived by a deterministic representation of
+    the command request. This includes the command name, arguments, protocol
+    version, etc. This initial key derivation is performed by CBOR-encoding a
+    data structure and feeding that output into a hasher.
+
+    Instances of this interface can influence this initial key derivation
+    via ``adjustcachekeystate()``.
+
+    The instance is informed of the derived cache key via a call to
+    ``setcachekey()``. The instance must store the key locally so it can
+    be consulted on subsequent operations that may require it.
+
+    When constructed, the instance has access to a callable that can be used
+    for encoding response objects. This callable receives as its single
+    argument an object emitted by a command function. It returns an iterable
+    of bytes chunks representing the encoded object. Unless the cacher is
+    caching native Python objects in memory or has a way of reconstructing
+    the original Python objects, implementations typically call this function
+    to produce bytes from the output objects and then store those bytes in
+    the cache. When it comes time to re-emit those bytes, they are wrapped
+    in a ``wireprototypes.encodedresponse`` instance to tell the output
+    layer that they are pre-encoded.
+
+    When receiving the objects emitted by the command function, instances
+    can choose what to do with those objects. The simplest thing to do is
+    re-emit the original objects. They will be forwarded to the output
+    layer and will be processed as if the cacher did not exist.
+
+    Implementations could also choose to not emit objects - instead locally
+    buffering objects or their encoded representation. They could then emit
+    a single "coalesced" object when ``onoutputfinished()`` is called. In
+    this way, the implementation would function as a filtering layer of
+    sorts.
+
+    When caching objects, typically the encoded form of the object will
+    be stored. Keep in mind that if the original object is forwarded to
+    the output layer, it will need to be encoded there as well. For large
+    output, this redundant encoding could add overhead. Implementations
+    could wrap the encoded object data in ``wireprototypes.encodedresponse``
+    instances to avoid this overhead.
+    """
+    def __enter__():
+        """Marks the instance as active.
+
+        Should return self.
+        """
+
+    def __exit__(exctype, excvalue, exctb):
+        """Called when cacher is no longer used.
+
+        This can be used by implementations to perform cleanup actions (e.g.
+        disconnecting network sockets, aborting a partially cached response.
+        """
+
+    def adjustcachekeystate(state):
+        """Influences cache key derivation by adjusting state to derive key.
+
+        A dict defining the state used to derive the cache key is passed.
+
+        Implementations can modify this dict to record additional state that
+        is wanted to influence key derivation.
+
+        Implementations are *highly* encouraged to not modify or delete
+        existing keys.
+        """
+
+    def setcachekey(key):
+        """Record the derived cache key for this request.
+
+        Instances may mutate the key for internal usage, as desired. e.g.
+        instances may wish to prepend the repo name, introduce path
+        components for filesystem or URL addressing, etc. Behavior is up to
+        the cache.
+
+        Returns a bool indicating if the request is cacheable by this
+        instance.
+        """
+
+    def lookup():
+        """Attempt to resolve an entry in the cache.
+
+        The instance is instructed to look for the cache key that it was
+        informed about via the call to ``setcachekey()``.
+
+        If there's no cache hit or the cacher doesn't wish to use the cached
+        entry, ``None`` should be returned.
+
+        Else, a dict defining the cached result should be returned. The
+        dict may have the following keys:
+
+        objs
+           An iterable of objects that should be sent to the client. That
+           iterable of objects is expected to be what the command function
+           would return if invoked or an equivalent representation thereof.
+        """
+
+    def onobject(obj):
+        """Called when a new object is emitted from the command function.
+
+        Receives as its argument the object that was emitted from the
+        command function.
+
+        This method returns an iterator of objects to forward to the output
+        layer. The easiest implementation is a generator that just
+        ``yield obj``.
+        """
+
+    def onfinished():
+        """Called after all objects have been emitted from the command function.
+
+        Implementations should return an iterator of objects to forward to
+        the output layer.
+
+        This method can be a generator.
+        """

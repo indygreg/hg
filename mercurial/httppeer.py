@@ -513,7 +513,9 @@ def sendv2request(ui, opener, requestbuilder, apiurl, permission, requests,
     reactor = wireprotoframing.clientreactor(hasmultiplesend=False,
                                              buffersends=True)
 
-    handler = wireprotov2peer.clienthandler(ui, reactor)
+    handler = wireprotov2peer.clienthandler(ui, reactor,
+                                            opener=opener,
+                                            requestbuilder=requestbuilder)
 
     url = '%s/%s' % (apiurl, permission)
 

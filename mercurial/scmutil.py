@@ -21,6 +21,7 @@ from .node import (
     bin,
     hex,
     nullid,
+    nullrev,
     short,
     wdirid,
     wdirrev,
@@ -730,7 +731,7 @@ def meaningfulparents(repo, ctx):
     if len(parents) > 1:
         return parents
     if repo.ui.debugflag:
-        return [parents[0], repo['null']]
+        return [parents[0], repo[nullrev]]
     if parents[0].rev() >= intrev(ctx) - 1:
         return []
     return parents

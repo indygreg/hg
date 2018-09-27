@@ -16,6 +16,9 @@ import zipfile
 import zlib
 
 from .i18n import _
+from .node import (
+    nullrev,
+)
 
 from . import (
     error,
@@ -76,7 +79,7 @@ def _rootctx(repo):
     # repo[0] may be hidden
     for rev in repo:
         return repo[rev]
-    return repo['null']
+    return repo[nullrev]
 
 # {tags} on ctx includes local tags and 'tip', with no current way to limit
 # that to global tags.  Therefore, use {latesttag} as a substitute when

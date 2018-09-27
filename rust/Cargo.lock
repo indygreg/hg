@@ -30,6 +30,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "hgdirectffi"
+version = "0.1.0"
+dependencies = [
+ "hg-core 0.1.0",
+ "libc 0.2.35 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "kernel32-sys"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

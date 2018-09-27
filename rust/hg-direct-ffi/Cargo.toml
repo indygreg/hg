@@ -1,0 +1,12 @@
+[package]
+name = "hgdirectffi"
+version = "0.1.0"
+authors = ["Georges Racinet <gracinet@anybox.fr>"]
+description = "Low level Python bindings for hg-core, going through existing C extensions"
+
+[dependencies]
+libc = "*"
+hg-core = { path = "../hg-core" }
+
+[lib]
+crate-type = ["staticlib"]

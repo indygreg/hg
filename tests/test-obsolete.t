@@ -806,6 +806,7 @@ check hgweb does not explode
   adding file changes
   added 62 changesets with 63 changes to 9 files (+60 heads)
   new changesets 50c51b361e60:c15e9edfca13 (62 drafts)
+  (2 other changesets obsolete on arrival)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
   $ for node in `hg log -r 'desc(babar_)' --template '{node}\n'`;
   > do

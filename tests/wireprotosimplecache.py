@@ -17,6 +17,7 @@ from mercurial import (
 )
 from mercurial.utils import (
     interfaceutil,
+    stringutil,
 )
 
 CACHE = None
@@ -26,6 +27,8 @@ configitem = registrar.configitem(configtable)
 
 configitem('simplecache', 'cacheobjects',
            default=False)
+configitem('simplecache', 'redirectsfile',
+           default=None)
 
 @interfaceutil.implementer(repository.iwireprotocolcommandcacher)
 class memorycacher(object):
@@ -91,6 +94,19 @@ class memorycacher(object):
 def makeresponsecacher(orig, repo, proto, command, args, objencoderfn):
     return memorycacher(repo.ui, command, objencoderfn)
 
+def loadredirecttargets(ui):
+    path = ui.config('simplecache', 'redirectsfile')
+    if not path:
+        return []
+
+    with open(path, 'rb') as fh:
+        s = fh.read()
+
+    return stringutil.evalpythonliteral(s)
+
+def getadvertisedredirecttargets(orig, repo, proto):
+    return loadredirecttargets(repo.ui)
+
 def extsetup(ui):
     global CACHE
 
@@ -98,3 +114,5 @@ def extsetup(ui):
 
     extensions.wrapfunction(wireprotov2server, 'makeresponsecacher',
                             makeresponsecacher)
+    extensions.wrapfunction(wireprotov2server, 'getadvertisedredirecttargets',
+                            getadvertisedredirecttargets)

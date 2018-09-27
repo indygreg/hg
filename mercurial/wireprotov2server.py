@@ -517,7 +517,65 @@ def _capabilitiesv2(repo, proto):
         caps['rawrepoformats'] = sorted(repo.requirements &
                                         repo.supportedformats)
 
+    targets = getadvertisedredirecttargets(repo, proto)
+    if targets:
+        caps[b'redirect'] = {
+            b'targets': [],
+            b'hashes': [b'sha256', b'sha1'],
+        }
+
+        for target in targets:
+            entry = {
+                b'name': target['name'],
+                b'protocol': target['protocol'],
+                b'uris': target['uris'],
+            }
+
+            for key in ('snirequired', 'tlsversions'):
+                if key in target:
+                    entry[key] = target[key]
+
+            caps[b'redirect'][b'targets'].append(entry)
+
     return proto.addcapabilities(repo, caps)
+
+def getadvertisedredirecttargets(repo, proto):
+    """Obtain a list of content redirect targets.
+
+    Returns a list containing potential redirect targets that will be
+    advertised in capabilities data. Each dict MUST have the following
+    keys:
+
+    name
+       The name of this redirect target. This is the identifier clients use
+       to refer to a target. It is transferred as part of every command
+       request.
+
+    protocol
+       Network protocol used by this target. Typically this is the string
+       in front of the ``://`` in a URL. e.g. ``https``.
+
+    uris
+       List of representative URIs for this target. Clients can use the
+       URIs to test parsing for compatibility or for ordering preference
+       for which target to use.
+
+    The following optional keys are recognized:
+
+    snirequired
+       Bool indicating if Server Name Indication (SNI) is required to
+       connect to this target.
+
+    tlsversions
+       List of bytes indicating which TLS versions are supported by this
+       target.
+
+    By default, clients reflect the target order advertised by servers
+    and servers will use the first client-advertised target when picking
+    a redirect target. So targets should be advertised in the order the
+    server prefers they be used.
+    """
+    return []
 
 def wireprotocommand(name, args=None, permission='push', cachekeyfn=None):
     """Decorator to declare a wire protocol command.

@@ -763,6 +763,10 @@ class revlog(object):
         for r in revs:
             checkrev(r)
         # and we're sure ancestors aren't filtered as well
+        if util.safehasattr(parsers, 'rustlazyancestors'):
+            return ancestor.rustlazyancestors(
+                self.index, revs,
+                stoprev=stoprev, inclusive=inclusive)
         return ancestor.lazyancestors(self._uncheckedparentrevs, revs,
                                       stoprev=stoprev, inclusive=inclusive)
 

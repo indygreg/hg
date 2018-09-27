@@ -11,8 +11,11 @@ import heapq
 
 from .node import nullrev
 from . import (
+    policy,
     pycompat,
 )
+
+parsers = policy.importmod(r'parsers')
 
 def commonancestorsheads(pfunc, *nodes):
     """Returns a set with the heads of all common ancestors of all nodes,
@@ -379,3 +382,25 @@ class lazyancestors(object):
             # free up memory.
             self._containsiter = None
             return False
+
+class rustlazyancestors(lazyancestors):
+
+    def __init__(self, index, revs, stoprev=0, inclusive=False):
+        self._index = index
+        self._stoprev = stoprev
+        self._inclusive = inclusive
+        # no need to prefilter out init revs that are smaller than stoprev,
+        # it's done by rustlazyancestors constructor.
+        # we need to convert to a list, because our ruslazyancestors
+        # constructor (from C code) doesn't understand anything else yet
+        self._initrevs = initrevs = list(revs)
+
+        self._containsseen = set()
+        self._containsiter = parsers.rustlazyancestors(
+            index, initrevs, stoprev, inclusive)
+
+    def __iter__(self):
+        return parsers.rustlazyancestors(self._index,
+                                         self._initrevs,
+                                         self._stoprev,
+                                         self._inclusive)

@@ -844,6 +844,7 @@ packages = ['mercurial',
             'hgext.infinitepush',
             'hgext.highlight',
             'hgext.largefiles', 'hgext.lfs', 'hgext.narrow',
+            'hgext.remotefilelog',
             'hgext.zeroconf', 'hgext3rd',
             'hgdemandimport']
 if sys.version_info[0] == 2:

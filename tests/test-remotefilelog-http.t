@@ -1,0 +1,98 @@
+  $ PYTHONPATH=$TESTDIR/..:$PYTHONPATH
+  $ export PYTHONPATH
+
+  $ . "$TESTDIR/remotefilelog-library.sh"
+
+  $ hginit master
+  $ cd master
+  $ cat >> .hg/hgrc <<EOF
+  > [remotefilelog]
+  > server=True
+  > EOF
+  $ echo x > x
+  $ echo y > y
+  $ hg commit -qAm x
+  $ hg serve -p $HGPORT -d --pid-file=../hg1.pid -E ../error.log -A ../access.log
+
+Build a query string for later use:
+  $ GET=`hg debugdata -m 0 | $PYTHON -c \
+  > 'import sys ; print [("?cmd=getfile&file=%s&node=%s" % tuple(s.split("\0"))) for s in sys.stdin.read().splitlines()][0]'`
+
+  $ cd ..
+  $ cat hg1.pid >> $DAEMON_PIDS
+
+  $ hgcloneshallow http://localhost:$HGPORT/ shallow -q
+  2 files fetched over 1 fetches - (2 misses, 0.00% hit ratio) over *s (glob)
+
+  $ grep getfile access.log
+  * "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=getfile+*node%3D1406e74118627694268417491f018a4a883152f0* (glob)
+
+Clear filenode cache so we can test fetching with a modified batch size
+  $ rm -r $TESTTMP/hgcache
+Now do a fetch with a large batch size so we're sure it works
+  $ hgcloneshallow http://localhost:$HGPORT/ shallow-large-batch \
+  >    --config remotefilelog.batchsize=1000 -q
+  2 files fetched over 1 fetches - (2 misses, 0.00% hit ratio) over *s (glob)
+
+The 'remotefilelog' capability should *not* be exported over http(s),
+as the getfile method it offers doesn't work with http.
+  $ get-with-headers.py localhost:$HGPORT '?cmd=capabilities' | grep lookup | identifyrflcaps
+  getfile
+  getflogheads
+
+  $ get-with-headers.py localhost:$HGPORT '?cmd=hello' | grep lookup | identifyrflcaps
+  getfile
+  getflogheads
+
+  $ get-with-headers.py localhost:$HGPORT '?cmd=this-command-does-not-exist' | head -n 1
+  400 no such method: this-command-does-not-exist
+  $ get-with-headers.py localhost:$HGPORT '?cmd=getfiles' | head -n 1
+  400 no such method: getfiles
+
+Verify serving from a shallow clone doesn't allow for remotefile
+fetches. This also serves to test the error handling for our batchable
+getfile RPC.
+
+  $ cd shallow
+  $ hg serve -p $HGPORT1 -d --pid-file=../hg2.pid -E ../error2.log
+  $ cd ..
+  $ cat hg2.pid >> $DAEMON_PIDS
+
+This GET should work, because this server is serving master, which is
+a full clone.
+
+  $ get-with-headers.py localhost:$HGPORT "$GET"
+  200 Script output follows
+  
+  0\x00U\x00\x00\x00\xff (esc)
+  2\x00x (esc)
+  \x14\x06\xe7A\x18bv\x94&\x84\x17I\x1f\x01\x8aJ\x881R\xf0\x00\x01\x00\x14\xf0\x06T\xd8\xef\x99"\x04\xd01\xe6\xa6i\xf4~\x98\xb3\xe3Dw>T\x00 (no-eol) (esc)
+
+This GET should fail using the in-band signalling mechanism, because
+it's not a full clone. Note that it's also plausible for servers to
+refuse to serve file contents for other reasons, like the file
+contents not being visible to the current user.
+
+  $ get-with-headers.py localhost:$HGPORT1 "$GET"
+  200 Script output follows
+  
+  1\x00cannot fetch remote files from shallow repo (no-eol) (esc)
+
+Clones should work with httppostargs turned on
+
+  $ cd master
+  $ hg --config experimental.httppostargs=1 serve -p $HGPORT2 -d --pid-file=../hg3.pid -E ../error3.log
+
+  $ cd ..
+  $ cat hg3.pid >> $DAEMON_PIDS
+
+Clear filenode cache so we can test fetching with a modified batch size
+  $ rm -r $TESTTMP/hgcache
+
+  $ hgcloneshallow http://localhost:$HGPORT2/ shallow-postargs -q
+  2 files fetched over 1 fetches - (2 misses, 0.00% hit ratio) over *s (glob)
+
+All error logs should be empty:
+  $ cat error.log
+  $ cat error2.log
+  $ cat error3.log

@@ -537,5 +537,5 @@ Actual test
   added 2 changesets with 0 changes to 0 files
   1 new obsolescence markers
   1 new orphan changesets
-  new changesets 95d586532b49 (1 drafts)
+  new changesets 66f7d451a68b:95d586532b49 (2 drafts)
   (run 'hg update' to get a working copy)

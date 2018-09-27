@@ -39,6 +39,7 @@ from . import (
     pycompat,
     revsetlang,
     similar,
+    smartset,
     url,
     util,
     vfs,
@@ -1622,11 +1623,9 @@ def registersummarycallback(repo, otr, txnname=''):
             if origrepolen >= len(repo):
                 return
 
-            # Compute the bounds of new revisions' range, excluding obsoletes.
-            unfi = repo.unfiltered()
-            revs = unfi.revs('%d: and not obsolete()', origrepolen)
+            # Compute the bounds of new visible revisions' range.
+            revs = smartset.spanset(repo, start=origrepolen)
             if not revs:
-                # Got only obsoletes.
                 return
             minrev, maxrev = repo[revs.min()], repo[revs.max()]
 

@@ -115,6 +115,22 @@ args
    Each command defines its own set of argument names and their expected
    types.
 
+redirect (optional)
+   (map) Advertises client support for following response *redirects*.
+
+   This map has the following bytestring keys:
+
+   targets
+      (array of bytestring) List of named redirect targets supported by
+      this client. The names come from the targets advertised by the
+      server's *capabilities* message.
+
+   hashes
+      (array of bytestring) List of preferred hashing algorithms that can
+      be used for content integrity verification.
+
+   See the *Content Redirects* section below for more on content redirects.
+
 This frame type MUST ONLY be sent from clients to servers: it is illegal
 for a server to send this frame to a client.
 
@@ -506,6 +522,9 @@ status
    error
       There was an error processing the command. More details about the
       error are encoded in the ``error`` key.
+   redirect
+      The response for this command is available elsewhere. Details on
+      where are in the ``location`` key.
 
 error (optional)
    A map containing information about an encountered error. The map has the
@@ -515,5 +534,116 @@ error (optional)
       (array of maps) A message describing the error. The message uses the
       same format as those in the ``Human Output Side-Channel`` frame.
 
+location (optional)
+   (map) Presence indicates that a *content redirect* has occurred. The map
+   provides the external location of the content.
+
+   This map contains the following bytestring keys:
+
+   url
+      (bytestring) URL from which this content may be requested.
+
+   mediatype
+      (bytestring) The media type for the fetched content. e.g.
+      ``application/mercurial-*``.
+
+      In some transports, this value is also advertised by the transport.
+      e.g. as the ``Content-Type`` HTTP header.
+
+   size (optional)
+      (unsigned integer) Total size of remote object in bytes. This is
+      the raw size of the entity that will be fetched, minus any
+      non-Mercurial protocol encoding (e.g. HTTP content or transfer
+      encoding.)
+
+   fullhashes (optional)
+      (array of arrays) Content hashes for the entire payload. Each entry
+      is an array of bytestrings containing the hash name and the hash value.
+
+   fullhashseed (optional)
+      (bytestring) Optional seed value to feed into hasher for full content
+      hash verification.
+
+   serverdercerts (optional)
+      (array of bytestring) DER encoded x509 certificates for the server. When
+      defined, clients MAY validate that the x509 certificate on the target
+      server exactly matches the certificate used here.
+
+   servercadercerts (optional)
+      (array of bytestring) DER encoded x509 certificates for the certificate
+      authority of the target server. When defined, clients MAY validate that
+      the x509 on the target server was signed by CA certificate in this set.
+
+   # TODO support for giving client an x509 certificate pair to be used as a
+   # client certificate.
+
+   # TODO support common authentication mechanisms (e.g. HTTP basic/digest
+   # auth).
+
+   # TODO support custom authentication mechanisms. This likely requires
+   # server to advertise required auth mechanism so client can filter.
+
+   # TODO support chained hashes. e.g. hash for each 1MB segment so client
+   # can iteratively validate data without having to consume all of it first.
+
 TODO formalize when error frames can be seen and how errors can be
 recognized midway through a command response.
+
+Content Redirects
+=================
+
+Servers have the ability to respond to ANY command request with a
+*redirect* to another location. Such a response is referred to as a *redirect
+response*. (This feature is conceptually similar to HTTP redirects, but is
+more powerful.)
+
+A *redirect response* MUST ONLY be issued if the client advertises support
+for a redirect *target*.
+
+A *redirect response* MUST NOT be issued unless the client advertises support
+for one.
+
+Clients advertise support for *redirect responses* after looking at the server's
+*capabilities* data, which is fetched during initial server connection
+handshake. The server's capabilities data advertises named *targets* for
+potential redirects.
+
+Each target is described by a protocol name, connection and protocol features,
+etc. The server also advertises target-agnostic redirect settings, such as
+which hash algorithms are supported for content integrity checking. (See
+the documentation for the *capabilities* command for more.)
+
+Clients examine the set of advertised redirect targets for compatibility.
+When sending a command request, the client advertises the set of redirect
+target names it is willing to follow, along with some other settings influencing
+behavior.
+
+For example, say the server is advertising a ``cdn`` redirect target that
+requires SNI and TLS 1.2. If the client supports those features, it will
+send command requests stating that the ``cdn`` target is acceptable to use.
+But if the client doesn't support SNI or TLS 1.2 (or maybe it encountered an
+error using this target from a previous request), then it omits this target
+name.
+
+If the client advertises support for a redirect target, the server MAY
+substitute the normal, inline response data for a *redirect response* -
+one where the initial CBOR map has a ``status`` key with value ``redirect``.
+
+The *redirect response* at a minimum advertises the URL where the response
+can be retrieved.
+
+The *redirect response* MAY also advertise additional details about that
+content and how to retrieve it. Notably, the response may contain the
+x509 public certificates for the server being redirected to or the
+certificate authority that signed that server's certificate. Unless the
+client has existing settings that offer stronger trust validation than what
+the server advertises, the client SHOULD use the server-provided certificates
+when validating the connection to the remote server in place of any default
+connection verification checks. This is because certificates coming from
+the server SHOULD establish a stronger chain of trust than what the default
+certification validation mechanism in most environments provides. (By default,
+certificate validation ensures the signer of the cert chains up to a set of
+trusted root certificates. And if an explicit certificate or CA certificate
+is presented, that greadly reduces the set of certificates that will be
+recognized as valid, thus reducing the potential for a "bad" certificate
+to be used and trusted.)

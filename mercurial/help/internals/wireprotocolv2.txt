@@ -111,6 +111,38 @@ rawrepoformats
    requirements can be used to determine whether a client can read a
    *raw* copy of file data available.
 
+redirect
+   A map declaring potential *content redirects* that may be used by this
+   server. Contains the following bytestring keys:
+
+   targets
+      (array of maps) Potential redirect targets. Values are maps describing
+      this target in more detail. Each map has the following bytestring keys:
+
+      name
+         (bytestring) Identifier for this target. The identifier will be used
+         by clients to uniquely identify this target.
+
+      protocol
+         (bytestring) High-level network protocol. Values can be
+         ``http``, ```https``, ``ssh``, etc.
+
+      uris
+          (array of bytestrings) Representative URIs for this target.
+
+      snirequired (optional)
+          (boolean) Indicates whether Server Name Indication is required
+          to use this target. Defaults to False.
+
+      tlsversions (optional)
+          (array of bytestring) Indicates which TLS versions are supported by
+          this target. Values are ``1.1``, ``1.2``, ``1.3``, etc.
+
+   hashes
+      (array of bytestring) Indicates support for hashing algorithms that are
+      used to ensure content integrity. Values include ``sha1``, ``sha256``,
+      etc.
+
 changesetdata
 -------------
 

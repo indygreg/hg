@@ -15,7 +15,6 @@ import stat
 from .i18n import _
 from .node import (
     addednodeid,
-    bin,
     hex,
     modifiednodeid,
     nullid,
@@ -385,70 +384,11 @@ class changectx(basectx):
     """A changecontext object makes access to data related to a particular
     changeset convenient. It represents a read-only context already present in
     the repo."""
-    def __init__(self, repo, changeid='.'):
+    def __init__(self, repo, rev, node):
         """changeid is a revision number, node, or tag"""
         super(changectx, self).__init__(repo)
-
-        try:
-            if isinstance(changeid, int):
-                self._node = repo.changelog.node(changeid)
-                self._rev = changeid
-                return
-            elif changeid == 'null':
-                self._node = nullid
-                self._rev = nullrev
-                return
-            elif changeid == 'tip':
-                self._node = repo.changelog.tip()
-                self._rev = repo.changelog.rev(self._node)
-                return
-            elif (changeid == '.'
-                  or repo.local() and changeid == repo.dirstate.p1()):
-                # this is a hack to delay/avoid loading obsmarkers
-                # when we know that '.' won't be hidden
-                self._node = repo.dirstate.p1()
-                self._rev = repo.unfiltered().changelog.rev(self._node)
-                return
-            elif len(changeid) == 20:
-                try:
-                    self._node = changeid
-                    self._rev = repo.changelog.rev(changeid)
-                    return
-                except error.FilteredLookupError:
-                    changeid = hex(changeid) # for the error message
-                    raise
-                except LookupError:
-                    # check if it might have come from damaged dirstate
-                    #
-                    # XXX we could avoid the unfiltered if we had a recognizable
-                    # exception for filtered changeset access
-                    if (repo.local()
-                        and changeid in repo.unfiltered().dirstate.parents()):
-                        msg = _("working directory has unknown parent '%s'!")
-                        raise error.Abort(msg % short(changeid))
-                    changeid = hex(changeid) # for the error message
-
-            elif len(changeid) == 40:
-                try:
-                    self._node = bin(changeid)
-                    self._rev = repo.changelog.rev(self._node)
-                    return
-                except error.FilteredLookupError:
-                    raise
-                except LookupError:
-                    pass
-            else:
-                raise error.ProgrammingError(
-                        "unsupported changeid '%s' of type %s" %
-                        (changeid, type(changeid)))
-
-        except (error.FilteredIndexError, error.FilteredLookupError):
-            raise error.FilteredRepoLookupError(_("filtered revision '%s'")
-                                                % pycompat.bytestr(changeid))
-        except IndexError:
-            pass
-        raise error.RepoLookupError(
-            _("unknown revision '%s'") % changeid)
+        self._rev = rev
+        self._node = node
 
     def __hash__(self):
         try:

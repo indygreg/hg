@@ -17,8 +17,10 @@ import weakref
 
 from .i18n import _
 from .node import (
+    bin,
     hex,
     nullid,
+    nullrev,
     short,
 )
 from . import (
@@ -1214,9 +1216,67 @@ class localrepository(object):
                     for i in pycompat.xrange(*changeid.indices(len(self)))
                     if i not in self.changelog.filteredrevs]
         try:
-            return context.changectx(self, changeid)
+            if isinstance(changeid, int):
+                node = self.changelog.node(changeid)
+                rev = changeid
+                return context.changectx(self, rev, node)
+            elif changeid == 'null':
+                node = nullid
+                rev = nullrev
+                return context.changectx(self, rev, node)
+            elif changeid == 'tip':
+                node = self.changelog.tip()
+                rev = self.changelog.rev(node)
+                return context.changectx(self, rev, node)
+            elif (changeid == '.'
+                  or self.local() and changeid == self.dirstate.p1()):
+                # this is a hack to delay/avoid loading obsmarkers
+                # when we know that '.' won't be hidden
+                node = self.dirstate.p1()
+                rev = self.unfiltered().changelog.rev(node)
+                return context.changectx(self, rev, node)
+            elif len(changeid) == 20:
+                try:
+                    node = changeid
+                    rev = self.changelog.rev(changeid)
+                    return context.changectx(self, rev, node)
+                except error.FilteredLookupError:
+                    changeid = hex(changeid) # for the error message
+                    raise
+                except LookupError:
+                    # check if it might have come from damaged dirstate
+                    #
+                    # XXX we could avoid the unfiltered if we had a recognizable
+                    # exception for filtered changeset access
+                    if (self.local()
+                        and changeid in self.unfiltered().dirstate.parents()):
+                        msg = _("working directory has unknown parent '%s'!")
+                        raise error.Abort(msg % short(changeid))
+                    changeid = hex(changeid) # for the error message
+
+            elif len(changeid) == 40:
+                try:
+                    node = bin(changeid)
+                    rev = self.changelog.rev(node)
+                    return context.changectx(self, rev, node)
+                except error.FilteredLookupError:
+                    raise
+                except LookupError:
+                    pass
+            else:
+                raise error.ProgrammingError(
+                        "unsupported changeid '%s' of type %s" %
+                        (changeid, type(changeid)))
+
+        except (error.FilteredIndexError, error.FilteredLookupError):
+            raise error.FilteredRepoLookupError(_("filtered revision '%s'")
+                                                % pycompat.bytestr(changeid))
+        except IndexError:
+            pass
         except error.WdirUnsupported:
             return context.workingctx(self)
+        raise error.RepoLookupError(
+            _("unknown revision '%s'") % changeid)
 
     def __contains__(self, changeid):
         """True if the given changeid exists

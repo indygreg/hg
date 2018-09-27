@@ -155,7 +155,7 @@ def _flockavailable():
     try:
         import fcntl
         fcntl.flock
-    except StandardError:
+    except (AttributeError, ImportError):
         return False
     else:
         return True

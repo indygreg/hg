@@ -435,7 +435,7 @@ class changectx(basectx):
                     return
                 except error.FilteredLookupError:
                     raise
-                except (TypeError, LookupError):
+                except LookupError:
                     pass
             else:
                 raise error.ProgrammingError(

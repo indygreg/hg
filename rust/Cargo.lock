@@ -17,6 +17,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "hg-core"
+version = "0.1.0"
+
+[[package]]
 name = "hgcli"
 version = "0.1.0"
 dependencies = [

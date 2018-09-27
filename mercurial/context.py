@@ -445,8 +445,6 @@ class changectx(basectx):
         except (error.FilteredIndexError, error.FilteredLookupError):
             raise error.FilteredRepoLookupError(_("filtered revision '%s'")
                                                 % pycompat.bytestr(changeid))
-        except error.FilteredRepoLookupError:
-            raise
         except IndexError:
             pass
         raise error.RepoLookupError(

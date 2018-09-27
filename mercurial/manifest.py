@@ -957,9 +957,8 @@ class treemanifest(object):
         if self._copyfunc is _noop:
             def _copyfunc(s):
                 self._load()
-                # OPT: it'd be nice to not load everything here. Unfortunately
-                # this makes a mess of the "dirty" state tracking if we don't.
-                self._loadalllazy()
+                s._lazydirs = {d: (p, n, r, True) for
+                               d, (p, n, r, c) in self._lazydirs.iteritems()}
                 sdirs = s._dirs
                 for d, v in self._dirs.iteritems():
                     sdirs[d] = v.copy()
@@ -1228,11 +1227,9 @@ class treemanifest(object):
                 return ld[1]
             return m._dirs.get(d, emptytree)._node
 
-        # we should have always loaded everything by the time we get here for
-        # `self`, but possibly not in `m1` or `m2`.
-        assert not self._lazydirs
         # let's skip investigating things that `match` says we do not need.
         visit = match.visitchildrenset(self._dir[:-1] or '.')
+        visit = self._loadchildrensetlazy(visit)
         if visit == 'this' or visit == 'all':
             visit = None
         for d, subm in self._dirs.iteritems():

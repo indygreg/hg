@@ -477,9 +477,6 @@ def wireprotocommand(name, args=None, permission='push'):
           A callable returning the default value for this argument. If not
           specified, ``None`` will be the default value.
 
-       ``required``
-          Bool indicating whether the argument is required.
-
        ``example``
           An example value for this argument.
 
@@ -535,13 +532,9 @@ def wireprotocommand(name, args=None, permission='push'):
             raise error.ProgrammingError('%s argument for command %s does not '
                                          'declare example field' % (arg, name))
 
-        if 'default' in meta and meta.get('required'):
-            raise error.ProgrammingError('%s argument for command %s is marked '
-                                         'as required but has a default value' %
-                                         (arg, name))
+        meta['required'] = 'default' not in meta
 
         meta.setdefault('default', lambda: None)
-        meta.setdefault('required', False)
         meta.setdefault('validvalues', None)
 
     def register(func):
@@ -570,14 +563,17 @@ def capabilitiesv2(repo, proto):
     args={
         'noderange': {
             'type': 'list',
+            'default': lambda: None,
             'example': [[b'0123456...'], [b'abcdef...']],
         },
         'nodes': {
             'type': 'list',
+            'default': lambda: None,
             'example': [b'0123456...'],
         },
         'nodesdepth': {
             'type': 'int',
+            'default': lambda: None,
             'example': 10,
         },
         'fields': {
@@ -746,7 +742,6 @@ def getfilestore(repo, proto, path):
         },
         'nodes': {
             'type': 'list',
-            'required': True,
             'example': [b'0123456...'],
         },
         'fields': {
@@ -757,7 +752,6 @@ def getfilestore(repo, proto, path):
         },
         'path': {
             'type': 'bytes',
-            'required': True,
             'example': b'foo.txt',
         }
     },
@@ -848,7 +842,6 @@ def knownv2(repo, proto, nodes):
     args={
         'namespace': {
             'type': 'bytes',
-            'required': True,
             'example': b'ns',
         },
     },
@@ -865,7 +858,6 @@ def listkeysv2(repo, proto, namespace):
     args={
         'key': {
             'type': 'bytes',
-            'required': True,
             'example': b'foo',
         },
     },
@@ -883,7 +875,6 @@ def lookupv2(repo, proto, key):
     args={
         'nodes': {
             'type': 'list',
-            'required': True,
             'example': [b'0123456...'],
         },
         'haveparents': {
@@ -899,7 +890,6 @@ def lookupv2(repo, proto, key):
         },
         'tree': {
             'type': 'bytes',
-            'required': True,
             'example': b'',
         },
     },
@@ -956,22 +946,18 @@ def manifestdata(repo, proto, haveparents, nodes, fields, tree):
     args={
         'namespace': {
             'type': 'bytes',
-            'required': True,
             'example': b'ns',
         },
         'key': {
             'type': 'bytes',
-            'required': True,
             'example': b'key',
         },
         'old': {
             'type': 'bytes',
-            'required': True,
             'example': b'old',
         },
         'new': {
             'type': 'bytes',
-            'required': True,
             'example': 'new',
         },
     },

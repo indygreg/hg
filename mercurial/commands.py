@@ -1224,7 +1224,7 @@ def bundle(ui, repo, fname, dest=None, **opts):
                                 "a destination"))
         if opts.get('base'):
             ui.warn(_("ignoring --base because --all was specified\n"))
-        base = ['null']
+        base = [nullrev]
     else:
         base = scmutil.revrange(repo, opts.get('base'))
     if cgversion not in changegroup.supportedoutgoingversions(repo):

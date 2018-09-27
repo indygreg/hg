@@ -1620,35 +1620,36 @@ def registersummarycallback(repo, otr, txnname=''):
         def reportnewcs(repo, tr):
             """Report the range of new revisions pulled/unbundled."""
             origrepolen = tr.changes.get('origrepolen', len(repo))
-            if origrepolen >= len(repo):
+            unfi = repo.unfiltered()
+            if origrepolen >= len(unfi):
                 return
 
             # Compute the bounds of new visible revisions' range.
             revs = smartset.spanset(repo, start=origrepolen)
-            if not revs:
-                return
-            minrev, maxrev = repo[revs.min()], repo[revs.max()]
+            if revs:
+                minrev, maxrev = repo[revs.min()], repo[revs.max()]
 
-            if minrev == maxrev:
-                revrange = minrev
-            else:
-                revrange = '%s:%s' % (minrev, maxrev)
-            draft = len(repo.revs('%ld and draft()', revs))
-            secret = len(repo.revs('%ld and secret()', revs))
-            if not (draft or secret):
-                msg = _('new changesets %s\n') % revrange
-            elif draft and secret:
-                msg = _('new changesets %s (%d drafts, %d secrets)\n')
-                msg %= (revrange, draft, secret)
-            elif draft:
-                msg = _('new changesets %s (%d drafts)\n')
-                msg %= (revrange, draft)
-            elif secret:
-                msg = _('new changesets %s (%d secrets)\n')
-                msg %= (revrange, secret)
-            else:
-                raise error.ProgrammingError('entered unreachable condition')
-            repo.ui.status(msg)
+                if minrev == maxrev:
+                    revrange = minrev
+                else:
+                    revrange = '%s:%s' % (minrev, maxrev)
+                draft = len(repo.revs('%ld and draft()', revs))
+                secret = len(repo.revs('%ld and secret()', revs))
+                if not (draft or secret):
+                    msg = _('new changesets %s\n') % revrange
+                elif draft and secret:
+                    msg = _('new changesets %s (%d drafts, %d secrets)\n')
+                    msg %= (revrange, draft, secret)
+                elif draft:
+                    msg = _('new changesets %s (%d drafts)\n')
+                    msg %= (revrange, draft)
+                elif secret:
+                    msg = _('new changesets %s (%d secrets)\n')
+                    msg %= (revrange, secret)
+                else:
+                    errormsg = 'entered unreachable condition'
+                    raise error.ProgrammingError(errormsg)
+                repo.ui.status(msg)
 
         @reportsummary
         def reportphasechanges(repo, tr):

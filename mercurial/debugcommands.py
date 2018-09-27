@@ -1436,10 +1436,10 @@ def debuglocks(ui, repo, **opts):
                 if ":" in locker:
                     host, pid = locker.split(':')
                     if host == socket.gethostname():
-                        locker = 'user %s, process %s' % (user, pid)
+                        locker = 'user %s, process %s' % (user or b'None', pid)
                     else:
                         locker = 'user %s, process %s, host %s' \
-                                 % (user, pid, host)
+                                 % (user or b'None', pid, host)
                 ui.write(("%-6s %s (%ds)\n") % (name + ":", locker, age))
                 return 1
             except OSError as e:

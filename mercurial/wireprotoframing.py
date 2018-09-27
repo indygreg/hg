@@ -22,6 +22,7 @@ from . import (
     encoding,
     error,
     util,
+    wireprototypes,
 )
 from .utils import (
     cborutil,
@@ -840,9 +841,21 @@ class serverreactor(object):
                         yield createcommandresponseokframe(stream, requestid)
                         emitted = True
 
-                    for chunk in cborutil.streamencode(o):
-                        for frame in emitter.send(chunk):
+                    # Objects emitted by command functions can be serializable
+                    # data structures or special types.
+                    # TODO consider extracting the content normalization to a
+                    # standalone function, as it may be useful for e.g. cachers.
+
+                    # A pre-encoded object is sent directly to the emitter.
+                    if isinstance(o, wireprototypes.encodedresponse):
+                        for frame in emitter.send(o.data):
                             yield frame
+
+                    # A regular object is CBOR encoded.
+                    else:
+                        for chunk in cborutil.streamencode(o):
+                            for frame in emitter.send(chunk):
+                                yield frame
 
                 except Exception as e:
                     for frame in createerrorframe(stream, requestid,

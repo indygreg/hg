@@ -10,6 +10,9 @@ from .node import (
     hex,
 )
 from .i18n import _
+from .thirdparty import (
+    attr,
+)
 from . import (
     error,
     util,
@@ -352,3 +355,15 @@ def supportedcompengines(ui, role):
                           ', '.sorted(validnames))
 
     return compengines
+
+@attr.s
+class encodedresponse(object):
+    """Represents response data that is already content encoded.
+
+    Wire protocol version 2 only.
+
+    Commands typically emit Python objects that are encoded and sent over the
+    wire. If commands emit an object of this type, the encoding step is bypassed
+    and the content from this object is used instead.
+    """
+    data = attr.ib()

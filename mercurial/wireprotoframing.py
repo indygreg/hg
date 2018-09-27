@@ -21,6 +21,7 @@ from .thirdparty import (
 from . import (
     encoding,
     error,
+    pycompat,
     util,
     wireprototypes,
 )
@@ -429,6 +430,26 @@ def createcommandresponseeosframe(stream, requestid):
                             flags=FLAG_COMMAND_RESPONSE_EOS,
                             payload=b'')
 
+def createalternatelocationresponseframe(stream, requestid, location):
+    data = {
+        b'status': b'redirect',
+        b'location': {
+            b'url': location.url,
+            b'mediatype': location.mediatype,
+        }
+    }
+
+    for a in (r'size', r'fullhashes', r'fullhashseed', r'serverdercerts',
+              r'servercadercerts'):
+        value = getattr(location, a)
+        if value is not None:
+            data[b'location'][pycompat.bytestr(a)] = value
+
+    return stream.makeframe(requestid=requestid,
+                            typeid=FRAME_TYPE_COMMAND_RESPONSE,
+                            flags=FLAG_COMMAND_RESPONSE_CONTINUATION,
+                            payload=b''.join(cborutil.streamencode(data)))
+
 def createcommanderrorresponse(stream, requestid, message, args=None):
     # TODO should this be using a list of {'msg': ..., 'args': {}} so atom
     # formatting works consistently?
@@ -813,6 +834,7 @@ class serverreactor(object):
 
         def sendframes():
             emitted = False
+            alternatelocationsent = False
             emitter = bufferingcommandresponseemitter(stream, requestid)
             while True:
                 try:
@@ -841,6 +863,25 @@ class serverreactor(object):
                     break
 
                 try:
+                    # Alternate location responses can only be the first and
+                    # only object in the output stream.
+                    if isinstance(o, wireprototypes.alternatelocationresponse):
+                        if emitted:
+                            raise error.ProgrammingError(
+                                'alternatelocationresponse seen after initial '
+                                'output object')
+
+                        yield createalternatelocationresponseframe(
+                            stream, requestid, o)
+
+                        alternatelocationsent = True
+                        emitted = True
+                        continue
+
+                    if alternatelocationsent:
+                        raise error.ProgrammingError(
+                            'object follows alternatelocationresponse')
+
                     if not emitted:
                         yield createcommandresponseokframe(stream, requestid)
                         emitted = True
@@ -977,6 +1018,7 @@ class serverreactor(object):
             'requestid': requestid,
             'command': request[b'name'],
             'args': request[b'args'],
+            'redirect': request.get(b'redirect'),
             'data': entry['data'].getvalue() if entry['data'] else None,
         }
 

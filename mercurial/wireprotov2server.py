@@ -312,7 +312,7 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
     res.headers[b'Content-Type'] = FRAMINGTYPE
 
     try:
-        objs = dispatch(repo, proto, command['command'])
+        objs = dispatch(repo, proto, command['command'], command['redirect'])
 
         action, meta = reactor.oncommandresponsereadyobjects(
             outstream, command['requestid'], objs)
@@ -339,7 +339,7 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
 def getdispatchrepo(repo, proto, command):
     return repo.filtered('served')
 
-def dispatch(repo, proto, command):
+def dispatch(repo, proto, command, redirect):
     """Run a wire protocol command.
 
     Returns an iterable of objects that will be sent to the client.
@@ -364,8 +364,17 @@ def dispatch(repo, proto, command):
             yield o
         return
 
+    if redirect:
+        redirecttargets = redirect[b'targets']
+        redirecthashes = redirect[b'hashes']
+    else:
+        redirecttargets = []
+        redirecthashes = []
+
     cacher = makeresponsecacher(repo, proto, command, args,
-                                cborutil.streamencode)
+                                cborutil.streamencode,
+                                redirecttargets=redirecttargets,
+                                redirecthashes=redirecthashes)
 
     # But we have no cacher. Do default handling.
     if not cacher:
@@ -751,7 +760,8 @@ def makecommandcachekeyfn(command, localversion=None, allargs=False):
 
     return cachekeyfn
 
-def makeresponsecacher(repo, proto, command, args, objencoderfn):
+def makeresponsecacher(repo, proto, command, args, objencoderfn,
+                       redirecttargets, redirecthashes):
     """Construct a cacher for a cacheable command.
 
     Returns an ``iwireprotocolcommandcacher`` instance.

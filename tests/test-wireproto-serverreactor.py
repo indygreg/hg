@@ -69,6 +69,7 @@ class ServerReactorTests(unittest.TestCase):
             b'requestid': 1,
             b'command': b'mycommand',
             b'args': {},
+            b'redirect': None,
             b'data': None,
         })
 
@@ -86,6 +87,7 @@ class ServerReactorTests(unittest.TestCase):
             b'requestid': 41,
             b'command': b'mycommand',
             b'args': {b'foo': b'bar'},
+            b'redirect': None,
             b'data': None,
         })
 
@@ -100,6 +102,7 @@ class ServerReactorTests(unittest.TestCase):
             b'requestid': 1,
             b'command': b'mycommand',
             b'args': {b'foo': b'bar', b'biz': b'baz'},
+            b'redirect': None,
             b'data': None,
         })
 
@@ -115,6 +118,7 @@ class ServerReactorTests(unittest.TestCase):
             b'requestid': 1,
             b'command': b'mycommand',
             b'args': {},
+            b'redirect': None,
             b'data': b'data!',
         })
 
@@ -137,6 +141,7 @@ class ServerReactorTests(unittest.TestCase):
             b'requestid': 1,
             b'command': b'mycommand',
             b'args': {},
+            b'redirect': None,
             b'data': b'data1data2data3',
         })
 
@@ -160,6 +165,7 @@ class ServerReactorTests(unittest.TestCase):
                 b'key': b'val',
                 b'foo': b'bar',
             },
+            b'redirect': None,
             b'data': b'value1value2',
         })
 
@@ -235,6 +241,7 @@ class ServerReactorTests(unittest.TestCase):
                 b'requestid': 1,
                 b'command': b'command',
                 b'args': {},
+                b'redirect': None,
                 b'data': None,
             })
 
@@ -291,12 +298,14 @@ class ServerReactorTests(unittest.TestCase):
             b'requestid': 3,
             b'command': b'command3',
             b'args': {b'biz': b'baz', b'key': b'val'},
+            b'redirect': None,
             b'data': None,
         })
         self.assertEqual(results[5][1], {
             b'requestid': 1,
             b'command': b'command1',
             b'args': {b'foo': b'bar', b'key1': b'val'},
+            b'redirect': None,
             b'data': None,
         })
 

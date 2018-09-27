@@ -430,10 +430,10 @@ Command frames can be reflected via debugreflect
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: text/plain\r\n
-  s>     Content-Length: 205\r\n
+  s>     Content-Length: 223\r\n
   s>     \r\n
   s>     received: 1 1 1 \xa2Dargs\xa2Dbar1CvalCfooDval1DnameHcommand1\n
-  s>     ["runcommand", {"args": {"bar1": "val", "foo": "val1"}, "command": "command1", "data": null, "requestid": 1}]\n
+  s>     ["runcommand", {"args": {"bar1": "val", "foo": "val1"}, "command": "command1", "data": null, "redirect": null, "requestid": 1}]\n
   s>     received: <no frame>\n
   s>     {"action": "noop"}
 

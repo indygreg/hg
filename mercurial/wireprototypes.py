@@ -368,3 +368,20 @@ class encodedresponse(object):
     and the content from this object is used instead.
     """
     data = attr.ib()
+
+@attr.s
+class alternatelocationresponse(object):
+    """Represents a response available at an alternate location.
+
+    Instances are sent in place of actual response objects when the server
+    is sending a "content redirect" response.
+
+    Only compatible with wire protocol version 2.
+    """
+    url = attr.ib()
+    mediatype = attr.ib()
+    size = attr.ib(default=None)
+    fullhashes = attr.ib(default=None)
+    fullhashseed = attr.ib(default=None)
+    serverdercerts = attr.ib(default=None)
+    servercadercerts = attr.ib(default=None)

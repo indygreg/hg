@@ -1,11 +1,20 @@
   $ . $TESTDIR/wireprotohelpers.sh
 
+  $ cat >> $HGRCPATH << EOF
+  > [extensions]
+  > blackbox =
+  > [blackbox]
+  > track = simplecache
+  > EOF
+
   $ hg init server
   $ enablehttpv2 server
   $ cd server
   $ cat >> .hg/hgrc << EOF
   > [extensions]
   > simplecache = $TESTDIR/wireprotosimplecache.py
+  > [simplecache]
+  > cacheapi = true
   > EOF
 
   $ echo a0 > a
@@ -1183,5 +1192,178 @@ Unknown tls value is filtered from compatible targets
     }
   ]
 
+Set up the server to issue content redirects to its built-in API server.
+
+  $ cat > redirects.py << EOF
+  > [
+  >   {
+  >     b'name': b'local',
+  >     b'protocol': b'http',
+  >     b'uris': [b'http://example.com/'],
+  >   },
+  > ]
+  > EOF
+
+Request to eventual cache URL should return 404 (validating the cache server works)
+
+  $ sendhttpraw << EOF
+  > httprequest GET api/simplecache/missingkey
+  >     user-agent: test
+  > EOF
+  using raw connection to peer
+  s>     GET /api/simplecache/missingkey HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     user-agent: test\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     \r\n
+  s> makefile('rb', None)
+  s>     HTTP/1.1 404 Not Found\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: text/plain\r\n
+  s>     Content-Length: 22\r\n
+  s>     \r\n
+  s>     key not found in cache
+
+Send a cacheable request
+
+  $ sendhttpv2peer << EOF
+  > command manifestdata
+  >     nodes eval:[b'\x99\x2f\x47\x79\x02\x9a\x3d\xf8\xd0\x66\x6d\x00\xbb\x92\x4f\x69\x63\x4e\x26\x41']
+  >     tree eval:b''
+  >     fields eval:[b'parents']
+  > EOF
+  creating http peer for wire protocol version 2
+  sending manifestdata command
+  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-exp-framing-0005\r\n
+  s>     content-type: application/mercurial-exp-framing-0005\r\n
+  s>     content-length: 128\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s>     x\x00\x00\x01\x00\x01\x01\x11\xa3Dargs\xa3Ffields\x81GparentsEnodes\x81T\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&ADtree@DnameLmanifestdataHredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81Elocal
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
+  s>     Transfer-Encoding: chunked\r\n
+  s>     \r\n
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
+  s>     \r\n
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     63\r\n
+  s>     [\x00\x00\x01\x00\x02\x001
+  s>     \xa1Jtotalitems\x01\xa2DnodeT\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&AGparents\x82T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
+  s>     \r\n
+  received frame(size=91; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
+  s>     0\r\n
+  s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  response: gen[
+    {
+      b'totalitems': 1
+    },
+    {
+      b'node': b'\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&A',
+      b'parents': [
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+      ]
+    }
+  ]
+
+Cached entry should be available on server
+
+  $ sendhttpraw << EOF
+  > httprequest GET api/simplecache/c045a581599d58608efd3d93d8129841f2af04a0
+  >     user-agent: test
+  > EOF
+  using raw connection to peer
+  s>     GET /api/simplecache/c045a581599d58608efd3d93d8129841f2af04a0 HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     user-agent: test\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     \r\n
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-cbor\r\n
+  s>     Content-Length: 91\r\n
+  s>     \r\n
+  s>     \xa1Jtotalitems\x01\xa2DnodeT\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&AGparents\x82T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
+  cbor> [
+    {
+      b'totalitems': 1
+    },
+    {
+      b'node': b'\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&A',
+      b'parents': [
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+        b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+      ]
+    }
+  ]
+
+2nd request should result in content redirect response
+
+  $ sendhttpv2peer << EOF
+  > command manifestdata
+  >     nodes eval:[b'\x99\x2f\x47\x79\x02\x9a\x3d\xf8\xd0\x66\x6d\x00\xbb\x92\x4f\x69\x63\x4e\x26\x41']
+  >     tree eval:b''
+  >     fields eval:[b'parents']
+  > EOF
+  creating http peer for wire protocol version 2
+  sending manifestdata command
+  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-exp-framing-0005\r\n
+  s>     content-type: application/mercurial-exp-framing-0005\r\n
+  s>     content-length: 128\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s>     x\x00\x00\x01\x00\x01\x01\x11\xa3Dargs\xa3Ffields\x81GparentsEnodes\x81T\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&ADtree@DnameLmanifestdataHredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81Elocal
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
+  s>     Transfer-Encoding: chunked\r\n
+  s>     \r\n
+  s>     *\r\n (glob)
+  s>     \x*\x00\x00\x01\x00\x02\x011 (glob)
+  s>     \xa2Hlocation\xa2ImediatypeX\x1aapplication/mercurial-cborCurl*http://*:$HGPORT/api/simplecache/c045a581599d58608efd3d93d8129841f2af04a0FstatusHredirect (glob)
+  s>     \r\n
+  received frame(size=*; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation) (glob)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x001
+  s>     \r\n
+  s>     8\r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
+  s>     0\r\n
+  s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  abort: redirect responses not yet supported
+  [255]
+
   $ cat error.log
   $ killdaemons.py
+
+  $ cat .hg/blackbox.log
+  *> cacher constructed for manifestdata (glob)
+  *> cache miss for c045a581599d58608efd3d93d8129841f2af04a0 (glob)
+  *> storing cache entry for c045a581599d58608efd3d93d8129841f2af04a0 (glob)
+  *> cacher constructed for manifestdata (glob)
+  *> cache hit for c045a581599d58608efd3d93d8129841f2af04a0 (glob)
+  *> sending content redirect for c045a581599d58608efd3d93d8129841f2af04a0 to http://*:$HGPORT/api/simplecache/c045a581599d58608efd3d93d8129841f2af04a0 (glob)

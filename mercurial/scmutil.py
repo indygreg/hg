@@ -984,9 +984,8 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
             sortfunc = lambda ns: torev(ns[0][0])
             rels = []
             for ns, s in sorted(replacements.items(), key=sortfunc):
-                for n in ns:
-                    rel = (unfi[n], tuple(unfi[m] for m in s))
-                    rels.append(rel)
+                rel = (tuple(unfi[n] for n in ns), tuple(unfi[m] for m in s))
+                rels.append(rel)
             if rels:
                 obsolete.createmarkers(repo, rels, operation=operation,
                                        metadata=metadata)

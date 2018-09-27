@@ -411,6 +411,7 @@ successors do not exist in Bob repository yet.
   adding manifests
   adding file changes
   added 2 changesets with 0 changes to 2 files (+1 heads)
+  (2 other changesets obsolete on arrival)
   (run 'hg heads' to see heads)
   $ hg log -G
   o  4:77ae25d99ff0 c_B2
@@ -455,6 +456,7 @@ decision is made in that case, so receiving the changesets are not an option).
   adding manifests
   adding file changes
   added 2 changesets with 0 changes to 2 files (+1 heads)
+  (2 other changesets obsolete on arrival)
   (run 'hg heads' to see heads)
   $ hg log -G
   o  4:77ae25d99ff0 c_B2

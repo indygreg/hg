@@ -85,6 +85,7 @@ check that bundle is not affected
   adding manifests
   adding file changes
   added 1 changesets with 0 changes to 1 files (+1 heads)
+  (1 other changesets obsolete on arrival)
   (run 'hg heads' to see heads)
 
 check-that bundle can contain markers:

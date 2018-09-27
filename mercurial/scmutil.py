@@ -1651,6 +1651,17 @@ def registersummarycallback(repo, otr, txnname=''):
                     raise error.ProgrammingError(errormsg)
                 repo.ui.status(msg)
 
+            # search new changesets directly pulled as obsolete
+            obsadded = unfi.revs('%d: and obsolete()', origrepolen)
+            cl = repo.changelog
+            extinctadded = [r for r in obsadded if r not in cl]
+            if extinctadded:
+                # They are not just obsolete, but obsolete and invisible
+                # we call them "extinct" internally but the terms have not been
+                # exposed to users.
+                msg = '(%d other changesets obsolete on arrival)\n'
+                repo.ui.status(msg % len(extinctadded))
+
         @reportsummary
         def reportphasechanges(repo, tr):
             """Report statistics of phase changes for changesets pre-existing

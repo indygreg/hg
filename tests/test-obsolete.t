@@ -1602,6 +1602,7 @@ Test adding changeset after obsmarkers affecting it
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
+  (1 other changesets obsolete on arrival)
   (run 'hg update' to get a working copy)
   $ hg log -G
   @  7:7ae79c5d60f0 (draft) [tip ] dd

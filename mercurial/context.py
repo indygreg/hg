@@ -1241,7 +1241,9 @@ class workingctx(committablectx):
         p = self._repo.dirstate.parents()
         if p[1] == nullid:
             p = p[:-1]
-        return [self._repo[x] for x in p]
+        # use unfiltered repo to delay/avoid loading obsmarkers
+        unfi = self._repo.unfiltered()
+        return [changectx(self._repo, unfi.changelog.rev(n), n) for n in p]
 
     def _fileinfo(self, path):
         # populate __dict__['_manifest'] as workingctx has no _manifestdelta

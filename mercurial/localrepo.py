@@ -1228,8 +1228,7 @@ class localrepository(object):
                 node = self.changelog.tip()
                 rev = self.changelog.rev(node)
                 return context.changectx(self, rev, node)
-            elif (changeid == '.'
-                  or self.local() and changeid == self.dirstate.p1()):
+            elif changeid == '.':
                 # this is a hack to delay/avoid loading obsmarkers
                 # when we know that '.' won't be hidden
                 node = self.dirstate.p1()

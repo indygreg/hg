@@ -18,6 +18,7 @@ from ..node import (
 )
 from .. import (
     error,
+    mdiff,
     pycompat,
 )
 
@@ -263,8 +264,9 @@ def resolvestripinfo(minlinkrev, tiprev, headrevs, linkrevfn, parentrevsfn):
 
     return strippoint, brokenrevs
 
-def emitrevisions(store, revs, resultcls, deltaparentfn, candeltafn,
-                  rawsizefn, revdifffn, flagsfn, sendfulltext=False,
+def emitrevisions(store, revs, resultcls, deltaparentfn=None, candeltafn=None,
+                  rawsizefn=None, revdifffn=None, flagsfn=None,
+                  sendfulltext=False,
                   revisiondata=False, assumehaveparentrevisions=False,
                   deltaprevious=False):
     """Generic implementation of ifiledata.emitrevisions().
@@ -282,26 +284,40 @@ def emitrevisions(store, revs, resultcls, deltaparentfn, candeltafn,
        A type implementing the ``irevisiondelta`` interface that will be
        constructed and returned.
 
-    ``deltaparentfn``
+    ``deltaparentfn`` (optional)
        Callable receiving a revision number and returning the revision number
        of a revision that the internal delta is stored against. This delta
        will be preferred over computing a new arbitrary delta.
 
-    ``candeltafn``
+       If not defined, a delta will always be computed from raw revision
+       data.
+
+    ``candeltafn`` (optional)
        Callable receiving a pair of revision numbers that returns a bool
        indicating whether a delta between them can be produced.
 
-    ``rawsizefn``
+       If not defined, it is assumed that any two revisions can delta with
+       each other.
+
+    ``rawsizefn`` (optional)
        Callable receiving a revision number and returning the length of the
        ``store.revision(rev, raw=True)``.
 
-    ``revdifffn``
+       If not defined, ``len(store.revision(rev, raw=True))`` will be called.
+
+    ``revdifffn`` (optional)
        Callable receiving a pair of revision numbers that returns a delta
        between them.
 
-    ``flagsfn``
+       If not defined, a delta will be computed by invoking mdiff code
+       on ``store.revision()`` results.
+
+       Defining this function allows a precomputed or stored delta to be
+       used without having to compute on.
+
+    ``flagsfn`` (optional)
        Callable receiving a revision number and returns the integer flags
-       value for it.
+       value for it. If not defined, flags value will be 0.
 
     ``sendfulltext``
        Whether to send fulltext revisions instead of deltas, if allowed.
@@ -327,8 +343,12 @@ def emitrevisions(store, revs, resultcls, deltaparentfn, candeltafn,
             continue
 
         node = fnode(rev)
-        deltaparentrev = deltaparentfn(rev)
         p1rev, p2rev = store.parentrevs(rev)
+
+        if deltaparentfn:
+            deltaparentrev = deltaparentfn(rev)
+        else:
+            deltaparentrev = nullrev
 
         # Forced delta against previous mode.
         if deltaprevious:
@@ -373,7 +393,7 @@ def emitrevisions(store, revs, resultcls, deltaparentfn, candeltafn,
 
         # But we can't actually use our chosen delta base for whatever
         # reason. Reset to fulltext.
-        if baserev != nullrev and not candeltafn(baserev, rev):
+        if baserev != nullrev and (candeltafn and not candeltafn(baserev, rev)):
             baserev = nullrev
 
         revision = None
@@ -388,13 +408,22 @@ def emitrevisions(store, revs, resultcls, deltaparentfn, candeltafn,
                     revision = e.tombstone
 
                 if baserev != nullrev:
-                    baserevisionsize = rawsizefn(baserev)
+                    if rawsizefn:
+                        baserevisionsize = rawsizefn(baserev)
+                    else:
+                        baserevisionsize = len(store.revision(baserev,
+                                                              raw=True))
 
             elif baserev == nullrev and not deltaprevious:
                 revision = store.revision(node, raw=True)
                 available.add(rev)
             else:
-                delta = revdifffn(baserev, rev)
+                if revdifffn:
+                    delta = revdifffn(baserev, rev)
+                else:
+                    delta = mdiff.textdiff(store.revision(baserev, raw=True),
+                                           store.revision(rev, raw=True))
+
                 available.add(rev)
 
         yield resultcls(
@@ -402,7 +431,7 @@ def emitrevisions(store, revs, resultcls, deltaparentfn, candeltafn,
             p1node=fnode(p1rev),
             p2node=fnode(p2rev),
             basenode=fnode(baserev),
-            flags=flagsfn(rev),
+            flags=flagsfn(rev) if flagsfn else 0,
             baserevisionsize=baserevisionsize,
             revision=revision,
             delta=delta)

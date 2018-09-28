@@ -134,7 +134,7 @@ def pullbundle2extraprepare(orig, pullop, kwargs):
         return orig(pullop, kwargs)
 
     if wireprotoserver.NARROWCAP not in pullop.remote.capabilities():
-        raise error.Abort(_("server doesn't support narrow clones"))
+        raise error.Abort(_("server does not support narrow clones"))
     orig(pullop, kwargs)
     kwargs['narrow'] = True
     include, exclude = repo.narrowpats
@@ -408,6 +408,13 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
         url, branches = hg.parseurl(remotepath)
         ui.status(_('comparing with %s\n') % util.hidepassword(url))
         remote = hg.peer(repo, opts, url)
+
+        # check narrow support before doing anything if widening needs to be
+        # performed. In future we should also abort if client is ellipses and
+        # server does not support ellipses
+        if widening and wireprotoserver.NARROWCAP not in remote.capabilities():
+            raise error.Abort(_("server does not support narrow clones"))
+
         commoninc = discovery.findcommonincoming(repo, remote)
 
         oldincludes, oldexcludes = repo.narrowpats

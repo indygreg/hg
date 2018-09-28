@@ -65,7 +65,7 @@ BUG: local-to-local narrow clones should work, but don't.
 
   $ hg clone --narrow master narrow-via-localpeer --noupdate --include "dir/src/f10"
   requesting all changes
-  abort: server doesn't support narrow clones
+  abort: server does not support narrow clones
   [255]
   $ hg tracked -R narrow-via-localpeer
   abort: repository narrow-via-localpeer not found!

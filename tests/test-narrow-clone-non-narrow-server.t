@@ -39,7 +39,7 @@ Verify that narrow is advertised in the bundle2 capabilities:
 
   $ hg clone --narrow --include f1 http://localhost:$HGPORT1/ narrowclone
   requesting all changes
-  abort: server doesn't support narrow clones
+  abort: server does not support narrow clones
   [255]
 
 Make a narrow clone (via HGPORT2), then try to narrow and widen
@@ -60,7 +60,5 @@ gracefully:
   looking for local changes to affected paths
   $ hg tracked --addinclude f1 http://localhost:$HGPORT1/
   comparing with http://localhost:$HGPORT1/
-  searching for changes
-  no changes found
-  abort: server doesn't support narrow clones
+  abort: server does not support narrow clones
   [255]

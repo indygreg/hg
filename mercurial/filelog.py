@@ -71,10 +71,6 @@ class filelog(object):
     def iscensored(self, rev):
         return self._revlog.iscensored(rev)
 
-    # Might be unused.
-    def checkhash(self, text, node, p1=None, p2=None, rev=None):
-        return self._revlog.checkhash(text, node, p1=p1, p2=p2, rev=rev)
-
     def revision(self, node, _df=None, raw=False):
         return self._revlog.revision(node, _df=_df, raw=raw)
 

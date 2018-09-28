@@ -368,12 +368,6 @@ class ifiledatatests(basetestcase):
             with self.assertRaises(IndexError):
                 f.size(i)
 
-        with self.assertRaises(error.StorageError):
-            f.checkhash(b'', nullid)
-
-        with self.assertRaises(error.LookupError):
-            f.checkhash(b'', b'\x01' * 20)
-
         self.assertEqual(f.revision(nullid), b'')
         self.assertEqual(f.revision(nullid, raw=True), b'')
 
@@ -425,18 +419,6 @@ class ifiledatatests(basetestcase):
 
         with self.assertRaises(IndexError):
             f.size(1)
-
-        f.checkhash(fulltext, node)
-        f.checkhash(fulltext, node, nullid, nullid)
-
-        with self.assertRaises(error.StorageError):
-            f.checkhash(fulltext + b'extra', node)
-
-        with self.assertRaises(error.StorageError):
-            f.checkhash(fulltext, node, b'\x01' * 20, nullid)
-
-        with self.assertRaises(error.StorageError):
-            f.checkhash(fulltext, node, nullid, b'\x01' * 20)
 
         self.assertEqual(f.revision(node), fulltext)
         self.assertEqual(f.revision(node, raw=True), fulltext)
@@ -509,20 +491,6 @@ class ifiledatatests(basetestcase):
 
         with self.assertRaises(IndexError):
             f.size(3)
-
-        f.checkhash(fulltext0, node0)
-        f.checkhash(fulltext1, node1)
-        f.checkhash(fulltext1, node1, node0, nullid)
-        f.checkhash(fulltext2, node2, node1, nullid)
-
-        with self.assertRaises(error.StorageError):
-            f.checkhash(fulltext1, b'\x01' * 20)
-
-        with self.assertRaises(error.StorageError):
-            f.checkhash(fulltext1 + b'extra', node1, node0, nullid)
-
-        with self.assertRaises(error.StorageError):
-            f.checkhash(fulltext1, node1, node0, node0)
 
         self.assertEqual(f.revision(node0), fulltext0)
         self.assertEqual(f.revision(node0, raw=True), fulltext0)

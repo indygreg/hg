@@ -1069,25 +1069,16 @@ class revlog(object):
             return [self.node(r) for r in self.headrevs()]
 
         if start is None:
-            start = nullid
-        if stop is None:
-            stop = []
-        stoprevs = set([self.rev(n) for n in stop])
-        startrev = self.rev(start)
-        reachable = {startrev}
-        heads = {startrev}
+            start = nullrev
+        else:
+            start = self.rev(start)
 
-        parentrevs = self.parentrevs
-        for r in self.revs(start=startrev + 1):
-            for p in parentrevs(r):
-                if p in reachable:
-                    if r not in stoprevs:
-                        reachable.add(r)
-                    heads.add(r)
-                if p in heads and p not in stoprevs:
-                    heads.remove(p)
+        stoprevs = set(self.rev(n) for n in stop or [])
 
-        return [self.node(r) for r in heads]
+        revs = dagop.headrevssubset(self.revs, self.parentrevs, startrev=start,
+                                    stoprevs=stoprevs)
+
+        return [self.node(rev) for rev in revs]
 
     def children(self, node):
         """find the children of a given node"""

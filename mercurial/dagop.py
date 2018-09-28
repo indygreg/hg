@@ -773,6 +773,42 @@ def headrevs(revs, parentsfn):
 
     return headrevs
 
+def headrevssubset(revsfn, parentrevsfn, startrev=None, stoprevs=None):
+    """Returns the set of all revs that have no children with control.
+
+    ``revsfn`` is a callable that with no arguments returns an iterator over
+    all revision numbers in topological order. With a ``start`` argument, it
+    returns revision numbers starting at that number.
+
+    ``parentrevsfn`` is a callable receiving a revision number and returns an
+    iterable of parent revision numbers, where values can include nullrev.
+
+    ``startrev`` is a revision number at which to start the search.
+
+    ``stoprevs`` is an iterable of revision numbers that, when encountered,
+    will stop DAG traversal beyond them. Parents of revisions in this
+    collection will be heads.
+    """
+    if startrev is None:
+        startrev = nullrev
+
+    stoprevs = set(stoprevs or [])
+
+    reachable = {startrev}
+    heads = {startrev}
+
+    for rev in revsfn(start=startrev + 1):
+        for prev in parentrevsfn(rev):
+            if prev in reachable:
+                if rev not in stoprevs:
+                    reachable.add(rev)
+                heads.add(rev)
+
+            if prev in heads and prev not in stoprevs:
+                heads.remove(prev)
+
+    return heads
+
 def linearize(revs, parentsfn):
     """Linearize and topologically sort a list of revisions.
 

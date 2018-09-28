@@ -258,10 +258,6 @@ def _computenonoverlap(repo, c1, c2, addedinm1, addedinm2, baselabel=''):
     if u2:
         repo.ui.debug("%s:\n   %s\n" % (header % 'other', "\n   ".join(u2)))
 
-    narrowmatch = repo.narrowmatch()
-    if not narrowmatch.always():
-        u1 = [f for f in u1 if narrowmatch(f)]
-        u2 = [f for f in u2 if narrowmatch(f)]
     return u1, u2
 
 def _makegetfctx(ctx):
@@ -467,8 +463,8 @@ def _fullcopytracing(repo, c1, c2, base):
             }
 
     # find interesting file sets from manifests
-    addedinm1 = m1.filesnotin(mb)
-    addedinm2 = m2.filesnotin(mb)
+    addedinm1 = m1.filesnotin(mb, repo.narrowmatch())
+    addedinm2 = m2.filesnotin(mb, repo.narrowmatch())
     bothnew = sorted(addedinm1 & addedinm2)
     if tca == base:
         # unmatched file from base

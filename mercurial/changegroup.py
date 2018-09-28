@@ -1271,8 +1271,7 @@ def getbundler(version, repo, bundlecaps=None, filematcher=None,
 
     # Requested files could include files not in the local store. So
     # filter those out.
-    filematcher = matchmod.intersectmatchers(repo.narrowmatch(),
-                                             filematcher)
+    filematcher = repo.narrowmatch(filematcher)
 
     fn = _packermap[version][0]
     return fn(repo, filematcher, bundlecaps, ellipses=ellipses,

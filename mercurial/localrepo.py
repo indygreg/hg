@@ -1200,8 +1200,14 @@ class localrepository(object):
         include, exclude = self.narrowpats
         return narrowspec.match(self.root, include=include, exclude=exclude)
 
-    # TODO(martinvonz): make this property-like instead?
-    def narrowmatch(self):
+    def narrowmatch(self, match=None):
+        """matcher corresponding the the repo's narrowspec
+
+        If `match` is given, then that will be intersected with the narrow
+        matcher.
+        """
+        if match:
+            return matchmod.intersectmatchers(match, self._narrowmatch)
         return self._narrowmatch
 
     def setnarrowpats(self, newincludes, newexcludes):

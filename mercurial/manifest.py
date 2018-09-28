@@ -1114,9 +1114,19 @@ class treemanifest(object):
                 return
             t1._load()
             t2._load()
-            # OPT: do we need to load everything?
-            t1._loadalllazy()
-            t2._loadalllazy()
+            toloadlazy = []
+            for d, v1 in t1._lazydirs.iteritems():
+                v2 = t2._lazydirs.get(d)
+                if not v2 or v2[1] != v1[1]:
+                    toloadlazy.append(d)
+            for d, v1 in t2._lazydirs.iteritems():
+                if d not in t1._lazydirs:
+                    toloadlazy.append(d)
+
+            for d in toloadlazy:
+                t1._loadlazy(d)
+                t2._loadlazy(d)
+
             for d, m1 in t1._dirs.iteritems():
                 m2 = t2._dirs.get(d, emptytree)
                 _diff(m1, m2)

@@ -135,26 +135,7 @@ class filelog(object):
 
         returns True if text is different than what is stored.
         """
-
-        t = text
-        if text.startswith('\1\n'):
-            t = '\1\n\1\n' + text
-
-        samehashes = not self._revlog.cmp(node, t)
-        if samehashes:
-            return False
-
-        # censored files compare against the empty file
-        if self.iscensored(self.rev(node)):
-            return text != ''
-
-        # renaming a file produces a different hash, even if the data
-        # remains unchanged. Check if it's the case (slow):
-        if self.renamed(node):
-            t2 = self.read(node)
-            return t2 != text
-
-        return True
+        return storageutil.filerevisiondifferent(self, node, text)
 
     def verifyintegrity(self, state):
         return self._revlog.verifyintegrity(state)

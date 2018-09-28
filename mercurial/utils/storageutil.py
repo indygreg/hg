@@ -108,6 +108,32 @@ def filerevisioncopied(store, node):
 
     return False
 
+def filerevisiondifferent(store, node, filedata):
+    """Determines whether file data is equivalent to a stored node."""
+
+    if filedata.startswith(b'\x01\n'):
+        revisiontext = b'\x01\n\x01\n' + filedata
+    else:
+        revisiontext = filedata
+
+    p1, p2 = store.parents(node)
+
+    computednode = hashrevisionsha1(revisiontext, p1, p2)
+
+    if computednode == node:
+        return False
+
+    # Censored files compare against the empty file.
+    if store.iscensored(store.rev(node)):
+        return filedata != b''
+
+    # Renaming a file produces a different hash, even if the data
+    # remains unchanged. Check if that's the case.
+    if store.renamed(node):
+        return store.read(node) != filedata
+
+    return True
+
 def iterrevs(storelen, start=0, stop=None):
     """Iterate over revision numbers in a store."""
     step = 1

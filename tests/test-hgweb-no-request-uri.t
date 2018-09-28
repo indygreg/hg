@@ -23,6 +23,7 @@ should be used from d74fc8dec2b4 onward to route the request.
   >     hgwebdir,
   > )
   > from mercurial import (
+  >     encoding,
   >     util,
   > )
   > stringio = util.stringio
@@ -55,11 +56,11 @@ should be used from d74fc8dec2b4 onward to route the request.
   > 
   > def process(app):
   >     content = app(env, startrsp)
-  >     sys.stdout.write(output.getvalue())
-  >     sys.stdout.write(''.join(content))
+  >     sys.stdout.write(encoding.strfromlocal(output.getvalue()))
+  >     sys.stdout.write(encoding.strfromlocal(b''.join(content)))
   >     getattr(content, 'close', lambda : None)()
   >     print('---- ERRORS')
-  >     print(errors.getvalue())
+  >     print(encoding.strfromlocal(errors.getvalue())) # avoid b'' output diff
   > 
   > output = stringio()
   > env['PATH_INFO'] = '/'

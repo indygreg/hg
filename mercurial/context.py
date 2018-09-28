@@ -343,7 +343,7 @@ class basectx(object):
             reversed = True
             ctx1, ctx2 = ctx2, ctx1
 
-        match = match or matchmod.always(self._repo.root, self._repo.getcwd())
+        match = self._repo.narrowmatch(match)
         match = ctx2._matchstatus(ctx1, match)
         r = scmutil.status([], [], [], [], [], [], [])
         r = ctx2._buildstatus(ctx1, r, match, listignored, listclean,
@@ -371,10 +371,6 @@ class basectx(object):
                 for rfiles, sfiles in zip(r, s):
                     rfiles.extend("%s/%s" % (subpath, f) for f in sfiles)
 
-        narrowmatch = self._repo.narrowmatch()
-        if not narrowmatch.always():
-            for l in r:
-                l[:] = list(filter(narrowmatch, l))
         for l in r:
             l.sort()
 

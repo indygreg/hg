@@ -53,6 +53,7 @@ Can not modify dirstate outside
   * matcher:
   <includematcher includes='(?:(?:|.*/)f1(?:/|$))'>
   f  inside/f1  inside/f1
+  $ hg add .
   $ hg add outside/f1
   abort: cannot track 'outside/f1' - it is outside the narrow clone
   [255]

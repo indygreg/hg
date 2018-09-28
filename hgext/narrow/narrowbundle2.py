@@ -51,7 +51,7 @@ def getrepocaps_narrow(orig, repo, **kwargs):
     caps[NARROWCAP] = ['v0']
     return caps
 
-def widen_bundle(repo, diffmatcher, common, known, cgversion, source, ellipses):
+def widen_bundle(repo, diffmatcher, common, known, cgversion, ellipses):
     """generates changegroup for widening a narrow clone
 
     repo is the localrepository instance
@@ -60,7 +60,6 @@ def widen_bundle(repo, diffmatcher, common, known, cgversion, source, ellipses):
     common is set of common revs between server and client
     known is a set of revs known on the client side (used in ellipses)
     cgversion is the changegroup version to send
-    source is the command which called this codepath
     ellipses is boolean value telling whether to send ellipses data or not
 
     returns changegroup data of the changegroup built or return None if there
@@ -80,7 +79,7 @@ def widen_bundle(repo, diffmatcher, common, known, cgversion, source, ellipses):
                                         filematcher=diffmatcher,
                                         fullnodes=commonnodes)
         cgdata = packer.generate(set([nullid]), list(commonnodes), False,
-                                 source, changelog=False)
+                                 'narrow_widen', changelog=False)
 
         return cgdata
 
@@ -114,8 +113,7 @@ def getbundlechangegrouppart_widen(bundler, repo, source, bundlecaps=None,
     common = set(common or [nullid])
 
     if (oldinclude != include or oldexclude != exclude):
-        cgdata = widen_bundle(repo, diffmatch, common, [], version,
-                              source, False)
+        cgdata = widen_bundle(repo, diffmatch, common, [], version, False)
         if cgdata is not None:
             part = bundler.newpart('changegroup', data=cgdata)
             part.addparam('version', version)
@@ -194,7 +192,7 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
                                             shallow=depth is not None,
                                             ellipsisroots=newellipsis,
                                             fullnodes=newfull)
-            cgdata = packer.generate(common, newvisit, False, source)
+            cgdata = packer.generate(common, newvisit, False, 'narrow_widen')
 
             part = bundler.newpart('changegroup', data=cgdata)
             part.addparam('version', version)
@@ -212,7 +210,7 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
                                         shallow=depth is not None,
                                         ellipsisroots=ellipsisroots,
                                         fullnodes=relevant_nodes)
-        cgdata = packer.generate(common, visitnodes, False, source)
+        cgdata = packer.generate(common, visitnodes, False, 'narrow_widen')
 
         part = bundler.newpart('changegroup', data=cgdata)
         part.addparam('version', version)

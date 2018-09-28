@@ -90,6 +90,30 @@ class ifileindextests(basetestcase):
         with self.assertRaises(error.LookupError):
             f.lookup(b'%d' % nullrev)
 
+        with self.assertRaises(error.LookupError):
+            f.lookup(b'badvalue')
+
+        self.assertEqual(f.lookup(hex(nullid)[0:12]), nullid)
+
+        with self.assertRaises(error.LookupError):
+            f.lookup(b'-2')
+
+        # TODO this is wonky.
+        self.assertEqual(f.lookup(b'0'), nullid)
+
+        with self.assertRaises(error.LookupError):
+            f.lookup(b'1')
+
+        with self.assertRaises(error.LookupError):
+            f.lookup(b'11111111111111111111111111111111111111')
+
+        for i in range(-5, 5):
+            if i == nullrev:
+                continue
+
+            with self.assertRaises(LookupError):
+                f.lookup(i)
+
         self.assertEqual(f.linkrev(nullrev), nullrev)
 
         for i in range(-5, 5):
@@ -170,8 +194,22 @@ class ifileindextests(basetestcase):
 
         self.assertEqual(f.lookup(node), node)
         self.assertEqual(f.lookup(0), node)
+        self.assertEqual(f.lookup(-1), nullid)
         self.assertEqual(f.lookup(b'0'), node)
         self.assertEqual(f.lookup(hex(node)), node)
+        self.assertEqual(f.lookup(hex(node)[0:12]), node)
+
+        with self.assertRaises(IndexError):
+            f.lookup(-2)
+
+        with self.assertRaises(error.LookupError):
+            f.lookup(b'-2')
+
+        with self.assertRaises(IndexError):
+            f.lookup(1)
+
+        with self.assertRaises(error.LookupError):
+            f.lookup(b'1')
 
         self.assertEqual(f.linkrev(0), 0)
 

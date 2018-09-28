@@ -135,7 +135,7 @@ class filelog(object):
 
         returns True if text is different than what is stored.
         """
-        return storageutil.filerevisiondifferent(self, node, text)
+        return not storageutil.filedataequivalent(self, node, text)
 
     def verifyintegrity(self, state):
         return self._revlog.verifyintegrity(state)

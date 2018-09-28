@@ -108,8 +108,18 @@ def filerevisioncopied(store, node):
 
     return False
 
-def filerevisiondifferent(store, node, filedata):
-    """Determines whether file data is equivalent to a stored node."""
+def filedataequivalent(store, node, filedata):
+    """Determines whether file data is equivalent to a stored node.
+
+    Returns True if the passed file data would hash to the same value
+    as a stored revision and False otherwise.
+
+    When a stored revision is censored, filedata must be empty to have
+    equivalence.
+
+    When a stored revision has copy metadata, it is ignored as part
+    of the compare.
+    """
 
     if filedata.startswith(b'\x01\n'):
         revisiontext = b'\x01\n\x01\n' + filedata
@@ -121,18 +131,18 @@ def filerevisiondifferent(store, node, filedata):
     computednode = hashrevisionsha1(revisiontext, p1, p2)
 
     if computednode == node:
-        return False
+        return True
 
     # Censored files compare against the empty file.
     if store.iscensored(store.rev(node)):
-        return filedata != b''
+        return filedata == b''
 
     # Renaming a file produces a different hash, even if the data
     # remains unchanged. Check if that's the case.
     if store.renamed(node):
-        return store.read(node) != filedata
+        return store.read(node) == filedata
 
-    return True
+    return False
 
 def iterrevs(storelen, start=0, stop=None):
     """Iterate over revision numbers in a store."""

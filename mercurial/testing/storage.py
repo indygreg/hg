@@ -85,21 +85,19 @@ class ifileindextests(basetestcase):
         self.assertEqual(f.lookup(nullid), nullid)
         self.assertEqual(f.lookup(nullrev), nullid)
         self.assertEqual(f.lookup(hex(nullid)), nullid)
-
-        # String converted to integer doesn't work for nullrev.
-        with self.assertRaises(error.LookupError):
-            f.lookup(b'%d' % nullrev)
+        self.assertEqual(f.lookup(b'%d' % nullrev), nullid)
 
         with self.assertRaises(error.LookupError):
             f.lookup(b'badvalue')
 
-        self.assertEqual(f.lookup(hex(nullid)[0:12]), nullid)
+        with self.assertRaises(error.LookupError):
+            f.lookup(hex(nullid)[0:12])
 
         with self.assertRaises(error.LookupError):
             f.lookup(b'-2')
 
-        # TODO this is wonky.
-        self.assertEqual(f.lookup(b'0'), nullid)
+        with self.assertRaises(error.LookupError):
+            f.lookup(b'0')
 
         with self.assertRaises(error.LookupError):
             f.lookup(b'1')
@@ -197,7 +195,9 @@ class ifileindextests(basetestcase):
         self.assertEqual(f.lookup(-1), nullid)
         self.assertEqual(f.lookup(b'0'), node)
         self.assertEqual(f.lookup(hex(node)), node)
-        self.assertEqual(f.lookup(hex(node)[0:12]), node)
+
+        with self.assertRaises(error.LookupError):
+            f.lookup(hex(node)[0:12])
 
         with self.assertRaises(IndexError):
             f.lookup(-2)

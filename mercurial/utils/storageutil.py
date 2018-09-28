@@ -10,10 +10,13 @@ from __future__ import absolute_import
 import hashlib
 import re
 
+from ..i18n import _
 from ..node import (
+    bin,
     nullid,
 )
 from .. import (
+    error,
     pycompat,
 )
 
@@ -99,3 +102,53 @@ def iterrevs(storelen, start=0, stop=None):
         stop = storelen
 
     return pycompat.xrange(start, stop, step)
+
+def fileidlookup(store, fileid, identifier):
+    """Resolve the file node for a value.
+
+    ``store`` is an object implementing the ``ifileindex`` interface.
+
+    ``fileid`` can be:
+
+    * A 20 byte binary node.
+    * An integer revision number
+    * A 40 byte hex node.
+    * A bytes that can be parsed as an integer representing a revision number.
+
+    ``identifier`` is used to populate ``error.LookupError`` with an identifier
+    for the store.
+
+    Raises ``error.LookupError`` on failure.
+    """
+    if isinstance(fileid, int):
+        return store.node(fileid)
+
+    if len(fileid) == 20:
+        try:
+            store.rev(fileid)
+            return fileid
+        except error.LookupError:
+            pass
+
+    if len(fileid) == 40:
+        try:
+            rawnode = bin(fileid)
+            store.rev(rawnode)
+            return rawnode
+        except TypeError:
+            pass
+
+    try:
+        rev = int(fileid)
+
+        if b'%d' % rev != fileid:
+            raise ValueError
+
+        try:
+            return store.node(rev)
+        except (IndexError, TypeError):
+            pass
+    except (ValueError, OverflowError):
+        pass
+
+    raise error.LookupError(fileid, identifier, _('no match found'))

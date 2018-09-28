@@ -49,7 +49,8 @@ class filelog(object):
         return self._revlog.node(rev)
 
     def lookup(self, node):
-        return self._revlog.lookup(node)
+        return storageutil.fileidlookup(self._revlog, node,
+                                        self._revlog.indexfile)
 
     def linkrev(self, rev):
         return self._revlog.linkrev(rev)

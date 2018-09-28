@@ -1099,9 +1099,6 @@ class imanifeststorage(interfaceutil.Interface):
         that can be converted to an integer.
 
         Raises ``error.LookupError`` if a ndoe could not be resolved.
-
-        TODO this is only used by debug* commands and can probably be deleted
-        easily.
         """
 
     def parents(node):

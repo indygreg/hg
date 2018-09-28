@@ -115,15 +115,7 @@ class filelog(object):
         return self.addrevision(text, transaction, link, p1, p2)
 
     def renamed(self, node):
-        if self.parents(node)[0] != revlog.nullid:
-            return False
-        t = self.revision(node)
-        m = storageutil.parsemeta(t)[0]
-        # copy and copyrev occur in pairs. In rare cases due to bugs,
-        # one can occur without the other.
-        if m and "copy" in m and "copyrev" in m:
-            return (m["copy"], revlog.bin(m["copyrev"]))
-        return False
+        return storageutil.filerevisioncopied(self, node)
 
     def size(self, rev):
         """return the size of a given revision"""

@@ -262,3 +262,149 @@ def resolvestripinfo(minlinkrev, tiprev, headrevs, linkrevfn, parentrevsfn):
                     futurelargelinkrevs.add(plinkrev)
 
     return strippoint, brokenrevs
+
+def emitrevisions(store, revs, resultcls, deltaparentfn, candeltafn,
+                  rawsizefn, revdifffn, flagsfn, sendfulltext=False,
+                  revisiondata=False, assumehaveparentrevisions=False,
+                  deltaprevious=False):
+    """Generic implementation of ifiledata.emitrevisions().
+
+    Emitting revision data is subtly complex. This function attempts to
+    encapsulate all the logic for doing so in a backend-agnostic way.
+
+    ``store``
+       Object conforming to ``ifilestorage`` interface.
+
+    ``revs``
+       List of integer revision numbers whose data to emit.
+
+    ``resultcls``
+       A type implementing the ``irevisiondelta`` interface that will be
+       constructed and returned.
+
+    ``deltaparentfn``
+       Callable receiving a revision number and returning the revision number
+       of a revision that the internal delta is stored against. This delta
+       will be preferred over computing a new arbitrary delta.
+
+    ``candeltafn``
+       Callable receiving a pair of revision numbers that returns a bool
+       indicating whether a delta between them can be produced.
+
+    ``rawsizefn``
+       Callable receiving a revision number and returning the length of the
+       ``store.revision(rev, raw=True)``.
+
+    ``revdifffn``
+       Callable receiving a pair of revision numbers that returns a delta
+       between them.
+
+    ``flagsfn``
+       Callable receiving a revision number and returns the integer flags
+       value for it.
+
+    ``sendfulltext``
+       Whether to send fulltext revisions instead of deltas, if allowed.
+
+    ``revisiondata``
+    ``assumehaveparentrevisions``
+    ``deltaprevious``
+       See ``ifiledata.emitrevisions()`` interface documentation.
+    """
+
+    fnode = store.node
+
+    prevrev = None
+
+    if deltaprevious or assumehaveparentrevisions:
+        prevrev = store.parentrevs(revs[0])[0]
+
+    # Set of revs available to delta against.
+    available = set()
+
+    for rev in revs:
+        if rev == nullrev:
+            continue
+
+        node = fnode(rev)
+        deltaparentrev = deltaparentfn(rev)
+        p1rev, p2rev = store.parentrevs(rev)
+
+        # Forced delta against previous mode.
+        if deltaprevious:
+            baserev = prevrev
+
+        # We're instructed to send fulltext. Honor that.
+        elif sendfulltext:
+            baserev = nullrev
+
+        # There is a delta in storage. We try to use that because it
+        # amounts to effectively copying data from storage and is
+        # therefore the fastest.
+        elif deltaparentrev != nullrev:
+            # Base revision was already emitted in this group. We can
+            # always safely use the delta.
+            if deltaparentrev in available:
+                baserev = deltaparentrev
+
+            # Base revision is a parent that hasn't been emitted already.
+            # Use it if we can assume the receiver has the parent revision.
+            elif (assumehaveparentrevisions
+                  and deltaparentrev in (p1rev, p2rev)):
+                baserev = deltaparentrev
+
+            # No guarantee the receiver has the delta parent. Send delta
+            # against last revision (if possible), which in the common case
+            # should be similar enough to this revision that the delta is
+            # reasonable.
+            elif prevrev is not None:
+                baserev = prevrev
+            else:
+                baserev = nullrev
+
+        # Storage has a fulltext revision.
+
+        # Let's use the previous revision, which is as good a guess as any.
+        # There is definitely room to improve this logic.
+        elif prevrev is not None:
+            baserev = prevrev
+        else:
+            baserev = nullrev
+
+        # But we can't actually use our chosen delta base for whatever
+        # reason. Reset to fulltext.
+        if baserev != nullrev and not candeltafn(baserev, rev):
+            baserev = nullrev
+
+        revision = None
+        delta = None
+        baserevisionsize = None
+
+        if revisiondata:
+            if store.iscensored(baserev) or store.iscensored(rev):
+                try:
+                    revision = store.revision(node, raw=True)
+                except error.CensoredNodeError as e:
+                    revision = e.tombstone
+
+                if baserev != nullrev:
+                    baserevisionsize = rawsizefn(baserev)
+
+            elif baserev == nullrev and not deltaprevious:
+                revision = store.revision(node, raw=True)
+                available.add(rev)
+            else:
+                delta = revdifffn(baserev, rev)
+                available.add(rev)
+
+        yield resultcls(
+            node=node,
+            p1node=fnode(p1rev),
+            p2node=fnode(p2rev),
+            basenode=fnode(baserev),
+            flags=flagsfn(rev),
+            baserevisionsize=baserevisionsize,
+            revision=revision,
+            delta=delta)
+
+        prevrev = rev

@@ -2193,7 +2193,6 @@ class revlog(object):
             nodesorder = 'storage'
 
         frev = self.rev
-        fnode = self.node
 
         if nodesorder == 'nodes':
             revs = [frev(n) for n in nodes]
@@ -2204,100 +2203,17 @@ class revlog(object):
             revs = set(frev(n) for n in nodes)
             revs = dagop.linearize(revs, self.parentrevs)
 
-        prevrev = None
-
-        if deltaprevious or assumehaveparentrevisions:
-            prevrev = self.parentrevs(revs[0])[0]
-
-        # Set of revs available to delta against.
-        available = set()
-
-        for rev in revs:
-            if rev == nullrev:
-                continue
-
-            node = fnode(rev)
-            deltaparentrev = self.deltaparent(rev)
-            p1rev, p2rev = self.parentrevs(rev)
-
-            # Forced delta against previous mode.
-            if deltaprevious:
-                baserev = prevrev
-
-            # Revlog is configured to use full snapshots. Stick to that.
-            elif not self._storedeltachains:
-                baserev = nullrev
-
-            # There is a delta in storage. We try to use that because it
-            # amounts to effectively copying data from storage and is
-            # therefore the fastest.
-            elif deltaparentrev != nullrev:
-                # Base revision was already emitted in this group. We can
-                # always safely use the delta.
-                if deltaparentrev in available:
-                    baserev = deltaparentrev
-
-                # Base revision is a parent that hasn't been emitted already.
-                # Use it if we can assume the receiver has the parent revision.
-                elif (assumehaveparentrevisions
-                      and deltaparentrev in (p1rev, p2rev)):
-                    baserev = deltaparentrev
-
-                # No guarantee the receiver has the delta parent. Send delta
-                # against last revision (if possible), which in the common case
-                # should be similar enough to this revision that the delta is
-                # reasonable.
-                elif prevrev is not None:
-                    baserev = prevrev
-                else:
-                    baserev = nullrev
-
-            # Storage has a fulltext revision.
-
-            # Let's use the previous revision, which is as good a guess as any.
-            # There is definitely room to improve this logic.
-            elif prevrev is not None:
-                baserev = prevrev
-            else:
-                baserev = nullrev
-
-            # But we can't actually use our chosen delta base for whatever
-            # reason. Reset to fulltext.
-            if baserev != nullrev and not self.candelta(baserev, rev):
-                baserev = nullrev
-
-            revision = None
-            delta = None
-            baserevisionsize = None
-
-            if revisiondata:
-                if self.iscensored(baserev) or self.iscensored(rev):
-                    try:
-                        revision = self.revision(node, raw=True)
-                    except error.CensoredNodeError as e:
-                        revision = e.tombstone
-
-                    if baserev != nullrev:
-                        baserevisionsize = self.rawsize(baserev)
-
-                elif baserev == nullrev and not deltaprevious:
-                    revision = self.revision(node, raw=True)
-                    available.add(rev)
-                else:
-                    delta = self.revdiff(baserev, rev)
-                    available.add(rev)
-
-            yield revlogrevisiondelta(
-                node=node,
-                p1node=fnode(p1rev),
-                p2node=fnode(p2rev),
-                basenode=fnode(baserev),
-                flags=self.flags(rev),
-                baserevisionsize=baserevisionsize,
-                revision=revision,
-                delta=delta)
-
-            prevrev = rev
+        return storageutil.emitrevisions(
+            self, revs, revlogrevisiondelta,
+            deltaparentfn=self.deltaparent,
+            candeltafn=self.candelta,
+            rawsizefn=self.rawsize,
+            revdifffn=self.revdiff,
+            flagsfn=self.flags,
+            sendfulltext=not self._storedeltachains,
+            revisiondata=revisiondata,
+            assumehaveparentrevisions=assumehaveparentrevisions,
+            deltaprevious=deltaprevious)
 
     DELTAREUSEALWAYS = 'always'
     DELTAREUSESAMEREVS = 'samerevs'

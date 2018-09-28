@@ -9,6 +9,9 @@ from __future__ import absolute_import
 
 import heapq
 
+from .node import (
+    nullrev,
+)
 from .thirdparty import (
     attr,
 )
@@ -224,6 +227,37 @@ def revdescendants(repo, revs, followfirst, startdepth=None, stopdepth=None):
         gen = _genrevdescendantsofdepth(repo, revs, followfirst,
                                         startdepth, stopdepth)
     return generatorset(gen, iterasc=True)
+
+def descendantrevs(revs, revsfn, parentrevsfn):
+    """Generate revision number descendants in revision order.
+
+    Yields revision numbers starting with a child of some rev in
+    ``revs``. Results are ordered by revision number and are
+    therefore topological. Each revision is not considered a descendant
+    of itself.
+
+    ``revsfn`` is a callable that with no argument iterates over all
+    revision numbers and with a ``start`` argument iterates over revision
+    numbers beginning with that value.
+
+    ``parentrevsfn`` is a callable that receives a revision number and
+    returns an iterable of parent revision numbers, whose values may include
+    nullrev.
+    """
+    first = min(revs)
+
+    if first == nullrev:
+        for rev in revsfn():
+            yield rev
+        return
+
+    seen = set(revs)
+    for rev in revsfn(start=first + 1):
+        for prev in parentrevsfn(rev):
+            if prev != nullrev and prev in seen:
+                seen.add(rev)
+                yield rev
+                break
 
 def _reachablerootspure(repo, minroot, roots, heads, includepath):
     """return (heads(::<roots> and ::<heads>))

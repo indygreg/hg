@@ -748,25 +748,7 @@ class revlog(object):
                                       inclusive=inclusive)
 
     def descendants(self, revs):
-        """Generate the descendants of 'revs' in revision order.
-
-        Yield a sequence of revision numbers starting with a child of
-        some rev in revs, i.e., each revision is *not* considered a
-        descendant of itself.  Results are ordered by revision number (a
-        topological sort)."""
-        first = min(revs)
-        if first == nullrev:
-            for i in self:
-                yield i
-            return
-
-        seen = set(revs)
-        for i in self.revs(start=first + 1):
-            for x in self.parentrevs(i):
-                if x != nullrev and x in seen:
-                    seen.add(i)
-                    yield i
-                    break
+        return dagop.descendantrevs(revs, self.revs, self.parentrevs)
 
     def findcommonmissing(self, common=None, heads=None):
         """Return a tuple of the ancestors of common and the ancestors of heads

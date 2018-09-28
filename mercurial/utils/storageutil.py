@@ -14,6 +14,7 @@ from ..i18n import _
 from ..node import (
     bin,
     nullid,
+    nullrev,
 )
 from .. import (
     error,
@@ -155,3 +156,54 @@ def fileidlookup(store, fileid, identifier):
         pass
 
     raise error.LookupError(fileid, identifier, _('no match found'))
+
+def resolvestripinfo(minlinkrev, tiprev, headrevs, linkrevfn, parentrevsfn):
+    """Resolve information needed to strip revisions.
+
+    Finds the minimum revision number that must be stripped in order to
+    strip ``minlinkrev``.
+
+    Returns a 2-tuple of the minimum revision number to do that and a set
+    of all revision numbers that have linkrevs that would be broken
+    by that strip.
+
+    ``tiprev`` is the current tip-most revision. It is ``len(store) - 1``.
+    ``headrevs`` is an iterable of head revisions.
+    ``linkrevfn`` is a callable that receives a revision and returns a linked
+    revision.
+    ``parentrevsfn`` is a callable that receives a revision number and returns
+    an iterable of its parent revision numbers.
+    """
+    brokenrevs = set()
+    strippoint = tiprev + 1
+
+    heads = {}
+    futurelargelinkrevs = set()
+    for head in headrevs:
+        headlinkrev = linkrevfn(head)
+        heads[head] = headlinkrev
+        if headlinkrev >= minlinkrev:
+            futurelargelinkrevs.add(headlinkrev)
+
+    # This algorithm involves walking down the rev graph, starting at the
+    # heads. Since the revs are topologically sorted according to linkrev,
+    # once all head linkrevs are below the minlink, we know there are
+    # no more revs that could have a linkrev greater than minlink.
+    # So we can stop walking.
+    while futurelargelinkrevs:
+        strippoint -= 1
+        linkrev = heads.pop(strippoint)
+
+        if linkrev < minlinkrev:
+            brokenrevs.add(strippoint)
+        else:
+            futurelargelinkrevs.remove(linkrev)
+
+        for p in parentrevsfn(strippoint):
+            if p != nullrev:
+                plinkrev = linkrevfn(p)
+                heads[p] = plinkrev
+                if plinkrev >= minlinkrev:
+                    futurelargelinkrevs.add(plinkrev)
+
+    return strippoint, brokenrevs

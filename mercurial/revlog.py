@@ -2096,39 +2096,9 @@ class revlog(object):
         Returns a tuple containing the minimum rev and a set of all revs that
         have linkrevs that will be broken by this strip.
         """
-        brokenrevs = set()
-        strippoint = len(self)
-
-        heads = {}
-        futurelargelinkrevs = set()
-        for head in self.headrevs():
-            headlinkrev = self.linkrev(head)
-            heads[head] = headlinkrev
-            if headlinkrev >= minlink:
-                futurelargelinkrevs.add(headlinkrev)
-
-        # This algorithm involves walking down the rev graph, starting at the
-        # heads. Since the revs are topologically sorted according to linkrev,
-        # once all head linkrevs are below the minlink, we know there are
-        # no more revs that could have a linkrev greater than minlink.
-        # So we can stop walking.
-        while futurelargelinkrevs:
-            strippoint -= 1
-            linkrev = heads.pop(strippoint)
-
-            if linkrev < minlink:
-                brokenrevs.add(strippoint)
-            else:
-                futurelargelinkrevs.remove(linkrev)
-
-            for p in self.parentrevs(strippoint):
-                if p != nullrev:
-                    plinkrev = self.linkrev(p)
-                    heads[p] = plinkrev
-                    if plinkrev >= minlink:
-                        futurelargelinkrevs.add(plinkrev)
-
-        return strippoint, brokenrevs
+        return storageutil.resolvestripinfo(minlink, len(self) - 1,
+                                            self.headrevs(),
+                                            self.linkrev, self.parentrevs)
 
     def strip(self, minlink, transaction):
         """truncate the revlog on the first revision with a linkrev >= minlink

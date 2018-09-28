@@ -104,8 +104,7 @@ added upstream revisions.
   sending batch command
   searching for changes
   all local heads known remotely
-  no changes found
-  sending getbundle command
+  sending narrow_widen command
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "changegroup" (params: * mandatory) supported (glob)
   adding changesets
@@ -115,12 +114,7 @@ added upstream revisions.
   adding widest/f revisions (tree !)
   added 0 changesets with 1 changes to 1 files
   bundle2-input-part: total payload size * (glob)
-  bundle2-input-part: "listkeys" (params: 1 mandatory) supported
-  bundle2-input-part: "phase-heads" supported
-  bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 2 parts total
-  checking for updated bookmarks
-  3 local changesets published
+  bundle2-input-bundle: 0 parts total
    widest/f: add from widened narrow clone -> g
   getting widest/f
   $ hg tracked
@@ -143,6 +137,7 @@ Pull down the newly added upstream revision.
   adding file changes
   added 5 changesets with 4 changes to 2 files
   new changesets *:* (glob)
+  3 local changesets published
   (run 'hg update' to get a working copy)
   $ hg update -r 'desc("add wider")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -179,12 +174,10 @@ widen the narrow spec to include the wider file
   $ hg tracked --addinclude wider
   comparing with ssh://user@dummy/master
   searching for changes
-  no changes found
   adding changesets
   adding manifests
   adding file changes
   added 0 changesets with 1 changes to 1 files
-  5 local changesets published
   $ hg tracked
   I path:inside
   I path:wider
@@ -284,12 +277,10 @@ make narrow clone with every third node.
   $ hg tracked --addinclude d1
   comparing with ssh://user@dummy/upstream
   searching for changes
-  no changes found
   adding changesets
   adding manifests
   adding file changes
   added 0 changesets with 1 changes to 1 files
-  11 local changesets published
   $ hg tracked
   I path:d0
   I path:d1
@@ -376,12 +367,10 @@ Widening that fails can be recovered from
   $ hg --config hooks.pretxnchangegroup.bad=false tracked --addinclude d1
   comparing with ssh://user@dummy/upstream
   searching for changes
-  no changes found
   adding changesets
   adding manifests
   adding file changes
   added 0 changesets with 1 changes to 1 files
-  11 local changesets published
   $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
   11: local
   10: add d10/f

@@ -21,7 +21,6 @@ from mercurial import (
     error,
     exchange,
     extensions,
-    match as matchmod,
     narrowspec,
     repair,
     repository,
@@ -57,7 +56,7 @@ def widen_bundle(repo, diffmatcher, common, known, cgversion, ellipses):
     repo is the localrepository instance
     diffmatcher is a differencemacther of '(newincludes, newexcludes) -
     (oldincludes, oldexcludes)'
-    common is set of common revs between server and client
+    common is set of common heads between server and client
     known is a set of revs known on the client side (used in ellipses)
     cgversion is the changegroup version to send
     ellipses is boolean value telling whether to send ellipses data or not
@@ -83,41 +82,6 @@ def widen_bundle(repo, diffmatcher, common, known, cgversion, ellipses):
         return cgdata
 
     return None
-
-def getbundlechangegrouppart_widen(bundler, repo, source, bundlecaps=None,
-                                   b2caps=None, heads=None, common=None,
-                                   **kwargs):
-    """Handling changegroup changegroup generation on the server when user
-    is widening their narrowspec"""
-
-    cgversions = b2caps.get('changegroup')
-    if cgversions:  # 3.1 and 3.2 ship with an empty value
-        cgversions = [v for v in cgversions
-                      if v in changegroup.supportedoutgoingversions(repo)]
-        if not cgversions:
-            raise ValueError(_('no common changegroup version'))
-        version = max(cgversions)
-    else:
-        raise ValueError(_("server does not advertise changegroup version,"
-                           " can't negotiate support for ellipsis nodes"))
-
-    include = sorted(filter(bool, kwargs.get(r'includepats', [])))
-    exclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
-    newmatch = narrowspec.match(repo.root, include=include, exclude=exclude)
-    oldinclude = sorted(filter(bool, kwargs.get(r'oldincludepats', [])))
-    oldexclude = sorted(filter(bool, kwargs.get(r'oldexcludepats', [])))
-    oldmatch = narrowspec.match(repo.root, include=oldinclude,
-                                exclude=oldexclude)
-    diffmatch = matchmod.differencematcher(newmatch, oldmatch)
-    common = set(common or [nullid])
-
-    if (oldinclude != include or oldexclude != exclude):
-        cgdata = widen_bundle(repo, diffmatch, common, [], version, False)
-        if cgdata is not None:
-            part = bundler.newpart('changegroup', data=cgdata)
-            part.addparam('version', version)
-            if 'treemanifest' in repo.requirements:
-                part.addparam('treemanifest', '1')
 
 # Serve a changegroup for a client with a narrow clone.
 def getbundlechangegrouppart_narrow(bundler, repo, source,
@@ -326,7 +290,6 @@ def setup():
     getbundleargs = wireprototypes.GETBUNDLE_ARGUMENTS
 
     getbundleargs['narrow'] = 'boolean'
-    getbundleargs['widen'] = 'boolean'
     getbundleargs['depth'] = 'plain'
     getbundleargs['oldincludepats'] = 'csv'
     getbundleargs['oldexcludepats'] = 'csv'
@@ -344,8 +307,6 @@ def setup():
         if (kwargs.get(r'narrow', False) and
             repo.ui.configbool('experimental', 'narrowservebrokenellipses')):
             getbundlechangegrouppart_narrow(*args, **kwargs)
-        elif kwargs.get(r'widen', False) and kwargs.get(r'narrow', False):
-            getbundlechangegrouppart_widen(*args, **kwargs)
         else:
             origcgfn(*args, **kwargs)
     exchange.getbundle2partsmapping['changegroup'] = wrappedcgfn

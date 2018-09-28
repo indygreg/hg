@@ -11,6 +11,7 @@ import os
 
 from mercurial.i18n import _
 from mercurial import (
+    bundle2,
     cmdutil,
     commands,
     discovery,
@@ -265,7 +266,6 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
         # The old{in,ex}cludepats have already been set by orig()
         kwargs['includepats'] = newincludes
         kwargs['excludepats'] = newexcludes
-        kwargs['widen'] = True
     wrappedextraprepare = extensions.wrappedfunction(exchange,
         '_pullbundle2extraprepare', pullbundle2extraprepare_widen)
 
@@ -290,9 +290,23 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
             with ds.parentchange():
                 ds.setparents(p1, p2)
         else:
-            with wrappedextraprepare,\
+            with remote.commandexecutor() as e:
+                bundle = e.callcommand('narrow_widen', {
+                    'oldincludes': oldincludes,
+                    'oldexcludes': oldexcludes,
+                    'newincludes': newincludes,
+                    'newexcludes': newexcludes,
+                    'cgversion': '03',
+                    'commonheads': common,
+                    'known': [],
+                    'ellipses': False,
+                }).result()
+
+            with repo.transaction('widening') as tr,\
                  repo.ui.configoverride(overrides, 'widen'):
-                exchange.pull(repo, remote, heads=common)
+                tgetter = lambda: tr
+                bundle2.processbundle(repo, bundle,
+                        transactiongetter=tgetter)
 
         repo.setnewnarrowpats()
         actions = {k: [] for k in 'a am f g cd dc r dm dg m e k p pr'.split()}

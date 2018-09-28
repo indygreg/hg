@@ -78,9 +78,6 @@ class filelog(object):
     def revision(self, node, _df=None, raw=False):
         return self._revlog.revision(node, _df=_df, raw=raw)
 
-    def revdiff(self, rev1, rev2):
-        return self._revlog.revdiff(rev1, rev2)
-
     def emitrevisions(self, nodes, nodesorder=None,
                       revisiondata=False, assumehaveparentrevisions=False,
                       deltaprevious=False):

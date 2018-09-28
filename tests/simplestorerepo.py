@@ -487,16 +487,6 @@ class filestorage(object):
 
         return nodes
 
-    def revdiff(self, rev1, rev2):
-        validaterev(rev1)
-        validaterev(rev2)
-
-        node1 = self.node(rev1)
-        node2 = self.node(rev2)
-
-        return mdiff.textdiff(self.revision(node1, raw=True),
-                              self.revision(node2, raw=True))
-
     def heads(self, start=None, stop=None):
         # This is copied from revlog.py.
         if start is None and stop is None:

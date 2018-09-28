@@ -396,17 +396,6 @@ class ifiledatatests(basetestcase):
         with self.assertRaises(error.LookupError):
             f.cmp(b'\x01' * 20, b'irrelevant')
 
-        self.assertEqual(f.revdiff(nullrev, nullrev), b'')
-
-        with self.assertRaises(IndexError):
-            f.revdiff(0, nullrev)
-
-        with self.assertRaises(IndexError):
-            f.revdiff(nullrev, 0)
-
-        with self.assertRaises(IndexError):
-            f.revdiff(0, 0)
-
         # Emitting empty list is an empty generator.
         gen = f.emitrevisions([])
         with self.assertRaises(StopIteration):
@@ -458,14 +447,6 @@ class ifiledatatests(basetestcase):
 
         self.assertFalse(f.cmp(node, fulltext))
         self.assertTrue(f.cmp(node, fulltext + b'extra'))
-
-        self.assertEqual(f.revdiff(0, 0), b'')
-        self.assertEqual(f.revdiff(nullrev, 0),
-                         b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x07%s' %
-                         fulltext)
-
-        self.assertEqual(f.revdiff(0, nullrev),
-                         b'\x00\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00\x00')
 
         # Emitting a single revision works.
         gen = f.emitrevisions([node])
@@ -576,14 +557,6 @@ class ifiledatatests(basetestcase):
 
         with self.assertRaises(error.LookupError):
             f.cmp(b'\x01' * 20, b'irrelevant')
-
-        self.assertEqual(f.revdiff(0, 1),
-                         b'\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x04\x01' +
-                         fulltext1)
-
-        self.assertEqual(f.revdiff(0, 2),
-                         b'\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x04\x02' +
-                         fulltext2)
 
         # Nodes should be emitted in order.
         gen = f.emitrevisions([node0, node1, node2], revisiondata=True)

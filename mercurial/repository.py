@@ -586,15 +586,6 @@ class ifiledata(interfaceutil.Interface):
         TODO better document the copy metadata and censoring logic.
         """
 
-    def revdiff(rev1, rev2):
-        """Obtain a delta between two revision numbers.
-
-        Operates on raw data in the store (``revision(node, raw=True)``).
-
-        The returned data is the result of ``bdiff.bdiff`` on the raw
-        revision data.
-        """
-
     def emitrevisions(nodes,
                       nodesorder=None,
                       revisiondata=False,

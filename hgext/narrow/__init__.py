@@ -15,11 +15,9 @@ from __future__ import absolute_import
 testedwith = 'ships-with-hg-core'
 
 from mercurial import (
-    extensions,
     localrepo,
     registrar,
     repository,
-    verify as verifymod,
 )
 
 from . import (
@@ -69,16 +67,6 @@ def reposetup(ui, repo):
         narrowrepo.wraprepo(repo)
         narrowpatch.setup(repo)
         narrowwirepeer.reposetup(repo)
-
-def _verifierinit(orig, self, repo, matcher=None):
-    # The verifier's matcher argument was desgined for narrowhg, so it should
-    # be None from core. If another extension passes a matcher (unlikely),
-    # we'll have to fail until matchers can be composed more easily.
-    assert matcher is None
-    orig(self, repo, repo.narrowmatch())
-
-def extsetup(ui):
-    extensions.wrapfunction(verifymod.verifier, '__init__', _verifierinit)
 
 templatekeyword = narrowtemplates.templatekeyword
 revsetpredicate = narrowtemplates.revsetpredicate

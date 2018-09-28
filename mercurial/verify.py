@@ -19,7 +19,6 @@ from . import (
     error,
     pycompat,
     revlog,
-    scmutil,
     util,
 )
 
@@ -35,12 +34,10 @@ def _normpath(f):
     return f
 
 class verifier(object):
-    # The match argument is always None in hg core, but e.g. the narrowhg
-    # extension will pass in a matcher here.
-    def __init__(self, repo, match=None):
+    def __init__(self, repo):
         self.repo = repo.unfiltered()
         self.ui = repo.ui
-        self.match = match or scmutil.matchall(repo)
+        self.match = repo.narrowmatch()
         self.badrevs = set()
         self.errors = 0
         self.warnings = 0

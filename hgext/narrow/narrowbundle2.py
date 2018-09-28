@@ -51,6 +51,41 @@ def getrepocaps_narrow(orig, repo, **kwargs):
     caps[NARROWCAP] = ['v0']
     return caps
 
+def widen_bundle(repo, diffmatcher, common, known, cgversion, source, ellipses):
+    """generates changegroup for widening a narrow clone
+
+    repo is the localrepository instance
+    diffmatcher is a differencemacther of '(newincludes, newexcludes) -
+    (oldincludes, oldexcludes)'
+    common is set of common revs between server and client
+    known is a set of revs known on the client side (used in ellipses)
+    cgversion is the changegroup version to send
+    source is the command which called this codepath
+    ellipses is boolean value telling whether to send ellipses data or not
+
+    returns changegroup data of the changegroup built or return None if there
+    are no common revs
+    """
+    # XXX: This patch will start sending bundle2 after couple of patches when
+    # called from the wireprotocol command
+    common = repo.revs("::%ln", common)
+    commonnodes = set()
+    cl = repo.changelog
+    for c in common:
+        commonnodes.add(cl.node(c))
+    if commonnodes:
+        # XXX: we should only send the filelogs (and treemanifest). user
+        # already has the changelog and manifest
+        packer = changegroup.getbundler(cgversion, repo,
+                                        filematcher=diffmatcher,
+                                        fullnodes=commonnodes)
+        cgdata = packer.generate(set([nullid]), list(commonnodes), False,
+                                 source, changelog=False)
+
+        return cgdata
+
+    return None
+
 def getbundlechangegrouppart_widen(bundler, repo, source, bundlecaps=None,
                                    b2caps=None, heads=None, common=None,
                                    **kwargs):
@@ -79,20 +114,9 @@ def getbundlechangegrouppart_widen(bundler, repo, source, bundlecaps=None,
     common = set(common or [nullid])
 
     if (oldinclude != include or oldexclude != exclude):
-        common = repo.revs("::%ln", common)
-        commonnodes = set()
-        cl = repo.changelog
-        for c in common:
-            commonnodes.add(cl.node(c))
-        if commonnodes:
-            # XXX: we should only send the filelogs (and treemanifest). user
-            # already has the changelog and manifest
-            packer = changegroup.getbundler(version, repo,
-                                            filematcher=diffmatch,
-                                            fullnodes=commonnodes)
-            cgdata = packer.generate(set([nullid]), list(commonnodes), False,
-                                     source, changelog=False)
-
+        cgdata = widen_bundle(repo, diffmatch, common, [], version,
+                              source, False)
+        if cgdata is not None:
             part = bundler.newpart('changegroup', data=cgdata)
             part.addparam('version', version)
             if 'treemanifest' in repo.requirements:

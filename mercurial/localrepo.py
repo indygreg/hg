@@ -2808,14 +2808,26 @@ def instance(ui, path, create, intents=None, createopts=None):
 def islocal(path):
     return True
 
-def newreporequirements(ui, createopts=None):
+def defaultcreateopts(ui, createopts=None):
+    """Populate the default creation options for a repository.
+
+    A dictionary of explicitly requested creation options can be passed
+    in. Missing keys will be populated.
+    """
+    createopts = dict(createopts or {})
+
+    if 'backend' not in createopts:
+        # experimental config: storage.new-repo-backend
+        createopts['backend'] = ui.config('storage', 'new-repo-backend')
+
+    return createopts
+
+def newreporequirements(ui, createopts):
     """Determine the set of requirements for a new local repository.
 
     Extensions can wrap this function to specify custom requirements for
     new repositories.
     """
-    createopts = createopts or {}
-
     # If the repo is being created from a shared repository, we copy
     # its requirements.
     if 'sharedrepo' in createopts:
@@ -2826,6 +2838,14 @@ def newreporequirements(ui, createopts=None):
             requirements.add('shared')
 
         return requirements
+
+    if 'backend' not in createopts:
+        raise error.ProgrammingError('backend key not present in createopts; '
+                                     'was defaultcreateopts() called?')
+
+    if createopts['backend'] != 'revlogv1':
+        raise error.Abort(_('unable to determine repository requirements for '
+                            'storage backend: %s') % createopts['backend'])
 
     requirements = {'revlogv1'}
     if ui.configbool('format', 'usestore'):
@@ -2885,6 +2905,7 @@ def filterknowncreateopts(ui, createopts):
     they know how to handle.
     """
     known = {
+        'backend',
         'narrowfiles',
         'sharedrepo',
         'sharedrelative',
@@ -2901,6 +2922,8 @@ def createrepository(ui, path, createopts=None):
 
     The following keys for ``createopts`` are recognized:
 
+    backend
+       The storage backend to use.
     narrowfiles
        Set up repository to support narrow file storage.
     sharedrepo
@@ -2912,7 +2935,7 @@ def createrepository(ui, path, createopts=None):
     shareditems
        Set of items to share to the new repository (in addition to storage).
     """
-    createopts = createopts or {}
+    createopts = defaultcreateopts(ui, createopts=createopts)
 
     unknownopts = filterknowncreateopts(ui, createopts)
 

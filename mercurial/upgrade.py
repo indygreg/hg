@@ -199,7 +199,8 @@ class requirementformatvariant(formatvariant):
 
     @staticmethod
     def _newreporequirements(ui):
-        return localrepo.newreporequirements(ui)
+        return localrepo.newreporequirements(
+            ui, localrepo.defaultcreateopts(ui))
 
     @classmethod
     def fromrepo(cls, repo):
@@ -747,7 +748,8 @@ def upgraderepo(ui, repo, run=False, optimize=None):
 
     # FUTURE there is potentially a need to control the wanted requirements via
     # command arguments or via an extension hook point.
-    newreqs = localrepo.newreporequirements(repo.ui)
+    newreqs = localrepo.newreporequirements(
+        repo.ui, localrepo.defaultcreateopts(repo.ui))
     newreqs.update(preservedrequirements(repo))
 
     noremovereqs = (repo.requirements - newreqs -

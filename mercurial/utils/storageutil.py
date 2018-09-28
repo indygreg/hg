@@ -17,6 +17,7 @@ from ..node import (
     nullrev,
 )
 from .. import (
+    dagop,
     error,
     mdiff,
     pycompat,
@@ -264,8 +265,8 @@ def resolvestripinfo(minlinkrev, tiprev, headrevs, linkrevfn, parentrevsfn):
 
     return strippoint, brokenrevs
 
-def emitrevisions(store, revs, resultcls, deltaparentfn=None, candeltafn=None,
-                  rawsizefn=None, revdifffn=None, flagsfn=None,
+def emitrevisions(store, nodes, nodesorder, resultcls, deltaparentfn=None,
+                  candeltafn=None, rawsizefn=None, revdifffn=None, flagsfn=None,
                   sendfulltext=False,
                   revisiondata=False, assumehaveparentrevisions=False,
                   deltaprevious=False):
@@ -277,8 +278,8 @@ def emitrevisions(store, revs, resultcls, deltaparentfn=None, candeltafn=None,
     ``store``
        Object conforming to ``ifilestorage`` interface.
 
-    ``revs``
-       List of integer revision numbers whose data to emit.
+    ``nodes``
+       List of revision nodes whose data to emit.
 
     ``resultcls``
        A type implementing the ``irevisiondelta`` interface that will be
@@ -322,6 +323,7 @@ def emitrevisions(store, revs, resultcls, deltaparentfn=None, candeltafn=None,
     ``sendfulltext``
        Whether to send fulltext revisions instead of deltas, if allowed.
 
+    ``nodesorder``
     ``revisiondata``
     ``assumehaveparentrevisions``
     ``deltaprevious``
@@ -329,6 +331,15 @@ def emitrevisions(store, revs, resultcls, deltaparentfn=None, candeltafn=None,
     """
 
     fnode = store.node
+    frev = store.rev
+
+    if nodesorder == 'nodes':
+        revs = [frev(n) for n in nodes]
+    elif nodesorder == 'storage':
+        revs = sorted(frev(n) for n in nodes)
+    else:
+        revs = set(frev(n) for n in nodes)
+        revs = dagop.linearize(revs, store.parentrevs)
 
     prevrev = None
 

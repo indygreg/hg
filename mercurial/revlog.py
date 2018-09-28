@@ -2192,19 +2192,8 @@ class revlog(object):
         if nodesorder is None and not self._generaldelta:
             nodesorder = 'storage'
 
-        frev = self.rev
-
-        if nodesorder == 'nodes':
-            revs = [frev(n) for n in nodes]
-        elif nodesorder == 'storage':
-            revs = sorted(frev(n) for n in nodes)
-        else:
-            assert self._generaldelta
-            revs = set(frev(n) for n in nodes)
-            revs = dagop.linearize(revs, self.parentrevs)
-
         return storageutil.emitrevisions(
-            self, revs, revlogrevisiondelta,
+            self, nodes, nodesorder, revlogrevisiondelta,
             deltaparentfn=self.deltaparent,
             candeltafn=self.candelta,
             rawsizefn=self.rawsize,

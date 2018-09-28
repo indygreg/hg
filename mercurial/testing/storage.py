@@ -199,13 +199,13 @@ class ifileindextests(basetestcase):
         with self.assertRaises(error.LookupError):
             f.lookup(hex(node)[0:12])
 
-        with self.assertRaises(IndexError):
+        with self.assertRaises(error.LookupError):
             f.lookup(-2)
 
         with self.assertRaises(error.LookupError):
             f.lookup(b'-2')
 
-        with self.assertRaises(IndexError):
+        with self.assertRaises(error.LookupError):
             f.lookup(1)
 
         with self.assertRaises(error.LookupError):

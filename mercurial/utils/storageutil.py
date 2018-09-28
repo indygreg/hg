@@ -121,7 +121,10 @@ def fileidlookup(store, fileid, identifier):
     Raises ``error.LookupError`` on failure.
     """
     if isinstance(fileid, int):
-        return store.node(fileid)
+        try:
+            return store.node(fileid)
+        except IndexError:
+            raise error.LookupError(fileid, identifier, _('no match found'))
 
     if len(fileid) == 20:
         try:

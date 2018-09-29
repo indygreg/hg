@@ -1848,10 +1848,8 @@ def readlock(pathname):
             raise
     except AttributeError: # no symlink in os
         pass
-    fp = posixfile(pathname, 'rb')
-    r = fp.read()
-    fp.close()
-    return r
+    with posixfile(pathname, 'rb') as fp:
+        return fp.read()
 
 def fstat(fp):
     '''stat file object that may not have fileno method.'''

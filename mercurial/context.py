@@ -542,7 +542,7 @@ class changectx(basectx):
                 return
             match.bad(fn, _('no such file in rev %s') % self)
 
-        m = matchmod.badmatch(match, bad)
+        m = matchmod.badmatch(self._repo.narrowmatch(match), bad)
         return self._manifest.walk(m)
 
     def matches(self, match):
@@ -1168,7 +1168,7 @@ class committablectx(basectx):
 
     def walk(self, match):
         '''Generates matching file names.'''
-        return sorted(self._repo.dirstate.walk(match,
+        return sorted(self._repo.dirstate.walk(self._repo.narrowmatch(match),
                                                subrepos=sorted(self.substate),
                                                unknown=True, ignored=False))
 

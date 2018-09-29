@@ -10,10 +10,10 @@ from __future__ import absolute_import
 from mercurial import (
     extensions,
     hg,
+    wireprotoserver,
     wireprotov1server,
 )
 
-NARROWCAP = 'exp-narrow-1'
 ELLIPSESCAP = 'exp-ellipses-1'
 
 def uisetup():
@@ -22,7 +22,7 @@ def uisetup():
 def addnarrowcap(orig, repo, proto):
     """add the narrow capability to the server"""
     caps = orig(repo, proto)
-    caps.append(NARROWCAP)
+    caps.append(wireprotoserver.NARROWCAP)
     if repo.ui.configbool('experimental', 'narrowservebrokenellipses'):
         caps.append(ELLIPSESCAP)
     return caps

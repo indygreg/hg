@@ -29,6 +29,7 @@ from mercurial import (
     repoview,
     sparse,
     util,
+    wireprotoserver,
 )
 
 from . import (
@@ -136,7 +137,7 @@ def pullbundle2extraprepare(orig, pullop, kwargs):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return orig(pullop, kwargs)
 
-    if narrowwirepeer.NARROWCAP not in pullop.remote.capabilities():
+    if wireprotoserver.NARROWCAP not in pullop.remote.capabilities():
         raise error.Abort(_("server doesn't support narrow clones"))
     orig(pullop, kwargs)
     kwargs['narrow'] = True

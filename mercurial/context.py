@@ -1173,6 +1173,7 @@ class committablectx(basectx):
                                                unknown=True, ignored=False))
 
     def matches(self, match):
+        match = self._repo.narrowmatch(match)
         ds = self._repo.dirstate
         return sorted(f for f in ds.matches(match) if ds[f] != 'r')
 

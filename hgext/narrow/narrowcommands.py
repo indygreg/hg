@@ -32,10 +32,6 @@ from mercurial import (
     wireprotoserver,
 )
 
-from . import (
-    narrowwirepeer,
-)
-
 table = {}
 command = registrar.command(table)
 
@@ -148,7 +144,7 @@ def pullbundle2extraprepare(orig, pullop, kwargs):
     kwargs['excludepats'] = exclude
     # calculate known nodes only in ellipses cases because in non-ellipses cases
     # we have all the nodes
-    if narrowwirepeer.ELLIPSESCAP in pullop.remote.capabilities():
+    if wireprotoserver.ELLIPSESCAP in pullop.remote.capabilities():
         kwargs['known'] = [node.hex(ctx.node()) for ctx in
                            repo.set('::%ln', pullop.common)
                            if ctx.node() != node.nullid]

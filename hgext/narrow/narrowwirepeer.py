@@ -14,8 +14,6 @@ from mercurial import (
     wireprotov1server,
 )
 
-ELLIPSESCAP = 'exp-ellipses-1'
-
 def uisetup():
     extensions.wrapfunction(wireprotov1server, '_capabilities', addnarrowcap)
 
@@ -24,7 +22,7 @@ def addnarrowcap(orig, repo, proto):
     caps = orig(repo, proto)
     caps.append(wireprotoserver.NARROWCAP)
     if repo.ui.configbool('experimental', 'narrowservebrokenellipses'):
-        caps.append(ELLIPSESCAP)
+        caps.append(wireprotoserver.ELLIPSESCAP)
     return caps
 
 def reposetup(repo):

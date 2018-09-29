@@ -13,7 +13,6 @@ from mercurial import (
 
 from . import (
     narrowdirstate,
-    narrowwirepeer,
 )
 
 def wraprepo(repo):
@@ -28,7 +27,7 @@ def wraprepo(repo):
         def peer(self):
             peer = super(narrowrepository, self).peer()
             peer._caps.add(wireprotoserver.NARROWCAP)
-            peer._caps.add(narrowwirepeer.ELLIPSESCAP)
+            peer._caps.add(wireprotoserver.ELLIPSESCAP)
             return peer
 
     repo.__class__ = narrowrepository

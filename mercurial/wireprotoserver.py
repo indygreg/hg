@@ -39,6 +39,7 @@ HGTYPE2 = 'application/mercurial-0.2'
 HGERRTYPE = 'application/hg-error'
 
 NARROWCAP = 'exp-narrow-1'
+ELLIPSESCAP = 'exp-ellipses-1'
 
 SSHV1 = wireprototypes.SSHV1
 SSHV2 = wireprototypes.SSHV2

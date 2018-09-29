@@ -37,7 +37,7 @@ Test for CVE-2016-3630
   >>> open("a.i", "wb").write(
   ... b"""eJxjYGZgZIAAYQYGxhgom+k/FMx8YKx9ZUaKSOyqo4cnuKb8mbqHV5cBCVTMWb1Cwqkhe4Gsg9AD
   ... Joa3dYtcYYYBAQ8Qr4OqZAYRICPTSr5WKd/42rV36d+8/VmrNpv7NP1jQAXrQE4BqQUARngwVA=="""
-  ... .decode("base64").decode("zlib"))
+  ... .decode("base64").decode("zlib")) and None
 
   $ hg debugrevlogindex a.i
      rev linkrev nodeid       p1           p2

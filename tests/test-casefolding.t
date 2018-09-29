@@ -248,7 +248,7 @@ We assume anyone running the tests on a case-insensitive volume on OS
 X will be using HFS+. If that's not true, this test will fail.
 
   $ rm A
-  >>> open(u'a\u200c'.encode('utf-8'), 'w').write('unicode is fun')
+  >>> open(u'a\u200c'.encode('utf-8'), 'w').write('unicode is fun') and None
   $ hg status
   M A
 

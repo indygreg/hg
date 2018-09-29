@@ -214,7 +214,7 @@ hg cat files and symlink, no expansion
 
 hg status of kw-ignored binary file starting with '\1\n'
 
-  >>> open("i", "wb").write("\1\nfoo")
+  >>> open("i", "wb").write("\1\nfoo") and None
   $ hg -q commit -Am metasep i
   $ hg status
   >>> open("i", "wb").write("\1\nbar")

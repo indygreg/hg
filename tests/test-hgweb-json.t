@@ -2201,7 +2201,7 @@ Commit message with Japanese Kanji 'Noh', which ends with '\x5c'
 Commit message with null character
 
   $ echo foo >> da/foo
-  >>> open('msg', 'wb').write('commit with null character: \0\n')
+  >>> open('msg', 'wb').write('commit with null character: \0\n') and None
   $ hg ci -l msg
   $ rm msg
 

@@ -5,7 +5,7 @@
 
 //! Low-level utility for signal and process handling.
 
-use libc::{c_int, size_t, ssize_t};
+use libc::{self, c_int, size_t, ssize_t};
 use std::io;
 use std::os::unix::io::RawFd;
 
@@ -13,6 +13,19 @@ use std::os::unix::io::RawFd;
 extern "C" {
     // sendfds.c
     fn sendfds(sockfd: c_int, fds: *const c_int, fdlen: size_t) -> ssize_t;
+}
+
+/// Changes the given fd to blocking mode.
+pub fn set_blocking_fd(fd: RawFd) -> io::Result<()> {
+    let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };
+    if flags < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let r = unsafe { libc::fcntl(fd, libc::F_SETFL, flags & !libc::O_NONBLOCK) };
+    if r < 0 {
+        return Err(io::Error::last_os_error())
+    }
+    Ok(())
 }
 
 /// Sends file descriptors via the given socket.

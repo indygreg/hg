@@ -12,7 +12,9 @@ by the WSGI standard and strictly implemented by mod_wsgi.
   > import sys
   > from mercurial import (
   >     dispatch,
+  >     encoding,
   >     hg,
+  >     pycompat,
   >     ui as uimod,
   >     util,
   > )
@@ -68,13 +70,15 @@ by the WSGI standard and strictly implemented by mod_wsgi.
   > i = hgweb(b'.')
   > for c in i(env, startrsp):
   >     pass
-  > print('---- ERRORS')
-  > print(errors.getvalue())
+  > sys.stdout.flush()
+  > pycompat.stdout.write(b'---- ERRORS\n')
+  > pycompat.stdout.write(b'%s\n' % errors.getvalue())
   > print('---- OS.ENVIRON wsgi variables')
   > print(sorted([x for x in os.environ if x.startswith('wsgi')]))
   > print('---- request.ENVIRON wsgi variables')
   > with i._obtainrepo() as repo:
-  >     print(sorted([x for x in repo.ui.environ if x.startswith(b'wsgi')]))
+  >     print(sorted([encoding.strfromlocal(x) for x in repo.ui.environ
+  >                   if x.startswith(b'wsgi')]))
   > EOF
   $ "$PYTHON" request.py
   ---- STATUS

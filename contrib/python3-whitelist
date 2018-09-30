@@ -103,6 +103,7 @@ test-copy.t
 test-copytrace-heuristics.t
 test-debugbuilddag.t
 test-debugbundle.t
+test-debugcommands.t
 test-debugextensions.t
 test-debugindexdot.t
 test-debugrename.t

@@ -314,7 +314,7 @@ def shelltocmdexe(path, env):
     index = 0
     pathlen = len(path)
     while index < pathlen:
-        c = path[index]
+        c = path[index:index + 1]
         if c == b'\'':   # no expansion within single quotes
             path = path[index + 1:]
             pathlen = len(path)
@@ -344,7 +344,7 @@ def shelltocmdexe(path, env):
                     var = path[:index]
 
                     # See below for why empty variables are handled specially
-                    if env.get(var, '') != '':
+                    if env.get(var, b'') != b'':
                         res += b'%' + var + b'%'
                     else:
                         res += b'${' + var + b'}'
@@ -365,20 +365,20 @@ def shelltocmdexe(path, env):
                 # VAR, and that really confuses things like revset expressions.
                 # OTOH, if it's left in Unix format and the hook runs sh.exe, it
                 # will substitute to an empty string, and everything is happy.
-                if env.get(var, '') != '':
+                if env.get(var, b'') != b'':
                     res += b'%' + var + b'%'
                 else:
                     res += b'$' + var
 
-                if c != '':
+                if c != b'':
                     index -= 1
         elif (c == b'~' and index + 1 < pathlen
-              and path[index + 1] in (b'\\', b'/')):
+              and path[index + 1:index + 2] in (b'\\', b'/')):
             res += "%USERPROFILE%"
         elif (c == b'\\' and index + 1 < pathlen
-              and path[index + 1] in (b'$', b'~')):
+              and path[index + 1:index + 2] in (b'$', b'~')):
             # Skip '\', but only if it is escaping $ or ~
-            res += path[index + 1]
+            res += path[index + 1:index + 2]
             index += 1
         else:
             res += c

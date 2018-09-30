@@ -342,9 +342,10 @@ def annotate(ui, repo, *pats, **opts):
              ('node', ' ', lambda x: hex(scmutil.binnode(x.fctx)), formathex),
              ('date', ' ', lambda x: x.fctx.date(), util.cachefunc(datefunc)),
              ('path', ' ', lambda x: x.fctx.path(), pycompat.bytestr),
-             ('line_number', ':', lambda x: x.lineno, pycompat.bytestr),
+             ('lineno', ':', lambda x: x.lineno, pycompat.bytestr),
             ]
-    opnamemap = {'rev': 'number', 'node': 'changeset', 'path': 'file'}
+    opnamemap = {'rev': 'number', 'node': 'changeset', 'path': 'file',
+                 'lineno': 'line_number'}
 
     if (not opts.get('user') and not opts.get('changeset')
         and not opts.get('date') and not opts.get('file')):

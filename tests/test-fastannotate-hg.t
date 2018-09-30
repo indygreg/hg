@@ -77,7 +77,7 @@ annotate (JSON)
   $ hg annotate -Tjson -cdfnul a
   [
    {
-    "lines": [{"date": [1.0, 0], "line": "a\n", "line_number": 1, "node": "8435f90966e442695d2ded29fdade2bac5ad8065", "path": "a", "rev": 0, "user": "nobody"}],
+    "lines": [{"date": [1.0, 0], "line": "a\n", "lineno": 1, "node": "8435f90966e442695d2ded29fdade2bac5ad8065", "path": "a", "rev": 0, "user": "nobody"}],
     "path": "a"
    }
   ]

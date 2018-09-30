@@ -2669,7 +2669,8 @@ class revlog(object):
                     state['skipread'].add(node)
             except Exception as e:
                 yield revlogproblem(
-                    error=_('unpacking %s: %s') % (short(node), e),
+                    error=_('unpacking %s: %s') % (short(node),
+                                                   stringutil.forcebytestr(e)),
                     node=node)
                 state['skipread'].add(node)
 

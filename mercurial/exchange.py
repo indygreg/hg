@@ -522,7 +522,8 @@ def push(repo, remote, force=False, revs=None, newbranch=False, bookmarks=(),
         # source repo cannot be locked.
         # We do not abort the push, but just disable the local phase
         # synchronisation.
-        msg = 'cannot lock source repository: %s\n' % err
+        msg = ('cannot lock source repository: %s\n'
+               % stringutil.forcebytestr(err))
         pushop.ui.debug(msg)
 
     with wlock or util.nullcontextmanager(), \

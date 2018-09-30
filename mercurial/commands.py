@@ -4622,7 +4622,7 @@ def resolve(ui, repo, *pats, **opts):
             label, key = mergestateinfo[ms[f]]
             fm.startitem()
             fm.context(ctx=wctx)
-            fm.condwrite(not nostatus, 'status', '%s ', key, label=label)
+            fm.condwrite(not nostatus, 'mergestatus', '%s ', key, label=label)
             fm.write('path', '%s\n', f, label=label)
         fm.end()
         return 0

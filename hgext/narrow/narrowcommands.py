@@ -251,6 +251,14 @@ def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
 def _widen(ui, repo, remote, commoninc, newincludes, newexcludes):
     newmatch = narrowspec.match(repo.root, newincludes, newexcludes)
 
+    # for now we assume that if a server has ellipses enabled, we will be
+    # exchanging ellipses nodes. In future we should add ellipses as a client
+    # side requirement (maybe) to distinguish a client is shallow or not and
+    # then send that information to server whether we want ellipses or not.
+    # Theoretically a non-ellipses repo should be able to use narrow
+    # functionality from an ellipses enabled server
+    ellipsesremote = wireprotoserver.ELLIPSESCAP in remote.capabilities()
+
     def pullbundle2extraprepare_widen(orig, pullop, kwargs):
         orig(pullop, kwargs)
         # The old{in,ex}cludepats have already been set by orig()
@@ -269,15 +277,21 @@ def _widen(ui, repo, remote, commoninc, newincludes, newexcludes):
     overrides = {('devel', 'all-warnings'): False}
 
     with ui.uninterruptable():
-        ds = repo.dirstate
-        p1, p2 = ds.p1(), ds.p2()
-        with ds.parentchange():
-            ds.setparents(node.nullid, node.nullid)
         common = commoninc[0]
-        with wrappedextraprepare, repo.ui.configoverride(overrides, 'widen'):
-            exchange.pull(repo, remote, heads=common)
-        with ds.parentchange():
-            ds.setparents(p1, p2)
+        if ellipsesremote:
+            ds = repo.dirstate
+            p1, p2 = ds.p1(), ds.p2()
+            with ds.parentchange():
+                ds.setparents(node.nullid, node.nullid)
+            with wrappedextraprepare,\
+                 repo.ui.configoverride(overrides, 'widen'):
+                exchange.pull(repo, remote, heads=common)
+            with ds.parentchange():
+                ds.setparents(p1, p2)
+        else:
+            with wrappedextraprepare,\
+                 repo.ui.configoverride(overrides, 'widen'):
+                exchange.pull(repo, remote, heads=common)
 
         repo.setnewnarrowpats()
         actions = {k: [] for k in 'a am f g cd dc r dm dg m e k p pr'.split()}

@@ -88,6 +88,9 @@ Widen the narrow spec to see the widest file. This should not get the newly
 added upstream revisions.
 
   $ cd narrow
+  $ hg id -n
+  2
+
   $ hg tracked --addinclude widest/f --debug
   comparing with ssh://user@dummy/master
   running python "*dummyssh" *user@dummy* *hg -R master serve --stdio* (glob)
@@ -126,6 +129,9 @@ added upstream revisions.
 
   $ cat widest/f
   widest
+
+  $ hg id -n
+  2
 
 Pull down the newly added upstream revision.
 

@@ -97,10 +97,9 @@ commitopts2 = [
      _('record the specified user as committer'), _('USER')),
 ]
 
-# hidden for now
 formatteropts = [
     ('T', 'template', '',
-     _('display with template (EXPERIMENTAL)'), _('TEMPLATE')),
+     _('display with template'), _('TEMPLATE')),
 ]
 
 templateopts = [

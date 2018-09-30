@@ -26,6 +26,7 @@ Missing arg:
       --decode              apply any matching decode filter
    -I --include PATTERN [+] include names matching the given patterns
    -X --exclude PATTERN [+] exclude names matching the given patterns
+   -T --template TEMPLATE   display with template
   
   (use 'hg cat -h' to show more help)
   [255]

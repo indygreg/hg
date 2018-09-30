@@ -637,6 +637,7 @@ Test command without options
    -I --include PATTERN [+] include names matching the given patterns
    -X --exclude PATTERN [+] exclude names matching the given patterns
    -S --subrepos            recurse into subrepositories
+   -T --template TEMPLATE   display with template
   
   (some details hidden, use --verbose to show complete help)
 

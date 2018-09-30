@@ -604,6 +604,8 @@ hide outer repo
   
   options:
   
+   -T --template TEMPLATE display with template
+  
   (some details hidden, use --verbose to show complete help)
 
 
@@ -614,7 +616,7 @@ hide outer repo
   
   options:
   
-   -T --template TEMPLATE display with template (EXPERIMENTAL)
+   -T --template TEMPLATE display with template
   
   global options ([+] can be repeated):
   
@@ -653,7 +655,7 @@ hide outer repo
   
   options:
   
-   -T --template TEMPLATE display with template (EXPERIMENTAL)
+   -T --template TEMPLATE display with template
   
   global options ([+] can be repeated):
   

@@ -248,7 +248,8 @@ def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
 
         repo.destroyed()
 
-def _widen(ui, repo, remote, commoninc, newincludes, newexcludes):
+def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
+           newincludes, newexcludes):
     newmatch = narrowspec.match(repo.root, newincludes, newexcludes)
 
     # for now we assume that if a server has ellipses enabled, we will be
@@ -433,6 +434,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
         if widening:
             newincludes = oldincludes | addedincludes
             newexcludes = oldexcludes - removedexcludes
-            _widen(ui, repo, remote, commoninc, newincludes, newexcludes)
+            _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
+                    newincludes, newexcludes)
 
     return 0

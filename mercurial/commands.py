@@ -2051,6 +2051,15 @@ def files(ui, repo, *pats, **opts):
 
     .. container:: verbose
 
+      Template:
+
+      The following keywords are supported in addition to the common template
+      keywords and functions. See also :hg:`help templates`.
+
+      :flags:   String. Character denoting file's symlink and executable bits.
+      :path:    String. Repository-absolute path of the file.
+      :size:    Integer. Size of the file in bytes.
+
       Examples:
 
       - list all files under the current directory::

@@ -412,7 +412,7 @@ non-ascii content and truncation of multi-byte subject
   > EOF
   $ echo a >> a/a
   $ hg --cwd a --encoding utf-8 commit -A -d '0 0' \
-  >   -m `"$PYTHON" -c 'print "\xc3\xa0\xc3\xa1\xc3\xa2\xc3\xa3\xc3\xa4"'`
+  >   -m `"$PYTHON" -c 'print("\xc3\xa0\xc3\xa1\xc3\xa2\xc3\xa3\xc3\xa4")'`
   $ hg --traceback --cwd b --encoding utf-8 pull ../a | \
   >   "$PYTHON" $TESTTMP/filter.py
   pulling from ../a

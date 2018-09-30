@@ -64,7 +64,7 @@ simple JSON (no "change" field)
   [
    {
     "date": [4, 0],
-    "line_number": 1,
+    "lineno": 1,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
     "path": "port",
     "rev": 4,
@@ -73,7 +73,7 @@ simple JSON (no "change" field)
    },
    {
     "date": [4, 0],
-    "line_number": 2,
+    "lineno": 2,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
     "path": "port",
     "rev": 4,
@@ -82,7 +82,7 @@ simple JSON (no "change" field)
    },
    {
     "date": [4, 0],
-    "line_number": 3,
+    "lineno": 3,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
     "path": "port",
     "rev": 4,
@@ -97,7 +97,7 @@ simple JSON without matching lines
   [
    {
     "date": [4, 0],
-    "line_number": 1,
+    "lineno": 1,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
     "path": "port",
     "rev": 4,
@@ -125,7 +125,7 @@ all JSON
    {
     "change": "-",
     "date": [4, 0],
-    "line_number": 4,
+    "lineno": 4,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
     "path": "port",
     "rev": 4,
@@ -135,7 +135,7 @@ all JSON
    {
     "change": "+",
     "date": [3, 0],
-    "line_number": 4,
+    "lineno": 4,
     "node": "95040cfd017d658c536071c6290230a613c4c2a6",
     "path": "port",
     "rev": 3,
@@ -145,7 +145,7 @@ all JSON
    {
     "change": "-",
     "date": [2, 0],
-    "line_number": 1,
+    "lineno": 1,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
     "path": "port",
     "rev": 2,
@@ -155,7 +155,7 @@ all JSON
    {
     "change": "-",
     "date": [2, 0],
-    "line_number": 2,
+    "lineno": 2,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
     "path": "port",
     "rev": 2,
@@ -165,7 +165,7 @@ all JSON
    {
     "change": "+",
     "date": [2, 0],
-    "line_number": 1,
+    "lineno": 1,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
     "path": "port",
     "rev": 2,
@@ -175,7 +175,7 @@ all JSON
    {
     "change": "+",
     "date": [2, 0],
-    "line_number": 2,
+    "lineno": 2,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
     "path": "port",
     "rev": 2,
@@ -185,7 +185,7 @@ all JSON
    {
     "change": "+",
     "date": [2, 0],
-    "line_number": 3,
+    "lineno": 3,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
     "path": "port",
     "rev": 2,
@@ -195,7 +195,7 @@ all JSON
    {
     "change": "+",
     "date": [1, 0],
-    "line_number": 2,
+    "lineno": 2,
     "node": "8b20f75c158513ff5ac80bd0e5219bfb6f0eb587",
     "path": "port",
     "rev": 1,
@@ -205,7 +205,7 @@ all JSON
    {
     "change": "+",
     "date": [0, 0],
-    "line_number": 1,
+    "lineno": 1,
     "node": "f31323c9217050ba245ee8b537c713ec2e8ab226",
     "path": "port",
     "rev": 0,
@@ -481,7 +481,7 @@ but it should be available in template dict:
   [
    {
     "date": [0, 0],
-    "line_number": 1,
+    "lineno": 1,
     "node": "ffffffffffffffffffffffffffffffffffffffff",
     "path": "file2",
     "rev": 2147483647,

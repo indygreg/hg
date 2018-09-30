@@ -2680,7 +2680,7 @@ def grep(ui, repo, pattern, *pats, **opts):
             except error.WdirUnsupported:
                 return ctx[fn].isbinary()
 
-        fieldnamemap = {'filename': 'path', 'linenumber': 'line_number'}
+        fieldnamemap = {'filename': 'path', 'linenumber': 'lineno'}
         if diff:
             iter = difflinestates(pstates, states)
         else:

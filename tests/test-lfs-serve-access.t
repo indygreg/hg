@@ -140,6 +140,7 @@ Blob URIs are correct when --prefix is used
   getting lfs.bin
   lfs: found f03217a32529a28a42d03b1244fe09b6e0f9fd06d7b966d4d50567be2abe6c0e in the local lfs store
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
 

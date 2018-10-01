@@ -130,6 +130,7 @@ Test basic clone
   received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   new changesets 3390ef850073:caa2a465451d (3 drafts)
+  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 All changesets should have been transferred
 
@@ -256,6 +257,7 @@ Cloning only a specific revision works
   received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   new changesets 3390ef850073:4432d83626e8
+  (sent 6 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cd client-singlehead
 
@@ -369,6 +371,7 @@ Incremental pull works
   updating the branch cache
   new changesets cd2534766bec:caa2a465451d (3 drafts)
   (run 'hg update' to get a working copy)
+  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ hg log -G -T '{rev} {node} {phase}\n'
   o  4 caa2a465451dd1facda0f5b12312c355584188a1 draft
@@ -439,6 +442,7 @@ Phase-only update works
   checking for updated bookmarks
   2 local changesets published
   (run 'hg update' to get a working copy)
+  (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ hg log -G -T '{rev} {node} {phase}\n'
   o  4 caa2a465451dd1facda0f5b12312c355584188a1 public
@@ -555,6 +559,7 @@ Bookmarks are transferred on clone
   received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
   updating the branch cache
   new changesets 3390ef850073:caa2a465451d (1 drafts)
+  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ hg -R client-bookmarks bookmarks
      book-1                    0:3390ef850073
@@ -611,6 +616,7 @@ Server-side bookmark moves are reflected during `hg pull`
   checking for updated bookmarks
   updating bookmark book-1
   (run 'hg update' to get a working copy)
+  (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ hg -R client-bookmarks bookmarks
      book-1                    2:cd2534766bec

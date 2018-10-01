@@ -362,6 +362,7 @@ lfs content, and the extension enabled.
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   updated to "d3b84d50eacb: lfs file with lfs client"
   1 other heads for branch "default"
+  (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
   $ grep 'lfs' $TESTTMP/client6_pull/.hg/requires $SERVER_REQUIRES
   $TESTTMP/client6_pull/.hg/requires:lfs
   $TESTTMP/server/.hg/requires:lfs

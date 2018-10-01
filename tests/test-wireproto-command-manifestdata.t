@@ -191,6 +191,7 @@ Fetching a single revision returns just metadata by default
       b'node': b'F\xa6r\x1b^\xda\xf0\xea\x04\xb7\x9a\\\xb3!\x88T\xa4\xd2\xab\xa0'
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Requesting parents works
 
@@ -246,6 +247,7 @@ Requesting parents works
       ]
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Requesting revision data works
 (haveparents defaults to false, so fulltext is emitted)
@@ -310,6 +312,7 @@ Requesting revision data works
     },
     b'a\x000879345e39377229634b420c639454156726c6b6\nb\x00819e258d31a5e1606629f365bb902a1b21ee4216\ndir0/c\x00914445346a0ca0629bd47ceb5dfe07e4d4cf2501\ndir0/child0/e\x00bbba6c06b30f443d34ff841bc985c4d0827c6be4\ndir0/child1/f\x0012fc7dcd773b5a0a929ce195228083c6ddc9cec4\ndir0/d\x00538206dc971e521540d6843abfe6d16032f6d426\n'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 haveparents=False yields same output
 
@@ -374,6 +377,7 @@ haveparents=False yields same output
     },
     b'a\x000879345e39377229634b420c639454156726c6b6\nb\x00819e258d31a5e1606629f365bb902a1b21ee4216\ndir0/c\x00914445346a0ca0629bd47ceb5dfe07e4d4cf2501\ndir0/child0/e\x00bbba6c06b30f443d34ff841bc985c4d0827c6be4\ndir0/child1/f\x0012fc7dcd773b5a0a929ce195228083c6ddc9cec4\ndir0/d\x00538206dc971e521540d6843abfe6d16032f6d426\n'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 haveparents=True will emit delta
 
@@ -434,6 +438,7 @@ haveparents=True will emit delta
     },
     b'\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Requesting multiple revisions works
 (haveparents defaults to false, so fulltext is emitted unless a parent
@@ -511,6 +516,7 @@ has been emitted)
     },
     b'\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 With haveparents=True, first revision is a delta instead of fulltext
 
@@ -587,6 +593,7 @@ With haveparents=True, first revision is a delta instead of fulltext
     },
     b'\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Revisions are sorted by DAG order, parents first
 
@@ -662,6 +669,7 @@ Revisions are sorted by DAG order, parents first
     },
     b'\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Requesting parents and revision data works
 
@@ -745,5 +753,6 @@ Requesting parents and revision data works
     },
     b'\x00\x00\x00\x00\x00\x00\x00+\x00\x00\x00+a\x000879345e39377229634b420c639454156726c6b6\n'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat error.log

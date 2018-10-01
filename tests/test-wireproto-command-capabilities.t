@@ -668,5 +668,6 @@ capabilities command returns expected info
       ]
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat error.log

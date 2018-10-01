@@ -117,6 +117,7 @@ Test that we can apply the bundle as a stream clone bundle
    E: remote created -> g
   getting E
   5 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (sent 4 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ hg clone --stream http://localhost:$HGPORT streamv2-clone-explicit --debug
   using http://localhost:$HGPORT/
@@ -172,3 +173,4 @@ Test that we can apply the bundle as a stream clone bundle
    E: remote created -> g
   getting E
   5 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (sent 4 HTTP requests and * bytes; received * bytes in responses) (glob)

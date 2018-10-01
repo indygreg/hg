@@ -63,6 +63,7 @@ pushkey for a bookmark works
   s>     \r\n
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: True
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ sendhttpv2peer << EOF
   > command listkeys
@@ -105,5 +106,6 @@ pushkey for a bookmark works
   response: {
     b'@': b'426bada5c67598ca65036d57d9e4b64b0c1ce7a0'
   }
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat error.log

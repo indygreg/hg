@@ -60,5 +60,6 @@ lookup for known node works
   s>     \r\n
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: b'Bk\xad\xa5\xc6u\x98\xcae\x03mW\xd9\xe4\xb6K\x0c\x1c\xe7\xa0'
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat error.log

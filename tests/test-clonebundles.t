@@ -27,6 +27,7 @@ Missing manifest should not result in server lookup
   adding file changes
   added 2 changesets with 2 changes to 2 files
   new changesets 53245c60e682:aaff8d2ffbbf
+  (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat server/access.log
   * - - [*] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
@@ -45,6 +46,7 @@ Empty manifest file results in retrieval
   adding file changes
   added 2 changesets with 2 changes to 2 files
   new changesets 53245c60e682:aaff8d2ffbbf
+  (sent 4 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Manifest file with invalid URL aborts
 

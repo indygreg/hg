@@ -42,6 +42,7 @@ check that {1} syntax works
   searching for changes
   all remote heads known locally
   no changes found
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
   [1]
 
 check that paths are expanded

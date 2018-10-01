@@ -405,7 +405,11 @@ class httppeer(wireprotov1peer.wirepeer):
         return True
 
     def close(self):
-        pass
+        self.ui.note(_('(sent %d HTTP requests and %d bytes; '
+                       'received %d bytes in responses)\n') %
+                     (self._urlopener.requestscount,
+                      self._urlopener.sentbytescount,
+                      self._urlopener.receivedbytescount))
 
     # End of ipeerconnection interface.
 
@@ -758,7 +762,11 @@ class httpv2peer(object):
         return False
 
     def close(self):
-        pass
+        self.ui.note(_('(sent %d HTTP requests and %d bytes; '
+                       'received %d bytes in responses)\n') %
+                     (self._opener.requestscount,
+                      self._opener.sentbytescount,
+                      self._opener.receivedbytescount))
 
     # End of ipeerconnection.
 

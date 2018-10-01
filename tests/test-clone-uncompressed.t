@@ -261,6 +261,7 @@ Clone with background file closing enabled
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 1 parts total
   checking for updated bookmarks
+  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 #endif
 #if stream-bundle2
   $ hg --debug --config worker.backgroundclose=true --config worker.backgroundcloseminfilecount=1 clone --stream -U http://localhost:$HGPORT clone-background | grep -v adding
@@ -282,6 +283,7 @@ Clone with background file closing enabled
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-bundle: 1 parts total
   checking for updated bookmarks
+  (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
 #endif
 
 Cannot stream clone when there are secret changesets

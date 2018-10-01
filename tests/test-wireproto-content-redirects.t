@@ -317,6 +317,7 @@ Redirect targets advertised when configured
       }
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Unknown protocol is filtered from compatible targets
 
@@ -610,6 +611,7 @@ Unknown protocol is filtered from compatible targets
       }
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Missing SNI support filters targets that require SNI
 
@@ -901,6 +903,7 @@ Missing SNI support filters targets that require SNI
       }
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat >> $HGRCPATH << EOF
   > [extensions]
@@ -1191,6 +1194,7 @@ Unknown tls value is filtered from compatible targets
       }
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Set up the server to issue content redirects to its built-in API server.
 
@@ -1279,6 +1283,7 @@ Send a cacheable request
       ]
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Cached entry should be available on server
 
@@ -1381,6 +1386,7 @@ Cached entry should be available on server
       ]
     }
   ]
+  (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat error.log
   $ killdaemons.py

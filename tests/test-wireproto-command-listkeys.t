@@ -68,6 +68,7 @@ Request for namespaces works
     b'namespaces': b'',
     b'phases': b''
   }
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Request for phases works
 
@@ -113,6 +114,7 @@ Request for phases works
     b'be0ef73c17ade3fc89dc41701eb9fc3a91b58282': b'1',
     b'publishing': b'True'
   }
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Request for bookmarks works
 
@@ -157,5 +159,6 @@ Request for bookmarks works
   response: {
     b'@': b'26805aba1e600a82e93661149f2313866a221a7b'
   }
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat error.log

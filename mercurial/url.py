@@ -555,6 +555,11 @@ def opener(ui, authinfo=None, useragent=None, loggingfh=None,
     handlers.append(cookiehandler(ui))
     opener = urlreq.buildopener(*handlers)
 
+    # keepalive.py's handlers will populate these attributes if they exist.
+    opener.requestscount = 0
+    opener.sentbytescount = 0
+    opener.receivedbytescount = 0
+
     # The user agent should should *NOT* be used by servers for e.g.
     # protocol detection or feature negotiation: there are other
     # facilities for that.

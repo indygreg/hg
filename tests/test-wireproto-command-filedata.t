@@ -201,6 +201,7 @@ Fetching a single revision returns just metadata by default
       b'node': b'\n\x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11'
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Requesting parents works
 
@@ -258,6 +259,7 @@ Requesting parents works
       ]
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Requesting revision data works
 (haveparents defaults to False, so fulltext is emitted)
@@ -322,6 +324,7 @@ Requesting revision data works
     },
     b'a0\n00000000000000000000000000000000000000\n11111111111111111111111111111111111111\na1\n'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 haveparents=False should be same as above
 
@@ -386,6 +389,7 @@ haveparents=False should be same as above
     },
     b'a0\n00000000000000000000000000000000000000\n11111111111111111111111111111111111111\na1\n'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 haveparents=True should emit a delta
 
@@ -448,6 +452,7 @@ haveparents=True should emit a delta
     },
     b'\x00\x00\x00Q\x00\x00\x00Q\x00\x00\x00\x03a1\n'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Requesting multiple revisions works
 (first revision is a fulltext since haveparents=False by default)
@@ -523,6 +528,7 @@ Requesting multiple revisions works
     },
     b'\x00\x00\x00Q\x00\x00\x00Q\x00\x00\x00\x03a1\n'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Revisions are sorted by DAG order, parents first
 
@@ -597,6 +603,7 @@ Revisions are sorted by DAG order, parents first
     },
     b'\x00\x00\x00Q\x00\x00\x00Q\x00\x00\x00\x03a1\n'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Requesting parents and revision data works
 
@@ -662,5 +669,6 @@ Requesting parents and revision data works
     },
     b'a0\n00000000000000000000000000000000000000\n11111111111111111111111111111111111111\na2\n'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat error.log

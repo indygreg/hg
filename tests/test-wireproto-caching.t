@@ -99,6 +99,7 @@ coming from cache.
       ]
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ sendhttpv2peer << EOF
   > command manifestdata
@@ -152,6 +153,7 @@ coming from cache.
       ]
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Sending different request doesn't yield cache hit.
 
@@ -214,6 +216,7 @@ Sending different request doesn't yield cache hit.
       ]
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat .hg/blackbox.log
   *> cacher constructed for manifestdata (glob)
@@ -292,6 +295,7 @@ Try with object caching mode
       ]
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ sendhttpv2peer << EOF
   > command manifestdata
@@ -345,6 +349,7 @@ Try with object caching mode
       ]
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat .hg/blackbox.log
   *> cacher constructed for manifestdata (glob)
@@ -596,6 +601,7 @@ A non-cacheable command does not instantiate cacher
       ]
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ test -f .hg/blackbox.log
   [1]

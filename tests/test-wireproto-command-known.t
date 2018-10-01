@@ -60,6 +60,7 @@ No arguments returns something reasonable
   s>     \r\n
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: []
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Single known node works
 
@@ -104,6 +105,7 @@ Single known node works
   response: [
     True
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Multiple nodes works
 
@@ -150,5 +152,6 @@ Multiple nodes works
     False,
     True
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat error.log

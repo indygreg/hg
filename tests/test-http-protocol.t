@@ -218,6 +218,7 @@ Test listkeys for listing namespaces
     b'namespaces': b'',
     b'phases': b''
   }
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Same thing, but with "httprequest" command
 
@@ -286,6 +287,7 @@ Client with HTTPv2 enabled advertises that and gets old capabilities response fr
   response: [
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ killdaemons.py
   $ enablehttpv2 empty
@@ -350,6 +352,7 @@ Client with HTTPv2 enabled automatically upgrades if the server supports it
   response: [
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ killdaemons.py
 
@@ -483,6 +486,7 @@ Test with the HTTP peer
   response: [
     b'\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL'
   ]
+  (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ killdaemons.py
 
@@ -747,3 +751,4 @@ Now test a variation where we strip the query string from the redirect URL.
   response: [
     b'\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL'
   ]
+  (sent 4 HTTP requests and * bytes; received * bytes in responses) (glob)

@@ -196,6 +196,7 @@ Sending just noderange heads sends all revisions
       b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Sending root nodes limits what data is sent
 
@@ -248,6 +249,7 @@ Sending root nodes limits what data is sent
       b'node': b'\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd'
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Requesting data on a single node by node works
 
@@ -297,6 +299,7 @@ Requesting data on a single node by node works
       b'node': b'3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:'
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Specifying a noderange and nodes takes union
 
@@ -350,6 +353,7 @@ Specifying a noderange and nodes takes union
       b'node': b'\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd'
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 nodesdepth of 1 limits to exactly requested nodes
 
@@ -400,6 +404,7 @@ nodesdepth of 1 limits to exactly requested nodes
       b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 nodesdepth of 2 limits to first ancestor
 
@@ -453,6 +458,7 @@ nodesdepth of 2 limits to first ancestor
       b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 nodesdepth with multiple nodes
 
@@ -512,6 +518,7 @@ nodesdepth with multiple nodes
       b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Parents data is transferred upon request
 
@@ -566,6 +573,7 @@ Parents data is transferred upon request
       ]
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Phase data is transferred upon request
 
@@ -617,6 +625,7 @@ Phase data is transferred upon request
       b'phase': b'public'
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Revision data is transferred upon request
 
@@ -679,6 +688,7 @@ Revision data is transferred upon request
     },
     b'1b74476799ec8318045db759b1b4bcc9b839d0aa\ntest\n0 0\na\n\ncommit 3'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Bookmarks key isn't present if no bookmarks data
 
@@ -738,6 +748,7 @@ Bookmarks key isn't present if no bookmarks data
       b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Bookmarks are sent when requested
 
@@ -808,6 +819,7 @@ Bookmarks are sent when requested
       b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Bookmarks are sent when we make a no-new-revisions request
 
@@ -896,6 +908,7 @@ Bookmarks are sent when we make a no-new-revisions request
       b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
     }
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Multiple fields can be transferred
 
@@ -962,6 +975,7 @@ Multiple fields can be transferred
     },
     b'1b74476799ec8318045db759b1b4bcc9b839d0aa\ntest\n0 0\na\n\ncommit 3'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Base nodes have just their metadata (e.g. phase) transferred
 
@@ -1074,5 +1088,6 @@ Base nodes have just their metadata (e.g. phase) transferred
     },
     b'1b74476799ec8318045db759b1b4bcc9b839d0aa\ntest\n0 0\na\n\ncommit 3'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat error.log

@@ -228,6 +228,7 @@ Request to read-only command works out of the box
   response: gen[
     b'customreadonly bytes response'
   ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Request to read-write command fails because server is read-only by default
 

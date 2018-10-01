@@ -88,5 +88,6 @@ No arguments returns something reasonable
       b'\xbe\x0e\xf7<\x17\xad\xe3\xfc\x89\xdcAp\x1e\xb9\xfc:\x91\xb5\x82\x82'
     ]
   }
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat error.log

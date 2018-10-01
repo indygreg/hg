@@ -26,13 +26,6 @@ def wrapdirstate(repo, dirstate):
         return _wrapper
 
     class narrowdirstate(dirstate.__class__):
-        def walk(self, match, subrepos, unknown, ignored, full=True,
-                 narrowonly=True):
-            if narrowonly:
-                match = repo.narrowmatch(match, includeexact=True)
-            return super(narrowdirstate, self).walk(match, subrepos, unknown,
-                                                    ignored, full)
-
         # Prevent adding/editing/copying/deleting files that are outside the
         # sparse checkout
         @_editfunc

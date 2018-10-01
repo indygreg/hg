@@ -1098,6 +1098,7 @@ def _interestingfiles(repo, matcher):
 
     ctx = repo[None]
     dirstate = repo.dirstate
+    matcher = repo.narrowmatch(matcher, includeexact=True)
     walkresults = dirstate.walk(matcher, subrepos=sorted(ctx.substate),
                                 unknown=True, ignored=False, full=False)
     for abs, st in walkresults.iteritems():

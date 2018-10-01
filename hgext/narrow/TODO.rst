@@ -14,3 +14,11 @@ server-specified narrowspec format.
 
 narrowrepo.setnarrowpats() or narrowspec.save() need to make sure
 they're holding the wlock.
+
+The follinwg places do an unrestricted dirstate walk (including files outside the
+narrowspec). Some of them should perhaps not do that.
+
+ * debugfileset
+ * perfwalk
+ * sparse (but restricted to sparse config)
+ * largefiles

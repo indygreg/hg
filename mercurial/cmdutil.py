@@ -2044,6 +2044,7 @@ def add(ui, repo, match, prefix, explicitonly, **opts):
     if abort or warn:
         cca = scmutil.casecollisionauditor(ui, abort, repo.dirstate)
 
+    match = repo.narrowmatch(match, includeexact=True)
     badmatch = matchmod.badmatch(match, badfn)
     dirstate = repo.dirstate
     # We don't want to just call wctx.walk here, since it would return a lot of

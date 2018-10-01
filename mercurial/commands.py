@@ -3034,17 +3034,18 @@ def identify(ui, repo, source=None, rev=None,
 
             return sorted(bms)
 
-        if bookmarks:
-            output.extend(getbms())
-        elif default and not ui.quiet:
-            # multiple bookmarks for a single parent separated by '/'
-            bm = '/'.join(getbms())
-            if bm:
-                output.append(bm)
-
-        fm.data(node=hex(remoterev))
-        if 'bookmarks' in fm.datahint():
-            fm.data(bookmarks=fm.formatlist(getbms(), name='bookmark'))
+        if fm.isplain():
+            if bookmarks:
+                output.extend(getbms())
+            elif default and not ui.quiet:
+                # multiple bookmarks for a single parent separated by '/'
+                bm = '/'.join(getbms())
+                if bm:
+                    output.append(bm)
+        else:
+            fm.data(node=hex(remoterev))
+            if 'bookmarks' in fm.datahint():
+                fm.data(bookmarks=fm.formatlist(getbms(), name='bookmark'))
     else:
         if rev:
             repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')

@@ -71,7 +71,7 @@ def main():
                 if session not in _threadmap:
                     _threadmap[session] = len(_threadmap)
                 pid = _threadmap[session]
-                ts_micros = (now - start).total_seconds() * 1000000
+                ts_micros = (now - start) * 1000000
                 out.write(json.dumps(
                     {
                         "name": label,

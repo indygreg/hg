@@ -1523,6 +1523,9 @@ def perfrevlogrevisions(ui, repo, file_=None, startrev=0, reverse=False,
     rl = cmdutil.openrevlog(repo, b'perfrevlogrevisions', file_, opts)
     rllen = getlen(ui)(rl)
 
+    if startrev < 0:
+        startrev = rllen + startrev
+
     def d():
         rl.clearcaches()
 

@@ -890,7 +890,7 @@ def perfphasesremote(ui, repo, dest=None, **opts):
 @command(b'perfmanifest',[
             (b'm', b'manifest-rev', False, b'Look up a manifest node revision'),
             (b'', b'clear-disk', False, b'clear on-disk caches too'),
-         ], b'REV|NODE')
+         ] + formatteropts, b'REV|NODE')
 def perfmanifest(ui, repo, rev, manifest_rev=False, clear_disk=False, **opts):
     """benchmark the time to read a manifest from disk and return a usable
     dict-like object

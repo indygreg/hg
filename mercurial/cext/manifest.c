@@ -42,7 +42,8 @@ typedef struct {
 /* get the length of the path for a line */
 static size_t pathlen(line *l)
 {
-	return strlen(l->start);
+	const char *end = memchr(l->start, '\0', l->len);
+	return (end) ? (size_t)(end - l->start) : l->len;
 }
 
 /* get the node value of a single line */
@@ -50,7 +51,12 @@ static PyObject *nodeof(line *l)
 {
 	char *s = l->start;
 	ssize_t llen = pathlen(l);
-	PyObject *hash = unhexlify(s + llen + 1, 40);
+	PyObject *hash;
+	if (llen + 1 + 40 + 1 > l->len) { /* path '\0' hash '\n' */
+		PyErr_SetString(PyExc_ValueError, "manifest line too short");
+		return NULL;
+	}
+	hash = unhexlify(s + llen + 1, 40);
 	if (!hash) {
 		return NULL;
 	}
@@ -248,10 +254,13 @@ static PyObject *lmiter_iterentriesnext(PyObject *o)
 	pl = pathlen(l);
 	path = PyBytes_FromStringAndSize(l->start, pl);
 	hash = nodeof(l);
+	if (!path || !hash) {
+		goto done;
+	}
 	consumed = pl + 41;
 	flags = PyBytes_FromStringAndSize(l->start + consumed,
 					   l->len - consumed - 1);
-	if (!path || !hash || !flags) {
+	if (!flags) {
 		goto done;
 	}
 	ret = PyTuple_Pack(3, path, hash, flags);

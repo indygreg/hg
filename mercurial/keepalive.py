@@ -174,6 +174,8 @@ class ConnectionManager(object):
 class KeepAliveHandler(object):
     def __init__(self):
         self._cm = ConnectionManager()
+        self.requestscount = 0
+        self.sentbytescount = 0
 
     #### Connection Management
     def open_connections(self):
@@ -312,6 +314,8 @@ class KeepAliveHandler(object):
         return r
 
     def _start_transaction(self, h, req):
+        oldbytescount = h.sentbytescount
+
         # What follows mostly reimplements HTTPConnection.request()
         # except it adds self.parent.addheaders in the mix and sends headers
         # in a deterministic order (to make testing easier).
@@ -345,6 +349,16 @@ class KeepAliveHandler(object):
         h.endheaders()
         if urllibcompat.hasdata(req):
             h.send(data)
+
+        # This will fail to record events in case of I/O failure. That's OK.
+        self.requestscount += 1
+        self.sentbytescount += h.sentbytescount - oldbytescount
+
+        try:
+            self.parent.requestscount += 1
+            self.parent.sentbytescount += h.sentbytescount - oldbytescount
+        except AttributeError:
+            pass
 
 class HTTPHandler(KeepAliveHandler, urlreq.httphandler):
     pass
@@ -585,9 +599,11 @@ def safesend(self, str):
             data = read(blocksize)
             while data:
                 self.sock.sendall(data)
+                self.sentbytescount += len(data)
                 data = read(blocksize)
         else:
             self.sock.sendall(str)
+            self.sentbytescount += len(str)
     except socket.error as v:
         reraise = True
         if v[0] == errno.EPIPE:      # Broken pipe
@@ -624,6 +640,9 @@ class HTTPConnection(httplib.HTTPConnection):
     send = safesend
     getresponse = wrapgetresponse(httplib.HTTPConnection)
 
+    def __init__(self, *args, **kwargs):
+        httplib.HTTPConnection.__init__(self, *args, **kwargs)
+        self.sentbytescount = 0
 
 #########################################################################
 #####   TEST FUNCTIONS

@@ -534,7 +534,7 @@ def makelocalrepository(baseui, path, intents=None):
     for iface, fn in REPO_INTERFACES:
         # We pass all potentially useful state to give extensions tons of
         # flexibility.
-        typ = fn(ui=ui,
+        typ = fn()(ui=ui,
                  intents=intents,
                  requirements=requirements,
                  features=features,
@@ -803,10 +803,12 @@ def makefilestorage(requirements, features, **kwargs):
 
 # List of repository interfaces and factory functions for them. Each
 # will be called in order during ``makelocalrepository()`` to iteratively
-# derive the final type for a local repository instance.
+# derive the final type for a local repository instance. We capture the
+# function as a lambda so we don't hold a reference and the module-level
+# functions can be wrapped.
 REPO_INTERFACES = [
-    (repository.ilocalrepositorymain, makemain),
-    (repository.ilocalrepositoryfilestorage, makefilestorage),
+    (repository.ilocalrepositorymain, lambda: makemain),
+    (repository.ilocalrepositoryfilestorage, lambda: makefilestorage),
 ]
 
 @interfaceutil.implementer(repository.ilocalrepositorymain)

@@ -1200,13 +1200,22 @@ class localrepository(object):
         include, exclude = self.narrowpats
         return narrowspec.match(self.root, include=include, exclude=exclude)
 
-    def narrowmatch(self, match=None):
+    def narrowmatch(self, match=None, includeexact=False):
         """matcher corresponding the the repo's narrowspec
 
         If `match` is given, then that will be intersected with the narrow
         matcher.
+
+        If `includeexact` is True, then any exact matches from `match` will
+        be included even if they're outside the narrowspec.
         """
         if match:
+            if includeexact and not self._narrowmatch.always():
+                # do not exclude explicitly-specified paths so that they can
+                # be warned later on
+                em = matchmod.exact(match._root, match._cwd, match.files())
+                nm = matchmod.unionmatcher([self._narrowmatch, em])
+                return matchmod.intersectmatchers(match, nm)
             return matchmod.intersectmatchers(match, self._narrowmatch)
         return self._narrowmatch
 

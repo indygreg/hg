@@ -10,7 +10,6 @@ from __future__ import absolute_import
 from mercurial.i18n import _
 from mercurial import (
     error,
-    match as matchmod,
 )
 
 def wrapdirstate(repo, dirstate):
@@ -30,11 +29,7 @@ def wrapdirstate(repo, dirstate):
         def walk(self, match, subrepos, unknown, ignored, full=True,
                  narrowonly=True):
             if narrowonly:
-                # hack to not exclude explicitly-specified paths so that they
-                # can be warned later on e.g. dirstate.add()
-                em = matchmod.exact(match._root, match._cwd, match.files())
-                nm = matchmod.unionmatcher([repo.narrowmatch(), em])
-                match = matchmod.intersectmatchers(match, nm)
+                match = repo.narrowmatch(match, includeexact=True)
             return super(narrowdirstate, self).walk(match, subrepos, unknown,
                                                     ignored, full)
 

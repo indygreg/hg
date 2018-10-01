@@ -18,10 +18,9 @@ def wrapdirstate(repo, dirstate):
 
     def _editfunc(fn):
         def _wrapper(self, *args):
-            dirstate = repo.dirstate
             narrowmatch = repo.narrowmatch()
             for f in args:
-                if f is not None and not narrowmatch(f) and f not in dirstate:
+                if f is not None and not narrowmatch(f) and f not in self:
                     raise error.Abort(_("cannot track '%s' - it is outside " +
                         "the narrow clone") % f)
             return fn(self, *args)

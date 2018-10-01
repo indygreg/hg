@@ -3023,6 +3023,7 @@ def identify(ui, repo, source=None, rev=None,
             output = [hexrev]
         fm.data(id=hexrev)
 
+        @util.cachefunc
         def getbms():
             bms = []
 
@@ -3033,17 +3034,17 @@ def identify(ui, repo, source=None, rev=None,
 
             return sorted(bms)
 
-        bms = getbms()
         if bookmarks:
-            output.extend(bms)
+            output.extend(getbms())
         elif default and not ui.quiet:
             # multiple bookmarks for a single parent separated by '/'
-            bm = '/'.join(bms)
+            bm = '/'.join(getbms())
             if bm:
                 output.append(bm)
 
         fm.data(node=hex(remoterev))
-        fm.data(bookmarks=fm.formatlist(bms, name='bookmark'))
+        if 'bookmarks' in fm.datahint():
+            fm.data(bookmarks=fm.formatlist(getbms(), name='bookmark'))
     else:
         if rev:
             repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')

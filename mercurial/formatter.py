@@ -213,7 +213,7 @@ class baseformatter(object):
     def write(self, fields, deftext, *fielddata, **opts):
         '''do default text output while assigning data to item'''
         fieldkeys = fields.split()
-        assert len(fieldkeys) == len(fielddata)
+        assert len(fieldkeys) == len(fielddata), (fieldkeys, fielddata)
         self._item.update(zip(fieldkeys, fielddata))
     def condwrite(self, cond, fields, deftext, *fielddata, **opts):
         '''do conditional write (primarily for plain formatter)'''

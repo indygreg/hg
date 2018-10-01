@@ -307,7 +307,7 @@ def _timer(fm, func, title=None, displayall=False):
         fm.write(prefix + b'comb', b' comb %f', entry[1] + entry[2])
         fm.write(prefix + b'user', b' user %f', entry[1])
         fm.write(prefix + b'sys',  b' sys %f', entry[2])
-        fm.write(prefix + b'count',  b' (%s of %d)', role, count)
+        fm.write(prefix + b'count',  b' (%s of %%d)' % role, count)
         fm.plain(b'\n')
     results.sort()
     min_val = results[0]

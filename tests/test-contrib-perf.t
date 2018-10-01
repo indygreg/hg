@@ -207,6 +207,50 @@ detailed output:
   ! wall * comb * user * sys * (avg of *) (glob)
   ! wall * comb * user * sys * (median of *) (glob)
 
+test json output
+----------------
+
+normal output:
+
+  $ hg perfheads --template json --config perf.stub=no
+  [
+   {
+    "comb": *, (glob)
+    "count": *, (glob)
+    "sys": *, (glob)
+    "user": *, (glob)
+    "wall": * (glob)
+   }
+  ]
+
+detailed output:
+
+  $ hg perfheads --template json --config perf.all-timing=yes --config perf.stub=no
+  [
+   {
+    "avg.comb": *, (glob)
+    "avg.count": *, (glob)
+    "avg.sys": *, (glob)
+    "avg.user": *, (glob)
+    "avg.wall": *, (glob)
+    "comb": *, (glob)
+    "count": *, (glob)
+    "max.comb": *, (glob)
+    "max.count": *, (glob)
+    "max.sys": *, (glob)
+    "max.user": *, (glob)
+    "max.wall": *, (glob)
+    "median.comb": *, (glob)
+    "median.count": *, (glob)
+    "median.sys": *, (glob)
+    "median.user": *, (glob)
+    "median.wall": *, (glob)
+    "sys": *, (glob)
+    "user": *, (glob)
+    "wall": * (glob)
+   }
+  ]
+
 Check perf.py for historical portability
 ----------------------------------------
 

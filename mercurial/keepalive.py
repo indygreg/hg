@@ -392,6 +392,7 @@ class HTTPResponse(httplib.HTTPResponse):
                                       method=method, **extrakw)
         self.fileno = sock.fileno
         self.code = None
+        self.receivedbytescount = 0
         self._rbuf = ''
         self._rbufsize = 8096
         self._handler = None # inserted by the handler later
@@ -436,7 +437,16 @@ class HTTPResponse(httplib.HTTPResponse):
         # if it's not empty.
         s = self._rbuf
         self._rbuf = ''
-        s += self._raw_read(amt)
+        data = self._raw_read(amt)
+
+        self.receivedbytescount += len(data)
+        self._connection.receivedbytescount += len(data)
+        try:
+            self._handler.parent.receivedbytescount += len(data)
+        except AttributeError:
+            pass
+
+        s += data
         return s
 
     # stolen from Python SVN #68532 to fix issue1088
@@ -512,6 +522,13 @@ class HTTPResponse(httplib.HTTPResponse):
             if not new:
                 break
 
+            self.receivedbytescount += len(new)
+            self._connection.receivedbytescount += len(new)
+            try:
+                self._handler.parent.receivedbytescount += len(new)
+            except AttributeError:
+                pass
+
             chunks.append(new)
             i = new.find('\n')
             if i >= 0:
@@ -557,6 +574,14 @@ class HTTPResponse(httplib.HTTPResponse):
             return total
         mv = memoryview(dest)
         got = self._raw_readinto(mv[have:total])
+
+        self.receivedbytescount += got
+        self._connection.receivedbytescount += got
+        try:
+            self._handler.receivedbytescount += got
+        except AttributeError:
+            pass
+
         dest[0:have] = self._rbuf
         got += len(self._rbuf)
         self._rbuf = ''
@@ -643,6 +668,7 @@ class HTTPConnection(httplib.HTTPConnection):
     def __init__(self, *args, **kwargs):
         httplib.HTTPConnection.__init__(self, *args, **kwargs)
         self.sentbytescount = 0
+        self.receivedbytescount = 0
 
 #########################################################################
 #####   TEST FUNCTIONS

@@ -203,6 +203,7 @@ test-hgrc.t
 test-hgweb-bundle.t
 test-hgweb-descend-empties.t
 test-hgweb-empty.t
+test-hgweb-non-interactive.t
 test-hgweb-removed.t
 test-hgwebdir-paths.py
 test-hgwebdirsym.t

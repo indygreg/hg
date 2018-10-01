@@ -38,7 +38,7 @@ a file, once as a link. Bundle was generated with:
 Merge them and display *_ISLINK vars
 merge heads
 
-  $ hg merge --tool="$PYTHON ../echo.py"
+  $ hg merge --tool="\"$PYTHON\" ../echo.py"
   merging l
   HG_FILE l
   HG_MY_ISLINK 1
@@ -54,7 +54,7 @@ merge working directory
   $ hg up -C 2
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg copy l l2
-  $ HGMERGE="$PYTHON ../echo.py" hg up 3
+  $ HGMERGE="\"$PYTHON\" ../echo.py" hg up 3
   merging l2
   HG_FILE l2
   HG_MY_ISLINK 1

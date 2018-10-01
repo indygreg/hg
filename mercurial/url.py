@@ -339,7 +339,7 @@ class logginghttphandler(httphandler):
         return logginghttpconnection(createconnection, *args, **kwargs)
 
 if has_https:
-    class httpsconnection(httplib.HTTPConnection):
+    class httpsconnection(keepalive.HTTPConnection):
         response_class = keepalive.HTTPResponse
         default_port = httplib.HTTPS_PORT
         # must be able to send big bundle as stream.
@@ -348,7 +348,7 @@ if has_https:
 
         def __init__(self, host, port=None, key_file=None, cert_file=None,
                      *args, **kwargs):
-            httplib.HTTPConnection.__init__(self, host, port, *args, **kwargs)
+            keepalive.HTTPConnection.__init__(self, host, port, *args, **kwargs)
             self.key_file = key_file
             self.cert_file = cert_file
 

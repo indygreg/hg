@@ -615,6 +615,10 @@ def wrapgetresponse(cls):
     return safegetresponse
 
 class HTTPConnection(httplib.HTTPConnection):
+    # url.httpsconnection inherits from this. So when adding/removing
+    # attributes, be sure to audit httpsconnection() for unintended
+    # consequences.
+
     # use the modified response class
     response_class = HTTPResponse
     send = safesend

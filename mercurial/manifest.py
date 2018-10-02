@@ -706,9 +706,11 @@ class treemanifest(object):
         self._lazydirs = {}
 
     def _loadlazy(self, d):
-        path, node, readsubtree = self._lazydirs[d]
-        self._dirs[d] = readsubtree(path, node)
-        del self._lazydirs[d]
+        v = self._lazydirs.get(d)
+        if v:
+            path, node, readsubtree = v
+            self._dirs[d] = readsubtree(path, node)
+            del self._lazydirs[d]
 
     def _loadchildrensetlazy(self, visit):
         if not visit:

@@ -23,7 +23,7 @@ from mercurial import (
 from . import (
     narrowbundle2,
     narrowcommands,
-    narrowpatch,
+    narrowcopies,
     narrowrepo,
     narrowtemplates,
     narrowwirepeer,
@@ -65,7 +65,7 @@ def reposetup(ui, repo):
 
     if repository.NARROW_REQUIREMENT in repo.requirements:
         narrowrepo.wraprepo(repo)
-        narrowpatch.setup(repo)
+        narrowcopies.setup(repo)
         narrowwirepeer.reposetup(repo)
 
 templatekeyword = narrowtemplates.templatekeyword

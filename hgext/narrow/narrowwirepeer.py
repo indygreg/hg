@@ -69,7 +69,6 @@ def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
     ellipses: whether to send ellipses data or not
     """
 
-    bundler = bundle2.bundle20(repo.ui)
     try:
         oldincludes = wireprototypes.decodelist(oldincludes)
         newincludes = wireprototypes.decodelist(newincludes)
@@ -96,15 +95,10 @@ def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
                                     exclude=oldexcludes)
         diffmatch = matchmod.differencematcher(newmatch, oldmatch)
 
-        # get changegroup data
-        cg = narrowbundle2.widen_bundle(repo, diffmatch, common, known,
-                                        cgversion, ellipses)
-        if cg is not None:
-            part = bundler.newpart('changegroup', data=cg)
-            part.addparam('version', cgversion)
-            if 'treemanifest' in repo.requirements:
-                part.addparam('treemanifest', '1')
+        bundler = narrowbundle2.widen_bundle(repo, diffmatch, common, known,
+                                             cgversion, ellipses)
     except error.Abort as exc:
+        bundler = bundle2.bundle20(repo.ui)
         manargs = [('message', pycompat.bytestr(exc))]
         advargs = []
         if exc.hint is not None:

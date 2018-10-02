@@ -51,7 +51,7 @@ def getrepocaps_narrow(orig, repo, **kwargs):
     return caps
 
 def widen_bundle(repo, diffmatcher, common, known, cgversion, ellipses):
-    """generates changegroup for widening a narrow clone
+    """generates bundle2 for widening a narrow clone
 
     repo is the localrepository instance
     diffmatcher is a differencemacther of '(newincludes, newexcludes) -
@@ -61,11 +61,9 @@ def widen_bundle(repo, diffmatcher, common, known, cgversion, ellipses):
     cgversion is the changegroup version to send
     ellipses is boolean value telling whether to send ellipses data or not
 
-    returns changegroup data of the changegroup built or return None if there
-    are no common revs
+    returns bundle2 of the data required for extending
     """
-    # XXX: This patch will start sending bundle2 after couple of patches when
-    # called from the wireprotocol command
+    bundler = bundle2.bundle20(repo.ui)
     commonnodes = set()
     cl = repo.changelog
     for r in repo.revs("::%ln", common):
@@ -79,9 +77,12 @@ def widen_bundle(repo, diffmatcher, common, known, cgversion, ellipses):
         cgdata = packer.generate(set([nullid]), list(commonnodes), False,
                                  'narrow_widen', changelog=False)
 
-        return cgdata
+        part = bundler.newpart('changegroup', data=cgdata)
+        part.addparam('version', cgversion)
+        if 'treemanifest' in repo.requirements:
+            part.addparam('treemanifest', '1')
 
-    return None
+    return bundler
 
 # Serve a changegroup for a client with a narrow clone.
 def getbundlechangegrouppart_narrow(bundler, repo, source,

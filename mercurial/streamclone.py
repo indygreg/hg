@@ -18,6 +18,7 @@ from . import (
     error,
     phases,
     pycompat,
+    repository,
     store,
     util,
 )
@@ -178,6 +179,9 @@ def maybeperformlegacystreamclone(pullop):
 
 def allowservergeneration(repo):
     """Whether streaming clones are allowed from the server."""
+    if repository.REPO_FEATURE_STREAM_CLONE not in repo.features:
+        return False
+
     if not repo.ui.configbool('server', 'uncompressed', untrusted=True):
         return False
 

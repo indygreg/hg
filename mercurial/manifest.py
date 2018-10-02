@@ -720,15 +720,9 @@ class treemanifest(object):
             return None
 
         todel = []
+        loadlazy = self._loadlazy
         for k in visit:
-            kslash = k + '/'
-            ld = self._lazydirs.get(kslash)
-            if ld:
-                path, node, readsubtree = ld
-                self._dirs[kslash] = readsubtree(path, node)
-                todel.append(kslash)
-        for kslash in todel:
-            del self._lazydirs[kslash]
+            loadlazy(k + '/')
         return visit
 
     def __len__(self):

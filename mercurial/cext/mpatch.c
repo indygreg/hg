@@ -50,21 +50,22 @@ static void setpyerr(int r)
 
 struct mpatch_flist *cpygetitem(void *bins, ssize_t pos)
 {
-	const char *buffer;
-	struct mpatch_flist *res;
-	ssize_t blen;
+	Py_buffer buffer;
+	struct mpatch_flist *res = NULL;
 	int r;
 
 	PyObject *tmp = PyList_GetItem((PyObject *)bins, pos);
 	if (!tmp)
 		return NULL;
-	if (PyObject_AsCharBuffer(tmp, &buffer, (Py_ssize_t *)&blen))
+	if (PyObject_GetBuffer(tmp, &buffer, PyBUF_CONTIG_RO))
 		return NULL;
-	if ((r = mpatch_decode(buffer, blen, &res)) < 0) {
+	if ((r = mpatch_decode(buffer.buf, buffer.len, &res)) < 0) {
 		if (!PyErr_Occurred())
 			setpyerr(r);
-		return NULL;
+		res = NULL;
 	}
+
+	PyBuffer_Release(&buffer);
 	return res;
 }
 

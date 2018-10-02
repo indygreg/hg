@@ -72,10 +72,10 @@ static PyObject *patches(PyObject *self, PyObject *args)
 {
 	PyObject *text, *bins, *result;
 	struct mpatch_flist *patch;
-	const char *in;
+	Py_buffer buffer;
 	int r = 0;
 	char *out;
-	Py_ssize_t len, outlen, inlen;
+	Py_ssize_t len, outlen;
 
 	if (!PyArg_ParseTuple(args, "OO:mpatch", &text, &bins))
 		return NULL;
@@ -87,17 +87,19 @@ static PyObject *patches(PyObject *self, PyObject *args)
 		return text;
 	}
 
-	if (PyObject_AsCharBuffer(text, &in, &inlen))
+	if (PyObject_GetBuffer(text, &buffer, PyBUF_CONTIG_RO)) {
 		return NULL;
+	}
 
 	patch = mpatch_fold(bins, cpygetitem, 0, len);
 	if (!patch) { /* error already set or memory error */
 		if (!PyErr_Occurred())
 			PyErr_NoMemory();
-		return NULL;
+		result = NULL;
+		goto cleanup;
 	}
 
-	outlen = mpatch_calcsize(inlen, patch);
+	outlen = mpatch_calcsize(buffer.len, patch);
 	if (outlen < 0) {
 		r = (int)outlen;
 		result = NULL;
@@ -112,7 +114,7 @@ static PyObject *patches(PyObject *self, PyObject *args)
 	/* clang-format off */
 	{
 		Py_BEGIN_ALLOW_THREADS
-		r = mpatch_apply(out, in, inlen, patch);
+		r = mpatch_apply(out, buffer.buf, buffer.len, patch);
 		Py_END_ALLOW_THREADS
 	}
 	/* clang-format on */
@@ -122,6 +124,7 @@ static PyObject *patches(PyObject *self, PyObject *args)
 	}
 cleanup:
 	mpatch_lfree(patch);
+	PyBuffer_Release(&buffer);
 	if (!result && !PyErr_Occurred())
 		setpyerr(r);
 	return result;

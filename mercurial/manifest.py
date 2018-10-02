@@ -817,8 +817,7 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
-            if dir in self._lazydirs:
-                self._loadlazy(dir)
+            self._loadlazy(dir)
 
             if dir not in self._dirs:
                 return False
@@ -831,8 +830,7 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
-            if dir in self._lazydirs:
-                self._loadlazy(dir)
+            self._loadlazy(dir)
 
             if dir not in self._dirs:
                 return default
@@ -844,8 +842,7 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
-            if dir in self._lazydirs:
-                self._loadlazy(dir)
+            self._loadlazy(dir)
 
             return self._dirs[dir].__getitem__(subpath)
         else:
@@ -855,8 +852,7 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
-            if dir in self._lazydirs:
-                self._loadlazy(dir)
+            self._loadlazy(dir)
 
             if dir not in self._dirs:
                 return ''
@@ -870,8 +866,7 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
-            if dir in self._lazydirs:
-                self._loadlazy(dir)
+            self._loadlazy(dir)
 
             return self._dirs[dir].find(subpath)
         else:
@@ -881,8 +876,7 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
-            if dir in self._lazydirs:
-                self._loadlazy(dir)
+            self._loadlazy(dir)
 
             self._dirs[dir].__delitem__(subpath)
             # If the directory is now empty, remove it
@@ -899,8 +893,7 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
-            if dir in self._lazydirs:
-                self._loadlazy(dir)
+            self._loadlazy(dir)
             if dir not in self._dirs:
                 self._dirs[dir] = treemanifest(self._subpath(dir))
             self._dirs[dir].__setitem__(subpath, n)
@@ -921,8 +914,7 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
-            if dir in self._lazydirs:
-                self._loadlazy(dir)
+            self._loadlazy(dir)
             if dir not in self._dirs:
                 self._dirs[dir] = treemanifest(self._subpath(dir))
             self._dirs[dir].setflag(subpath, flags)
@@ -993,8 +985,7 @@ class treemanifest(object):
         self._load()
         topdir, subdir = _splittopdir(dir)
         if topdir:
-            if topdir in self._lazydirs:
-                self._loadlazy(topdir)
+            self._loadlazy(topdir)
             if topdir in self._dirs:
                 return self._dirs[topdir].hasdir(subdir)
             return False

@@ -27,6 +27,8 @@ REPO_FEATURE_REVLOG_FILE_STORAGE = b'revlogfilestorage'
 REPO_FEATURE_SHARED_STORAGE = b'sharedstore'
 # LFS supported for backing file storage.
 REPO_FEATURE_LFS = b'lfs'
+# Repository supports being stream cloned.
+REPO_FEATURE_STREAM_CLONE = b'streamclone'
 
 class ipeerconnection(interfaceutil.Interface):
     """Represents a "connection" to a repository.

@@ -795,6 +795,7 @@ class revlognarrowfilestorage(object):
 def makefilestorage(requirements, features, **kwargs):
     """Produce a type conforming to ``ilocalrepositoryfilestorage``."""
     features.add(repository.REPO_FEATURE_REVLOG_FILE_STORAGE)
+    features.add(repository.REPO_FEATURE_STREAM_CLONE)
 
     if repository.NARROW_REQUIREMENT in requirements:
         return revlognarrowfilestorage

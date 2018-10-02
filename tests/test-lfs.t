@@ -876,8 +876,6 @@ avoids the corrupt lfs object in the original remote.)
   pushing to dest
   searching for changes
   lfs: found 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b in the local lfs store
-  lfs: found 89b6070915a3d573ff3599d1cda305bc5e38549b15c4847ab034169da66e1ca8 in the local lfs store
-  lfs: found b1a6ea88da0017a0e77db139a54618986e9a2489bee24af9fe596de9daac498c in the local lfs store
   abort: detected corrupt lfs object: 66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e
   (run hg verify)
   [255]

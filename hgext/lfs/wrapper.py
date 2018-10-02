@@ -333,7 +333,7 @@ def extractpointers(repo, revs):
             for p in pointersfromctx(ctx).values():
                 pointers[p.oid()] = p
             progress.increment()
-        return sorted(pointers.values())
+        return sorted(pointers.values(), key=lambda p: p.oid())
 
 def pointerfromctx(ctx, f, removed=False):
     """return a pointer for the named file from the given changectx, or None if

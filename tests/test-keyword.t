@@ -217,7 +217,7 @@ hg status of kw-ignored binary file starting with '\1\n'
   >>> open("i", "wb").write("\1\nfoo") and None
   $ hg -q commit -Am metasep i
   $ hg status
-  >>> open("i", "wb").write("\1\nbar")
+  >>> open("i", "wb").write("\1\nbar") and None
   $ hg status
   M i
   $ hg -q commit -m "modify metasep" i
@@ -943,7 +943,7 @@ Imported patch should not be rejected
 
   >>> import re
   >>> text = re.sub(r'(Id.*)', r'\1 rejecttest', open('a').read())
-  >>> open('a', 'wb').write(text)
+  >>> open('a', 'wb').write(text) and None
   $ hg --debug commit -m'rejects?' -d '3 0' -u 'User Name <user@example.com>'
   committing files:
   a

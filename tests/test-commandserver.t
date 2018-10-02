@@ -298,7 +298,7 @@ Clean hook cached version
   ... 
   ...     runcommand(server, ['bookmarks', 'bm3'])
   ...     f = open('a', 'ab')
-  ...     f.write('a\n')
+  ...     f.write('a\n') and None
   ...     f.close()
   ...     runcommand(server, ['commit', '-Amm'])
   ...     runcommand(server, ['bookmarks'])
@@ -391,7 +391,7 @@ Clean hook cached version
   ...     readchannel(server)
   ...     runcommand(server, ['commit', '-Am.'])
   ...     f = open('ignored-file', 'ab')
-  ...     f.write('')
+  ...     f.write('') and None
   ...     f.close()
   ...     f = open('.hgignore', 'ab')
   ...     f.write('ignored-file')
@@ -418,7 +418,7 @@ cache of non-public revisions should be invalidated on repository change
   ...     for i in range(5, 7):
   ...         f = open('a', 'ab')
   ...         f.seek(0, os.SEEK_END)
-  ...         f.write('a\n')
+  ...         f.write('a\n') and None
   ...         f.close()
   ...         os.system('hg commit -Aqm%d' % i)
   ...     # new commits should be listed as draft revisions
@@ -463,7 +463,7 @@ cache of phase roots should be invalidated on strip (issue3827):
   ...     # create new head, 5:731265503d86
   ...     runcommand(server, ['update', '-C', '0'])
   ...     f = open('a', 'ab')
-  ...     f.write('a\n')
+  ...     f.write('a\n') and None
   ...     f.close()
   ...     runcommand(server, ['commit', '-Am.', 'a'])
   ...     runcommand(server, ['log', '-Gq'])

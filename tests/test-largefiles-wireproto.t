@@ -243,7 +243,7 @@ Archive contains largefiles
   >>> import urllib2
   >>> u = 'http://localhost:%s/archive/default.zip' % os.environ['HGPORT2']
   >>> with open('archive.zip', 'w') as f:
-  ...     f.write(urllib2.urlopen(u).read())
+  ...     f.write(urllib2.urlopen(u).read()) and None
   $ unzip -t archive.zip
   Archive:  archive.zip
       testing: empty-default/.hg_archival.txt*OK (glob)

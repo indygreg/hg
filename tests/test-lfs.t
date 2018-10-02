@@ -327,9 +327,9 @@ enabled adds the lfs requirement
   $ hg commit -m b
   $ hg status
   >>> with open('a2', 'wb') as f:
-  ...     f.write(b'\1\nSTART-WITH-HG-FILELOG-METADATA')
+  ...     f.write(b'\1\nSTART-WITH-HG-FILELOG-METADATA') and None
   >>> with open('a1', 'wb') as f:
-  ...     f.write(b'\1\nMETA\n')
+  ...     f.write(b'\1\nMETA\n') and None
   $ hg commit -m meta
   $ hg status
   $ hg log -T '{rev}: {file_copies} | {file_dels} | {file_adds}\n'

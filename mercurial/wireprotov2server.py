@@ -975,6 +975,35 @@ def getfilestore(repo, proto, path):
 
     return fl
 
+def emitfilerevisions(revisions, fields):
+    for revision in revisions:
+        d = {
+            b'node': revision.node,
+        }
+
+        if b'parents' in fields:
+            d[b'parents'] = [revision.p1node, revision.p2node]
+
+        followingmeta = []
+        followingdata = []
+
+        if b'revision' in fields:
+            if revision.revision is not None:
+                followingmeta.append((b'revision', len(revision.revision)))
+                followingdata.append(revision.revision)
+            else:
+                d[b'deltabasenode'] = revision.basenode
+                followingmeta.append((b'delta', len(revision.delta)))
+                followingdata.append(revision.delta)
+
+        if followingmeta:
+            d[b'fieldsfollowing'] = followingmeta
+
+        yield d
+
+        for extra in followingdata:
+            yield extra
+
 @wireprotocommand(
     'filedata',
     args={
@@ -1026,33 +1055,8 @@ def filedata(repo, proto, haveparents, nodes, fields, path):
         b'totalitems': len(nodes),
     }
 
-    for revision in revisions:
-        d = {
-            b'node': revision.node,
-        }
-
-        if b'parents' in fields:
-            d[b'parents'] = [revision.p1node, revision.p2node]
-
-        followingmeta = []
-        followingdata = []
-
-        if b'revision' in fields:
-            if revision.revision is not None:
-                followingmeta.append((b'revision', len(revision.revision)))
-                followingdata.append(revision.revision)
-            else:
-                d[b'deltabasenode'] = revision.basenode
-                followingmeta.append((b'delta', len(revision.delta)))
-                followingdata.append(revision.delta)
-
-        if followingmeta:
-            d[b'fieldsfollowing'] = followingmeta
-
-        yield d
-
-        for extra in followingdata:
-            yield extra
+    for o in emitfilerevisions(revisions, fields):
+        yield o
 
 @wireprotocommand(
     'heads',

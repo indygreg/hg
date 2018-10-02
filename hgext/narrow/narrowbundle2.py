@@ -67,11 +67,10 @@ def widen_bundle(repo, diffmatcher, common, known, cgversion, ellipses):
     """
     # XXX: This patch will start sending bundle2 after couple of patches when
     # called from the wireprotocol command
-    common = repo.revs("::%ln", common)
     commonnodes = set()
     cl = repo.changelog
-    for c in common:
-        commonnodes.add(cl.node(c))
+    for r in repo.revs("::%ln", common):
+        commonnodes.add(cl.node(r))
     if commonnodes:
         # XXX: we should only send the filelogs (and treemanifest). user
         # already has the changelog and manifest

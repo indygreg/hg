@@ -549,9 +549,13 @@ enabled adds the lfs requirement
    4 files changed, 2 insertions(+), 0 deletions(-)
   $ hg commit -m binarytest
   $ cat > $TESTTMP/dumpbinary.py << EOF
+  > from mercurial.utils import (
+  >     stringutil,
+  > )
   > def reposetup(ui, repo):
-  >     for n in 'abcd':
-  >         ui.write(('%s: binary=%s\n') % (n, repo['.'][n].isbinary()))
+  >     for n in (b'a', b'b', b'c', b'd'):
+  >         ui.write((b'%s: binary=%s\n')
+  >                   % (n, stringutil.pprint(repo[b'.'][n].isbinary())))
   > EOF
   $ hg --config extensions.dumpbinary=$TESTTMP/dumpbinary.py id --trace
   a: binary=True
@@ -679,14 +683,20 @@ absence doesn't cause an abort.)
   > # print raw revision sizes, flags, and hashes for certain files
   > import hashlib
   > from mercurial.node import short
-  > from mercurial import revlog
+  > from mercurial import (
+  >     pycompat,
+  >     revlog,
+  > )
+  > from mercurial.utils import (
+  >     stringutil,
+  > )
   > def hash(rawtext):
   >     h = hashlib.sha512()
   >     h.update(rawtext)
-  >     return h.hexdigest()[:4]
+  >     return pycompat.sysbytes(h.hexdigest()[:4])
   > def reposetup(ui, repo):
   >     # these 2 files are interesting
-  >     for name in ['l', 's']:
+  >     for name in [b'l', b's']:
   >         fl = repo.file(name)
   >         if len(fl) == 0:
   >             continue
@@ -694,8 +704,8 @@ absence doesn't cause an abort.)
   >         texts = [fl.revision(i, raw=True) for i in fl]
   >         flags = [int(fl._revlog.flags(i)) for i in fl]
   >         hashes = [hash(t) for t in texts]
-  >         print('  %s: rawsizes=%r flags=%r hashes=%r'
-  >               % (name, sizes, flags, hashes))
+  >         pycompat.stdout.write(b'  %s: rawsizes=%r flags=%r hashes=%s\n'
+  >                               % (name, sizes, flags, stringutil.pprint(hashes)))
   > EOF
 
   $ for i in client client2 server repo3 repo4 repo5 repo6 repo7 repo8 repo9 \

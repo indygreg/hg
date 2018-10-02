@@ -19,6 +19,7 @@
 #   Mercurial
 
 from __future__ import absolute_import
+import contextlib
 import functools
 import gc
 import os
@@ -273,20 +274,28 @@ def gettimer(ui, opts=None):
 def stub_timer(fm, func, title=None):
     func()
 
+@contextlib.contextmanager
+def timeone():
+    r = []
+    ostart = os.times()
+    cstart = util.timer()
+    yield r
+    cstop = util.timer()
+    ostop = os.times()
+    a, b = ostart, ostop
+    r.append((cstop - cstart, b[0] - a[0], b[1]-a[1]))
+
 def _timer(fm, func, title=None, displayall=False):
     gc.collect()
     results = []
     begin = util.timer()
     count = 0
     while True:
-        ostart = os.times()
-        cstart = util.timer()
-        r = func()
-        cstop = util.timer()
-        ostop = os.times()
+        with timeone() as item:
+            r = func()
         count += 1
-        a, b = ostart, ostop
-        results.append((cstop - cstart, b[0] - a[0], b[1]-a[1]))
+        results.append(item[0])
+        cstop = util.timer()
         if cstop - begin > 3 and count >= 100:
             break
         if cstop - begin > 10 and count >= 3:

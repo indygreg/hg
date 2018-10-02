@@ -3324,7 +3324,8 @@ def debugwireproto(ui, repo, path=None, **opts):
                 getattr(e, 'read', lambda: None)()
                 continue
 
-            if res.headers.get('Content-Type') == 'application/mercurial-cbor':
+            ct = res.headers.get(r'Content-Type')
+            if ct == r'application/mercurial-cbor':
                 ui.write(_('cbor> %s\n') %
                          stringutil.pprint(cborutil.decodeall(body)[0],
                                            bprefix=True,

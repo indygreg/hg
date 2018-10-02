@@ -3286,7 +3286,10 @@ def debugwireproto(ui, repo, path=None, **opts):
                 line = line.lstrip()
                 m = re.match(b'^([a-zA-Z0-9_-]+): (.*)$', line)
                 if m:
-                    headers[m.group(1)] = m.group(2)
+                    # Headers need to use native strings.
+                    key = pycompat.strurl(m.group(1))
+                    value = pycompat.strurl(m.group(2))
+                    headers[key] = value
                     continue
 
                 if line.startswith(b'BODYFILE '):

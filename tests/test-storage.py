@@ -23,7 +23,7 @@ STATE = {
 
 def makefilefn(self):
     """Factory for filelog instances."""
-    fl = filelog.filelog(STATE['vfs'], 'filelog-%d' % STATE['lastindex'])
+    fl = filelog.filelog(STATE['vfs'], b'filelog-%d' % STATE['lastindex'])
     STATE['lastindex'] += 1
     return fl
 
@@ -31,7 +31,7 @@ def maketransaction(self):
     vfsmap = {'plain': STATE['vfs']}
 
     return transaction.transaction(STATE['ui'].warn, STATE['vfs'], vfsmap,
-                                  'journal', 'undo')
+                                   b'journal', b'undo')
 
 # Assigning module-level attributes that inherit from unittest.TestCase
 # is all that is needed to register tests.

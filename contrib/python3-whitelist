@@ -92,6 +92,7 @@ test-convert-cvs-synthetic.t
 test-convert-cvs.t
 test-convert-cvsnt-mergepoints.t
 test-convert-datesort.t
+test-contrib-dumprevlog.t
 test-convert-filemap.t
 test-convert-hg-sink.t
 test-convert-hg-source.t

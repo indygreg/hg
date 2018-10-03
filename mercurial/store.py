@@ -359,17 +359,21 @@ class basicstore(object):
         l.sort()
         return l
 
-    def datafiles(self):
+    def datafiles(self, matcher=None):
         return self._walk('data', True) + self._walk('meta', True)
 
     def topfiles(self):
         # yield manifest before changelog
         return reversed(self._walk('', False))
 
-    def walk(self):
-        '''yields (unencoded, encoded, size)'''
+    def walk(self, matcher=None):
+        '''yields (unencoded, encoded, size)
+
+        if a matcher is passed, storage files of only those tracked paths
+        are passed with matches the matcher
+        '''
         # yield data files first
-        for x in self.datafiles():
+        for x in self.datafiles(matcher):
             yield x
         for x in self.topfiles():
             yield x
@@ -407,7 +411,7 @@ class encodedstore(basicstore):
         self.vfs = vfsmod.filtervfs(vfs, encodefilename)
         self.opener = self.vfs
 
-    def datafiles(self):
+    def datafiles(self, matcher=None):
         for a, b, size in super(encodedstore, self).datafiles():
             try:
                 a = decodefilename(a)
@@ -536,7 +540,7 @@ class fncachestore(basicstore):
     def getsize(self, path):
         return self.rawvfs.stat(path).st_size
 
-    def datafiles(self):
+    def datafiles(self, matcher=None):
         for f in sorted(self.fncache):
             ef = self.encode(f)
             try:

@@ -777,10 +777,11 @@ class basefilectx(object):
         changesets.
         """
         attrs = vars(self)
-        noctx = not (r'_changeid' in attrs or r'_changectx' in attrs)
-        if noctx:
+        hastoprev = (r'_changeid' in attrs or r'_changectx' in attrs)
+        if hastoprev:
+            return self._adjustlinkrev(self.rev(), inclusive=True)
+        else:
             return self.linkrev()
-        return self._adjustlinkrev(self.rev(), inclusive=True)
 
     def introfilectx(self):
         """Return filectx having identical contents, but pointing to the

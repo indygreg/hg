@@ -2033,6 +2033,14 @@ def export(ui, repo, *changesets, **opts):
 
     .. container:: verbose
 
+      Template:
+
+      The following keywords are supported in addition to the common template
+      keywords and functions. See also :hg:`help templates`.
+
+      :diff:    String. Diff content.
+      :parents: List of strings. Parent nodes of the changeset.
+
       Examples:
 
       - use export and import to transplant a bugfix to the current

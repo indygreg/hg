@@ -913,7 +913,8 @@ class bufferingdecoder(object):
     """
     def __init__(self):
         self._decoder = sansiodecoder()
-        self._leftover = None
+        self._chunks = []
+        self._wanted = 0
 
     def decode(self, b):
         """Attempt to decode bytes to CBOR values.
@@ -924,19 +925,40 @@ class bufferingdecoder(object):
         * Integer number of bytes decoded from the new input.
         * Integer number of bytes wanted to decode the next value.
         """
+        # Our strategy for buffering is to aggregate the incoming chunks in a
+        # list until we've received enough data to decode the next item.
+        # This is slightly more complicated than using an ``io.BytesIO``
+        # or continuously concatenating incoming data. However, because it
+        # isn't constantly reallocating backing memory for a growing buffer,
+        # it prevents excessive memory thrashing and is significantly faster,
+        # especially in cases where the percentage of input chunks that don't
+        # decode into a full item is high.
 
-        if self._leftover:
-            oldlen = len(self._leftover)
-            b = self._leftover + b
-            self._leftover = None
+        if self._chunks:
+            # A previous call said we needed N bytes to decode the next item.
+            # But this call doesn't provide enough data. We buffer the incoming
+            # chunk without attempting to decode.
+            if len(b) < self._wanted:
+                self._chunks.append(b)
+                self._wanted -= len(b)
+                return False, 0, self._wanted
+
+            # Else we may have enough data to decode the next item. Aggregate
+            # old data with new and reset the buffer.
+            newlen = len(b)
+            self._chunks.append(b)
+            b = b''.join(self._chunks)
+            self._chunks = []
+            oldlen = len(b) - newlen
+
         else:
-            b = b
             oldlen = 0
 
         available, readcount, wanted = self._decoder.decode(b)
+        self._wanted = wanted
 
         if readcount < len(b):
-            self._leftover = b[readcount:]
+            self._chunks.append(b[readcount:])
 
         return available, readcount - oldlen, wanted
 

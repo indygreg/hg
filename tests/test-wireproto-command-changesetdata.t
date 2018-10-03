@@ -44,29 +44,6 @@ No arguments is an invalid request
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 28\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     \x14\x00\x00\x01\x00\x01\x01\x11\xa1DnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     49\r\n
-  s>     A\x00\x00\x01\x00\x02\x012
-  s>     \xa2Eerror\xa1GmessageX"noderange or nodes must be definedFstatusEerror
-  s>     \r\n
-  received frame(size=65; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
-  s>     0\r\n
-  s>     \r\n
   abort: noderange or nodes must be defined!
   [255]
 
@@ -78,29 +55,6 @@ Empty noderange heads results in an error
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 47\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     \'\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa1Inoderange\x82\x80\x80DnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     51\r\n
-  s>     I\x00\x00\x01\x00\x02\x012
-  s>     \xa2Eerror\xa1GmessageX*heads in noderange request cannot be emptyFstatusEerror
-  s>     \r\n
-  received frame(size=73; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
-  s>     0\r\n
-  s>     \r\n
   abort: heads in noderange request cannot be empty!
   [255]
 
@@ -113,29 +67,6 @@ nodesdepth requires nodes argument
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 69\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     =\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Inoderange\x82\x80\x81GignoredJnodesdepthB42DnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     4d\r\n
-  s>     E\x00\x00\x01\x00\x02\x012
-  s>     \xa2Eerror\xa1GmessageX&nodesdepth requires the nodes argumentFstatusEerror
-  s>     \r\n
-  received frame(size=69; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
-  s>     0\r\n
-  s>     \r\n
   abort: nodesdepth requires the nodes argument!
   [255]
 
@@ -147,38 +78,6 @@ Sending just noderange heads sends all revisions
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 89\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     Q\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa1Inoderange\x82\x80\x82T\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11DnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     81\r\n
-  s>     y\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x04\xa1DnodeT3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:\xa1DnodeTu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1\xa1DnodeT\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd\xa1DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11
-  s>     \r\n
-  received frame(size=121; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 4
@@ -196,7 +95,6 @@ Sending just noderange heads sends all revisions
       b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Sending root nodes limits what data is sent
 
@@ -206,38 +104,6 @@ Sending root nodes limits what data is sent
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 89\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     Q\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa1Inoderange\x82\x81T3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:\x81T\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddDnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     4b\r\n
-  s>     C\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x02\xa1DnodeTu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1\xa1DnodeT\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd
-  s>     \r\n
-  received frame(size=67; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 2
@@ -249,7 +115,6 @@ Sending root nodes limits what data is sent
       b'node': b'\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd'
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Requesting data on a single node by node works
 
@@ -259,38 +124,6 @@ Requesting data on a single node by node works
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 62\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     6\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa1Enodes\x81T3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:DnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     30\r\n
-  s>     (\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa1DnodeT3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:
-  s>     \r\n
-  received frame(size=40; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 1
@@ -299,7 +132,6 @@ Requesting data on a single node by node works
       b'node': b'3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:'
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Specifying a noderange and nodes takes union
 
@@ -310,38 +142,6 @@ Specifying a noderange and nodes takes union
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 117\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     m\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Inoderange\x82\x81Tu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1\x81T\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddEnodes\x81T\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11DnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     4b\r\n
-  s>     C\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x02\xa1DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11\xa1DnodeT\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd
-  s>     \r\n
-  received frame(size=67; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 2
@@ -353,7 +153,6 @@ Specifying a noderange and nodes takes union
       b'node': b'\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd'
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 nodesdepth of 1 limits to exactly requested nodes
 
@@ -364,38 +163,6 @@ nodesdepth of 1 limits to exactly requested nodes
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 74\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     B\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Enodes\x81T\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11Jnodesdepth\x01DnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     30\r\n
-  s>     (\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa1DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11
-  s>     \r\n
-  received frame(size=40; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 1
@@ -404,7 +171,6 @@ nodesdepth of 1 limits to exactly requested nodes
       b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 nodesdepth of 2 limits to first ancestor
 
@@ -415,38 +181,6 @@ nodesdepth of 2 limits to first ancestor
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 74\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     B\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Enodes\x81T\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11Jnodesdepth\x02DnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     4b\r\n
-  s>     C\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x02\xa1DnodeT3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:\xa1DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11
-  s>     \r\n
-  received frame(size=67; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 2
@@ -458,7 +192,6 @@ nodesdepth of 2 limits to first ancestor
       b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 nodesdepth with multiple nodes
 
@@ -469,38 +202,6 @@ nodesdepth with multiple nodes
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 95\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     W\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Enodes\x82T\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11T\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddJnodesdepth\x02DnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     81\r\n
-  s>     y\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x04\xa1DnodeT3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:\xa1DnodeTu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1\xa1DnodeT\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd\xa1DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11
-  s>     \r\n
-  received frame(size=121; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 4
@@ -518,7 +219,6 @@ nodesdepth with multiple nodes
       b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Parents data is transferred upon request
 
@@ -529,38 +229,6 @@ Parents data is transferred upon request
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 78\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     F\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Ffields\x81GparentsEnodes\x81T\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11DnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     63\r\n
-  s>     [\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11Gparents\x82T3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
-  s>     \r\n
-  received frame(size=91; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 1
@@ -573,7 +241,6 @@ Parents data is transferred upon request
       ]
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Phase data is transferred upon request
 
@@ -584,38 +251,6 @@ Phase data is transferred upon request
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 76\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     D\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Ffields\x81EphaseEnodes\x81T\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddDnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     3d\r\n
-  s>     5\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2DnodeT\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddEphaseFpublic
-  s>     \r\n
-  received frame(size=53; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 1
@@ -625,7 +260,6 @@ Phase data is transferred upon request
       b'phase': b'public'
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Revision data is transferred upon request
 
@@ -636,43 +270,6 @@ Revision data is transferred upon request
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 79\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     G\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Ffields\x81HrevisionEnodes\x81T\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11DnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     8c\r\n
-  s>     \x84\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2Ofieldsfollowing\x81\x82Hrevision\x18=DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11X=1b74476799ec8318045db759b1b4bcc9b839d0aa\n
-  s>     test\n
-  s>     0 0\n
-  s>     a\n
-  s>     \n
-  s>     commit 3
-  s>     \r\n
-  received frame(size=132; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 1
@@ -688,7 +285,6 @@ Revision data is transferred upon request
     },
     b'1b74476799ec8318045db759b1b4bcc9b839d0aa\ntest\n0 0\na\n\ncommit 3'
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Bookmarks key isn't present if no bookmarks data
 
@@ -699,38 +295,6 @@ Bookmarks key isn't present if no bookmarks data
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 107\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     c\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Ffields\x81IbookmarksInoderange\x82\x80\x82T\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11DnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     81\r\n
-  s>     y\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x04\xa1DnodeT3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:\xa1DnodeTu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1\xa1DnodeT\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd\xa1DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11
-  s>     \r\n
-  received frame(size=121; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 4
@@ -748,7 +312,6 @@ Bookmarks key isn't present if no bookmarks data
       b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Bookmarks are sent when requested
 
@@ -763,38 +326,6 @@ Bookmarks are sent when requested
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 107\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     c\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Ffields\x81IbookmarksInoderange\x82\x80\x82T\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11DnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     ac\r\n
-  s>     \xa4\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x04\xa1DnodeT3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:\xa1DnodeTu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1\xa2Ibookmarks\x81Fbook-1DnodeT\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xdd\xa2Ibookmarks\x82Fbook-2Fbook-3DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11
-  s>     \r\n
-  received frame(size=164; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 4
@@ -819,7 +350,6 @@ Bookmarks are sent when requested
       b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Bookmarks are sent when we make a no-new-revisions request
 
@@ -830,49 +360,6 @@ Bookmarks are sent when we make a no-new-revisions request
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 137\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     \x81\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Ffields\x82IbookmarksHrevisionInoderange\x82\x81T\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11\x82T\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11DnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     14b\r\n
-  s>     C\x01\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x02\xa2Ofieldsfollowing\x81\x82Hrevision\x18?DnodeTu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1X?7f144aea0ba742713887b564d57e9d12f12ff382\n
-  s>     test\n
-  s>     0 0\n
-  s>     a\n
-  s>     b\n
-  s>     \n
-  s>     commit 1\xa3Ibookmarks\x81Fbook-1Ofieldsfollowing\x81\x82Hrevision\x18=DnodeT\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddX=37f0a2d1c28ffe4b879109a7d1bbf8f07b3c763b\n
-  s>     test\n
-  s>     0 0\n
-  s>     b\n
-  s>     \n
-  s>     commit 2\xa2Ibookmarks\x82Fbook-2Fbook-3DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11
-  s>     \r\n
-  received frame(size=323; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 2
@@ -908,7 +395,6 @@ Bookmarks are sent when we make a no-new-revisions request
       b'node': b'\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11'
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Multiple fields can be transferred
 
@@ -919,43 +405,6 @@ Multiple fields can be transferred
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 87\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     O\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Ffields\x82GparentsHrevisionEnodes\x81T\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11DnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     bf\r\n
-  s>     \xb7\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa3Ofieldsfollowing\x81\x82Hrevision\x18=DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11Gparents\x82T3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00X=1b74476799ec8318045db759b1b4bcc9b839d0aa\n
-  s>     test\n
-  s>     0 0\n
-  s>     a\n
-  s>     \n
-  s>     commit 3
-  s>     \r\n
-  received frame(size=183; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 1
@@ -975,7 +424,6 @@ Multiple fields can be transferred
     },
     b'1b74476799ec8318045db759b1b4bcc9b839d0aa\ntest\n0 0\na\n\ncommit 3'
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Base nodes have just their metadata (e.g. phase) transferred
 
@@ -986,54 +434,6 @@ Base nodes have just their metadata (e.g. phase) transferred
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  s>     POST /api/exp-http-v2-0002/ro/changesetdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 141\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     \x85\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Ffields\x83EphaseGparentsHrevisionInoderange\x82\x81T3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:\x82T\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11DnameMchangesetdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     263\r\n
-  s>     [\x02\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x03\xa2DnodeT3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:EphaseFpublic\xa4Ofieldsfollowing\x81\x82Hrevision\x18?DnodeTu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1Gparents\x82T3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00EphaseFpublicX?7f144aea0ba742713887b564d57e9d12f12ff382\n
-  s>     test\n
-  s>     0 0\n
-  s>     a\n
-  s>     b\n
-  s>     \n
-  s>     commit 1\xa4Ofieldsfollowing\x81\x82Hrevision\x18=DnodeT\x0b\xb8\xad\x89J\x15\xb1S\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f*K(\xddGparents\x82Tu\x92\x91~\x1c>\x82g|\xb0\xa4\xbcq\\\xa2]\xd1-(\xc1T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00EphaseFpublicX=37f0a2d1c28ffe4b879109a7d1bbf8f07b3c763b\n
-  s>     test\n
-  s>     0 0\n
-  s>     b\n
-  s>     \n
-  s>     commit 2\xa4Ofieldsfollowing\x81\x82Hrevision\x18=DnodeT\xea\xe5\xf8,.b#h\xd2}\xae\xcbv\xb7\xe3\x93\xd0\xf2B\x11Gparents\x82T3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00EphaseEdraftX=1b74476799ec8318045db759b1b4bcc9b839d0aa\n
-  s>     test\n
-  s>     0 0\n
-  s>     a\n
-  s>     \n
-  s>     commit 3
-  s>     \r\n
-  received frame(size=603; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 3
@@ -1088,6 +488,5 @@ Base nodes have just their metadata (e.g. phase) transferred
     },
     b'1b74476799ec8318045db759b1b4bcc9b839d0aa\ntest\n0 0\na\n\ncommit 3'
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat error.log

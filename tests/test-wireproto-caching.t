@@ -55,38 +55,6 @@ coming from cache.
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 83\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     K\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81GparentsEnodes\x81T\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&ADtree@DnameLmanifestdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     63\r\n
-  s>     [\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2DnodeT\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&AGparents\x82T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
-  s>     \r\n
-  received frame(size=91; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 1
@@ -99,7 +67,6 @@ coming from cache.
       ]
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ sendhttpv2peer << EOF
   > command manifestdata
@@ -109,38 +76,6 @@ coming from cache.
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 83\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     K\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81GparentsEnodes\x81T\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&ADtree@DnameLmanifestdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     63\r\n
-  s>     [\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2DnodeT\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&AGparents\x82T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
-  s>     \r\n
-  received frame(size=91; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 1
@@ -153,7 +88,6 @@ coming from cache.
       ]
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Sending different request doesn't yield cache hit.
 
@@ -165,38 +99,6 @@ Sending different request doesn't yield cache hit.
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 104\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     `\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81GparentsEnodes\x82T\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&AT\xa9\x88\xfbCX>\x87\x1d\x1e\xd5u\x0e\xe0t\xc6\xd8@\xbb\xbf\xc8Dtree@DnameLmanifestdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     b1\r\n
-  s>     \xa9\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x02\xa2DnodeT\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&AGparents\x82T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xa2DnodeT\xa9\x88\xfbCX>\x87\x1d\x1e\xd5u\x0e\xe0t\xc6\xd8@\xbb\xbf\xc8Gparents\x82T\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&AT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
-  s>     \r\n
-  received frame(size=169; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 2
@@ -216,7 +118,6 @@ Sending different request doesn't yield cache hit.
       ]
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat .hg/blackbox.log
   *> cacher constructed for manifestdata (glob)
@@ -251,38 +152,6 @@ Try with object caching mode
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 83\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     K\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81GparentsEnodes\x81T\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&ADtree@DnameLmanifestdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     63\r\n
-  s>     [\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2DnodeT\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&AGparents\x82T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
-  s>     \r\n
-  received frame(size=91; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 1
@@ -295,7 +164,6 @@ Try with object caching mode
       ]
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ sendhttpv2peer << EOF
   > command manifestdata
@@ -305,38 +173,6 @@ Try with object caching mode
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 83\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     K\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81GparentsEnodes\x81T\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&ADtree@DnameLmanifestdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     63\r\n
-  s>     [\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2DnodeT\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&AGparents\x82T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
-  s>     \r\n
-  received frame(size=91; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 1
@@ -349,7 +185,6 @@ Try with object caching mode
       ]
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat .hg/blackbox.log
   *> cacher constructed for manifestdata (glob)
@@ -372,38 +207,6 @@ A non-cacheable command does not instantiate cacher
   > EOF
   creating http peer for wire protocol version 2
   sending capabilities command
-  s>     POST /api/exp-http-v2-0002/ro/capabilities HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 27\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     \x13\x00\x00\x01\x00\x01\x01\x11\xa1DnameLcapabilities
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     52b\r\n
-  s>     #\x05\x00\x01\x00\x02\x001
-  s>     \xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionInoderange\xa3Gdefault\xf6Hrequired\xf4DtypeDlistEnodes\xa3Gdefault\xf6Hrequired\xf4DtypeDlistJnodesdepth\xa3Gdefault\xf6Hrequired\xf4DtypeCintKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullGpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushKcompression\x82\xa1DnameDzstd\xa1DnameDzlibQframingmediatypes\x81X&application/mercurial-exp-framing-0005Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1
-  s>     \r\n
-  received frame(size=1315; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'commands': {
@@ -601,7 +404,6 @@ A non-cacheable command does not instantiate cacher
       ]
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ test -f .hg/blackbox.log
   [1]
@@ -616,29 +418,6 @@ An error is not cached
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 83\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     K\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81GparentsEnodes\x81T\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaaDtree@DnameLmanifestdata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     51\r\n
-  s>     I\x00\x00\x01\x00\x02\x012
-  s>     \xa2Eerror\xa2Dargs\x81T\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaaGmessagePunknown node: %sFstatusEerror
-  s>     \r\n
-  received frame(size=73; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
-  s>     0\r\n
-  s>     \r\n
   abort: unknown node: \xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa! (esc)
   [255]
 

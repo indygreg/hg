@@ -57,29 +57,6 @@ Missing arguments is an error
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 23\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     \x0f\x00\x00\x01\x00\x01\x01\x11\xa1DnameHfiledata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     4e\r\n
-  s>     F\x00\x00\x01\x00\x02\x012
-  s>     \xa2Eerror\xa1GmessageX\'missing required arguments: nodes, pathFstatusEerror
-  s>     \r\n
-  received frame(size=70; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
-  s>     0\r\n
-  s>     \r\n
   abort: missing required arguments: nodes, path!
   [255]
 
@@ -89,29 +66,6 @@ Missing arguments is an error
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 36\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     \x1c\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa1Enodes\x80DnameHfiledata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     47\r\n
-  s>     ?\x00\x00\x01\x00\x02\x012
-  s>     \xa2Eerror\xa1GmessageX missing required arguments: pathFstatusEerror
-  s>     \r\n
-  received frame(size=63; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
-  s>     0\r\n
-  s>     \r\n
   abort: missing required arguments: path!
   [255]
 
@@ -124,29 +78,6 @@ Unknown node is an error
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 64\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     8\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Enodes\x81T\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaa\xaaDpathAaDnameHfiledata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     6b\r\n
-  s>     c\x00\x00\x01\x00\x02\x012
-  s>     \xa2Eerror\xa2Dargs\x81X(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaGmessageUunknown file node: %sFstatusEerror
-  s>     \r\n
-  received frame(size=99; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
-  s>     0\r\n
-  s>     \r\n
   abort: unknown file node: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!
   [255]
 
@@ -159,40 +90,6 @@ Fetching a single revision returns just metadata by default
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 64\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     8\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2Enodes\x81T\n
-  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11DpathAaDnameHfiledata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     30\r\n
-  s>     (\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa1DnodeT\n
-  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11
-  s>     \r\n
-  received frame(size=40; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 1
@@ -201,7 +98,6 @@ Fetching a single revision returns just metadata by default
       b'node': b'\n\x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11'
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Requesting parents works
 
@@ -213,40 +109,6 @@ Requesting parents works
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 80\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     H\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81GparentsEnodes\x81T\n
-  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11DpathAaDnameHfiledata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     63\r\n
-  s>     [\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2DnodeT\n
-  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11Gparents\x82Td\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
-  s>     \r\n
-  received frame(size=91; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 1
@@ -259,7 +121,6 @@ Requesting parents works
       ]
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Requesting revision data works
 (haveparents defaults to False, so fulltext is emitted)
@@ -272,43 +133,6 @@ Requesting revision data works
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 81\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     I\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81HrevisionEnodes\x81T\n
-  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11DpathAaDnameHfiledata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     a3\r\n
-  s>     \x9b\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2Ofieldsfollowing\x81\x82Hrevision\x18TDnodeT\n
-  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11XTa0\n
-  s>     00000000000000000000000000000000000000\n
-  s>     11111111111111111111111111111111111111\n
-  s>     a1\n
-  s>     \r\n
-  received frame(size=155; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 1
@@ -324,7 +148,6 @@ Requesting revision data works
     },
     b'a0\n00000000000000000000000000000000000000\n11111111111111111111111111111111111111\na1\n'
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 haveparents=False should be same as above
 
@@ -337,43 +160,6 @@ haveparents=False should be same as above
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 94\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     V\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa4Ffields\x81HrevisionKhaveparents\xf4Enodes\x81T\n
-  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11DpathAaDnameHfiledata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     a3\r\n
-  s>     \x9b\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2Ofieldsfollowing\x81\x82Hrevision\x18TDnodeT\n
-  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11XTa0\n
-  s>     00000000000000000000000000000000000000\n
-  s>     11111111111111111111111111111111111111\n
-  s>     a1\n
-  s>     \r\n
-  received frame(size=155; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 1
@@ -389,7 +175,6 @@ haveparents=False should be same as above
     },
     b'a0\n00000000000000000000000000000000000000\n11111111111111111111111111111111111111\na1\n'
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 haveparents=True should emit a delta
 
@@ -402,40 +187,6 @@ haveparents=True should emit a delta
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 94\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     V\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa4Ffields\x81HrevisionKhaveparents\xf5Enodes\x81T\n
-  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11DpathAaDnameHfiledata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     7c\r\n
-  s>     t\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa3MdeltabasenodeTd\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9Ofieldsfollowing\x81\x82Edelta\x0fDnodeT\n
-  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11O\x00\x00\x00Q\x00\x00\x00Q\x00\x00\x00\x03a1\n
-  s>     \r\n
-  received frame(size=116; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 1
@@ -452,7 +203,6 @@ haveparents=True should emit a delta
     },
     b'\x00\x00\x00Q\x00\x00\x00Q\x00\x00\x00\x03a1\n'
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Requesting multiple revisions works
 (first revision is a fulltext since haveparents=False by default)
@@ -465,43 +215,6 @@ Requesting multiple revisions works
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 102\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     ^\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81HrevisionEnodes\x82Td\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9T\n
-  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11DpathAaDnameHfiledata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     107\r\n
-  s>     \xff\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x02\xa2Ofieldsfollowing\x81\x82Hrevision\x18QDnodeTd\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9XQa0\n
-  s>     00000000000000000000000000000000000000\n
-  s>     11111111111111111111111111111111111111\n
-  s>     \xa3MdeltabasenodeTd\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9Ofieldsfollowing\x81\x82Edelta\x0fDnodeT\n
-  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11O\x00\x00\x00Q\x00\x00\x00Q\x00\x00\x00\x03a1\n
-  s>     \r\n
-  received frame(size=255; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 2
@@ -528,7 +241,6 @@ Requesting multiple revisions works
     },
     b'\x00\x00\x00Q\x00\x00\x00Q\x00\x00\x00\x03a1\n'
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Revisions are sorted by DAG order, parents first
 
@@ -540,43 +252,6 @@ Revisions are sorted by DAG order, parents first
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 102\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     ^\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x81HrevisionEnodes\x82T\n
-  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11Td\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9DpathAaDnameHfiledata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     107\r\n
-  s>     \xff\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x02\xa2Ofieldsfollowing\x81\x82Hrevision\x18QDnodeTd\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9XQa0\n
-  s>     00000000000000000000000000000000000000\n
-  s>     11111111111111111111111111111111111111\n
-  s>     \xa3MdeltabasenodeTd\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9Ofieldsfollowing\x81\x82Edelta\x0fDnodeT\n
-  s>     \x862\x1f\x13y\xd1\xa9\xec\xd0W\x9a"\x97z\xf7\xa5\xac\xaf\x11O\x00\x00\x00Q\x00\x00\x00Q\x00\x00\x00\x03a1\n
-  s>     \r\n
-  received frame(size=255; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 2
@@ -603,7 +278,6 @@ Revisions are sorted by DAG order, parents first
     },
     b'\x00\x00\x00Q\x00\x00\x00Q\x00\x00\x00\x03a1\n'
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Requesting parents and revision data works
 
@@ -615,41 +289,6 @@ Requesting parents and revision data works
   > EOF
   creating http peer for wire protocol version 2
   sending filedata command
-  s>     POST /api/exp-http-v2-0002/ro/filedata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 89\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     Q\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa3Ffields\x82GparentsHrevisionEnodes\x81T~X\x01\xb6\xd5\xf0:ZT\xf3\xc4{X?ug\xaa\xd4>[DpathAaDnameHfiledata
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     d6\r\n
-  s>     \xce\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa3Ofieldsfollowing\x81\x82Hrevision\x18TDnodeT~X\x01\xb6\xd5\xf0:ZT\xf3\xc4{X?ug\xaa\xd4>[Gparents\x82Td\x9d\x14\x9d\xf4=\x83\x88%#\xb7\xfb\x1ej:\xf6\xf1\x90{9T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00XTa0\n
-  s>     00000000000000000000000000000000000000\n
-  s>     11111111111111111111111111111111111111\n
-  s>     a2\n
-  s>     \r\n
-  received frame(size=206; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 1
@@ -669,6 +308,5 @@ Requesting parents and revision data works
     },
     b'a0\n00000000000000000000000000000000000000\n11111111111111111111111111111111111111\na2\n'
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat error.log

@@ -1239,38 +1239,6 @@ Send a cacheable request
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 128\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     x\x00\x00\x01\x00\x01\x01\x11\xa3Dargs\xa3Ffields\x81GparentsEnodes\x81T\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&ADtree@DnameLmanifestdataHredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81Elocal
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
-  s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     63\r\n
-  s>     [\x00\x00\x01\x00\x02\x001
-  s>     \xa1Jtotalitems\x01\xa2DnodeT\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&AGparents\x82T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
-  s>     \r\n
-  received frame(size=91; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: gen[
     {
       b'totalitems': 1
@@ -1283,7 +1251,6 @@ Send a cacheable request
       ]
     }
   ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Cached entry should be available on server
 
@@ -1328,52 +1295,6 @@ Cached entry should be available on server
   > EOF
   creating http peer for wire protocol version 2
   sending manifestdata command
-  s>     POST /api/exp-http-v2-0002/ro/manifestdata HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 128\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     x\x00\x00\x01\x00\x01\x01\x11\xa3Dargs\xa3Ffields\x81GparentsEnodes\x81T\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&ADtree@DnameLmanifestdataHredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81Elocal
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     *\r\n (glob)
-  s>     \x*\x00\x00\x01\x00\x02\x011 (glob)
-  s>     \xa2Hlocation\xa2ImediatypeX\x1aapplication/mercurial-cborCurl*http://*:$HGPORT/api/simplecache/c045a581599d58608efd3d93d8129841f2af04a0FstatusHredirect (glob)
-  s>     \r\n
-  received frame(size=*; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation) (glob)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x001
-  s>     \r\n
-  s>     8\r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
-  (following redirect to http://*:$HGPORT/api/simplecache/c045a581599d58608efd3d93d8129841f2af04a0) (glob)
-  s>     GET /api/simplecache/c045a581599d58608efd3d93d8129841f2af04a0 HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-cbor\r\n
-  s>     host: *:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-cbor\r\n
-  s>     Content-Length: 91\r\n
-  s>     \r\n
-  s>     \xa1Jtotalitems\x01\xa2DnodeT\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&AGparents\x82T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
   response: gen[
     {
       b'totalitems': 1
@@ -1386,7 +1307,6 @@ Cached entry should be available on server
       ]
     }
   ]
-  (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat error.log
   $ killdaemons.py

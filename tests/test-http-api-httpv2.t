@@ -188,7 +188,7 @@ Request to read-only command works out of the box
   s>     0\r\n
   s>     \r\n
 
-  $ sendhttpv2peer << EOF
+  $ sendhttpv2peerverbose << EOF
   > command customreadonly
   > EOF
   creating http peer for wire protocol version 2

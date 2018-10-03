@@ -36,12 +36,6 @@ from __future__ import absolute_import
 
 import itertools
 import os
-import subprocess
-import sys
-
-from mercurial import (
-    pycompat,
-)
 
 from mercurial.utils import (
     procutil,
@@ -54,51 +48,6 @@ from mercurial.utils import (
 testedwith = 'ships-with-hg-core'
 
 def uisetup(ui):
-    if pycompat.iswindows:
-        # no fork on Windows, but we can create a detached process
-        # https://msdn.microsoft.com/en-us/library/windows/desktop/ms684863.aspx
-        # No stdlib constant exists for this value
-        DETACHED_PROCESS = 0x00000008
-        _creationflags = DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
-
-        def runshellcommand(script, env):
-            # we can't use close_fds *and* redirect stdin. I'm not sure that we
-            # need to because the detached process has no console connection.
-            subprocess.Popen(
-                procutil.tonativestr(script),
-                shell=True, env=procutil.tonativeenv(env), close_fds=True,
-                creationflags=_creationflags)
-    else:
-        def runshellcommand(script, env):
-            # double-fork to completely detach from the parent process
-            # based on http://code.activestate.com/recipes/278731
-            pid = os.fork()
-            if pid:
-                # parent
-                return
-            # subprocess.Popen() forks again, all we need to add is
-            # flag the new process as a new session.
-            if sys.version_info < (3, 2):
-                newsession = {'preexec_fn': os.setsid}
-            else:
-                newsession = {'start_new_session': True}
-            try:
-                # connect std* to devnull to make sure the subprocess can't
-                # muck up these stream for mercurial.
-                # Connect all the streams to be more close to Windows behavior
-                # and pager will wait for scripts to end if we don't do that
-                nullrfd = open(os.devnull, 'r')
-                nullwfd = open(os.devnull, 'w')
-                subprocess.Popen(
-                    procutil.tonativestr(script),
-                    shell=True, stdin=nullrfd,
-                    stdout=nullwfd, stderr=nullwfd,
-                    env=procutil.tonativeenv(env),
-                    close_fds=True, **newsession)
-            finally:
-                # mission accomplished, this child needs to exit and not
-                # continue the hg process here.
-                os._exit(0)
 
     class logtoprocessui(ui.__class__):
         def log(self, event, *msg, **opts):
@@ -133,7 +82,7 @@ def uisetup(ui):
                 env = dict(itertools.chain(procutil.shellenviron().items(),
                                            msgpairs, optpairs),
                            EVENT=event, HGPID=str(os.getpid()))
-                runshellcommand(script, env)
+                procutil.runbgcommand(script, env, shell=True)
             return super(logtoprocessui, self).log(event, *msg, **opts)
 
     # Replace the class for this instance and all clones created from it:

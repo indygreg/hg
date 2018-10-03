@@ -199,9 +199,7 @@ def wraprepo(repo):
                 cmd.append('--repack')
             if revs:
                 cmd += ['-r', revs]
-            cmd = ' '.join(map(procutil.shellquote, cmd))
-
-            extutil.runshellcommand(cmd, encoding.environ)
+            extutil.runbgcommand(cmd, encoding.environ)
 
         def prefetch(self, revs, base=None, pats=None, opts=None):
             """Prefetches all the necessary file revisions for the given revs

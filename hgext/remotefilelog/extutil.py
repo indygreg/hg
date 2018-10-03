@@ -92,18 +92,6 @@ else:
             # continue the hg process here.
             os._exit(returncode)
 
-def runshellcommand(script, env):
-    '''
-    Run a shell command in the background.
-    This spawns the command and returns before it completes.
-
-    Prefer using runbgcommand() instead of this function.  This function should
-    be discouraged in new code.  Running commands through a subshell requires
-    you to be very careful about correctly escaping arguments, and you need to
-    make sure your command works with both Windows and Unix shells.
-    '''
-    runbgcommand(script, env=env, shell=True)
-
 @contextlib.contextmanager
 def flock(lockpath, description, timeout=-1):
     """A flock based lock object. Currently it is always non-blocking.

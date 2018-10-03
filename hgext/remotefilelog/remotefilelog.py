@@ -271,35 +271,6 @@ class remotefilelog(object):
                 delta=delta,
                 )
 
-    def emitrevisiondeltas(self, requests):
-        prevnode = None
-        for request in requests:
-            node = request.node
-            p1, p2 = self.parents(node)
-            if prevnode is None:
-                prevnode = p1
-            if request.basenode is not None:
-                basenode = request.basenode
-            else:
-                basenode = p1
-            if basenode == nullid:
-                revision = self.revision(node, raw=True)
-                delta = None
-            else:
-                revision = None
-                delta = self.revdiff(basenode, node)
-            yield revlog.revlogrevisiondelta(
-                node=node,
-                p1node=p1,
-                p2node=p2,
-                linknode=self.linknode(node),
-                basenode=basenode,
-                flags=self.flags(node),
-                baserevisionsize=None,
-                revision=revision,
-                delta=delta,
-                )
-
     def revdiff(self, node1, node2):
         return mdiff.textdiff(self.revision(node1, raw=True),
                               self.revision(node2, raw=True))

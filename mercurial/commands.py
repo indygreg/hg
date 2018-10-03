@@ -288,6 +288,25 @@ def annotate(ui, repo, *pats, **opts):
     anyway, although the results will probably be neither useful
     nor desirable.
 
+    .. container:: verbose
+
+      Template:
+
+      The following keywords are supported in addition to the common template
+      keywords and functions. See also :hg:`help templates`.
+
+      :lines:   List of lines with annotation data.
+      :path:    String. Repository-absolute path of the specified file.
+
+      And each entry of ``{lines}`` provides the following sub-keywords in
+      addition to ``{date}``, ``{node}``, ``{rev}``, ``{user}``, etc.
+
+      :line:    String. Line content.
+      :lineno:  Integer. Line number at that revision.
+      :path:    String. Repository-absolute path of the file at that revision.
+
+      See :hg:`help templates.operators` for the list expansion syntax.
+
     Returns 0 on success.
     """
     opts = pycompat.byteskwargs(opts)

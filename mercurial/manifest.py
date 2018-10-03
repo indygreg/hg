@@ -719,7 +719,6 @@ class treemanifest(object):
             self._loadalllazy()
             return None
 
-        todel = []
         loadlazy = self._loadlazy
         for k in visit:
             loadlazy(k + '/')

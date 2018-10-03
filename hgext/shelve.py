@@ -302,7 +302,7 @@ def cleanupoldbackups(repo):
     hgfiles = [f for f in vfs.listdir()
                if f.endswith('.' + patchextension)]
     hgfiles = sorted([(vfs.stat(f)[stat.ST_MTIME], f) for f in hgfiles])
-    if 0 < maxbackups and maxbackups < len(hgfiles):
+    if maxbackups > 0 and maxbackups < len(hgfiles):
         bordermtime = hgfiles[-maxbackups][0]
     else:
         bordermtime = None

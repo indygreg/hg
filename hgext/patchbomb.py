@@ -187,12 +187,12 @@ def introwanted(ui, opts, number):
     elif introconfig == 'never':
         intro = False
     elif introconfig == 'auto':
-        intro = 1 < number
+        intro = number > 1
     else:
         ui.write_err(_('warning: invalid patchbomb.intro value "%s"\n')
                      % introconfig)
         ui.write_err(_('(should be one of always, never, auto)\n'))
-        intro = 1 < number
+        intro = number > 1
     return intro
 
 def _formatflags(ui, repo, rev, flags):
@@ -663,7 +663,7 @@ def email(ui, repo, *revs, **opts):
                 if not known[idx]:
                     missing.append(h)
             if missing:
-                if 1 < len(missing):
+                if len(missing) > 1:
                     msg = _('public "%s" is missing %s and %i others')
                     msg %= (publicurl, missing[0], len(missing) - 1)
                 else:

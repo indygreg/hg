@@ -200,7 +200,7 @@ def fill(text, width, initindent='', hangindent=''):
             if not m:
                 uctext = encoding.unifromlocal(text[start:])
                 w = len(uctext)
-                while 0 < w and uctext[w - 1].isspace():
+                while w > 0 and uctext[w - 1].isspace():
                     w -= 1
                 yield (encoding.unitolocal(uctext[:w]),
                        encoding.unitolocal(uctext[w:]))

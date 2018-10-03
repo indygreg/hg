@@ -2197,7 +2197,7 @@ def debugrevlog(ui, repo, file_=None, **opts):
     fullsize[2] /= numfull
     semitotal = semisize[2]
     snaptotal = {}
-    if 0 < numsemi:
+    if numsemi > 0:
         semisize[2] /= numsemi
     for depth in snapsizedepth:
         snaptotal[depth] = snapsizedepth[depth][2]

@@ -910,7 +910,7 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
     if not outgoing.missing:
         raise error.Abort(_('no outgoing ancestors'))
     roots = list(repo.revs("roots(%ln)", outgoing.missing))
-    if 1 < len(roots):
+    if len(roots) > 1:
         msg = _('there are ambiguous outgoing revisions')
         hint = _("see 'hg help histedit' for more detail")
         raise error.Abort(msg, hint=hint)

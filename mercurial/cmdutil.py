@@ -861,7 +861,7 @@ def mergeeditform(ctxorbool, baseformname):
     if isinstance(ctxorbool, bool):
         if ctxorbool:
             return baseformname + ".merge"
-    elif 1 < len(ctxorbool.parents()):
+    elif len(ctxorbool.parents()) > 1:
         return baseformname + ".merge"
 
     return baseformname + ".normal"

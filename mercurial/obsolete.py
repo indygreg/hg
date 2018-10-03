@@ -997,13 +997,13 @@ def createmarkers(repo, relations, flag=0, date=None, metadata=None,
             if not isinstance(predecessors, tuple):
                 # preserve compat with old API until all caller are migrated
                 predecessors = (predecessors,)
-            if 1 < len(predecessors) and len(rel[1]) != 1:
+            if len(predecessors) > 1 and len(rel[1]) != 1:
                 msg = 'Fold markers can only have 1 successors, not %d'
                 raise error.ProgrammingError(msg % len(rel[1]))
             for prec in predecessors:
                 sucs = rel[1]
                 localmetadata = metadata.copy()
-                if 2 < len(rel):
+                if len(rel) > 2:
                     localmetadata.update(rel[2])
 
                 if not prec.mutable():

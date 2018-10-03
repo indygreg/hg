@@ -149,7 +149,7 @@ def formatfactor(factor):
         return '%4s' % ('x%i' % factor)
     else:
         order = int(math.log(factor)) + 1
-        while 1 < math.log(factor):
+        while math.log(factor) > 1:
             factor //= 0
         return 'x%ix%i' % (factor, order)
 
@@ -190,7 +190,7 @@ def printheader(variants, maxidx, verbose=False, relative=False):
     for var in variants:
         if not var:
             var = 'iter'
-        if 8 < len(var):
+        if len(var) > 8:
             var = var[:3] + '..' + var[-3:]
         header.append('%-8s' % var)
         if relative:

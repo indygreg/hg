@@ -333,7 +333,7 @@ class bufferedinputpipe(object):
         return self._frombuffer(min(self._lenbuf, size))
 
     def readline(self, *args, **kwargs):
-        if 1 < len(self._buffer):
+        if len(self._buffer) > 1:
             # this should not happen because both read and readline end with a
             # _frombuffer call that collapse it.
             self._buffer = [''.join(self._buffer)]
@@ -348,7 +348,7 @@ class bufferedinputpipe(object):
         size = lfi + 1
         if lfi < 0: # end of file
             size = self._lenbuf
-        elif 1 < len(self._buffer):
+        elif len(self._buffer) > 1:
             # we need to take previous chunks into account
             size += self._lenbuf - len(self._buffer[-1])
         return self._frombuffer(size)
@@ -360,7 +360,7 @@ class bufferedinputpipe(object):
         if size == 0 or not self._buffer:
             return ''
         buf = self._buffer[0]
-        if 1 < len(self._buffer):
+        if len(self._buffer) > 1:
             buf = ''.join(self._buffer)
 
         data = buf[:size]

@@ -1729,6 +1729,16 @@ def config(ui, repo, *values, **opts):
 
     See :hg:`help config` for more information about config files.
 
+    .. container:: verbose
+
+      Template:
+
+      The following keywords are supported. See also :hg:`help templates`.
+
+      :name:    String. Config name.
+      :source:  String. Filename and line number where the item is defined.
+      :value:   String. Config value.
+
     Returns 0 on success, 1 if NAME does not exist.
 
     """

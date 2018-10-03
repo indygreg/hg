@@ -604,6 +604,9 @@ coreconfigitem('experimental', 'revlogv2',
 coreconfigitem('experimental', 'revisions.disambiguatewithin',
     default=None,
 )
+coreconfigitem('experimental', 'server.filesdata.recommended-batch-size',
+    default=50000,
+)
 coreconfigitem('experimental', 'server.manifestdata.recommended-batch-size',
     default=100000,
 )

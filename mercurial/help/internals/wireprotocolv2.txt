@@ -340,6 +340,89 @@ revision data or a delta. What the server decides can be inferred by looking
 for the presence of the ``delta`` or ``revision`` keys in the
 ``fieldsfollowing`` array.
 
+filesdata
+---------
+
+Obtain various data related to multiple tracked files for specific changesets.
+
+This command is similar to ``filedata`` with the main difference being that
+individual requests operate on multiple file paths. This allows clients to
+request data for multiple paths by issuing a single command.
+
+The command accepts the following arguments:
+
+fields
+   (set of bytestring) Which data associated with a file to fetch.
+   The following values are recognized:
+
+   parents
+      Parent nodes for the revision.
+
+   revision
+      The raw revision data for a file.
+
+haveparents
+   (bool) Whether the client has the parent revisions of all requested
+   nodes.
+
+pathfilter
+   (map) Defines a filter that determines what file paths are relevant.
+
+   See the *Path Filters* section for more.
+
+   If the argument is omitted, it is assumed that all paths are relevant.
+
+revisions
+   (array of maps) Specifies revisions whose data is being requested. Each value
+   in the array is a map describing revisions. See the *Revisions Specifiers*
+   section below for the format of this map.
+
+   Data will be sent for the union of all revisions resolved by all revision
+   specifiers.
+
+   Only revision specifiers operating on changeset revisions are allowed.
+
+The response bytestream starts with a CBOR map describing the data that
+follows. This map has the following bytestring keys:
+
+totalpaths
+   (unsigned integer) Total number of paths whose data is being transferred.
+
+totalitems
+   (unsigned integer) Total number of file revisions whose data is being
+   transferred.
+
+Following the map header are 0 or more sequences of CBOR values. Each sequence
+represents data for a specific tracked path. Each sequence begins with a CBOR
+map describing the file data that follows. Following that map is N CBOR values
+describing file revision data. The format of this data is identical to that
+returned by the ``filedata`` command.
+
+Each sequence's map header has the following bytestring keys:
+
+path
+   (bytestring) The tracked file path whose data follows.
+
+totalitems
+   (unsigned integer) Total number of file revisions whose data is being
+   transferred.
+
+The ``haveparents`` argument has significant implications on the data
+transferred.
+
+When ``haveparents`` is true, the command MAY only emit data for file
+revisions introduced by the set of changeset revisions whose data is being
+requested. In other words, the command may assume that all file revisions
+for all relevant paths for ancestors of the requested changeset revisions
+are present on the receiver.
+
+When ``haveparents`` is false, the command MUST assume that the receiver
+has no file revisions data. This means that all referenced file revisions
+in the queried set of changeset revisions will be sent.
+
+TODO we'll probably want a more complicated mechanism for the client to
+specify which ancestor revisions are known.
+
 heads
 -----
 
@@ -559,3 +642,27 @@ changesetdagrange
    revisions between will be used. Nodes in ``roots`` are not part of the
    resolved set. Nodes in ``heads`` are. The ``roots`` array may be empty.
    The ``heads`` array MUST be defined.
+
+Path Filters
+============
+
+Various commands accept a *path filter* argument that defines the set of file
+paths relevant to the request.
+
+A *path filter* is defined as a map with the bytestring keys ``include`` and
+``exclude``. Each is an array of bytestring values. Each value defines a pattern
+rule (see :hg:`help patterns`) that is used to match file paths.
+
+A path matches the path filter if it is matched by a rule in the ``include``
+set but doesn't match a rule in the ``exclude`` set. In other words, a path
+matcher takes the union of all ``include`` patterns and then substracts the
+union of all ``exclude`` patterns.
+
+Patterns MUST be prefixed with their pattern type. Only the following pattern
+types are allowed: ``path:``, ``rootfilesin:``.
+
+If the ``include`` key is omitted, it is assumed that all paths are
+relevant. The patterns from ``exclude`` will still be used, if defined.
+
+An example value is ``path:tests/foo``, which would match a file named
+``tests/foo`` or a directory ``tests/foo`` and all files under it.

@@ -273,6 +273,38 @@ A non-cacheable command does not instantiate cacher
             b'pull'
           ]
         },
+        b'filesdata': {
+          b'args': {
+            b'fields': {
+              b'default': set([]),
+              b'required': False,
+              b'type': b'set',
+              b'validvalues': set([
+                b'firstchangeset',
+                b'parents',
+                b'revision'
+              ])
+            },
+            b'haveparents': {
+              b'default': False,
+              b'required': False,
+              b'type': b'bool'
+            },
+            b'pathfilter': {
+              b'default': None,
+              b'required': False,
+              b'type': b'dict'
+            },
+            b'revisions': {
+              b'required': True,
+              b'type': b'list'
+            }
+          },
+          b'permissions': [
+            b'pull'
+          ],
+          b'recommendedbatchsize': 50000
+        },
         b'heads': {
           b'args': {
             b'publiconly': {

@@ -6,6 +6,7 @@
 
 from __future__ import absolute_import
 
+import collections
 import contextlib
 import hashlib
 
@@ -18,6 +19,7 @@ from . import (
     discovery,
     encoding,
     error,
+    match as matchmod,
     narrowspec,
     pycompat,
     wireprotoframing,
@@ -1004,6 +1006,29 @@ def emitfilerevisions(revisions, fields):
         for extra in followingdata:
             yield extra
 
+def makefilematcher(repo, pathfilter):
+    """Construct a matcher from a path filter dict."""
+
+    # Validate values.
+    if pathfilter:
+        for key in (b'include', b'exclude'):
+            for pattern in pathfilter.get(key, []):
+                if not pattern.startswith((b'path:', b'rootfilesin:')):
+                    raise error.WireprotoCommandError(
+                        '%s pattern must begin with `path:` or `rootfilesin:`; '
+                        'got %s', (key, pattern))
+
+    if pathfilter:
+        matcher = matchmod.match(repo.root, b'',
+                                 include=pathfilter.get(b'include', []),
+                                 exclude=pathfilter.get(b'exclude', []))
+    else:
+        matcher = matchmod.match(repo.root, b'')
+
+    # Requested patterns could include files not in the local store. So
+    # filter those out.
+    return matchmod.intersectmatchers(repo.narrowmatch(), matcher)
+
 @wireprotocommand(
     'filedata',
     args={
@@ -1033,6 +1058,10 @@ def emitfilerevisions(revisions, fields):
     # the cache key.
     cachekeyfn=makecommandcachekeyfn('filedata', 1, allargs=True))
 def filedata(repo, proto, haveparents, nodes, fields, path):
+    # TODO this API allows access to file revisions that are attached to
+    # secret changesets. filesdata does not have this problem. Maybe this
+    # API should be deleted?
+
     try:
         # Extensions may wish to access the protocol handler.
         store = getfilestore(repo, proto, path)
@@ -1057,6 +1086,117 @@ def filedata(repo, proto, haveparents, nodes, fields, path):
 
     for o in emitfilerevisions(revisions, fields):
         yield o
+
+def filesdatacapabilities(repo, proto):
+    batchsize = repo.ui.configint(
+        b'experimental', b'server.filesdata.recommended-batch-size')
+    return {
+        b'recommendedbatchsize': batchsize,
+    }
+
+@wireprotocommand(
+    'filesdata',
+    args={
+        'haveparents': {
+            'type': 'bool',
+            'default': lambda: False,
+            'example': True,
+        },
+        'fields': {
+            'type': 'set',
+            'default': set,
+            'example': {b'parents', b'revision'},
+            'validvalues': {b'firstchangeset', b'parents', b'revision'},
+        },
+        'pathfilter': {
+            'type': 'dict',
+            'default': lambda: None,
+            'example': {b'include': [b'path:tests']},
+        },
+        'revisions': {
+            'type': 'list',
+            'example': [{
+                b'type': b'changesetexplicit',
+                b'nodes': [b'abcdef...'],
+            }],
+        },
+    },
+    permission='pull',
+    # TODO censoring a file revision won't invalidate the cache.
+    # Figure out a way to take censoring into account when deriving
+    # the cache key.
+    cachekeyfn=makecommandcachekeyfn('filesdata', 1, allargs=True),
+    extracapabilitiesfn=filesdatacapabilities)
+def filesdata(repo, proto, haveparents, fields, pathfilter, revisions):
+    # TODO This should operate on a repo that exposes obsolete changesets. There
+    # is a race between a client making a push that obsoletes a changeset and
+    # another client fetching files data for that changeset. If a client has a
+    # changeset, it should probably be allowed to access files data for that
+    # changeset.
+
+    cl = repo.changelog
+    outgoing = resolvenodes(repo, revisions)
+    filematcher = makefilematcher(repo, pathfilter)
+
+    # Figure out what needs to be emitted.
+    changedpaths = set()
+    fnodes = collections.defaultdict(set)
+
+    for node in outgoing:
+        ctx = repo[node]
+        changedpaths.update(ctx.files())
+
+    changedpaths = sorted(p for p in changedpaths if filematcher(p))
+
+    # If ancestors are known, we send file revisions having a linkrev in the
+    # outgoing set of changeset revisions.
+    if haveparents:
+        outgoingclrevs = set(cl.rev(n) for n in outgoing)
+
+        for path in changedpaths:
+            try:
+                store = getfilestore(repo, proto, path)
+            except FileAccessError as e:
+                raise error.WireprotoCommandError(e.msg, e.args)
+
+            for rev in store:
+                linkrev = store.linkrev(rev)
+
+                if linkrev in outgoingclrevs:
+                    fnodes[path].add(store.node(rev))
+
+    # If ancestors aren't known, we walk the manifests and send all
+    # encountered file revisions.
+    else:
+        for node in outgoing:
+            mctx = repo[node].manifestctx()
+
+            for path, fnode in mctx.read().items():
+                if filematcher(path):
+                    fnodes[path].add(fnode)
+
+    yield {
+        b'totalpaths': len(fnodes),
+        b'totalitems': sum(len(v) for v in fnodes.values())
+    }
+
+    for path, filenodes in sorted(fnodes.items()):
+        try:
+            store = getfilestore(repo, proto, path)
+        except FileAccessError as e:
+            raise error.WireprotoCommandError(e.msg, e.args)
+
+        yield {
+            b'path': path,
+            b'totalitems': len(filenodes),
+        }
+
+        revisions = store.emitrevisions(filenodes,
+                                        revisiondata=b'revision' in fields,
+                                        assumehaveparentrevisions=haveparents)
+
+        for o in emitfilerevisions(revisions, fields):
+            yield o
 
 @wireprotocommand(
     'heads',

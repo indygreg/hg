@@ -724,6 +724,28 @@ class treemanifest(object):
             loadlazy(k + '/')
         return visit
 
+    def _loaddifflazy(self, t1, t2):
+        """load items in t1 and t2 if they're needed for diffing.
+
+        The criteria currently is:
+        - if it's not present in _lazydirs in either t1 or t2, load it in the
+          other (it may already be loaded or it may not exist, doesn't matter)
+        - if it's present in _lazydirs in both, compare the nodeid; if it
+          differs, load it in both
+        """
+        toloadlazy = []
+        for d, v1 in t1._lazydirs.iteritems():
+            v2 = t2._lazydirs.get(d)
+            if not v2 or v2[1] != v1[1]:
+                toloadlazy.append(d)
+        for d, v1 in t2._lazydirs.iteritems():
+            if d not in t1._lazydirs:
+                toloadlazy.append(d)
+
+        for d in toloadlazy:
+            t1._loadlazy(d)
+            t2._loadlazy(d)
+
     def __len__(self):
         self._load()
         size = len(self._files)
@@ -957,8 +979,7 @@ class treemanifest(object):
                 return
             t1._load()
             t2._load()
-            t1._loadalllazy()
-            t2._loadalllazy()
+            self._loaddifflazy(t1, t2)
             for d, m1 in t1._dirs.iteritems():
                 if d in t2._dirs:
                     m2 = t2._dirs[d]
@@ -1113,18 +1134,7 @@ class treemanifest(object):
                 return
             t1._load()
             t2._load()
-            toloadlazy = []
-            for d, v1 in t1._lazydirs.iteritems():
-                v2 = t2._lazydirs.get(d)
-                if not v2 or v2[1] != v1[1]:
-                    toloadlazy.append(d)
-            for d, v1 in t2._lazydirs.iteritems():
-                if d not in t1._lazydirs:
-                    toloadlazy.append(d)
-
-            for d in toloadlazy:
-                t1._loadlazy(d)
-                t2._loadlazy(d)
+            self._loaddifflazy(t1, t2)
 
             for d, m1 in t1._dirs.iteritems():
                 m2 = t2._dirs.get(d, emptytree)

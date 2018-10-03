@@ -1659,6 +1659,15 @@ class revlog(object):
             if p1 is None and p2 is None:
                 p1, p2 = self.parents(node)
             if node != self.hash(text, p1, p2):
+                # Clear the revision cache on hash failure. The revision cache
+                # only stores the raw revision and clearing the cache does have
+                # the side-effect that we won't have a cache hit when the raw
+                # revision data is accessed. But this case should be rare and
+                # it is extra work to teach the cache about the hash
+                # verification state.
+                if self._revisioncache and self._revisioncache[0] == node:
+                    self._revisioncache = None
+
                 revornode = rev
                 if revornode is None:
                     revornode = templatefilters.short(hex(node))

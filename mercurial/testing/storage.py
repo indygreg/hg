@@ -881,13 +881,14 @@ class ifiledatatests(basetestcase):
         with self.assertRaises(error.StorageError):
             f.revision(node1)
 
-        # revision(raw=True) still verifies hashes.
-        # TODO this is buggy because of cache interaction.
-        self.assertEqual(f.revision(node1, raw=True), fulltext1)
+        # raw=True still verifies because there are no special storage
+        # settings.
+        with self.assertRaises(error.StorageError):
+            f.revision(node1, raw=True)
 
         # read() behaves like revision().
-        # TODO this is buggy because of cache interaction.
-        f.read(node1)
+        with self.assertRaises(error.StorageError):
+            f.read(node1)
 
         # We can't test renamed() here because some backends may not require
         # reading/validating the fulltext to return rename metadata.
@@ -931,8 +932,8 @@ class ifiledatatests(basetestcase):
         with self.assertRaises(error.StorageError):
             f.read(node1)
 
-        # TODO this should raise error.StorageError.
-        f.read(node1)
+        with self.assertRaises(error.StorageError):
+            f.read(node1)
 
     def testbadnodedelta(self):
         f = self._makefilefn()
@@ -986,7 +987,8 @@ class ifiledatatests(basetestcase):
         with self.assertRaises(error.CensoredNodeError):
             f.revision(1)
 
-        self.assertEqual(f.revision(1, raw=True), stored1)
+        with self.assertRaises(error.CensoredNodeError):
+            f.revision(1, raw=True)
 
         with self.assertRaises(error.CensoredNodeError):
             f.read(1)

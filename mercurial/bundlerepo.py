@@ -127,8 +127,8 @@ class bundlerevlog(revlog.revlog):
         iterrev = rev
         # reconstruct the revision if it is from a changegroup
         while iterrev > self.repotiprev:
-            if self._cache and self._cache[1] == iterrev:
-                rawtext = self._cache[2]
+            if self._revisioncache and self._revisioncache[1] == iterrev:
+                rawtext = self._revisioncache[2]
                 break
             chain.append(iterrev)
             iterrev = self.index[iterrev][3]
@@ -143,7 +143,7 @@ class bundlerevlog(revlog.revlog):
                                                 'read', raw=raw)
         if validatehash:
             self.checkhash(text, node, rev=rev)
-        self._cache = (node, rev, rawtext)
+        self._revisioncache = (node, rev, rawtext)
         return text
 
     def baserevision(self, nodeorrev):

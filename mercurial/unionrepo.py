@@ -110,7 +110,7 @@ class unionrevlog(revlog.revlog):
 
         if rev > self.repotiprev:
             text = self.revlog2.revision(node)
-            self._cache = (node, rev, text)
+            self._revisioncache = (node, rev, text)
         else:
             text = self.baserevision(rev)
             # already cached

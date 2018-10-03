@@ -346,7 +346,7 @@ class revlog(object):
         self._checkambig = checkambig
         self._censorable = censorable
         # 3-tuple of (node, rev, text) for a raw revision.
-        self._cache = None
+        self._revisioncache = None
         # Maps rev to chain base rev.
         self._chainbasecache = util.lrucachedict(100)
         # 2-tuple of (offset, data) of raw data from the revlog at an offset.
@@ -545,7 +545,7 @@ class revlog(object):
         return True
 
     def clearcaches(self):
-        self._cache = None
+        self._revisioncache = None
         self._chainbasecache.clear()
         self._chunkcache = (0, '')
         self._pcache = {}
@@ -1524,11 +1524,11 @@ class revlog(object):
         rawtext = None
         if node == nullid:
             return ""
-        if self._cache:
-            if self._cache[0] == node:
+        if self._revisioncache:
+            if self._revisioncache[0] == node:
                 # _cache only stores rawtext
                 if raw:
-                    return self._cache[2]
+                    return self._revisioncache[2]
                 # duplicated, but good for perf
                 if rev is None:
                     rev = self.rev(node)
@@ -1536,11 +1536,11 @@ class revlog(object):
                     flags = self.flags(rev)
                 # no extra flags set, no flag processor runs, text = rawtext
                 if flags == REVIDX_DEFAULT_FLAGS:
-                    return self._cache[2]
+                    return self._revisioncache[2]
                 # rawtext is reusable. need to run flag processor
-                rawtext = self._cache[2]
+                rawtext = self._revisioncache[2]
 
-            cachedrev = self._cache[1]
+            cachedrev = self._revisioncache[1]
 
         # look up what we need to read
         if rawtext is None:
@@ -1549,10 +1549,10 @@ class revlog(object):
 
             chain, stopped = self._deltachain(rev, stoprev=cachedrev)
             if stopped:
-                rawtext = self._cache[2]
+                rawtext = self._revisioncache[2]
 
             # drop cache to save memory
-            self._cache = None
+            self._revisioncache = None
 
             targetsize = None
             rawsize = self.index[rev][2]
@@ -1565,7 +1565,7 @@ class revlog(object):
                 bins = bins[1:]
 
             rawtext = mdiff.patches(rawtext, bins)
-            self._cache = (node, rev, rawtext)
+            self._revisioncache = (node, rev, rawtext)
 
         if flags is None:
             if rev is None:
@@ -1926,7 +1926,7 @@ class revlog(object):
             rawtext = deltacomputer.buildtext(revinfo, fh)
 
         if type(rawtext) == bytes: # only accept immutable objects
-            self._cache = (node, curr, rawtext)
+            self._revisioncache = (node, curr, rawtext)
         self._chainbasecache[curr] = deltainfo.chainbase
         return node
 
@@ -2132,7 +2132,7 @@ class revlog(object):
         transaction.add(self.indexfile, end)
 
         # then reset internal state in memory to forget those revisions
-        self._cache = None
+        self._revisioncache = None
         self._chaininfocache = {}
         self._chunkclear()
         for x in pycompat.xrange(rev, len(self)):

@@ -381,6 +381,12 @@ class sqlitefilestore(object):
     def __iter__(self):
         return iter(pycompat.xrange(len(self._revisions)))
 
+    def hasnode(self, node):
+        if node == nullid:
+            return False
+
+        return node in self._nodetorev
+
     def revs(self, start=0, stop=None):
         return storageutil.iterrevs(len(self._revisions), start=start,
                                     stop=stop)

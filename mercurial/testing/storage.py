@@ -45,6 +45,13 @@ class ifileindextests(basetestcase):
         with self.assertRaises(StopIteration):
             next(gen)
 
+        self.assertFalse(f.hasnode(None))
+        self.assertFalse(f.hasnode(0))
+        self.assertFalse(f.hasnode(nullrev))
+        self.assertFalse(f.hasnode(nullid))
+        self.assertFalse(f.hasnode(b'0'))
+        self.assertFalse(f.hasnode(b'a' * 20))
+
         # revs() should evaluate to an empty list.
         self.assertEqual(list(f.revs()), [])
 
@@ -160,6 +167,13 @@ class ifileindextests(basetestcase):
 
         with self.assertRaises(StopIteration):
             next(gen)
+
+        self.assertTrue(f.hasnode(node))
+        self.assertFalse(f.hasnode(hex(node)))
+        self.assertFalse(f.hasnode(nullrev))
+        self.assertFalse(f.hasnode(nullid))
+        self.assertFalse(f.hasnode(node[0:12]))
+        self.assertFalse(f.hasnode(hex(node)[0:20]))
 
         self.assertEqual(list(f.revs()), [0])
         self.assertEqual(list(f.revs(start=1)), [])

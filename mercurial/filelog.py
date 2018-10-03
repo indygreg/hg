@@ -7,6 +7,10 @@
 
 from __future__ import absolute_import
 
+from .node import (
+    nullid,
+    nullrev,
+)
 from . import (
     error,
     repository,
@@ -32,6 +36,16 @@ class filelog(object):
 
     def __iter__(self):
         return self._revlog.__iter__()
+
+    def hasnode(self, node):
+        if node in (nullid, nullrev):
+            return False
+
+        try:
+            self._revlog.rev(node)
+            return True
+        except (TypeError, ValueError, IndexError, error.LookupError):
+            return False
 
     def revs(self, start=0, stop=None):
         return self._revlog.revs(start=start, stop=stop)

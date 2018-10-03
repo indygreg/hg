@@ -484,6 +484,16 @@ class ifileindex(interfaceutil.Interface):
     def __iter__():
         """Iterate over revision numbers for this file."""
 
+    def hasnode(node):
+        """Returns a bool indicating if a node is known to this store.
+
+        Implementations must only return True for full, binary node values:
+        hex nodes, revision numbers, and partial node matches must be
+        rejected.
+
+        The null node is never present.
+        """
+
     def revs(start=0, stop=None):
         """Iterate over revision numbers for this file, with control."""
 

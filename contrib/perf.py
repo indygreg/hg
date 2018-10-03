@@ -301,12 +301,19 @@ def _timer(fm, func, title=None, displayall=False):
         if cstop - begin > 10 and count >= 3:
             break
 
+    formatone(fm, results, title=title, result=r,
+              displayall=displayall)
+
+def formatone(fm, timings, title=None, result=None, displayall=False):
+
+    count = len(timings)
+
     fm.startitem()
 
     if title:
         fm.write(b'title', b'! %s\n', title)
-    if r:
-        fm.write(b'result', b'! result: %s\n', r)
+    if result:
+        fm.write(b'result', b'! result: %s\n', result)
     def display(role, entry):
         prefix = b''
         if role != b'best':
@@ -318,15 +325,15 @@ def _timer(fm, func, title=None, displayall=False):
         fm.write(prefix + b'sys',  b' sys %f', entry[2])
         fm.write(prefix + b'count',  b' (%s of %%d)' % role, count)
         fm.plain(b'\n')
-    results.sort()
-    min_val = results[0]
+    timings.sort()
+    min_val = timings[0]
     display(b'best', min_val)
     if displayall:
-        max_val = results[-1]
+        max_val = timings[-1]
         display(b'max', max_val)
-        avg = tuple([sum(x) / count for x in zip(*results)])
+        avg = tuple([sum(x) / count for x in zip(*timings)])
         display(b'avg', avg)
-        median = results[len(results) // 2]
+        median = timings[len(timings) // 2]
         display(b'median', median)
 
 # utilities for historical portability

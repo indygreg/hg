@@ -114,6 +114,8 @@ perfstatus
                  Benchmark obtaining a revlog revision.
    perfrevlogrevisions
                  Benchmark reading a series of revisions from a revlog.
+   perfrevlogwrite
+                 Benchmark writing a series of revisions to a revlog.
    perfrevrange  (no help text available)
    perfrevset    benchmark the execution time of a revset
    perfstartup   (no help text available)
@@ -265,4 +267,16 @@ Check perf.py for historical portability
   contrib/perf.py:\d+: (re)
    >     from mercurial import (
    import newer module separately in try clause for early Mercurial
+  contrib/perf.py:\d+: (re)
+   >     origindexpath = orig.opener.join(orig.indexfile)
+   use getvfs()/getsvfs() for early Mercurial
+  contrib/perf.py:\d+: (re)
+   >     origdatapath = orig.opener.join(orig.datafile)
+   use getvfs()/getsvfs() for early Mercurial
+  contrib/perf.py:\d+: (re)
+   >         vfs = vfsmod.vfs(tmpdir)
+   use getvfs()/getsvfs() for early Mercurial
+  contrib/perf.py:\d+: (re)
+   >         vfs.options = getattr(orig.opener, 'options', None)
+   use getvfs()/getsvfs() for early Mercurial
   [1]

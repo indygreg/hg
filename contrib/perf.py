@@ -24,8 +24,10 @@ import functools
 import gc
 import os
 import random
+import shutil
 import struct
 import sys
+import tempfile
 import threading
 import time
 from mercurial import (
@@ -1564,6 +1566,161 @@ def perfrevlogrevisions(ui, repo, file_=None, startrev=0, reverse=False,
     timer, fm = gettimer(ui, opts)
     timer(d)
     fm.end()
+
+@command(b'perfrevlogwrite', revlogopts + formatteropts +
+         [(b's', b'startrev', 1000, b'revision to start writing at'),
+          (b'', b'stoprev', -1, b'last revision to write'),
+          (b'', b'count', 3, b'last revision to write'),
+         ],
+         b'-c|-m|FILE')
+def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
+    """Benchmark writing a series of revisions to a revlog.
+    """
+    opts = _byteskwargs(opts)
+
+    rl = cmdutil.openrevlog(repo, b'perfrevlogwrite', file_, opts)
+    rllen = getlen(ui)(rl)
+    if startrev < 0:
+        startrev = rllen + startrev
+    if stoprev < 0:
+        stoprev = rllen + stoprev
+
+    ### actually gather results
+    count = opts['count']
+    if count <= 0:
+        raise error.Abort('invalide run count: %d' % count)
+    allresults = []
+    for c in range(count):
+        allresults.append(_timeonewrite(ui, rl, startrev, stoprev, c + 1))
+
+    ### consolidate the results in a single list
+    results = []
+    for idx, (rev, t) in enumerate(allresults[0]):
+        ts = [t]
+        for other in allresults[1:]:
+            orev, ot = other[idx]
+            assert orev == rev
+            ts.append(ot)
+        results.append((rev, ts))
+    resultcount = len(results)
+
+    ### Compute and display relevant statistics
+
+    # get a formatter
+    fm = ui.formatter(b'perf', opts)
+    displayall = ui.configbool(b"perf", b"all-timing", False)
+
+    # sorts results by median time
+    results.sort(key=lambda x: sorted(x[1])[len(x[1]) // 2])
+    # list of (name, index) to display)
+    relevants = [
+        ("min", 0),
+        ("10%", resultcount * 10 // 100),
+        ("25%", resultcount * 25 // 100),
+        ("50%", resultcount * 70 // 100),
+        ("75%", resultcount * 75 // 100),
+        ("90%", resultcount * 90 // 100),
+        ("95%", resultcount * 95 // 100),
+        ("99%", resultcount * 99 // 100),
+        ("max", -1),
+    ]
+    for name, idx in relevants:
+        data = results[idx]
+        title = '%s of %d, rev %d' % (name, resultcount, data[0])
+        formatone(fm, data[1], title=title, displayall=displayall)
+
+    # XXX summing that many float will not be very precise, we ignore this fact
+    # for now
+    totaltime = []
+    for item in allresults:
+        totaltime.append((sum(x[1][0] for x in item),
+                          sum(x[1][1] for x in item),
+                          sum(x[1][2] for x in item),)
+        )
+    formatone(fm, totaltime, title="total time (%d revs)" % resultcount,
+              displayall=displayall)
+    fm.end()
+
+class _faketr(object):
+    def add(s, x, y, z=None):
+        return None
+
+def _timeonewrite(ui, orig, startrev, stoprev, runidx=None):
+    timings = []
+    tr = _faketr()
+    with _temprevlog(ui, orig, startrev) as dest:
+        revs = list(orig.revs(startrev, stoprev))
+        total = len(revs)
+        topic = 'adding'
+        if runidx is not None:
+            topic += ' (run #%d)' % runidx
+        for idx, rev in enumerate(revs):
+            ui.progress(topic, idx, unit='revs', total=total)
+            addargs, addkwargs = _getrevisionseed(orig, rev, tr)
+            with timeone() as r:
+                dest.addrawrevision(*addargs, **addkwargs)
+            timings.append((rev, r[0]))
+        ui.progress(topic, total, unit='revs', total=total)
+        ui.progress(topic, None, unit='revs', total=total)
+    return timings
+
+def _getrevisionseed(orig, rev, tr):
+    linkrev = orig.linkrev(rev)
+    node = orig.node(rev)
+    p1, p2 = orig.parents(node)
+    flags = orig.flags(rev)
+    cachedelta = None
+    text = orig.revision(rev)
+
+    return ((text, tr, linkrev, p1, p2),
+            {'node': node, 'flags': flags, 'cachedelta': cachedelta})
+
+@contextlib.contextmanager
+def _temprevlog(ui, orig, truncaterev):
+    from mercurial import vfs as vfsmod
+
+    if orig._inline:
+        raise error.Abort('not supporting inline revlog (yet)')
+
+    origindexpath = orig.opener.join(orig.indexfile)
+    origdatapath = orig.opener.join(orig.datafile)
+    indexname = 'revlog.i'
+    dataname = 'revlog.d'
+
+    tmpdir = tempfile.mkdtemp(prefix='tmp-hgperf-')
+    try:
+        # copy the data file in a temporary directory
+        ui.debug('copying data in %s\n' % tmpdir)
+        destindexpath = os.path.join(tmpdir, 'revlog.i')
+        destdatapath = os.path.join(tmpdir, 'revlog.d')
+        shutil.copyfile(origindexpath, destindexpath)
+        shutil.copyfile(origdatapath, destdatapath)
+
+        # remove the data we want to add again
+        ui.debug('truncating data to be rewritten\n')
+        with open(destindexpath, 'ab') as index:
+            index.seek(0)
+            index.truncate(truncaterev * orig._io.size)
+        with open(destdatapath, 'ab') as data:
+            data.seek(0)
+            data.truncate(orig.start(truncaterev))
+
+        # instantiate a new revlog from the temporary copy
+        ui.debug('truncating adding to be rewritten\n')
+        vfs = vfsmod.vfs(tmpdir)
+        vfs.options = getattr(orig.opener, 'options', None)
+
+        dest = revlog.revlog(vfs,
+                             indexfile=indexname,
+                             datafile=dataname)
+        if dest._inline:
+            raise error.Abort('not supporting inline revlog (yet)')
+        # make sure internals are initialized
+        dest.revision(len(dest) - 1)
+        yield dest
+        del dest, vfs
+    finally:
+        shutil.rmtree(tmpdir, True)
 
 @command(b'perfrevlogchunks', revlogopts + formatteropts +
          [(b'e', b'engines', b'', b'compression engines to use'),

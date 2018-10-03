@@ -5,7 +5,9 @@ from __future__ import absolute_import
 import silenttestrunner
 
 from mercurial import (
+    error,
     filelog,
+    revlog,
     transaction,
     ui as uimod,
     vfs as vfsmod,
@@ -33,14 +35,39 @@ def maketransaction(self):
     return transaction.transaction(STATE['ui'].warn, STATE['vfs'], vfsmap,
                                    b'journal', b'undo')
 
+def addrawrevision(self, fl, tr, node, p1, p2, linkrev, rawtext=None,
+                   delta=None, censored=False, ellipsis=False, extstored=False):
+    flags = 0
+
+    if censored:
+        flags |= revlog.REVIDX_ISCENSORED
+    if ellipsis:
+        flags |= revlog.REVIDX_ELLIPSIS
+    if extstored:
+        flags |= revlog.REVIDX_EXTSTORED
+
+    if rawtext is not None:
+        fl._revlog.addrawrevision(rawtext, tr, linkrev, p1, p2, node, flags)
+    elif delta is not None:
+        raise error.Abort('support for storing raw deltas not yet supported')
+    else:
+        raise error.Abort('must supply rawtext or delta arguments')
+
+    # We may insert bad data. Clear caches to prevent e.g. cache hits to
+    # bypass hash verification.
+    fl._revlog.clearcaches()
+
 # Assigning module-level attributes that inherit from unittest.TestCase
 # is all that is needed to register tests.
 filelogindextests = storagetesting.makeifileindextests(makefilefn,
-                                                       maketransaction)
+                                                       maketransaction,
+                                                       addrawrevision)
 filelogdatatests = storagetesting.makeifiledatatests(makefilefn,
-                                                     maketransaction)
+                                                     maketransaction,
+                                                     addrawrevision)
 filelogmutationtests = storagetesting.makeifilemutationtests(makefilefn,
-                                                             maketransaction)
+                                                             maketransaction,
+                                                             addrawrevision)
 
 if __name__ == '__main__':
     silenttestrunner.main(__name__)

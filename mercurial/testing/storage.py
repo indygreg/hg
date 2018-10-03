@@ -861,6 +861,110 @@ class ifiledatatests(basetestcase):
         self.assertFalse(f.cmp(node1, fulltext1))
         self.assertTrue(f.cmp(node1, stored0))
 
+    def testbadnoderead(self):
+        f = self._makefilefn()
+
+        fulltext0 = b'foo\n' * 30
+        fulltext1 = fulltext0 + b'bar\n'
+
+        with self._maketransactionfn() as tr:
+            node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
+            node1 = b'\xaa' * 20
+
+            self._addrawrevisionfn(f, tr, node1, node0, nullid, 1,
+                                   rawtext=fulltext1)
+
+        self.assertEqual(len(f), 2)
+        self.assertEqual(f.parents(node1), (node0, nullid))
+
+        # revision() raises since it performs hash verification.
+        with self.assertRaises(error.StorageError):
+            f.revision(node1)
+
+        # revision(raw=True) still verifies hashes.
+        # TODO this is buggy because of cache interaction.
+        self.assertEqual(f.revision(node1, raw=True), fulltext1)
+
+        # read() behaves like revision().
+        # TODO this is buggy because of cache interaction.
+        f.read(node1)
+
+        # We can't test renamed() here because some backends may not require
+        # reading/validating the fulltext to return rename metadata.
+
+    def testbadnoderevisionraw(self):
+        # Like above except we test revision(raw=True) first to isolate
+        # revision caching behavior.
+        f = self._makefilefn()
+
+        fulltext0 = b'foo\n' * 30
+        fulltext1 = fulltext0 + b'bar\n'
+
+        with self._maketransactionfn() as tr:
+            node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
+            node1 = b'\xaa' * 20
+
+            self._addrawrevisionfn(f, tr, node1, node0, nullid, 1,
+                                   rawtext=fulltext1)
+
+        with self.assertRaises(error.StorageError):
+            f.revision(node1, raw=True)
+
+        with self.assertRaises(error.StorageError):
+            f.revision(node1, raw=True)
+
+    def testbadnoderevisionraw(self):
+        # Like above except we test read() first to isolate revision caching
+        # behavior.
+        f = self._makefilefn()
+
+        fulltext0 = b'foo\n' * 30
+        fulltext1 = fulltext0 + b'bar\n'
+
+        with self._maketransactionfn() as tr:
+            node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
+            node1 = b'\xaa' * 20
+
+            self._addrawrevisionfn(f, tr, node1, node0, nullid, 1,
+                                   rawtext=fulltext1)
+
+        with self.assertRaises(error.StorageError):
+            f.read(node1)
+
+        # TODO this should raise error.StorageError.
+        f.read(node1)
+
+    def testbadnodedelta(self):
+        f = self._makefilefn()
+
+        fulltext0 = b'foo\n' * 31
+        fulltext1 = fulltext0 + b'bar\n'
+        fulltext2 = fulltext1 + b'baz\n'
+
+        with self._maketransactionfn() as tr:
+            node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
+            node1 = b'\xaa' * 20
+
+            self._addrawrevisionfn(f, tr, node1, node0, nullid, 1,
+                                   rawtext=fulltext1)
+
+        with self.assertRaises(error.StorageError):
+            f.read(node1)
+
+        diff = mdiff.textdiff(fulltext1, fulltext2)
+        node2 = storageutil.hashrevisionsha1(fulltext2, node1, nullid)
+        deltas = [(node2, node1, nullid, b'\x01' * 20, node1, diff, 0)]
+
+        # This /might/ fail on some backends.
+        with self._maketransactionfn() as tr:
+            f.addgroup(deltas, lambda x: 0, tr)
+
+        self.assertEqual(len(f), 3)
+
+        # Assuming a delta is stored, we shouldn't need to validate node1 in
+        # order to retrieve node2.
+        self.assertEqual(f.read(node2), fulltext2)
+
     def testcensored(self):
         f = self._makefilefn()
 
@@ -868,20 +972,46 @@ class ifiledatatests(basetestcase):
             b'censored': b'tombstone',
         }, b'')
 
-        # TODO tests are incomplete because we need the node to be
-        # different due to presence of censor metadata. But we can't
-        # do this with addrevision().
         with self._maketransactionfn() as tr:
             node0 = f.add(b'foo', None, tr, 0, nullid, nullid)
-            f.addrevision(stored1, tr, 1, node0, nullid,
-                          flags=repository.REVISION_FLAG_CENSORED)
+
+            # The node value doesn't matter since we can't verify it.
+            node1 = b'\xbb' * 20
+
+            self._addrawrevisionfn(f, tr, node1, node0, nullid, 1, stored1,
+                                   censored=True)
 
         self.assertTrue(f.iscensored(1))
 
-        self.assertEqual(f.revision(1), stored1)
+        with self.assertRaises(error.CensoredNodeError):
+            f.revision(1)
+
         self.assertEqual(f.revision(1, raw=True), stored1)
 
-        self.assertEqual(f.read(1), b'')
+        with self.assertRaises(error.CensoredNodeError):
+            f.read(1)
+
+    def testcensoredrawrevision(self):
+        # Like above, except we do the revision(raw=True) request first to
+        # isolate revision caching behavior.
+
+        f = self._makefilefn()
+
+        stored1 = storageutil.packmeta({
+            b'censored': b'tombstone',
+        }, b'')
+
+        with self._maketransactionfn() as tr:
+            node0 = f.add(b'foo', None, tr, 0, nullid, nullid)
+
+            # The node value doesn't matter since we can't verify it.
+            node1 = b'\xbb' * 20
+
+            self._addrawrevisionfn(f, tr, node1, node0, nullid, 1, stored1,
+                                   censored=True)
+
+        with self.assertRaises(error.CensoredNodeError):
+            f.revision(1, raw=True)
 
 class ifilemutationtests(basetestcase):
     """Generic tests for the ifilemutation interface.
@@ -1004,6 +1134,55 @@ class ifilemutationtests(basetestcase):
         self.assertEqual(f.node(1), nodes[1])
         self.assertEqual(f.node(2), nodes[2])
 
+    def testdeltaagainstcensored(self):
+        # Attempt to apply a delta made against a censored revision.
+        f = self._makefilefn()
+
+        stored1 = storageutil.packmeta({
+            b'censored': b'tombstone',
+        }, b'')
+
+        with self._maketransactionfn() as tr:
+            node0 = f.add(b'foo\n' * 30, None, tr, 0, nullid, nullid)
+
+            # The node value doesn't matter since we can't verify it.
+            node1 = b'\xbb' * 20
+
+            self._addrawrevisionfn(f, tr, node1, node0, nullid, 1, stored1,
+                                   censored=True)
+
+        delta = mdiff.textdiff(b'bar\n' * 30, (b'bar\n' * 30) + b'baz\n')
+        deltas = [(b'\xcc' * 20, node1, nullid, b'\x01' * 20, node1, delta, 0)]
+
+        with self._maketransactionfn() as tr:
+            with self.assertRaises(error.CensoredBaseError):
+                f.addgroup(deltas, lambda x: 0, tr)
+
+    def testcensorrevisionbasic(self):
+        f = self._makefilefn()
+
+        with self._maketransactionfn() as tr:
+            node0 = f.add(b'foo\n' * 30, None, tr, 0, nullid, nullid)
+            node1 = f.add(b'foo\n' * 31, None, tr, 1, node0, nullid)
+            node2 = f.add(b'foo\n' * 32, None, tr, 2, node1, nullid)
+
+        with self._maketransactionfn() as tr:
+            f.censorrevision(tr, node1)
+
+        self.assertEqual(len(f), 3)
+        self.assertEqual(list(f.revs()), [0, 1, 2])
+
+        self.assertEqual(f.read(node0), b'foo\n' * 30)
+
+        # TODO revlog can't resolve revision after censor. Probably due to a
+        # cache on the revlog instance.
+        with self.assertRaises(error.StorageError):
+            self.assertEqual(f.read(node2), b'foo\n' * 32)
+
+        # TODO should raise CensoredNodeError, but fallout from above prevents.
+        with self.assertRaises(error.StorageError):
+            f.read(node1)
+
     def testgetstrippointnoparents(self):
         # N revisions where none have parents.
         f = self._makefilefn()
@@ -1121,7 +1300,7 @@ class ifilemutationtests(basetestcase):
         with self.assertRaises(error.LookupError):
             f.rev(node1)
 
-def makeifileindextests(makefilefn, maketransactionfn):
+def makeifileindextests(makefilefn, maketransactionfn, addrawrevisionfn):
     """Create a unittest.TestCase class suitable for testing file storage.
 
     ``makefilefn`` is a callable which receives the test case as an
@@ -1129,6 +1308,10 @@ def makeifileindextests(makefilefn, maketransactionfn):
 
     ``maketransactionfn`` is a callable which receives the test case as an
     argument and returns a transaction object.
+
+    ``addrawrevisionfn`` is a callable which receives arguments describing a
+    low-level revision to add. This callable allows the insertion of
+    potentially bad data into the store in order to facilitate testing.
 
     Returns a type that is a ``unittest.TestCase`` that can be used for
     testing the object implementing the file storage interface. Simply
@@ -1138,19 +1321,22 @@ def makeifileindextests(makefilefn, maketransactionfn):
     d = {
         r'_makefilefn': makefilefn,
         r'_maketransactionfn': maketransactionfn,
+        r'_addrawrevisionfn': addrawrevisionfn,
     }
     return type(r'ifileindextests', (ifileindextests,), d)
 
-def makeifiledatatests(makefilefn, maketransactionfn):
+def makeifiledatatests(makefilefn, maketransactionfn, addrawrevisionfn):
     d = {
         r'_makefilefn': makefilefn,
         r'_maketransactionfn': maketransactionfn,
+        r'_addrawrevisionfn': addrawrevisionfn,
     }
     return type(r'ifiledatatests', (ifiledatatests,), d)
 
-def makeifilemutationtests(makefilefn, maketransactionfn):
+def makeifilemutationtests(makefilefn, maketransactionfn, addrawrevisionfn):
     d = {
         r'_makefilefn': makefilefn,
         r'_maketransactionfn': maketransactionfn,
+        r'_addrawrevisionfn': addrawrevisionfn,
     }
     return type(r'ifilemutationtests', (ifilemutationtests,), d)

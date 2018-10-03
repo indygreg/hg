@@ -262,7 +262,9 @@ def filterhgerr(err):
                and not e.startswith(b'warning: Not importing')
                and not e.startswith(b'obsolete feature not enabled')
                and not e.startswith(b'*** failed to import extension')
-               and not e.startswith(b'devel-warn:'))]
+               and not e.startswith(b'devel-warn:')
+               and not (e.startswith(b'(third party extension')
+                        and e.endswith(b'or newer of Mercurial; disabling)')))]
     return b'\n'.join(b'  ' + e for e in err)
 
 def findhg():

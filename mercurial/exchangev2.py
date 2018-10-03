@@ -64,7 +64,8 @@ def pull(pullop):
     # Find all file nodes referenced by added manifests and fetch those
     # revisions.
     fnodes = _derivefilesfrommanifests(repo, manres['added'])
-    _fetchfiles(repo, tr, remote, fnodes, manres['linkrevs'])
+    _fetchfilesfromcsets(repo, tr, remote, fnodes, csetres['added'],
+                         manres['linkrevs'])
 
 def _pullchangesetdiscovery(repo, remote, heads, abortwhenunrelated=True):
     """Determine which changesets need to be pulled."""
@@ -346,6 +347,7 @@ def _derivefilesfrommanifests(repo, manifestnodes):
     return fnodes
 
 def _fetchfiles(repo, tr, remote, fnodes, linkrevs):
+    """Fetch file data from explicit file revisions."""
     def iterrevisions(objs, progress):
         for filerevision in objs:
             node = filerevision[b'node']
@@ -418,3 +420,84 @@ def _fetchfiles(repo, tr, remote, fnodes, linkrevs):
                     iterrevisions(objs, progress),
                     locallinkrevs[path].__getitem__,
                     weakref.proxy(tr))
+
+def _fetchfilesfromcsets(repo, tr, remote, fnodes, csets, manlinkrevs):
+    """Fetch file data from explicit changeset revisions."""
+
+    def iterrevisions(objs, remaining, progress):
+        while remaining:
+            filerevision = next(objs)
+
+            node = filerevision[b'node']
+
+            extrafields = {}
+
+            for field, size in filerevision.get(b'fieldsfollowing', []):
+                extrafields[field] = next(objs)
+
+            if b'delta' in extrafields:
+                basenode = filerevision[b'deltabasenode']
+                delta = extrafields[b'delta']
+            elif b'revision' in extrafields:
+                basenode = nullid
+                revision = extrafields[b'revision']
+                delta = mdiff.trivialdiffheader(len(revision)) + revision
+            else:
+                continue
+
+            yield (
+                node,
+                filerevision[b'parents'][0],
+                filerevision[b'parents'][1],
+                node,
+                basenode,
+                delta,
+                # Flags not yet supported.
+                0,
+            )
+
+            progress.increment()
+            remaining -= 1
+
+    progress = repo.ui.makeprogress(
+        _('files'), unit=_('chunks'),
+        total=sum(len(v) for v in fnodes.itervalues()))
+
+    commandmeta = remote.apidescriptor[b'commands'][b'filesdata']
+    batchsize = commandmeta.get(b'recommendedbatchsize', 50000)
+
+    for i in pycompat.xrange(0, len(csets), batchsize):
+        batch = [x for x in csets[i:i + batchsize]]
+        if not batch:
+            continue
+
+        with remote.commandexecutor() as e:
+            args = {
+                b'revisions': [{
+                    b'type': b'changesetexplicit',
+                    b'nodes': batch,
+                }],
+                b'fields': {b'parents', b'revision'},
+                b'haveparents': True,
+            }
+
+            objs = e.callcommand(b'filesdata', args).result()
+
+            # First object is an overall header.
+            overall = next(objs)
+
+            # We have overall['totalpaths'] segments.
+            for i in pycompat.xrange(overall[b'totalpaths']):
+                header = next(objs)
+
+                path = header[b'path']
+                store = repo.file(path)
+
+                linkrevs = {
+                    fnode: manlinkrevs[mnode]
+                    for fnode, mnode in fnodes[path].iteritems()}
+
+                store.addgroup(iterrevisions(objs, header[b'totalitems'],
+                                             progress),
+                               linkrevs.__getitem__,
+                               weakref.proxy(tr))

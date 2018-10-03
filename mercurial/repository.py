@@ -312,6 +312,12 @@ class ipeerbase(ipeerconnection, ipeercapabilities, ipeerrequests):
     All peer instances must conform to this interface.
     """
 
+class ipeerv2(ipeerconnection, ipeercapabilities, ipeerrequests):
+    """Unified peer interface for wire protocol version 2 peers."""
+
+    apidescriptor = interfaceutil.Attribute(
+        """Data structure holding description of server API.""")
+
 @interfaceutil.implementer(ipeerbase)
 class peer(object):
     """Base class for peer repositories."""

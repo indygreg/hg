@@ -744,14 +744,12 @@ class httpv2executor(object):
         while handler.readdata(resp):
             pass
 
-# TODO implement interface for version 2 peers
-@interfaceutil.implementer(repository.ipeerconnection,
-                           repository.ipeercapabilities,
-                           repository.ipeerrequests)
+@interfaceutil.implementer(repository.ipeerv2)
 class httpv2peer(object):
     def __init__(self, ui, repourl, apipath, opener, requestbuilder,
                  apidescriptor):
         self.ui = ui
+        self.apidescriptor = apidescriptor
 
         if repourl.endswith('/'):
             repourl = repourl[:-1]
@@ -761,7 +759,6 @@ class httpv2peer(object):
         self._apiurl = '%s/%s' % (repourl, apipath)
         self._opener = opener
         self._requestbuilder = requestbuilder
-        self._descriptor = apidescriptor
 
         self._redirect = wireprotov2peer.supportedredirects(ui, apidescriptor)
 
@@ -806,7 +803,7 @@ class httpv2peer(object):
 
         # Alias command-* to presence of command of that name.
         if name.startswith('command-'):
-            return name[len('command-'):] in self._descriptor['commands']
+            return name[len('command-'):] in self.apidescriptor['commands']
 
         return False
 
@@ -826,7 +823,7 @@ class httpv2peer(object):
 
     def commandexecutor(self):
         return httpv2executor(self.ui, self._opener, self._requestbuilder,
-                              self._apiurl, self._descriptor, self._redirect)
+                              self._apiurl, self.apidescriptor, self._redirect)
 
 # Registry of API service names to metadata about peers that handle it.
 #

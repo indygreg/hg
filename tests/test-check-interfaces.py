@@ -106,10 +106,7 @@ def main():
     ziverify.verifyClass(repository.ipeerbase, httppeer.httppeer)
     checkzobject(httppeer.httppeer(None, None, None, dummyopener(), None, None))
 
-    ziverify.verifyClass(repository.ipeerconnection,
-                         httppeer.httpv2peer)
-    ziverify.verifyClass(repository.ipeercapabilities,
-                         httppeer.httpv2peer)
+    ziverify.verifyClass(repository.ipeerv2, httppeer.httpv2peer)
     checkzobject(httppeer.httpv2peer(None, b'', b'', None, None, None))
 
     ziverify.verifyClass(repository.ipeerbase,

@@ -1571,6 +1571,7 @@ def perfrevlogrevisions(ui, repo, file_=None, startrev=0, reverse=False,
          [(b's', b'startrev', 1000, b'revision to start writing at'),
           (b'', b'stoprev', -1, b'last revision to write'),
           (b'', b'count', 3, b'last revision to write'),
+          (b'', b'details', False, b'print timing for every revisions tested'),
          ],
          b'-c|-m|FILE')
 def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
@@ -1609,6 +1610,13 @@ def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
     # get a formatter
     fm = ui.formatter(b'perf', opts)
     displayall = ui.configbool(b"perf", b"all-timing", False)
+
+    # print individual details if requested
+    if opts['details']:
+        for idx, item in enumerate(results, 1):
+            rev, data = item
+            title = 'revisions #%d of %d, rev %d' % (idx, resultcount, rev)
+            formatone(fm, data, title=title, displayall=displayall)
 
     # sorts results by median time
     results.sort(key=lambda x: sorted(x[1])[len(x[1]) // 2])

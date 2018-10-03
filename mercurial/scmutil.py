@@ -979,7 +979,7 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
             # unnecessary. That's the "if s or not isobs(n)" check below.
             # Also sort the node in topology order, that might be useful for
             # some obsstore logic.
-            # NOTE: the filtering and sorting might belong to createmarkers.
+            # NOTE: the sorting might belong to createmarkers.
             torev = unfi.changelog.rev
             sortfunc = lambda ns: torev(ns[0][0])
             rels = []

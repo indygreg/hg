@@ -415,12 +415,15 @@ class revlog(object):
             raise error.RevlogError(_('revlog chunk cache size %r is not a '
                                       'power of 2') % self._chunkcachesize)
 
+        self._loadindex(v, mmapindexthreshold)
+
+    def _loadindex(self, v, mmapindexthreshold):
         indexdata = ''
         self._initempty = True
         try:
             with self._indexfp() as f:
                 if (mmapindexthreshold is not None and
-                        self.opener.fstat(f).st_size >= mmapindexthreshold):
+                    self.opener.fstat(f).st_size >= mmapindexthreshold):
                     indexdata = util.buffer(util.mmapread(f))
                 else:
                     indexdata = f.read()

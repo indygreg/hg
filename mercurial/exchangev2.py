@@ -320,19 +320,25 @@ def _derivefilesfrommanifests(repo, manifestnodes):
     ml = repo.manifestlog
     fnodes = collections.defaultdict(dict)
 
-    for manifestnode in manifestnodes:
-        m = ml.get(b'', manifestnode)
+    progress = repo.ui.makeprogress(
+        _('scanning manifests'), total=len(manifestnodes))
 
-        # TODO this will pull in unwanted nodes because it takes the storage
-        # delta into consideration. What we really want is something that takes
-        # the delta between the manifest's parents. And ideally we would
-        # ignore file nodes that are known locally. For now, ignore both
-        # these limitations. This will result in incremental fetches requesting
-        # data we already have. So this is far from ideal.
-        md = m.readfast()
+    with progress:
+        for manifestnode in manifestnodes:
+            m = ml.get(b'', manifestnode)
 
-        for path, fnode in md.items():
-            fnodes[path].setdefault(fnode, manifestnode)
+            # TODO this will pull in unwanted nodes because it takes the storage
+            # delta into consideration. What we really want is something that
+            # takes the delta between the manifest's parents. And ideally we
+            # would ignore file nodes that are known locally. For now, ignore
+            # both these limitations. This will result in incremental fetches
+            # requesting data we already have. So this is far from ideal.
+            md = m.readfast()
+
+            for path, fnode in md.items():
+                fnodes[path].setdefault(fnode, manifestnode)
+
+            progress.increment()
 
     return fnodes
 

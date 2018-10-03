@@ -16,6 +16,7 @@ from . import (
     branchmap,
     cacheutil,
     error,
+    narrowspec,
     phases,
     pycompat,
     repository,
@@ -194,8 +195,8 @@ def allowservergeneration(repo):
     return True
 
 # This is it's own function so extensions can override it.
-def _walkstreamfiles(repo):
-    return repo.store.walk()
+def _walkstreamfiles(repo, matcher=None):
+    return repo.store.walk(matcher)
 
 def generatev1(repo):
     """Emit content for version 1 of a streaming clone.
@@ -553,8 +554,12 @@ def generatev2(repo, includes, excludes):
         entries = []
         totalfilesize = 0
 
+        matcher = None
+        if includes or excludes:
+            matcher = narrowspec.match(repo.root, includes, excludes)
+
         repo.ui.debug('scanning\n')
-        for name, ename, size in _walkstreamfiles(repo):
+        for name, ename, size in _walkstreamfiles(repo, matcher):
             if size:
                 entries.append((_srcstore, name, _fileappend, size))
                 totalfilesize += size

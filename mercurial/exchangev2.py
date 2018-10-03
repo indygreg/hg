@@ -268,10 +268,9 @@ def _fetchmanifests(repo, tr, remote, manifestnodes):
     progress = repo.ui.makeprogress(_('manifests'), unit=_('chunks'),
                                     total=len(fetchnodes))
 
-    # Fetch manifests 10,000 per command.
-    # TODO have server advertise preferences?
+    commandmeta = remote.apidescriptor[b'commands'][b'manifestdata']
+    batchsize = commandmeta.get(b'recommendedbatchsize', 10000)
     # TODO make size configurable on client?
-    batchsize = 10000
 
     # We send commands 1 at a time to the remote. This is not the most
     # efficient because we incur a round trip at the end of each batch.

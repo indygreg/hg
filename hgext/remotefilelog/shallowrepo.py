@@ -25,7 +25,6 @@ from . import (
     constants,
     contentstore,
     datapack,
-    extutil,
     fileserverclient,
     historypack,
     metadatastore,
@@ -199,7 +198,7 @@ def wraprepo(repo):
                 cmd.append('--repack')
             if revs:
                 cmd += ['-r', revs]
-            extutil.runbgcommand(cmd, encoding.environ)
+            procutil.runbgcommand(cmd, encoding.environ)
 
         def prefetch(self, revs, base=None, pats=None, opts=None):
             """Prefetches all the necessary file revisions for the given revs

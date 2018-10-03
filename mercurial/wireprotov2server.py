@@ -20,7 +20,6 @@ from . import (
     error,
     narrowspec,
     pycompat,
-    streamclone,
     util,
     wireprotoframing,
     wireprototypes,
@@ -522,9 +521,8 @@ def _capabilitiesv2(repo, proto):
             'permissions': [entry.permission],
         }
 
-    if streamclone.allowservergeneration(repo):
-        caps['rawrepoformats'] = sorted(repo.requirements &
-                                        repo.supportedformats)
+    caps['rawrepoformats'] = sorted(repo.requirements &
+                                    repo.supportedformats)
 
     targets = getadvertisedredirecttargets(repo, proto)
     if targets:

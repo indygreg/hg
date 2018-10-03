@@ -1358,6 +1358,16 @@ def cat(ui, repo, file1, *pats, **opts):
     :``%b``: basename of the exporting repository
     :``\\``: literal "\\" character
 
+    .. container:: verbose
+
+      Template:
+
+      The following keywords are supported in addition to the common template
+      keywords and functions. See also :hg:`help templates`.
+
+      :data:    String. File content.
+      :path:    String. Repository-absolute path of the file.
+
     Returns 0 on success.
     """
     opts = pycompat.byteskwargs(opts)

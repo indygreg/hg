@@ -1004,6 +1004,123 @@ class ifilemutationtests(basetestcase):
         self.assertEqual(f.node(1), nodes[1])
         self.assertEqual(f.node(2), nodes[2])
 
+    def testgetstrippointnoparents(self):
+        # N revisions where none have parents.
+        f = self._makefilefn()
+
+        with self._maketransactionfn() as tr:
+            for rev in range(10):
+                f.add(b'%d' % rev, None, tr, rev, nullid, nullid)
+
+        for rev in range(10):
+            self.assertEqual(f.getstrippoint(rev), (rev, set()))
+
+    def testgetstrippointlinear(self):
+        # N revisions in a linear chain.
+        f = self._makefilefn()
+
+        with self._maketransactionfn() as tr:
+            p1 = nullid
+
+            for rev in range(10):
+                f.add(b'%d' % rev, None, tr, rev, p1, nullid)
+
+        for rev in range(10):
+            self.assertEqual(f.getstrippoint(rev), (rev, set()))
+
+    def testgetstrippointmultipleheads(self):
+        f = self._makefilefn()
+
+        with self._maketransactionfn() as tr:
+            node0 = f.add(b'0', None, tr, 0, nullid, nullid)
+            node1 = f.add(b'1', None, tr, 1, node0, nullid)
+            f.add(b'2', None, tr, 2, node1, nullid)
+            f.add(b'3', None, tr, 3, node0, nullid)
+            f.add(b'4', None, tr, 4, node0, nullid)
+
+        for rev in range(5):
+            self.assertEqual(f.getstrippoint(rev), (rev, set()))
+
+    def testgetstrippointearlierlinkrevs(self):
+        f = self._makefilefn()
+
+        with self._maketransactionfn() as tr:
+            node0 = f.add(b'0', None, tr, 0, nullid, nullid)
+            f.add(b'1', None, tr, 10, node0, nullid)
+            f.add(b'2', None, tr, 5, node0, nullid)
+
+        self.assertEqual(f.getstrippoint(0), (0, set()))
+        self.assertEqual(f.getstrippoint(1), (1, set()))
+        self.assertEqual(f.getstrippoint(2), (1, set()))
+        self.assertEqual(f.getstrippoint(3), (1, set()))
+        self.assertEqual(f.getstrippoint(4), (1, set()))
+        self.assertEqual(f.getstrippoint(5), (1, set()))
+        self.assertEqual(f.getstrippoint(6), (1, {2}))
+        self.assertEqual(f.getstrippoint(7), (1, {2}))
+        self.assertEqual(f.getstrippoint(8), (1, {2}))
+        self.assertEqual(f.getstrippoint(9), (1, {2}))
+        self.assertEqual(f.getstrippoint(10), (1, {2}))
+        self.assertEqual(f.getstrippoint(11), (3, set()))
+
+    def teststripempty(self):
+        f = self._makefilefn()
+
+        with self._maketransactionfn() as tr:
+            f.strip(0, tr)
+
+        self.assertEqual(len(f), 0)
+
+    def teststripall(self):
+        f = self._makefilefn()
+
+        with self._maketransactionfn() as tr:
+            p1 = nullid
+            for rev in range(10):
+                p1 = f.add(b'%d' % rev, None, tr, rev, p1, nullid)
+
+        self.assertEqual(len(f), 10)
+
+        with self._maketransactionfn() as tr:
+            f.strip(0, tr)
+
+        self.assertEqual(len(f), 0)
+
+    def teststrippartial(self):
+        f = self._makefilefn()
+
+        with self._maketransactionfn() as tr:
+            f.add(b'0', None, tr, 0, nullid, nullid)
+            node1 = f.add(b'1', None, tr, 5, nullid, nullid)
+            node2 = f.add(b'2', None, tr, 10, nullid, nullid)
+
+        self.assertEqual(len(f), 3)
+
+        with self._maketransactionfn() as tr:
+            f.strip(11, tr)
+
+        self.assertEqual(len(f), 3)
+
+        with self._maketransactionfn() as tr:
+            f.strip(10, tr)
+
+        self.assertEqual(len(f), 2)
+
+        with self.assertRaises(error.LookupError):
+            f.rev(node2)
+
+        with self._maketransactionfn() as tr:
+            f.strip(6, tr)
+
+        self.assertEqual(len(f), 2)
+
+        with self._maketransactionfn() as tr:
+            f.strip(3, tr)
+
+        self.assertEqual(len(f), 1)
+
+        with self.assertRaises(error.LookupError):
+            f.rev(node1)
+
 def makeifileindextests(makefilefn, maketransactionfn):
     """Create a unittest.TestCase class suitable for testing file storage.
 

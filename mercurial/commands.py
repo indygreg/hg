@@ -954,6 +954,14 @@ def bookmark(ui, repo, *names, **opts):
 
     .. container:: verbose
 
+      Template:
+
+      The following keywords are supported in addition to the common template
+      keywords and functions such as ``{bookmark}``. See also
+      :hg:`help templates`.
+
+      :active:  Boolean. True if the bookmark is active.
+
       Examples:
 
       - create an active bookmark for a new line of development::

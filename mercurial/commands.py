@@ -1132,6 +1132,18 @@ def branches(ui, repo, active=False, closed=False, **opts):
 
     Use the command :hg:`update` to switch to an existing branch.
 
+    .. container:: verbose
+
+      Template:
+
+      The following keywords are supported in addition to the common template
+      keywords and functions such as ``{branch}``. See also
+      :hg:`help templates`.
+
+      :active:  Boolean. True if the branch is active.
+      :closed:  Boolean. True if the branch is closed.
+      :current: Boolean. True if it is the current branch.
+
     Returns 0.
     """
 

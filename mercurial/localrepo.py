@@ -1682,7 +1682,7 @@ class localrepository(object):
             rp = report
         else:
             rp = self.ui.warn
-        vfsmap = {'plain': self.vfs} # root of .hg/
+        vfsmap = {'plain': self.vfs, 'store': self.svfs} # root of .hg/
         # we must avoid cyclic reference between repo and transaction.
         reporef = weakref.ref(self)
         # Code to track tag movement

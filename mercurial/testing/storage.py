@@ -1175,14 +1175,9 @@ class ifilemutationtests(basetestcase):
         self.assertEqual(list(f.revs()), [0, 1, 2])
 
         self.assertEqual(f.read(node0), b'foo\n' * 30)
+        self.assertEqual(f.read(node2), b'foo\n' * 32)
 
-        # TODO revlog can't resolve revision after censor. Probably due to a
-        # cache on the revlog instance.
-        with self.assertRaises(error.StorageError):
-            self.assertEqual(f.read(node2), b'foo\n' * 32)
-
-        # TODO should raise CensoredNodeError, but fallout from above prevents.
-        with self.assertRaises(error.StorageError):
+        with self.assertRaises(error.CensoredNodeError):
             f.read(node1)
 
     def testgetstrippointnoparents(self):

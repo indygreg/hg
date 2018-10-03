@@ -30,7 +30,7 @@ def makefilefn(self):
     return fl
 
 def maketransaction(self):
-    vfsmap = {'plain': STATE['vfs']}
+    vfsmap = {'plain': STATE['vfs'], 'store': STATE['vfs']}
 
     return transaction.transaction(STATE['ui'].warn, STATE['vfs'], vfsmap,
                                    b'journal', b'undo')

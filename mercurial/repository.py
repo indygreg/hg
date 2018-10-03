@@ -30,6 +30,13 @@ REPO_FEATURE_LFS = b'lfs'
 # Repository supports being stream cloned.
 REPO_FEATURE_STREAM_CLONE = b'streamclone'
 
+REVISION_FLAG_CENSORED = 1 << 15
+REVISION_FLAG_ELLIPSIS = 1 << 14
+REVISION_FLAG_EXTSTORED = 1 << 13
+
+REVISION_FLAGS_KNOWN = (
+    REVISION_FLAG_CENSORED | REVISION_FLAG_ELLIPSIS | REVISION_FLAG_EXTSTORED)
+
 class ipeerconnection(interfaceutil.Interface):
     """Represents a "connection" to a repository.
 
@@ -375,7 +382,10 @@ class irevisiondelta(interfaceutil.Interface):
         """20 byte node of the changelog revision this node is linked to.""")
 
     flags = interfaceutil.Attribute(
-        """2 bytes of integer flags that apply to this revision.""")
+        """2 bytes of integer flags that apply to this revision.
+
+        This is a bitwise composition of the ``REVISION_FLAG_*`` constants.
+        """)
 
     basenode = interfaceutil.Attribute(
         """20 byte node of the revision this data is a delta against.
@@ -658,7 +668,8 @@ class ifilemutation(interfaceutil.Interface):
         The data passed in already contains a metadata header, if any.
 
         ``node`` and ``flags`` can be used to define the expected node and
-        the flags to use with storage.
+        the flags to use with storage. ``flags`` is a bitwise value composed
+        of the various ``REVISION_FLAG_*`` constants.
 
         ``add()`` is usually called when adding files from e.g. the working
         directory. ``addrevision()`` is often called by ``add()`` and for

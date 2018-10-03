@@ -26,7 +26,6 @@ from . import (
     phases,
     pycompat,
     repository,
-    revlog,
     util,
 )
 
@@ -716,7 +715,7 @@ def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
                 p1node, p2node = adjustedparents[revision.node]
                 revision.p1node = p1node
                 revision.p2node = p2node
-                revision.flags |= revlog.REVIDX_ELLIPSIS
+                revision.flags |= repository.REVISION_FLAG_ELLIPSIS
 
         else:
             linknode = lookup(revision.node)

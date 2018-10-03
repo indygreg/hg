@@ -10,6 +10,7 @@
 from __future__ import absolute_import
 
 from .. import (
+    repository,
     util,
 )
 
@@ -28,9 +29,16 @@ REVLOGV1_FLAGS = FLAG_INLINE_DATA | FLAG_GENERALDELTA
 REVLOGV2_FLAGS = REVLOGV1_FLAGS
 
 # revlog index flags
-REVIDX_ISCENSORED = (1 << 15) # revision has censor metadata, must be verified
-REVIDX_ELLIPSIS = (1 << 14) # revision hash does not match data (narrowhg)
-REVIDX_EXTSTORED = (1 << 13) # revision data is stored externally
+
+# For historical reasons, revlog's internal flags were exposed via the
+# wire protocol and are even exposed in parts of the storage APIs.
+
+# revision has censor metadata, must be verified
+REVIDX_ISCENSORED = repository.REVISION_FLAG_CENSORED
+# revision hash does not match data (narrowhg)
+REVIDX_ELLIPSIS = repository.REVISION_FLAG_ELLIPSIS
+# revision data is stored externally
+REVIDX_EXTSTORED = repository.REVISION_FLAG_EXTSTORED
 REVIDX_DEFAULT_FLAGS = 0
 # stable order in which flags need to be processed and their processors applied
 REVIDX_FLAGS_ORDER = [

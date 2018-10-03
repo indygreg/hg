@@ -371,7 +371,7 @@ class filestorage(object):
     def iscensored(self, rev):
         validaterev(rev)
 
-        return self._flags(rev) & revlog.REVIDX_ISCENSORED
+        return self._flags(rev) & repository.REVISION_FLAG_CENSORED
 
     def commonancestorsheads(self, a, b):
         validatenode(a)

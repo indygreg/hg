@@ -1038,8 +1038,8 @@ sub-topics can be accessed
   
       There are 3 versions of changegroups: "1", "2", and "3". From a high-
       level, versions "1" and "2" are almost exactly the same, with the only
-      difference being an additional item in the *delta header*.  Version "3"
-      adds support for revlog flags in the *delta header* and optionally
+      difference being an additional item in the *delta header*. Version "3"
+      adds support for storage flags in the *delta header* and optionally
       exchanging treemanifests (enabled by setting an option on the
       "changegroup" part in the bundle2).
   
@@ -1161,6 +1161,27 @@ sub-topics can be accessed
       In version 2 and up, the delta base node is encoded in the entry in the
       changegroup. This allows the delta to be expressed against any parent,
       which can result in smaller deltas and more efficient encoding of data.
+  
+      The *flags* field holds bitwise flags affecting the processing of revision
+      data. The following flags are defined:
+  
+      32768
+         Censored revision. The revision's fulltext has been replaced by censor
+         metadata. May only occur on file revisions.
+  
+      16384
+         Ellipsis revision. Revision hash does not match data (likely due to
+         rewritten parents).
+  
+      8192
+         Externally stored. The revision fulltext contains "key:value" "\n"
+         delimited metadata defining an object stored elsewhere. Used by the LFS
+         extension.
+  
+      For historical reasons, the integer values are identical to revlog version
+      1 per-revision storage flags and correspond to bits being set in this
+      2-byte field. Bits were allocated starting from the most-significant bit,
+      hence the reverse ordering and allocation of these flags.
   
       Changeset Segment
       =================
@@ -3435,8 +3456,8 @@ Sub-topic topics rendered properly
   <p>
   There are 3 versions of changegroups: &quot;1&quot;, &quot;2&quot;, and &quot;3&quot;. From a
   high-level, versions &quot;1&quot; and &quot;2&quot; are almost exactly the same, with the
-  only difference being an additional item in the *delta header*.  Version
-  &quot;3&quot; adds support for revlog flags in the *delta header* and optionally
+  only difference being an additional item in the *delta header*. Version
+  &quot;3&quot; adds support for storage flags in the *delta header* and optionally
   exchanging treemanifests (enabled by setting an option on the
   &quot;changegroup&quot; part in the bundle2).
   </p>
@@ -3581,6 +3602,24 @@ Sub-topic topics rendered properly
   In version 2 and up, the delta base node is encoded in the entry in the
   changegroup. This allows the delta to be expressed against any parent,
   which can result in smaller deltas and more efficient encoding of data.
+  </p>
+  <p>
+  The *flags* field holds bitwise flags affecting the processing of revision
+  data. The following flags are defined:
+  </p>
+  <dl>
+   <dt>32768
+   <dd>Censored revision. The revision's fulltext has been replaced by censor metadata. May only occur on file revisions.
+   <dt>16384
+   <dd>Ellipsis revision. Revision hash does not match data (likely due to rewritten parents).
+   <dt>8192
+   <dd>Externally stored. The revision fulltext contains &quot;key:value&quot; &quot;\n&quot; delimited metadata defining an object stored elsewhere. Used by the LFS extension.
+  </dl>
+  <p>
+  For historical reasons, the integer values are identical to revlog version 1
+  per-revision storage flags and correspond to bits being set in this 2-byte
+  field. Bits were allocated starting from the most-significant bit, hence the
+  reverse ordering and allocation of these flags.
   </p>
   <h2>Changeset Segment</h2>
   <p>

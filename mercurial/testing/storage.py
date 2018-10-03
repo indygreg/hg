@@ -17,7 +17,7 @@ from ..node import (
 from .. import (
     error,
     mdiff,
-    revlog,
+    repository,
 )
 from ..utils import (
     storageutil,
@@ -874,7 +874,7 @@ class ifiledatatests(basetestcase):
         with self._maketransactionfn() as tr:
             node0 = f.add(b'foo', None, tr, 0, nullid, nullid)
             f.addrevision(stored1, tr, 1, node0, nullid,
-                          flags=revlog.REVIDX_ISCENSORED)
+                          flags=repository.REVISION_FLAG_CENSORED)
 
         self.assertTrue(f.iscensored(1))
 
@@ -914,7 +914,7 @@ class ifilemutationtests(basetestcase):
         f = self._makefilefn()
         with self._maketransactionfn() as tr:
             for i in range(15, 0, -1):
-                if (1 << i) & ~revlog.REVIDX_KNOWN_FLAGS:
+                if (1 << i) & ~repository.REVISION_FLAGS_KNOWN:
                     flags = 1 << i
                     break
 

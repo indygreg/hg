@@ -3111,7 +3111,7 @@ def identify(ui, repo, source=None, rev=None,
                     output.append(bm)
         else:
             fm.data(node=hex(remoterev))
-            if 'bookmarks' in fm.datahint():
+            if bookmarks or 'bookmarks' in fm.datahint():
                 fm.data(bookmarks=fm.formatlist(getbms(), name='bookmark'))
     else:
         if rev:

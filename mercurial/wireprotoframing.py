@@ -674,6 +674,10 @@ def ensureserverstream(stream):
                                      'numbered streams; %d is not even' %
                                      stream.streamid)
 
+DEFAULT_PROTOCOL_SETTINGS = {
+    'contentencodings': [b'identity'],
+}
+
 class serverreactor(object):
     """Holds state of a server handling frame-based protocol requests.
 
@@ -750,7 +754,7 @@ class serverreactor(object):
         sender cannot receive until all data has been transmitted.
         """
         self._deferoutput = deferoutput
-        self._state = 'idle'
+        self._state = 'initial'
         self._nextoutgoingstreamid = 2
         self._bufferedframegens = []
         # stream id -> stream instance for all active streams from the client.
@@ -762,6 +766,11 @@ class serverreactor(object):
         # Once all output for a request has been sent, it is removed from this
         # set.
         self._activecommands = set()
+
+        self._protocolsettingsdecoder = None
+
+        # Sender protocol settings are optional. Set implied default values.
+        self._sendersettings = dict(DEFAULT_PROTOCOL_SETTINGS)
 
     def onframerecv(self, frame):
         """Process a frame that has been received off the wire.
@@ -794,6 +803,8 @@ class serverreactor(object):
             del self._incomingstreams[frame.streamid]
 
         handlers = {
+            'initial': self._onframeinitial,
+            'protocol-settings-receiving': self._onframeprotocolsettings,
             'idle': self._onframeidle,
             'command-receiving': self._onframecommandreceiving,
             'errored': self._onframeerrored,
@@ -1061,6 +1072,85 @@ class serverreactor(object):
             return self._makeerrorresult(
                 _('received command request frame with neither new nor '
                   'continuation flags set'))
+
+    def _onframeinitial(self, frame):
+        # Called when we receive a frame when in the "initial" state.
+        if frame.typeid == FRAME_TYPE_SENDER_PROTOCOL_SETTINGS:
+            self._state = 'protocol-settings-receiving'
+            self._protocolsettingsdecoder = cborutil.bufferingdecoder()
+            return self._onframeprotocolsettings(frame)
+
+        elif frame.typeid == FRAME_TYPE_COMMAND_REQUEST:
+            self._state = 'idle'
+            return self._onframeidle(frame)
+
+        else:
+            self._state = 'errored'
+            return self._makeerrorresult(
+                _('expected sender protocol settings or command request '
+                  'frame; got %d') % frame.typeid)
+
+    def _onframeprotocolsettings(self, frame):
+        assert self._state == 'protocol-settings-receiving'
+        assert self._protocolsettingsdecoder is not None
+
+        if frame.typeid != FRAME_TYPE_SENDER_PROTOCOL_SETTINGS:
+            self._state = 'errored'
+            return self._makeerrorresult(
+                _('expected sender protocol settings frame; got %d') %
+                frame.typeid)
+
+        more = frame.flags & FLAG_SENDER_PROTOCOL_SETTINGS_CONTINUATION
+        eos = frame.flags & FLAG_SENDER_PROTOCOL_SETTINGS_EOS
+
+        if more and eos:
+            self._state = 'errored'
+            return self._makeerrorresult(
+                _('sender protocol settings frame cannot have both '
+                  'continuation and end of stream flags set'))
+
+        if not more and not eos:
+            self._state = 'errored'
+            return self._makeerrorresult(
+                _('sender protocol settings frame must have continuation or '
+                  'end of stream flag set'))
+
+        # TODO establish limits for maximum amount of data that can be
+        # buffered.
+        try:
+            self._protocolsettingsdecoder.decode(frame.payload)
+        except Exception as e:
+            self._state = 'errored'
+            return self._makeerrorresult(
+                _('error decoding CBOR from sender protocol settings frame: %s')
+                % stringutil.forcebytestr(e))
+
+        if more:
+            return self._makewantframeresult()
+
+        assert eos
+
+        decoded = self._protocolsettingsdecoder.getavailable()
+        self._protocolsettingsdecoder = None
+
+        if not decoded:
+            self._state = 'errored'
+            return self._makeerrorresult(
+                _('sender protocol settings frame did not contain CBOR data'))
+        elif len(decoded) > 1:
+            self._state = 'errored'
+            return self._makeerrorresult(
+                _('sender protocol settings frame contained multiple CBOR '
+                  'values'))
+
+        d = decoded[0]
+
+        if b'contentencodings' in d:
+            self._sendersettings['contentencodings'] = d[b'contentencodings']
+
+        self._state = 'idle'
+
+        return self._makewantframeresult()
 
     def _onframeidle(self, frame):
         # The only frame type that should be received in this state is a

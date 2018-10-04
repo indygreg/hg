@@ -9,6 +9,9 @@ from mercurial import (
     util,
     wireprotoframing as framing,
 )
+from mercurial.utils import (
+    cborutil,
+)
 
 ffs = framing.makeframefromhumanstring
 
@@ -193,7 +196,8 @@ class ServerReactorTests(unittest.TestCase):
             ffs(b'1 1 stream-begin command-data 0 ignored'))
         self.assertaction(result, b'error')
         self.assertEqual(result[1], {
-            b'message': b'expected command request frame; got 2',
+            b'message': b'expected sender protocol settings or command request '
+                        b'frame; got 2',
         })
 
     def testunexpectedcommanddatareceiving(self):
@@ -493,6 +497,105 @@ class ServerReactorTests(unittest.TestCase):
 
         results = list(sendcommandframes(reactor, instream, 1, b'command1', {}))
         self.assertaction(results[0], b'runcommand')
+
+    def testprotocolsettingsnoflags(self):
+        result = self._sendsingleframe(
+            makereactor(),
+            ffs(b'0 1 stream-begin sender-protocol-settings 0 '))
+        self.assertaction(result, b'error')
+        self.assertEqual(result[1], {
+            b'message': b'sender protocol settings frame must have '
+                        b'continuation or end of stream flag set',
+        })
+
+    def testprotocolsettingsconflictflags(self):
+        result = self._sendsingleframe(
+            makereactor(),
+            ffs(b'0 1 stream-begin sender-protocol-settings continuation|eos '))
+        self.assertaction(result, b'error')
+        self.assertEqual(result[1], {
+            b'message': b'sender protocol settings frame cannot have both '
+                        b'continuation and end of stream flags set',
+        })
+
+    def testprotocolsettingsemptypayload(self):
+        result = self._sendsingleframe(
+            makereactor(),
+            ffs(b'0 1 stream-begin sender-protocol-settings eos '))
+        self.assertaction(result, b'error')
+        self.assertEqual(result[1], {
+            b'message': b'sender protocol settings frame did not contain CBOR '
+                        b'data',
+        })
+
+    def testprotocolsettingsmultipleobjects(self):
+        result = self._sendsingleframe(
+            makereactor(),
+            ffs(b'0 1 stream-begin sender-protocol-settings eos '
+                b'\x46foobar\x43foo'))
+        self.assertaction(result, b'error')
+        self.assertEqual(result[1], {
+            b'message': b'sender protocol settings frame contained multiple '
+                        b'CBOR values',
+        })
+
+    def testprotocolsettingscontentencodings(self):
+        reactor = makereactor()
+
+        result = self._sendsingleframe(
+            reactor,
+            ffs(b'0 1 stream-begin sender-protocol-settings eos '
+                b'cbor:{b"contentencodings": [b"a", b"b"]}'))
+        self.assertaction(result, b'wantframe')
+
+        self.assertEqual(reactor._state, b'idle')
+        self.assertEqual(reactor._sendersettings[b'contentencodings'],
+                         [b'a', b'b'])
+
+    def testprotocolsettingsmultipleframes(self):
+        reactor = makereactor()
+
+        data = b''.join(cborutil.streamencode({
+            b'contentencodings': [b'value1', b'value2'],
+        }))
+
+        results = list(sendframes(reactor, [
+            ffs(b'0 1 stream-begin sender-protocol-settings continuation %s' %
+                data[0:5]),
+            ffs(b'0 1 0 sender-protocol-settings eos %s' % data[5:]),
+        ]))
+
+        self.assertEqual(len(results), 2)
+
+        self.assertaction(results[0], b'wantframe')
+        self.assertaction(results[1], b'wantframe')
+
+        self.assertEqual(reactor._state, b'idle')
+        self.assertEqual(reactor._sendersettings[b'contentencodings'],
+                         [b'value1', b'value2'])
+
+    def testprotocolsettingsbadcbor(self):
+        result = self._sendsingleframe(
+            makereactor(),
+            ffs(b'0 1 stream-begin sender-protocol-settings eos badvalue'))
+        self.assertaction(result, b'error')
+
+    def testprotocolsettingsnoninitial(self):
+        # Cannot have protocol settings frames as non-initial frames.
+        reactor = makereactor()
+
+        stream = framing.stream(1)
+        results = list(sendcommandframes(reactor, stream, 1, b'mycommand', {}))
+        self.assertEqual(len(results), 1)
+        self.assertaction(results[0], b'runcommand')
+
+        result = self._sendsingleframe(
+            reactor,
+            ffs(b'0 1 0 sender-protocol-settings eos '))
+        self.assertaction(result, b'error')
+        self.assertEqual(result[1], {
+            b'message': b'expected command request frame; got 8',
+        })
 
 if __name__ == '__main__':
     import silenttestrunner

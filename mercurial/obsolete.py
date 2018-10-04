@@ -278,7 +278,7 @@ def _fm0decodemeta(data):
     d = {}
     for l in data.split('\0'):
         if l:
-            key, value = l.split(':')
+            key, value = l.split(':', 1)
             d[key] = value
     return d
 

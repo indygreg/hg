@@ -1620,3 +1620,22 @@ Test adding changeset after obsmarkers affecting it
   
 
   $ cd ..
+
+Test issue 5783
+
+  $ hg init issue-5783 --config format.obsstore-version=0
+  $ cd issue-5783
+  $ touch a.cpp
+  $ hg add a.cpp
+  $ hg commit -m 'Add a.cpp'
+  $ echo 'Hello' > a.cpp
+  $ hg amend -n 'Testing::Obsstore' --config format.obsstore-version=0 --config extensions.amend=
+  $ touch b.cpp
+  $ hg add b.cpp
+  $ hg commit -m 'Add b.cpp'
+  $ echo 'Hello' > b.cpp
+  $ hg amend -n 'Testing::Obsstore2' --config extensions.amend=
+  $ hg debugobsolete
+  d1b09fe3ad2b2a03e23a72f0c582e29a49570145 1a1a11184d2588af24e767e5335d5d9d07e8c550 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'note': 'Testing::Obsstore', 'operation': 'amend', 'user': 'test'}
+  1bfd8e3868f641e048b6667cd672c68932f26d00 79959ca316d5b27ac6be1dd0cfd0843a5b5412eb 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'note': 'Testing::Obsstore2', 'operation': 'amend', 'user': 'test'}
+  $ cd ..

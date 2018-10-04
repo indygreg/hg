@@ -49,15 +49,14 @@ class datapacktestsbase(object):
     def getFakeHash(self):
         return ''.join(chr(random.randint(0, 255)) for _ in range(20))
 
-    def createPack(self, revisions=None, packdir=None, version=0):
+    def createPack(self, revisions=None, packdir=None):
         if revisions is None:
             revisions = [("filename", self.getFakeHash(), nullid, "content")]
 
         if packdir is None:
             packdir = self.makeTempDir()
 
-        packer = datapack.mutabledatapack(
-            uimod.ui(), packdir, version=version)
+        packer = datapack.mutabledatapack(uimod.ui(), packdir, version=2)
 
         for args in revisions:
             filename, node, base, content = args[0:4]
@@ -175,25 +174,13 @@ class datapacktestsbase(object):
                     'Z': 'random_string',
                     '_': '\0' * i}
             revisions.append((filename, node, nullid, content, meta))
-        pack = self.createPack(revisions, version=1)
+        pack = self.createPack(revisions)
         for name, node, x, content, origmeta in revisions:
             parsedmeta = pack.getmeta(name, node)
             # flag == 0 should be optimized out
             if origmeta[constants.METAKEYFLAG] == 0:
                 del origmeta[constants.METAKEYFLAG]
             self.assertEquals(parsedmeta, origmeta)
-
-    def testPackMetadataThrows(self):
-        filename = '1'
-        content = '2'
-        node = self.getHash(content)
-        meta = {constants.METAKEYFLAG: 3}
-        revisions = [(filename, node, nullid, content, meta)]
-        try:
-            self.createPack(revisions, version=0)
-            self.assertTrue(False, "should throw if metadata is not supported")
-        except RuntimeError:
-            pass
 
     def testGetMissing(self):
         """Test the getmissing() api.

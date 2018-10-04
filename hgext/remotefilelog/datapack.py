@@ -5,7 +5,6 @@ import struct
 from mercurial.node import hex, nullid
 from mercurial.i18n import _
 from mercurial import (
-    error,
     pycompat,
     util,
 )
@@ -95,7 +94,7 @@ class datapack(basepack.basepack):
     INDEXFORMAT = '!20siQQ'
     INDEXENTRYLENGTH = 40
 
-    SUPPORTED_VERSIONS = [0, 1]
+    SUPPORTED_VERSIONS = [2]
 
     def getmissing(self, keys):
         missing = []
@@ -114,10 +113,6 @@ class datapack(basepack.basepack):
         value = self._find(node)
         if value is None:
             raise KeyError((name, hex(node)))
-
-        # version 0 does not support metadata
-        if self.VERSION == 0:
-            return {}
 
         node, deltabaseoffset, offset, size = value
         rawentry = self._data[offset:offset + size]
@@ -203,14 +198,11 @@ class datapack(basepack.basepack):
         delta = lz4wrapper.lz4decompress(delta)
 
         if getmeta:
-            if self.VERSION == 0:
-                meta = {}
-            else:
-                metastart = deltastart + 8 + deltalen
-                metalen = struct.unpack_from('!I', rawentry, metastart)[0]
+            metastart = deltastart + 8 + deltalen
+            metalen = struct.unpack_from('!I', rawentry, metastart)[0]
 
-                rawmeta = rawentry[metastart + 4:metastart + 4 + metalen]
-                meta = shallowutil.parsepackmeta(rawmeta)
+            rawmeta = rawentry[metastart + 4:metastart + 4 + metalen]
+            meta = shallowutil.parsepackmeta(rawmeta)
             return filename, node, deltabasenode, delta, meta
         else:
             return filename, node, deltabasenode, delta
@@ -316,10 +308,9 @@ class datapack(basepack.basepack):
             uncompressedlen = struct.unpack('<I', data[offset:offset + 4])[0]
             offset += deltalen
 
-            if self.VERSION == 1:
-                # <4 byte len> + <metadata-list>
-                metalen = struct.unpack_from('!I', data, offset)[0]
-                offset += 4 + metalen
+            # <4 byte len> + <metadata-list>
+            metalen = struct.unpack_from('!I', data, offset)[0]
+            offset += 4 + metalen
 
             yield (filename, node, deltabase, uncompressedlen)
 
@@ -406,7 +397,7 @@ class mutabledatapack(basepack.mutablebasepack):
     INDEXENTRYLENGTH = datapack.INDEXENTRYLENGTH
 
     # v1 has metadata support
-    SUPPORTED_VERSIONS = [0, 1]
+    SUPPORTED_VERSIONS = [2]
 
     def add(self, name, node, deltabasenode, delta, metadata=None):
         # metadata is a dict, ex. {METAKEYFLAG: flag}
@@ -431,15 +422,10 @@ class mutabledatapack(basepack.mutablebasepack):
             delta,
         ))
 
-        if self.VERSION == 1:
-            # v1 support metadata
-            rawmeta = shallowutil.buildpackmeta(metadata)
-            rawdata += struct.pack('!I', len(rawmeta)) # unsigned 4 byte
-            rawdata += rawmeta
-        else:
-            # v0 cannot store metadata, raise if metadata contains flag
-            if metadata and metadata.get(constants.METAKEYFLAG, 0) != 0:
-                raise error.ProgrammingError('v0 pack cannot store flags')
+        # v1 support metadata
+        rawmeta = shallowutil.buildpackmeta(metadata)
+        rawdata += struct.pack('!I', len(rawmeta)) # unsigned 4 byte
+        rawdata += rawmeta
 
         offset = self.packfp.tell()
 

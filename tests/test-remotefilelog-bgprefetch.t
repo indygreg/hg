@@ -107,10 +107,10 @@
   $ sleep 0.5
   $ hg debugwaitonrepack >/dev/null 2>%1
   $ find $CACHEDIR -type f | sort
-  $TESTTMP/hgcache/master/packs/94d53eef9e622533aec1fc6d8053cb086e785d21.histidx
-  $TESTTMP/hgcache/master/packs/94d53eef9e622533aec1fc6d8053cb086e785d21.histpack
-  $TESTTMP/hgcache/master/packs/f3644bc7773e8289deda7f765138120c838f4e6e.dataidx
-  $TESTTMP/hgcache/master/packs/f3644bc7773e8289deda7f765138120c838f4e6e.datapack
+  $TESTTMP/hgcache/master/packs/3616094d229ed39e2593f79c772676d4ec00253a.dataidx
+  $TESTTMP/hgcache/master/packs/3616094d229ed39e2593f79c772676d4ec00253a.datapack
+  $TESTTMP/hgcache/master/packs/6e8633deba6e544e5f8edbd7b996d6e31a2c42ae.histidx
+  $TESTTMP/hgcache/master/packs/6e8633deba6e544e5f8edbd7b996d6e31a2c42ae.histpack
   $TESTTMP/hgcache/master/packs/repacklock
   $TESTTMP/hgcache/repos
 
@@ -143,10 +143,10 @@
   $ sleep 1
   $ hg debugwaitonrepack >/dev/null 2>%1
   $ find $CACHEDIR -type f | sort
-  $TESTTMP/hgcache/master/packs/27c52c105a1ddf8c75143a6b279b04c24b1f4bee.histidx
-  $TESTTMP/hgcache/master/packs/27c52c105a1ddf8c75143a6b279b04c24b1f4bee.histpack
-  $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0.dataidx
-  $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0.datapack
+  $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histidx
+  $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histpack
+  $TESTTMP/hgcache/master/packs/ac19aff076286bebe3ff108c96c6445a0fe27c46.dataidx
+  $TESTTMP/hgcache/master/packs/ac19aff076286bebe3ff108c96c6445a0fe27c46.datapack
   $TESTTMP/hgcache/master/packs/repacklock
   $TESTTMP/hgcache/repos
 
@@ -154,7 +154,7 @@
 # could only be downloaded by the background prefetch
 
   $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
-  $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0:
+  $TESTTMP/hgcache/master/packs/ac19aff076286bebe3ff108c96c6445a0fe27c46:
   w:
   Node          Delta Base    Delta Length  Blob Size
   bb6ccd5dceaa  000000000000  2             2
@@ -195,10 +195,10 @@
   $ sleep 1
   $ hg debugwaitonrepack >/dev/null 2>%1
   $ find $CACHEDIR -type f | sort
-  $TESTTMP/hgcache/master/packs/27c52c105a1ddf8c75143a6b279b04c24b1f4bee.histidx
-  $TESTTMP/hgcache/master/packs/27c52c105a1ddf8c75143a6b279b04c24b1f4bee.histpack
-  $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0.dataidx
-  $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0.datapack
+  $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histidx
+  $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histpack
+  $TESTTMP/hgcache/master/packs/ac19aff076286bebe3ff108c96c6445a0fe27c46.dataidx
+  $TESTTMP/hgcache/master/packs/ac19aff076286bebe3ff108c96c6445a0fe27c46.datapack
   $TESTTMP/hgcache/master/packs/repacklock
   $TESTTMP/hgcache/repos
 
@@ -206,7 +206,7 @@
 # could only be downloaded by the background prefetch
 
   $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
-  $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0:
+  $TESTTMP/hgcache/master/packs/ac19aff076286bebe3ff108c96c6445a0fe27c46:
   w:
   Node          Delta Base    Delta Length  Blob Size
   bb6ccd5dceaa  000000000000  2             2
@@ -249,7 +249,7 @@
 # could only be downloaded by the background prefetch
 
   $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
-  $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0:
+  $TESTTMP/hgcache/master/packs/ac19aff076286bebe3ff108c96c6445a0fe27c46:
   w:
   Node          Delta Base    Delta Length  Blob Size
   bb6ccd5dceaa  000000000000  2             2
@@ -287,16 +287,16 @@
   $ hg debugwaitonrepack >/dev/null 2>%1
 
   $ find $CACHEDIR -type f | sort
-  $TESTTMP/hgcache/master/packs/27c52c105a1ddf8c75143a6b279b04c24b1f4bee.histidx
-  $TESTTMP/hgcache/master/packs/27c52c105a1ddf8c75143a6b279b04c24b1f4bee.histpack
-  $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0.dataidx
-  $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0.datapack
+  $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histidx
+  $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histpack
+  $TESTTMP/hgcache/master/packs/ac19aff076286bebe3ff108c96c6445a0fe27c46.dataidx
+  $TESTTMP/hgcache/master/packs/ac19aff076286bebe3ff108c96c6445a0fe27c46.datapack
   $TESTTMP/hgcache/master/packs/repacklock
   $TESTTMP/hgcache/repos
 
 # Ensure that files were prefetched
   $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
-  $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0:
+  $TESTTMP/hgcache/master/packs/ac19aff076286bebe3ff108c96c6445a0fe27c46:
   w:
   Node          Delta Base    Delta Length  Blob Size
   bb6ccd5dceaa  000000000000  2             2
@@ -331,16 +331,16 @@
   $ hg debugwaitonrepack >/dev/null 2>%1
 
   $ find $CACHEDIR -type f | sort
-  $TESTTMP/hgcache/master/packs/27c52c105a1ddf8c75143a6b279b04c24b1f4bee.histidx
-  $TESTTMP/hgcache/master/packs/27c52c105a1ddf8c75143a6b279b04c24b1f4bee.histpack
-  $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0.dataidx
-  $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0.datapack
+  $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histidx
+  $TESTTMP/hgcache/master/packs/8f1443d44e57fec96f72fb2412e01d2818767ef2.histpack
+  $TESTTMP/hgcache/master/packs/ac19aff076286bebe3ff108c96c6445a0fe27c46.dataidx
+  $TESTTMP/hgcache/master/packs/ac19aff076286bebe3ff108c96c6445a0fe27c46.datapack
   $TESTTMP/hgcache/master/packs/repacklock
   $TESTTMP/hgcache/repos
 
 # Ensure that files were prefetched
   $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
-  $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0:
+  $TESTTMP/hgcache/master/packs/ac19aff076286bebe3ff108c96c6445a0fe27c46:
   w:
   Node          Delta Base    Delta Length  Blob Size
   bb6ccd5dceaa  000000000000  2             2

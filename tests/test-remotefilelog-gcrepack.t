@@ -45,13 +45,13 @@
   $ hg debugwaitonrepack >/dev/null 2>%1
 
   $ find $CACHEDIR | sort | grep ".datapack\|.histpack"
-  $TESTTMP/hgcache/master/packs/9a2ea858fe2967db9b6ea4c0ca238881cae9d6eb.histpack
-  $TESTTMP/hgcache/master/packs/f7a942a6e4673d2c7b697fdd926ca2d153831ca4.datapack
+  $TESTTMP/hgcache/master/packs/7bcd2d90b99395ca43172a0dd24e18860b2902f9.histpack
+  $TESTTMP/hgcache/master/packs/be1bfed71a51645d8c3b9dc73e234e3a8ff06ac1.datapack
 
 # Ensure that all file versions were prefetched
 
   $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
-  $TESTTMP/hgcache/master/packs/f7a942a6e4673d2c7b697fdd926ca2d153831ca4:
+  $TESTTMP/hgcache/master/packs/be1bfed71a51645d8c3b9dc73e234e3a8ff06ac1:
   x:
   Node          Delta Base    Delta Length  Blob Size
   1406e7411862  000000000000  2             2
@@ -78,14 +78,14 @@
   $ hg debugwaitonrepack >/dev/null 2>%1
 
   $ find $CACHEDIR | sort | grep ".datapack\|.histpack"
-  $TESTTMP/hgcache/master/packs/05baa499c6b07f2bf0ea3d2c8151da1cb86f5e33.datapack
-  $TESTTMP/hgcache/master/packs/9a2ea858fe2967db9b6ea4c0ca238881cae9d6eb.histpack
+  $TESTTMP/hgcache/master/packs/7bcd2d90b99395ca43172a0dd24e18860b2902f9.histpack
+  $TESTTMP/hgcache/master/packs/b868298fad9bf477b4e9d9455226c440b0135fe6.datapack
 
 # Ensure that file 'x' was garbage collected. It should be GCed because it is not in the keepset
 # and is old (commit date is 0.0 in tests). Ensure that file 'y' is present as it is in the keepset.
 
   $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
-  $TESTTMP/hgcache/master/packs/05baa499c6b07f2bf0ea3d2c8151da1cb86f5e33:
+  $TESTTMP/hgcache/master/packs/b868298fad9bf477b4e9d9455226c440b0135fe6:
   y:
   Node          Delta Base    Delta Length  Blob Size
   50dbc4572b8e  000000000000  3             3
@@ -106,13 +106,13 @@
   $ hg debugwaitonrepack >/dev/null 2>%1
 
   $ find $CACHEDIR | sort | grep ".datapack\|.histpack"
-  $TESTTMP/hgcache/master/packs/9a2ea858fe2967db9b6ea4c0ca238881cae9d6eb.histpack
-  $TESTTMP/hgcache/master/packs/f7a942a6e4673d2c7b697fdd926ca2d153831ca4.datapack
+  $TESTTMP/hgcache/master/packs/7bcd2d90b99395ca43172a0dd24e18860b2902f9.histpack
+  $TESTTMP/hgcache/master/packs/be1bfed71a51645d8c3b9dc73e234e3a8ff06ac1.datapack
 
 # Ensure that all file versions were prefetched
 
   $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
-  $TESTTMP/hgcache/master/packs/f7a942a6e4673d2c7b697fdd926ca2d153831ca4:
+  $TESTTMP/hgcache/master/packs/be1bfed71a51645d8c3b9dc73e234e3a8ff06ac1:
   x:
   Node          Delta Base    Delta Length  Blob Size
   1406e7411862  000000000000  2             2
@@ -140,13 +140,13 @@
   $ hg debugwaitonrepack >/dev/null 2>%1
 
   $ find $CACHEDIR | sort | grep ".datapack\|.histpack"
-  $TESTTMP/hgcache/master/packs/9a2ea858fe2967db9b6ea4c0ca238881cae9d6eb.histpack
-  $TESTTMP/hgcache/master/packs/f7a942a6e4673d2c7b697fdd926ca2d153831ca4.datapack
+  $TESTTMP/hgcache/master/packs/7bcd2d90b99395ca43172a0dd24e18860b2902f9.histpack
+  $TESTTMP/hgcache/master/packs/be1bfed71a51645d8c3b9dc73e234e3a8ff06ac1.datapack
 
 # Ensure that all file versions were prefetched
 
   $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
-  $TESTTMP/hgcache/master/packs/f7a942a6e4673d2c7b697fdd926ca2d153831ca4:
+  $TESTTMP/hgcache/master/packs/be1bfed71a51645d8c3b9dc73e234e3a8ff06ac1:
   x:
   Node          Delta Base    Delta Length  Blob Size
   1406e7411862  000000000000  2             2

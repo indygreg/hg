@@ -260,7 +260,7 @@ class basepackstore(object):
 class versionmixin(object):
     # Mix-in for classes with multiple supported versions
     VERSION = None
-    SUPPORTED_VERSIONS = [0]
+    SUPPORTED_VERSIONS = [2]
 
     def _checkversion(self, version):
         if version in self.SUPPORTED_VERSIONS:
@@ -277,7 +277,7 @@ class basepack(versionmixin):
     # pages can be released (100MB)
     MAXPAGEDIN = 100 * 1024**2
 
-    SUPPORTED_VERSIONS = [0]
+    SUPPORTED_VERSIONS = [2]
 
     def __init__(self, path):
         self.path = path
@@ -315,12 +315,9 @@ class basepack(versionmixin):
 
     @util.propertycache
     def _indexend(self):
-        if self.VERSION == 0:
-            return self.indexsize
-        else:
-            nodecount = struct.unpack_from('!Q', self._index,
-                                           self.params.indexstart - 8)[0]
-            return self.params.indexstart + nodecount * self.INDEXENTRYLENGTH
+        nodecount = struct.unpack_from('!Q', self._index,
+                                       self.params.indexstart - 8)[0]
+        return self.params.indexstart + nodecount * self.INDEXENTRYLENGTH
 
     def freememory(self):
         """Unmap and remap the memory to free it up after known expensive
@@ -361,9 +358,10 @@ class basepack(versionmixin):
 
 class mutablebasepack(versionmixin):
 
-    def __init__(self, ui, packdir, version=0):
+    def __init__(self, ui, packdir, version=2):
         self._checkversion(version)
-
+        # TODO(augie): make this configurable
+        self._compressor = 'GZ'
         opener = vfsmod.vfs(packdir)
         opener.createmode = 0o444
         self.opener = opener
@@ -496,8 +494,7 @@ class mutablebasepack(versionmixin):
 
         self._writeheader(params)
         self.idxfp.write(rawfanouttable)
-        if self.VERSION == 1:
-            self.idxfp.write(rawentrieslength)
+        self.idxfp.write(rawentrieslength)
         self.idxfp.write(rawindex)
         self.idxfp.close()
 
@@ -538,6 +535,5 @@ class indexparams(object):
         self.fanoutsize = self.fanoutcount * 4
 
         self.indexstart = FANOUTSTART + self.fanoutsize
-        if version == 1:
-            # Skip the index length
-            self.indexstart += 8
+        # Skip the index length
+        self.indexstart += 8

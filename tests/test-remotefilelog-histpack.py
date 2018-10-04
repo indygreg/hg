@@ -55,7 +55,7 @@ class histpacktests(unittest.TestCase):
 
         packdir = self.makeTempDir()
         packer = historypack.mutablehistorypack(uimod.ui(), packdir,
-                                                version=1)
+                                                version=2)
 
         for filename, node, p1, p2, linknode, copyfrom in revisions:
             packer.add(filename, node, p1, p2, linknode, copyfrom)

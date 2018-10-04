@@ -345,10 +345,7 @@ def _runrepack(repo, data, history, packpath, category, fullhistory=None,
     packer = repacker(repo, data, history, fullhistory, category,
                       gc=garbagecollect, isold=isold, options=options)
 
-    # internal config: remotefilelog.datapackversion
-    dv = repo.ui.configint('remotefilelog', 'datapackversion', 0)
-
-    with datapack.mutabledatapack(repo.ui, packpath, version=dv) as dpack:
+    with datapack.mutabledatapack(repo.ui, packpath, version=2) as dpack:
         with historypack.mutablehistorypack(repo.ui, packpath) as hpack:
             try:
                 packer.run(dpack, hpack)

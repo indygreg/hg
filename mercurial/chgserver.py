@@ -19,7 +19,8 @@
 'setenv' command
     replace os.environ completely
 
-'setumask' command
+'setumask' command (DEPRECATED)
+'setumask2' command
     set umask
 
 'validate' command
@@ -452,8 +453,20 @@ class chgcmdserver(commandserver.server):
         os.chdir(path)
 
     def setumask(self):
+        """Change umask (DEPRECATED)"""
+        # BUG: this does not follow the message frame structure, but kept for
+        # backward compatibility with old chg clients for some time
+        self._setumask(self._read(4))
+
+    def setumask2(self):
         """Change umask"""
-        mask = struct.unpack('>I', self._read(4))[0]
+        data = self._readstr()
+        if len(data) != 4:
+            raise ValueError('invalid mask length in setumask2 request')
+        self._setumask(data)
+
+    def _setumask(self, data):
+        mask = struct.unpack('>I', data)[0]
         _log('setumask %r\n' % mask)
         os.umask(mask)
 
@@ -488,7 +501,8 @@ class chgcmdserver(commandserver.server):
                          'chdir': chdir,
                          'runcommand': runcommand,
                          'setenv': setenv,
-                         'setumask': setumask})
+                         'setumask': setumask,
+                         'setumask2': setumask2})
 
     if util.safehasattr(procutil, 'setprocname'):
         def setprocname(self):

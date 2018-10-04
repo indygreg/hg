@@ -50,7 +50,7 @@
 
 # Ensure that all file versions were prefetched
 
-  $ hg debugdatapack $TESTTMP/hgcache/master/packs/f7a942a6e4673d2c7b697fdd926ca2d153831ca4.datapack
+  $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
   $TESTTMP/hgcache/master/packs/f7a942a6e4673d2c7b697fdd926ca2d153831ca4:
   x:
   Node          Delta Base    Delta Length  Blob Size
@@ -84,7 +84,7 @@
 # Ensure that file 'x' was garbage collected. It should be GCed because it is not in the keepset
 # and is old (commit date is 0.0 in tests). Ensure that file 'y' is present as it is in the keepset.
 
-  $ hg debugdatapack $TESTTMP/hgcache/master/packs/05baa499c6b07f2bf0ea3d2c8151da1cb86f5e33.datapack
+  $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
   $TESTTMP/hgcache/master/packs/05baa499c6b07f2bf0ea3d2c8151da1cb86f5e33:
   y:
   Node          Delta Base    Delta Length  Blob Size
@@ -111,7 +111,7 @@
 
 # Ensure that all file versions were prefetched
 
-  $ hg debugdatapack $TESTTMP/hgcache/master/packs/f7a942a6e4673d2c7b697fdd926ca2d153831ca4.datapack
+  $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
   $TESTTMP/hgcache/master/packs/f7a942a6e4673d2c7b697fdd926ca2d153831ca4:
   x:
   Node          Delta Base    Delta Length  Blob Size
@@ -145,7 +145,7 @@
 
 # Ensure that all file versions were prefetched
 
-  $ hg debugdatapack $TESTTMP/hgcache/master/packs/f7a942a6e4673d2c7b697fdd926ca2d153831ca4.datapack
+  $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
   $TESTTMP/hgcache/master/packs/f7a942a6e4673d2c7b697fdd926ca2d153831ca4:
   x:
   Node          Delta Base    Delta Length  Blob Size

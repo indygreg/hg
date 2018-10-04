@@ -153,7 +153,7 @@
 # Ensure that file 'w' was prefetched - it was not part of the update operation and therefore
 # could only be downloaded by the background prefetch
 
-  $ hg debugdatapack $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0.datapack
+  $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
   $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0:
   w:
   Node          Delta Base    Delta Length  Blob Size
@@ -205,7 +205,7 @@
 # Ensure that file 'w' was prefetched - it was not part of the commit operation and therefore
 # could only be downloaded by the background prefetch
 
-  $ hg debugdatapack $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0.datapack
+  $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
   $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0:
   w:
   Node          Delta Base    Delta Length  Blob Size
@@ -248,7 +248,7 @@
 # Ensure that file 'y' was prefetched - it was not part of the rebase operation and therefore
 # could only be downloaded by the background prefetch
 
-  $ hg debugdatapack $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0.datapack
+  $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
   $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0:
   w:
   Node          Delta Base    Delta Length  Blob Size
@@ -295,7 +295,7 @@
   $TESTTMP/hgcache/repos
 
 # Ensure that files were prefetched
-  $ hg debugdatapack $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0.datapack
+  $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
   $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0:
   w:
   Node          Delta Base    Delta Length  Blob Size
@@ -339,7 +339,7 @@
   $TESTTMP/hgcache/repos
 
 # Ensure that files were prefetched
-  $ hg debugdatapack $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0.datapack
+  $ hg debugdatapack `ls -ct $TESTTMP/hgcache/master/packs/*.datapack | head -n 1`
   $TESTTMP/hgcache/master/packs/8299d5a1030f073f4adbb3b6bd2ad3bdcc276df0:
   w:
   Node          Delta Base    Delta Length  Blob Size

@@ -385,7 +385,6 @@ class changectx(basectx):
     changeset convenient. It represents a read-only context already present in
     the repo."""
     def __init__(self, repo, rev, node):
-        """changeid is a revision number, node, or tag"""
         super(changectx, self).__init__(repo)
         self._rev = rev
         self._node = node

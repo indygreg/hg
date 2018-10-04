@@ -1309,6 +1309,40 @@ class clientreactor(object):
     the TCP socket. For transports where there are multiple discrete
     interactions (say tunneled within in HTTP request), there will be a
     separate instance for each distinct interaction.
+
+    Consumers are expected to tell instances when events occur by calling
+    various methods. These methods return a 2-tuple describing any follow-up
+    action(s) to take. The first element is the name of an action to
+    perform. The second is a data structure (usually a dict) specific to
+    that action that contains more information. e.g. if the reactor wants
+    to send frames to the server, the data structure will contain a reference
+    to those frames.
+
+    Valid actions that consumers can be instructed to take are:
+
+    noop
+       Indicates no additional action is required.
+
+    sendframes
+       Indicates that frames should be sent to the server. The ``framegen``
+       key contains a generator of frames that should be sent. The reactor
+       assumes that all frames in this generator are sent to the server.
+
+    error
+       Indicates that an error occurred. The ``message`` key contains an
+       error message describing the failure.
+
+    responsedata
+       Indicates a response to a previously-issued command was received.
+
+       The ``request`` key contains the ``commandrequest`` instance that
+       represents the request this data is for.
+
+       The ``data`` key contains the decoded data from the server.
+
+       ``expectmore`` and ``eos`` evaluate to True when more response data
+       is expected to follow or we're at the end of the response stream,
+       respectively.
     """
     def __init__(self, hasmultiplesend=False, buffersends=True):
         """Create a new instance.

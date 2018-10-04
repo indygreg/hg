@@ -1255,16 +1255,12 @@ class localrepository(object):
                         msg = _("working directory has unknown parent '%s'!")
                         raise error.Abort(msg % short(changeid))
                     changeid = hex(changeid) # for the error message
+                    raise
 
             elif len(changeid) == 40:
-                try:
-                    node = bin(changeid)
-                    rev = self.changelog.rev(node)
-                    return context.changectx(self, rev, node)
-                except error.FilteredLookupError:
-                    raise
-                except LookupError:
-                    pass
+                node = bin(changeid)
+                rev = self.changelog.rev(node)
+                return context.changectx(self, rev, node)
             else:
                 raise error.ProgrammingError(
                         "unsupported changeid '%s' of type %s" %
@@ -1273,12 +1269,10 @@ class localrepository(object):
         except (error.FilteredIndexError, error.FilteredLookupError):
             raise error.FilteredRepoLookupError(_("filtered revision '%s'")
                                                 % pycompat.bytestr(changeid))
-        except IndexError:
-            pass
+        except (IndexError, LookupError):
+            raise error.RepoLookupError(_("unknown revision '%s'") % changeid)
         except error.WdirUnsupported:
             return context.workingctx(self)
-        raise error.RepoLookupError(
-            _("unknown revision '%s'") % changeid)
 
     def __contains__(self, changeid):
         """True if the given changeid exists

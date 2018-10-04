@@ -90,8 +90,8 @@
 
 # Ensure that loose files are repacked
   $ find $CACHEDIR -type f | sort
-  $TESTTMP/hgcache/master/packs/173691d550fabb9d33db8da192f1c9bc62dd11a4.dataidx
-  $TESTTMP/hgcache/master/packs/173691d550fabb9d33db8da192f1c9bc62dd11a4.datapack
+  $TESTTMP/hgcache/master/packs/320dab99b7e3f60512b97f347689625263d22cf5.dataidx
+  $TESTTMP/hgcache/master/packs/320dab99b7e3f60512b97f347689625263d22cf5.datapack
   $TESTTMP/hgcache/master/packs/837b83c1ef6485a336eb4421ac5973c0ec130fbb.histidx
   $TESTTMP/hgcache/master/packs/837b83c1ef6485a336eb4421ac5973c0ec130fbb.histpack
   $TESTTMP/hgcache/master/packs/repacklock

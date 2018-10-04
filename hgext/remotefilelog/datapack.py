@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import struct
+import zlib
 
 from mercurial.node import hex, nullid
 from mercurial.i18n import _
@@ -11,7 +12,6 @@ from mercurial import (
 from . import (
     basepack,
     constants,
-    lz4wrapper,
     shallowutil,
 )
 
@@ -195,7 +195,7 @@ class datapack(basepack.basepack):
         deltalen = struct.unpack('!Q', rawdeltalen)[0]
 
         delta = rawentry[deltastart + 8:deltastart + 8 + deltalen]
-        delta = lz4wrapper.lz4decompress(delta)
+        delta = self._decompress(delta)
 
         if getmeta:
             metastart = deltastart + 8 + deltalen
@@ -206,6 +206,9 @@ class datapack(basepack.basepack):
             return filename, node, deltabasenode, delta, meta
         else:
             return filename, node, deltabasenode, delta
+
+    def _decompress(self, data):
+        return zlib.decompress(data)
 
     def add(self, name, node, data):
         raise RuntimeError("cannot add to datapack (%s:%s)" % (name, node))
@@ -300,12 +303,10 @@ class datapack(basepack.basepack):
             deltalen = struct.unpack('!Q', rawdeltalen)[0]
             offset += 8
 
-            # it has to be at least long enough for the lz4 header.
-            assert deltalen >= 4
-
-            # python-lz4 stores the length of the uncompressed field as a
-            # little-endian 32-bit integer at the start of the data.
-            uncompressedlen = struct.unpack('<I', data[offset:offset + 4])[0]
+            # TODO(augie): we should store a header that is the
+            # uncompressed size.
+            uncompressedlen = len(self._decompress(
+                data[offset:offset + deltalen]))
             offset += deltalen
 
             # <4 byte len> + <metadata-list>
@@ -399,6 +400,9 @@ class mutabledatapack(basepack.mutablebasepack):
     # v1 has metadata support
     SUPPORTED_VERSIONS = [2]
 
+    def _compress(self, data):
+        return zlib.compress(data)
+
     def add(self, name, node, deltabasenode, delta, metadata=None):
         # metadata is a dict, ex. {METAKEYFLAG: flag}
         if len(name) > 2**16:
@@ -411,7 +415,7 @@ class mutabledatapack(basepack.mutablebasepack):
             return
 
         # TODO: allow configurable compression
-        delta = lz4wrapper.lz4compress(delta)
+        delta = self._compress(delta)
 
         rawdata = ''.join((
             struct.pack('!H', len(name)), # unsigned 2 byte int

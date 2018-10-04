@@ -12,6 +12,7 @@ import io
 import os
 import threading
 import time
+import zlib
 
 from mercurial.i18n import _
 from mercurial.node import bin, hex, nullid
@@ -27,7 +28,6 @@ from mercurial.utils import procutil
 from . import (
     constants,
     contentstore,
-    lz4wrapper,
     metadatastore,
 )
 
@@ -444,7 +444,7 @@ class fileserverclient(object):
                                       % (len(data), size))
 
         self.writedata.addremotefilelognode(filename, bin(node),
-                                             lz4wrapper.lz4decompress(data))
+                                             zlib.decompress(data))
 
     def connect(self):
         if self.cacheprocess:

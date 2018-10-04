@@ -10,6 +10,7 @@ import errno
 import os
 import stat
 import time
+import zlib
 
 from mercurial.i18n import _
 from mercurial.node import bin, hex, nullid
@@ -28,7 +29,6 @@ from mercurial import (
     wireprotov1server,
 )
 from .  import (
-    lz4wrapper,
     shallowrepo,
     shallowutil,
 )
@@ -230,7 +230,8 @@ def _loadfileblob(repo, cachepath, path, node):
             filectx = repo.filectx(path, fileid=node)
 
         text = createfileblob(filectx)
-        text = lz4wrapper.lzcompresshc(text)
+        # TODO configurable compression engines
+        text = zlib.compress(text)
 
         # everything should be user & group read/writable
         oldumask = os.umask(0o002)

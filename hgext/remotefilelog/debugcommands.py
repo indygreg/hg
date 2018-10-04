@@ -8,6 +8,7 @@ from __future__ import absolute_import
 
 import hashlib
 import os
+import zlib
 
 from mercurial.node import bin, hex, nullid, short
 from mercurial.i18n import _
@@ -22,7 +23,6 @@ from . import (
     extutil,
     fileserverclient,
     historypack,
-    lz4wrapper,
     repack,
     shallowrepo,
     shallowutil,
@@ -171,6 +171,9 @@ def verifyremotefilelog(ui, path, **opts):
                     ui.status("%s %s\n" % (key, os.path.relpath(filepath,
                                                                 path)))
 
+def _decompressblob(raw):
+    return zlib.decompress(raw)
+
 def parsefileblob(path, decompress):
     raw = None
     f = open(path, "r")
@@ -180,7 +183,7 @@ def parsefileblob(path, decompress):
         f.close()
 
     if decompress:
-        raw = lz4wrapper.lz4decompress(raw)
+        raw = _decompressblob(raw)
 
     offset, size, flags = shallowutil.parsesizeflags(raw)
     start = offset + size

@@ -6,6 +6,9 @@ from mercurial import (
     error,
     wireprotoframing as framing,
 )
+from mercurial.utils import (
+    cborutil,
+)
 
 ffs = framing.makeframefromhumanstring
 
@@ -161,6 +164,120 @@ class RedirectTests(unittest.TestCase):
                              b"cbor:{b'name': b'foo', "
                              b"b'redirect': {b'targets': [b'a', b'b'], "
                              b"b'hashes': [b'sha256']}}"))
+
+class StreamSettingsTests(unittest.TestCase):
+    def testnoflags(self):
+        reactor = framing.clientreactor(buffersends=False)
+
+        request, action, meta = reactor.callcommand(b'foo', {})
+        for f in meta[b'framegen']:
+            pass
+
+        action, meta = sendframe(reactor,
+            ffs(b'1 2 stream-begin stream-settings 0 '))
+
+        self.assertEqual(action, b'error')
+        self.assertEqual(meta, {
+            b'message': b'stream encoding settings frame must have '
+                        b'continuation or end of stream flag set',
+        })
+
+    def testconflictflags(self):
+        reactor = framing.clientreactor(buffersends=False)
+
+        request, action, meta = reactor.callcommand(b'foo', {})
+        for f in meta[b'framegen']:
+            pass
+
+        action, meta = sendframe(reactor,
+            ffs(b'1 2 stream-begin stream-settings continuation|eos '))
+
+        self.assertEqual(action, b'error')
+        self.assertEqual(meta, {
+            b'message': b'stream encoding settings frame cannot have both '
+                        b'continuation and end of stream flags set',
+        })
+
+    def testemptypayload(self):
+        reactor = framing.clientreactor(buffersends=False)
+
+        request, action, meta = reactor.callcommand(b'foo', {})
+        for f in meta[b'framegen']:
+            pass
+
+        action, meta = sendframe(reactor,
+            ffs(b'1 2 stream-begin stream-settings eos '))
+
+        self.assertEqual(action, b'error')
+        self.assertEqual(meta, {
+            b'message': b'stream encoding settings frame did not contain '
+                        b'CBOR data'
+        })
+
+    def testbadcbor(self):
+        reactor = framing.clientreactor(buffersends=False)
+
+        request, action, meta = reactor.callcommand(b'foo', {})
+        for f in meta[b'framegen']:
+            pass
+
+        action, meta = sendframe(reactor,
+            ffs(b'1 2 stream-begin stream-settings eos badvalue'))
+
+        self.assertEqual(action, b'error')
+
+    def testsingleobject(self):
+        reactor = framing.clientreactor(buffersends=False)
+
+        request, action, meta = reactor.callcommand(b'foo', {})
+        for f in meta[b'framegen']:
+            pass
+
+        action, meta = sendframe(reactor,
+            ffs(b'1 2 stream-begin stream-settings eos cbor:b"identity"'))
+
+        self.assertEqual(action, b'noop')
+        self.assertEqual(meta, {})
+
+    def testmultipleobjects(self):
+        reactor = framing.clientreactor(buffersends=False)
+
+        request, action, meta = reactor.callcommand(b'foo', {})
+        for f in meta[b'framegen']:
+            pass
+
+        data = b''.join([
+            b''.join(cborutil.streamencode(b'identity')),
+            b''.join(cborutil.streamencode({b'foo', b'bar'})),
+        ])
+
+        action, meta = sendframe(reactor,
+            ffs(b'1 2 stream-begin stream-settings eos %s' % data))
+
+        self.assertEqual(action, b'noop')
+        self.assertEqual(meta, {})
+
+    def testmultipleframes(self):
+        reactor = framing.clientreactor(buffersends=False)
+
+        request, action, meta = reactor.callcommand(b'foo', {})
+        for f in meta[b'framegen']:
+            pass
+
+        data = b''.join(cborutil.streamencode(b'identity'))
+
+        action, meta = sendframe(reactor,
+            ffs(b'1 2 stream-begin stream-settings continuation %s' %
+                data[0:3]))
+
+        self.assertEqual(action, b'noop')
+        self.assertEqual(meta, {})
+
+        action, meta = sendframe(reactor,
+            ffs(b'1 2 0 stream-settings eos %s' % data[3:]))
+
+        self.assertEqual(action, b'noop')
+        self.assertEqual(meta, {})
 
 if __name__ == '__main__':
     import silenttestrunner

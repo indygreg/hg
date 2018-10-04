@@ -909,7 +909,7 @@ class filectx(basefilectx):
        filerevision convenient."""
     def __init__(self, repo, path, changeid=None, fileid=None,
                  filelog=None, changectx=None):
-        """changeid can be a changeset revision, node, or tag.
+        """changeid must be a revision number, if specified.
            fileid can be a file revision or node."""
         self._repo = repo
         self._path = path

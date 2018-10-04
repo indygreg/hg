@@ -336,7 +336,53 @@ MUST normalize all string data to valid UTF-8 and receivers SHOULD
 validate that received data conforms to UTF-8. The topic name
 SHOULD be ASCII.
 
-Stream Encoding Settings (``0x08``)
+Sender Protocol Settings (``0x08``)
+-----------------------------------
+
+This frame type advertises the sender's support for various protocol and
+stream level features. The data advertised in this frame is used to influence
+subsequent behavior of the current frame exchange channel.
+
+The frame payload consists of a CBOR map. It may contain the following
+bytestring keys:
+
+contentencodings
+   (array of bytestring) A list of content encodings supported by the
+   sender, in order of most to least preferred.
+
+   Peers are allowed to encode stream data using any of the listed
+   encodings.
+
+   See the ``Content Encoding Profiles`` section for an enumeration
+   of supported content encodings.
+
+   If not defined, the value is assumed to be a list with the single value
+   ``identity``, meaning only the no-op encoding is supported.
+
+   Senders MAY filter the set of advertised encodings against what it
+   knows the receiver supports (e.g. if the receiver advertised encodings
+   via the capabilities descriptor). However, doing so will prevent
+   servers from gaining an understanding of the aggregate capabilities
+   of clients. So clients are discouraged from doing so.
+
+When this frame is not sent/received, the receiver assumes default values
+for all keys.
+
+If encountered, this frame type MUST be sent before any other frame type
+in a channel.
+
+The following flag values are defined for this frame type:
+
+0x01
+   Data continuation. When set, an additional frame containing more protocol
+   settings immediately follows.
+0x02
+   End of data. When set, the protocol settings data has been completely
+   sent.
+
+The ``0x01`` flag is mutually exclusive with the ``0x02`` flag.
+
+Stream Encoding Settings (``0x09``)
 -----------------------------------
 
 This frame type holds information defining the content encoding
@@ -351,11 +397,25 @@ This frame type MUST ONLY occur on frames having the *Beginning of Stream*
 The payload of this frame defines what content encoding has (possibly)
 been applied to the payloads of subsequent frames in this stream.
 
-The payload begins with an 8-bit integer defining the length of the
-encoding *profile*, followed by the string name of that profile, which
-must be an ASCII string. All bytes that follow can be used by that
-profile for supplemental settings definitions. See the section below
-on defined encoding profiles.
+The payload consists of a series of CBOR values. The first value is a
+bytestring denoting the content encoding profile of the data in this
+stream. Subsequent CBOR values supplement this simple value in a
+profile-specific manner. See the ``Content Encoding Profiles`` section
+for more.
+
+In the absence of this frame on a stream, it is assumed the stream is
+using the ``identity`` content encoding.
+
+The following flag values are defined for this frame type:
+
+0x01
+   Data continuation. When set, an additional frame containing more encoding
+   settings immediately follows.
+0x02
+   End of data. When set, the encoding settings data has been completely
+   sent.
+
+The ``0x01`` flag is mutually exclusive with the ``0x02`` flag.
 
 Stream States and Flags
 =======================
@@ -386,6 +446,11 @@ are defined:
    Apply content encoding. When set, any content encoding settings
    defined by the stream should be applied when attempting to read
    the frame. When not set, the frame payload isn't encoded.
+
+TODO consider making stream opening and closing communicated via
+explicit frame types (e.g. a "stream state change" frame) rather than
+flags on all frames. This would make stream state changes more explicit,
+as they could only occur on specific frame types.
 
 Streams
 =======
@@ -452,9 +517,35 @@ Streams can have named content encoding *profiles* associated with
 them. A profile defines a shared understanding of content encoding
 settings and behavior.
 
-The following profiles are defined:
+Profiles are described in the following sections.
 
-TBD
+identity
+--------
+
+The ``identity`` profile is a no-op encoding: the encoded bytes are
+exactly the input bytes.
+
+This profile MUST be supported by all peers.
+
+In the absence of an identified profile, the ``identity`` profile is
+assumed.
+
+zstd-8mb
+--------
+
+Zstandard encoding (RFC 8478). Zstandard is a fast and effective lossless
+compression format.
+
+This profile allows decompressor window sizes of up to 8 MB.
+
+zlib
+----
+
+zlib compressed data (RFC 1950). zlib is a widely-used and supported
+lossless compression format.
+
+It isn't as fast as zstandard and it is recommended to use zstandard instead,
+if possible.
 
 Command Protocol
 ================

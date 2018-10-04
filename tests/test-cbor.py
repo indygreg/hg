@@ -965,6 +965,14 @@ class BufferingDecoderTests(TestCase):
 
             self.assertEqual(decoder.getavailable(), [source])
 
+    def testbytearray(self):
+        source = b''.join(cborutil.streamencode(b'foobar'))
+
+        decoder = cborutil.bufferingdecoder()
+        decoder.decode(bytearray(source))
+
+        self.assertEqual(decoder.getavailable(), [b'foobar'])
+
 class DecodeallTests(TestCase):
     def testemptyinput(self):
         self.assertEqual(cborutil.decodeall(b''), [])

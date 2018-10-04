@@ -925,6 +925,11 @@ class bufferingdecoder(object):
         * Integer number of bytes decoded from the new input.
         * Integer number of bytes wanted to decode the next value.
         """
+        # We /might/ be able to support passing a bytearray all the
+        # way through. For now, let's cheat.
+        if isinstance(b, bytearray):
+            b = bytes(b)
+
         # Our strategy for buffering is to aggregate the incoming chunks in a
         # list until we've received enough data to decode the next item.
         # This is slightly more complicated than using an ``io.BytesIO``

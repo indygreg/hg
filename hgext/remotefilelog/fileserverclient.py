@@ -54,8 +54,8 @@ def peersetup(ui, peer):
 
     class remotefilepeer(peer.__class__):
         @wireprotov1peer.batchable
-        def getfile(self, file, node):
-            if not self.capable('getfile'):
+        def x_rfl_getfile(self, file, node):
+            if not self.capable('x_rfl_getfile'):
                 raise error.Abort(
                     'configured remotefile server does not support getfile')
             f = wireprotov1peer.future()
@@ -66,8 +66,8 @@ def peersetup(ui, peer):
             yield data
 
         @wireprotov1peer.batchable
-        def getflogheads(self, path):
-            if not self.capable('getflogheads'):
+        def x_rfl_getflogheads(self, path):
+            if not self.capable('x_rfl_getflogheads'):
                 raise error.Abort('configured remotefile server does not '
                                   'support getflogheads')
             f = wireprotov1peer.future()
@@ -204,7 +204,7 @@ def _getfilesbatch(
     with remote.commandexecutor() as e:
         futures = []
         for m in missed:
-            futures.append(e.callcommand('getfile', {
+            futures.append(e.callcommand('x_rfl_getfile', {
                 'file': idmap[m],
                 'node': m[-40:]
             }))
@@ -219,7 +219,7 @@ def _getfilesbatch(
 
 def _getfiles_optimistic(
     remote, receivemissing, progresstick, missed, idmap, step):
-    remote._callstream("getfiles")
+    remote._callstream("x_rfl_getfiles")
     i = 0
     pipeo = remote._pipeo
     pipei = remote._pipei
@@ -394,7 +394,7 @@ class fileserverclient(object):
                                 _getfiles = _getfiles_optimistic
                             _getfiles(remote, self.receivemissing, progresstick,
                                       missed, idmap, step)
-                        elif remote.capable("getfile"):
+                        elif remote.capable("x_rfl_getfile"):
                             if remote.capable('batch'):
                                 batchdefault = 100
                             else:

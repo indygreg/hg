@@ -22,7 +22,7 @@ def getflogheads(ui, repo, path):
     dest = repo.ui.expandpath('default')
     peer = hg.peer(repo, {}, dest)
 
-    flogheads = peer.getflogheads(path)
+    flogheads = peer.x_rfl_getflogheads(path)
 
     if flogheads:
         for head in flogheads:

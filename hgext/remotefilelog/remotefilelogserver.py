@@ -77,11 +77,11 @@ def onetimesetup(ui):
 
     # support file content requests
     wireprotov1server.wireprotocommand(
-        'getflogheads', 'path', permission='pull')(getflogheads)
+        'x_rfl_getflogheads', 'path', permission='pull')(getflogheads)
     wireprotov1server.wireprotocommand(
-        'getfiles', '', permission='pull')(getfiles)
+        'x_rfl_getfiles', '', permission='pull')(getfiles)
     wireprotov1server.wireprotocommand(
-        'getfile', 'file node', permission='pull')(getfile)
+        'x_rfl_getfile', 'file node', permission='pull')(getfile)
 
     class streamstate(object):
         match = None
@@ -198,8 +198,8 @@ def onetimesetup(ui):
             if isinstance(proto, _sshv1server):
                 # legacy getfiles method which only works over ssh
                 caps.append(constants.NETWORK_CAP_LEGACY_SSH_GETFILES)
-            caps.append('getflogheads')
-            caps.append('getfile')
+            caps.append('x_rfl_getflogheads')
+            caps.append('x_rfl_getfile')
         return caps
     extensions.wrapfunction(wireprotov1server, '_capabilities', _capabilities)
 
@@ -215,7 +215,7 @@ def onetimesetup(ui):
         context.basefilectx, '_adjustlinkrev', _adjustlinkrev)
 
     def _iscmd(orig, cmd):
-        if cmd == 'getfiles':
+        if cmd == 'x_rfl_getfiles':
             return False
         return orig(cmd)
 

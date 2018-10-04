@@ -37,12 +37,12 @@ the server supports our custom getfiles method.
   $ cd master
   $ echo 'hello' | hg -R . serve --stdio | grep capa | identifyrflcaps
   exp-remotefilelog-ssh-getfiles-1
-  getfile
-  getflogheads
+  x_rfl_getfile
+  x_rfl_getflogheads
   $ echo 'capabilities' | hg -R . serve --stdio | identifyrflcaps ; echo
   exp-remotefilelog-ssh-getfiles-1
-  getfile
-  getflogheads
+  x_rfl_getfile
+  x_rfl_getflogheads
   
 
 Pull to the child repository.  Use our custom setupremotefilelog extension

@@ -16,7 +16,7 @@
 
 Build a query string for later use:
   $ GET=`hg debugdata -m 0 | $PYTHON -c \
-  > 'import sys ; print [("?cmd=getfile&file=%s&node=%s" % tuple(s.split("\0"))) for s in sys.stdin.read().splitlines()][0]'`
+  > 'import sys ; print [("?cmd=x_rfl_getfile&file=%s&node=%s" % tuple(s.split("\0"))) for s in sys.stdin.read().splitlines()][0]'`
 
   $ cd ..
   $ cat hg1.pid >> $DAEMON_PIDS
@@ -25,7 +25,7 @@ Build a query string for later use:
   2 files fetched over 1 fetches - (2 misses, 0.00% hit ratio) over *s (glob)
 
   $ grep getfile access.log
-  * "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=getfile+*node%3D1406e74118627694268417491f018a4a883152f0* (glob)
+  * "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=x_rfl_getfile+*node%3D1406e74118627694268417491f018a4a883152f0* (glob)
 
 Clear filenode cache so we can test fetching with a modified batch size
   $ rm -r $TESTTMP/hgcache
@@ -37,17 +37,17 @@ Now do a fetch with a large batch size so we're sure it works
 The 'remotefilelog' capability should *not* be exported over http(s),
 as the getfile method it offers doesn't work with http.
   $ get-with-headers.py localhost:$HGPORT '?cmd=capabilities' | grep lookup | identifyrflcaps
-  getfile
-  getflogheads
+  x_rfl_getfile
+  x_rfl_getflogheads
 
   $ get-with-headers.py localhost:$HGPORT '?cmd=hello' | grep lookup | identifyrflcaps
-  getfile
-  getflogheads
+  x_rfl_getfile
+  x_rfl_getflogheads
 
   $ get-with-headers.py localhost:$HGPORT '?cmd=this-command-does-not-exist' | head -n 1
   400 no such method: this-command-does-not-exist
-  $ get-with-headers.py localhost:$HGPORT '?cmd=getfiles' | head -n 1
-  400 no such method: getfiles
+  $ get-with-headers.py localhost:$HGPORT '?cmd=x_rfl_getfiles' | head -n 1
+  400 no such method: x_rfl_getfiles
 
 Verify serving from a shallow clone doesn't allow for remotefile
 fetches. This also serves to test the error handling for our batchable

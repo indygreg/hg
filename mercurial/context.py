@@ -734,6 +734,8 @@ class basefilectx(object):
         mfl = repo.manifestlog
         # fetch the linkrev
         lkr = self.linkrev()
+        if srcrev == lkr:
+            return lkr
         # hack to reuse ancestor computation when searching for renames
         memberanc = getattr(self, '_ancestrycontext', None)
         iteranc = None

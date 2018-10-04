@@ -317,8 +317,8 @@ class logginghttpconnection(keepalive.HTTPConnection):
 
 class logginghttphandler(httphandler):
     """HTTP handler that logs socket I/O."""
-    def __init__(self, logfh, name, observeropts):
-        super(logginghttphandler, self).__init__()
+    def __init__(self, logfh, name, observeropts, timeout=None):
+        super(logginghttphandler, self).__init__(timeout=timeout)
 
         self._logfh = logfh
         self._logname = name
@@ -365,8 +365,8 @@ if has_https:
             sslutil.validatesocket(self.sock)
 
     class httpshandler(keepalive.KeepAliveHandler, urlreq.httpshandler):
-        def __init__(self, ui):
-            keepalive.KeepAliveHandler.__init__(self)
+        def __init__(self, ui, timeout=None):
+            keepalive.KeepAliveHandler.__init__(self, timeout=timeout)
             urlreq.httpshandler.__init__(self)
             self.ui = ui
             self.pwmgr = passwordmgr(self.ui,
@@ -525,18 +525,19 @@ def opener(ui, authinfo=None, useragent=None, loggingfh=None,
     ``sendaccept`` allows controlling whether the ``Accept`` request header
     is sent. The header is sent by default.
     '''
+    timeout = ui.configwith(float, 'http', 'timeout')
     handlers = []
 
     if loggingfh:
         handlers.append(logginghttphandler(loggingfh, loggingname,
-                                           loggingopts or {}))
+                                           loggingopts or {}, timeout=timeout))
         # We don't yet support HTTPS when logging I/O. If we attempt to open
         # an HTTPS URL, we'll likely fail due to unknown protocol.
 
     else:
-        handlers.append(httphandler())
+        handlers.append(httphandler(timeout=timeout))
         if has_https:
-            handlers.append(httpshandler(ui))
+            handlers.append(httpshandler(ui, timeout=timeout))
 
     handlers.append(proxyhandler(ui))
 

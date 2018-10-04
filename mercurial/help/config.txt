@@ -1322,6 +1322,15 @@ proxy.
     Optional. Always use the proxy, even for localhost and any entries
     in ``http_proxy.no``. (default: False)
 
+``http``
+----------
+
+Used to configure access to Mercurial repositories via HTTP.
+
+``timeout``
+    If set, blocking operations will timeout after that many seconds.
+    (default: None)
+
 ``merge``
 ---------
 

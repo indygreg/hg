@@ -172,8 +172,9 @@ class ConnectionManager(object):
             return dict(self._hostmap)
 
 class KeepAliveHandler(object):
-    def __init__(self):
+    def __init__(self, timeout=None):
         self._cm = ConnectionManager()
+        self._timeout = timeout
         self.requestscount = 0
         self.sentbytescount = 0
 
@@ -234,7 +235,7 @@ class KeepAliveHandler(object):
                 h = self._cm.get_ready_conn(host)
             else:
                 # no (working) free connections were found.  Create a new one.
-                h = http_class(host)
+                h = http_class(host, timeout=self._timeout)
                 if DEBUG:
                     DEBUG.info("creating new connection to %s (%d)",
                                host, id(h))

@@ -737,6 +737,11 @@ coreconfigitem('http_proxy', 'passwd',
 coreconfigitem('http_proxy', 'user',
     default=None,
 )
+
+coreconfigitem('http', 'timeout',
+    default=None,
+)
+
 coreconfigitem('logtoprocess', 'commandexception',
     default=None,
 )

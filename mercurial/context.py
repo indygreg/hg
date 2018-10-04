@@ -776,10 +776,9 @@ class basefilectx(object):
         'linkrev-shadowing' when a file revision is used by multiple
         changesets.
         """
-        lkr = self.linkrev()
         attrs = vars(self)
         noctx = not (r'_changeid' in attrs or r'_changectx' in attrs)
-        if noctx or self.rev() == lkr:
+        if noctx:
             return self.linkrev()
         return self._adjustlinkrev(self.rev(), inclusive=True)
 

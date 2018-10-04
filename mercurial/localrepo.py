@@ -1222,26 +1222,21 @@ class localrepository(object):
             if isinstance(changeid, int):
                 node = self.changelog.node(changeid)
                 rev = changeid
-                return context.changectx(self, rev, node)
             elif changeid == 'null':
                 node = nullid
                 rev = nullrev
-                return context.changectx(self, rev, node)
             elif changeid == 'tip':
                 node = self.changelog.tip()
                 rev = self.changelog.rev(node)
-                return context.changectx(self, rev, node)
             elif changeid == '.':
                 # this is a hack to delay/avoid loading obsmarkers
                 # when we know that '.' won't be hidden
                 node = self.dirstate.p1()
                 rev = self.unfiltered().changelog.rev(node)
-                return context.changectx(self, rev, node)
             elif len(changeid) == 20:
                 try:
                     node = changeid
                     rev = self.changelog.rev(changeid)
-                    return context.changectx(self, rev, node)
                 except error.FilteredLookupError:
                     changeid = hex(changeid) # for the error message
                     raise
@@ -1260,11 +1255,12 @@ class localrepository(object):
             elif len(changeid) == 40:
                 node = bin(changeid)
                 rev = self.changelog.rev(node)
-                return context.changectx(self, rev, node)
             else:
                 raise error.ProgrammingError(
                         "unsupported changeid '%s' of type %s" %
                         (changeid, type(changeid)))
+
+            return context.changectx(self, rev, node)
 
         except (error.FilteredIndexError, error.FilteredLookupError):
             raise error.FilteredRepoLookupError(_("filtered revision '%s'")

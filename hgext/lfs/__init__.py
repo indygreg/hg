@@ -124,6 +124,8 @@ Configs::
 
 from __future__ import absolute_import
 
+import sys
+
 from mercurial.i18n import _
 
 from mercurial import (
@@ -203,6 +205,12 @@ command = registrar.command(cmdtable)
 
 templatekeyword = registrar.templatekeyword()
 filesetpredicate = registrar.filesetpredicate()
+
+lfsprocessor = (
+    wrapper.readfromstore,
+    wrapper.writetostore,
+    wrapper.bypasscheckhash,
+)
 
 def featuresetup(ui, supported):
     # don't die on seeing a repo with the lfs requirement
@@ -302,12 +310,28 @@ def wrapfilelog(filelog):
     wrapfunction(filelog, 'renamed', wrapper.filelogrenamed)
     wrapfunction(filelog, 'size', wrapper.filelogsize)
 
+def _resolverevlogstorevfsoptions(orig, ui, requirements, features):
+    opts = orig(ui, requirements, features)
+    for name, module in extensions.extensions(ui):
+        if module is sys.modules[__name__]:
+            if revlog.REVIDX_EXTSTORED in opts[b'flagprocessors']:
+                msg = (_(b"cannot register multiple processors on flag '%#x'.")
+                       % revlog.REVIDX_EXTSTORED)
+                raise error.Abort(msg)
+
+            opts[b'flagprocessors'][revlog.REVIDX_EXTSTORED] = lfsprocessor
+            break
+
+    return opts
+
 def extsetup(ui):
     wrapfilelog(filelog.filelog)
 
     wrapfunction = extensions.wrapfunction
 
     wrapfunction(localrepo, 'makefilestorage', wrapper.localrepomakefilestorage)
+    wrapfunction(localrepo, 'resolverevlogstorevfsoptions',
+                 _resolverevlogstorevfsoptions)
 
     wrapfunction(cmdutil, '_updatecatformatter', wrapper._updatecatformatter)
     wrapfunction(scmutil, 'wrapconvertsink', wrapper.convertsink)
@@ -333,15 +357,6 @@ def extsetup(ui):
     wrapfunction(context.basefilectx, 'cmp', wrapper.filectxcmp)
     wrapfunction(context.basefilectx, 'isbinary', wrapper.filectxisbinary)
     context.basefilectx.islfs = wrapper.filectxislfs
-
-    revlog.addflagprocessor(
-        revlog.REVIDX_EXTSTORED,
-        (
-            wrapper.readfromstore,
-            wrapper.writetostore,
-            wrapper.bypasscheckhash,
-        ),
-    )
 
     scmutil.fileprefetchhooks.add('lfs', wrapper._prefetchfiles)
 

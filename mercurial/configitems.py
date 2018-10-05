@@ -538,6 +538,9 @@ coreconfigitem('experimental', 'mergetempdirprefix',
 coreconfigitem('experimental', 'mmapindexthreshold',
     default=None,
 )
+coreconfigitem('experimental', 'narrow',
+    default=False,
+)
 coreconfigitem('experimental', 'nonnormalparanoidcheck',
     default=False,
 )

@@ -357,7 +357,7 @@ def _revsetutil(repo, subset, x, rtypes):
     else:
         matcher = util.always
 
-    revs = set()
+    nodes = set()
     cl = repo.changelog
     for rtype in rtypes:
         if rtype in repo.names:
@@ -365,10 +365,10 @@ def _revsetutil(repo, subset, x, rtypes):
             for name in ns.listnames(repo):
                 if not matcher(name):
                     continue
-                revs.update(ns.nodes(repo, name))
+                nodes.update(ns.nodes(repo, name))
 
-    results = (cl.rev(n) for n in revs if cl.hasnode(n))
-    return subset & smartset.baseset(sorted(results))
+    revs = (cl.rev(n) for n in nodes if cl.hasnode(n))
+    return subset & smartset.baseset(sorted(revs))
 
 @revsetpredicate('remotenames([name])')
 def remotenamesrevset(repo, subset, x):

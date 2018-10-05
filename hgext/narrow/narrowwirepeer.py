@@ -21,8 +21,6 @@ from mercurial import (
     wireprotov1server,
 )
 
-from . import narrowbundle2
-
 def uisetup():
     extensions.wrapfunction(wireprotov1server, '_capabilities', addnarrowcap)
     wireprotov1peer.wirepeer.narrow_widen = peernarrowwiden
@@ -95,7 +93,7 @@ def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
                                     exclude=oldexcludes)
         diffmatch = matchmod.differencematcher(newmatch, oldmatch)
 
-        bundler = narrowbundle2.widen_bundle(repo, diffmatch, common, known,
+        bundler = bundle2.widen_bundle(repo, diffmatch, common, known,
                                              cgversion, ellipses)
     except error.Abort as exc:
         bundler = bundle2.bundle20(repo.ui)

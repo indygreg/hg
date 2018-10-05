@@ -50,40 +50,6 @@ def getrepocaps_narrow(orig, repo, **kwargs):
     caps[NARROWCAP] = ['v0']
     return caps
 
-def widen_bundle(repo, diffmatcher, common, known, cgversion, ellipses):
-    """generates bundle2 for widening a narrow clone
-
-    repo is the localrepository instance
-    diffmatcher is a differencemacther of '(newincludes, newexcludes) -
-    (oldincludes, oldexcludes)'
-    common is set of common heads between server and client
-    known is a set of revs known on the client side (used in ellipses)
-    cgversion is the changegroup version to send
-    ellipses is boolean value telling whether to send ellipses data or not
-
-    returns bundle2 of the data required for extending
-    """
-    bundler = bundle2.bundle20(repo.ui)
-    commonnodes = set()
-    cl = repo.changelog
-    for r in repo.revs("::%ln", common):
-        commonnodes.add(cl.node(r))
-    if commonnodes:
-        # XXX: we should only send the filelogs (and treemanifest). user
-        # already has the changelog and manifest
-        packer = changegroup.getbundler(cgversion, repo,
-                                        filematcher=diffmatcher,
-                                        fullnodes=commonnodes)
-        cgdata = packer.generate(set([nullid]), list(commonnodes), False,
-                                 'narrow_widen', changelog=False)
-
-        part = bundler.newpart('changegroup', data=cgdata)
-        part.addparam('version', cgversion)
-        if 'treemanifest' in repo.requirements:
-            part.addparam('treemanifest', '1')
-
-    return bundler
-
 # Serve a changegroup for a client with a narrow clone.
 def getbundlechangegrouppart_narrow(bundler, repo, source,
                                     bundlecaps=None, b2caps=None, heads=None,

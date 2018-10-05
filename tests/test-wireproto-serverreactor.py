@@ -6,6 +6,7 @@ from mercurial.thirdparty import (
     cbor,
 )
 from mercurial import (
+    ui as uimod,
     util,
     wireprotoframing as framing,
 )
@@ -18,7 +19,8 @@ ffs = framing.makeframefromhumanstring
 OK = cbor.dumps({b'status': b'ok'})
 
 def makereactor(deferoutput=False):
-    return framing.serverreactor(deferoutput=deferoutput)
+    ui = uimod.ui()
+    return framing.serverreactor(ui, deferoutput=deferoutput)
 
 def sendframes(reactor, gen):
     """Send a generator of frame bytearray to a reactor.

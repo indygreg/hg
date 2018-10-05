@@ -514,7 +514,8 @@ class httppeer(wireprotov1peer.wirepeer):
 
 def sendv2request(ui, opener, requestbuilder, apiurl, permission, requests,
                   redirect):
-    reactor = wireprotoframing.clientreactor(hasmultiplesend=False,
+    reactor = wireprotoframing.clientreactor(ui,
+                                             hasmultiplesend=False,
                                              buffersends=True)
 
     handler = wireprotov2peer.clienthandler(ui, reactor,

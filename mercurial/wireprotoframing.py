@@ -750,7 +750,7 @@ class serverreactor(object):
     between who responds to what.
     """
 
-    def __init__(self, deferoutput=False):
+    def __init__(self, ui, deferoutput=False):
         """Construct a new server reactor.
 
         ``deferoutput`` can be used to indicate that no output frames should be
@@ -760,6 +760,7 @@ class serverreactor(object):
         send those frames. This is useful for half-duplex transports where the
         sender cannot receive until all data has been transmitted.
         """
+        self._ui = ui
         self._deferoutput = deferoutput
         self._state = 'initial'
         self._nextoutgoingstreamid = 2
@@ -1351,7 +1352,7 @@ class clientreactor(object):
        is expected to follow or we're at the end of the response stream,
        respectively.
     """
-    def __init__(self, hasmultiplesend=False, buffersends=True):
+    def __init__(self, ui, hasmultiplesend=False, buffersends=True):
         """Create a new instance.
 
         ``hasmultiplesend`` indicates whether multiple sends are supported
@@ -1362,6 +1363,7 @@ class clientreactor(object):
         ``buffercommands`` indicates whether sends should be buffered until the
         last request has been issued.
         """
+        self._ui = ui
         self._hasmultiplesend = hasmultiplesend
         self._buffersends = buffersends
 

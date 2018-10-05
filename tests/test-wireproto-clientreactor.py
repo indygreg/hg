@@ -4,6 +4,7 @@ import unittest
 
 from mercurial import (
     error,
+    ui as uimod,
     wireprotoframing as framing,
 )
 from mercurial.utils import (
@@ -11,6 +12,8 @@ from mercurial.utils import (
 )
 
 ffs = framing.makeframefromhumanstring
+
+globalui = uimod.ui()
 
 def sendframe(reactor, frame):
     """Send a frame bytearray to a reactor."""
@@ -35,7 +38,9 @@ class SingleSendTests(unittest.TestCase):
             unittest.TestCase.assertRaisesRegexp)
 
     def testbasic(self):
-        reactor = framing.clientreactor(hasmultiplesend=False, buffersends=True)
+        reactor = framing.clientreactor(globalui,
+                                        hasmultiplesend=False,
+                                        buffersends=True)
 
         request, action, meta = reactor.callcommand(b'foo', {})
         self.assertEqual(request.state, b'pending')
@@ -60,7 +65,9 @@ class SingleSendTests(unittest.TestCase):
 class NoBufferTests(unittest.TestCase):
     """A reactor without send buffering sends requests immediately."""
     def testbasic(self):
-        reactor = framing.clientreactor(hasmultiplesend=True, buffersends=False)
+        reactor = framing.clientreactor(globalui,
+                                        hasmultiplesend=True,
+                                        buffersends=False)
 
         request, action, meta = reactor.callcommand(b'command1', {})
         self.assertEqual(request.requestid, 1)
@@ -94,7 +101,7 @@ class BadFrameRecvTests(unittest.TestCase):
             unittest.TestCase.assertRaisesRegexp)
 
     def testoddstream(self):
-        reactor = framing.clientreactor()
+        reactor = framing.clientreactor(globalui)
 
         action, meta = sendframe(reactor, ffs(b'1 1 0 1 0 foo'))
         self.assertEqual(action, b'error')
@@ -102,7 +109,7 @@ class BadFrameRecvTests(unittest.TestCase):
                          b'received frame with odd numbered stream ID: 1')
 
     def testunknownstream(self):
-        reactor = framing.clientreactor()
+        reactor = framing.clientreactor(globalui)
 
         action, meta = sendframe(reactor, ffs(b'1 0 0 1 0 foo'))
         self.assertEqual(action, b'error')
@@ -111,7 +118,7 @@ class BadFrameRecvTests(unittest.TestCase):
                          b'of stream flag set')
 
     def testunhandledframetype(self):
-        reactor = framing.clientreactor(buffersends=False)
+        reactor = framing.clientreactor(globalui, buffersends=False)
 
         request, action, meta = reactor.callcommand(b'foo', {})
         for frame in meta[b'framegen']:
@@ -123,7 +130,7 @@ class BadFrameRecvTests(unittest.TestCase):
 
 class StreamTests(unittest.TestCase):
     def testmultipleresponseframes(self):
-        reactor = framing.clientreactor(buffersends=False)
+        reactor = framing.clientreactor(globalui, buffersends=False)
 
         request, action, meta = reactor.callcommand(b'foo', {})
 
@@ -144,7 +151,7 @@ class StreamTests(unittest.TestCase):
 
 class RedirectTests(unittest.TestCase):
     def testredirect(self):
-        reactor = framing.clientreactor(buffersends=False)
+        reactor = framing.clientreactor(globalui, buffersends=False)
 
         redirect = {
             b'targets': [b'a', b'b'],
@@ -167,7 +174,7 @@ class RedirectTests(unittest.TestCase):
 
 class StreamSettingsTests(unittest.TestCase):
     def testnoflags(self):
-        reactor = framing.clientreactor(buffersends=False)
+        reactor = framing.clientreactor(globalui, buffersends=False)
 
         request, action, meta = reactor.callcommand(b'foo', {})
         for f in meta[b'framegen']:
@@ -183,7 +190,7 @@ class StreamSettingsTests(unittest.TestCase):
         })
 
     def testconflictflags(self):
-        reactor = framing.clientreactor(buffersends=False)
+        reactor = framing.clientreactor(globalui, buffersends=False)
 
         request, action, meta = reactor.callcommand(b'foo', {})
         for f in meta[b'framegen']:
@@ -199,7 +206,7 @@ class StreamSettingsTests(unittest.TestCase):
         })
 
     def testemptypayload(self):
-        reactor = framing.clientreactor(buffersends=False)
+        reactor = framing.clientreactor(globalui, buffersends=False)
 
         request, action, meta = reactor.callcommand(b'foo', {})
         for f in meta[b'framegen']:
@@ -215,7 +222,7 @@ class StreamSettingsTests(unittest.TestCase):
         })
 
     def testbadcbor(self):
-        reactor = framing.clientreactor(buffersends=False)
+        reactor = framing.clientreactor(globalui, buffersends=False)
 
         request, action, meta = reactor.callcommand(b'foo', {})
         for f in meta[b'framegen']:
@@ -227,7 +234,7 @@ class StreamSettingsTests(unittest.TestCase):
         self.assertEqual(action, b'error')
 
     def testsingleobject(self):
-        reactor = framing.clientreactor(buffersends=False)
+        reactor = framing.clientreactor(globalui, buffersends=False)
 
         request, action, meta = reactor.callcommand(b'foo', {})
         for f in meta[b'framegen']:
@@ -240,7 +247,7 @@ class StreamSettingsTests(unittest.TestCase):
         self.assertEqual(meta, {})
 
     def testmultipleobjects(self):
-        reactor = framing.clientreactor(buffersends=False)
+        reactor = framing.clientreactor(globalui, buffersends=False)
 
         request, action, meta = reactor.callcommand(b'foo', {})
         for f in meta[b'framegen']:
@@ -258,7 +265,7 @@ class StreamSettingsTests(unittest.TestCase):
         self.assertEqual(meta, {})
 
     def testmultipleframes(self):
-        reactor = framing.clientreactor(buffersends=False)
+        reactor = framing.clientreactor(globalui, buffersends=False)
 
         request, action, meta = reactor.callcommand(b'foo', {})
         for f in meta[b'framegen']:

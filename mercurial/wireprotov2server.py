@@ -156,7 +156,7 @@ def _processhttpv2reflectrequest(ui, repo, req, res):
 
     # We assume we have a unified framing protocol request body.
 
-    reactor = wireprotoframing.serverreactor()
+    reactor = wireprotoframing.serverreactor(ui)
     states = []
 
     while True:
@@ -191,7 +191,7 @@ def _processhttpv2request(ui, repo, req, res, authedperm, reqcommand, proto):
     # TODO Some HTTP clients are full duplex and can receive data before
     # the entire request is transmitted. Figure out a way to indicate support
     # for that so we can opt into full duplex mode.
-    reactor = wireprotoframing.serverreactor(deferoutput=True)
+    reactor = wireprotoframing.serverreactor(ui, deferoutput=True)
     seencommand = False
 
     outstream = reactor.makeoutputstream()

@@ -368,7 +368,7 @@ def _revsetutil(repo, subset, x, rtypes):
                 nodes.update(ns.nodes(repo, name))
 
     revs = (cl.rev(n) for n in nodes if cl.hasnode(n))
-    return subset & smartset.baseset(sorted(revs))
+    return subset & smartset.baseset(revs)
 
 @revsetpredicate('remotenames([name])')
 def remotenamesrevset(repo, subset, x):

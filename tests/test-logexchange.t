@@ -486,67 +486,19 @@ Testing for a single name which does not exists
 
   $ hg log -r 'remotenames("server3")' -GT "{rev}:{node|short} {remotenames}\n"
 
-Testing for multiple names where all of them exists
+Testing for multiple names, which is not supported.
 
   $ hg log -r 'remotenames("re:default", "re:server2")' -GT "{rev}:{node|short} {remotenames}\n"
-  o  10:bf433e48adea server2/default
-  |
-  | o  9:f34adec73c21 server2/wat
-  | |
-  | o  8:3e1487808078 default/foo default/wat
-  | :
-  @ :  7:ec2426147f0e default/default
-  | :
-  o :  6:87d6d6676308 default/bar server2/bar
-  :/
-  o  3:62615734edd5 server2/foo
-  |
-  ~
+  hg: parse error: only one argument accepted
+  [255]
 
   $ hg log -r 'remotebranches("default/wat", "server2/wat")' -GT "{rev}:{node|short} {remotebranches}\n"
-  o  9:f34adec73c21 server2/wat
-  |
-  o  8:3e1487808078 default/wat
-  |
-  ~
+  hg: parse error: only one argument accepted
+  [255]
 
   $ hg log -r 'remotebookmarks("default/foo", "server2/foo")' -GT "{rev}:{node|short} {remotebookmarks}\n"
-  o  8:3e1487808078 default/foo
-  :
-  o  3:62615734edd5 server2/foo
-  |
-  ~
-
-Testing for multipe names where some exists and some not
-
-  $ hg log -r 'remotenames(def, "re:server2")' -GT "{rev}:{node|short} {remotenames}\n"
-  o  10:bf433e48adea server2/default
-  :
-  : o  9:f34adec73c21 server2/wat
-  : :
-  o :  6:87d6d6676308 default/bar server2/bar
-  :/
-  o  3:62615734edd5 server2/foo
-  |
-  ~
-
-  $ hg log -r 'remotebranches("default/default", server)' -GT "{rev}:{node|short} {remotebranches}\n"
-  @  7:ec2426147f0e default/default
-  |
-  ~
-
-  $ hg log -r 'remotebookmarks("default/foo", serv)' -GT "{rev}:{node|short} {remotebookmarks}\n"
-  o  8:3e1487808078 default/foo
-  |
-  ~
-
-Where multiple names specified and None of them exists
-
-  $ hg log -r 'remotenames(def, serv2)' -GT "{rev}:{node|short} {remotenames}\n"
-
-  $ hg log -r 'remotebranches(defu, server)' -GT "{rev}:{node|short} {remotebranches}\n"
-
-  $ hg log -r 'remotebookmarks(delt, serv)' -GT "{rev}:{node|short} {remotebookmarks}\n"
+  hg: parse error: only one argument accepted
+  [255]
 
 Testing pattern matching
 
@@ -567,14 +519,5 @@ Testing pattern matching
   |
   ~
   o  9:f34adec73c21 server2/wat
-  |
-  ~
-
-  $ hg log -r 'remotebookmarks("re:def", "re:.*2")' -GT "{rev}:{node|short} {remotebookmarks}\n"
-  o  8:3e1487808078 default/foo
-  :
-  : o  6:87d6d6676308 default/bar server2/bar
-  :/
-  o  3:62615734edd5 server2/foo
   |
   ~

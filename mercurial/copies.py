@@ -212,7 +212,7 @@ def _committedforwardcopies(a, b, match):
                 dbg('debug.copies:          rename of: %s\n' % ofctx._path)
             cm[f] = ofctx.path()
         if debug:
-            dbg('debug.copies:          time: %s seconds\n'
+            dbg('debug.copies:          time: %f seconds\n'
                 % (util.timer() - start))
     return cm
 

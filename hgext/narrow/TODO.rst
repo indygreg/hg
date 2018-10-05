@@ -9,9 +9,8 @@ the stand-in to raise a ProgrammingError.
 Reason more completely about rename-filtering logic in
 narrowfilelog. There could be some surprises lurking there.
 
-Formally document the narrowspec format. Unify with sparse, if at all
-possible. For bonus points, unify with the server-specified narrowspec
-format.
+Formally document the narrowspec format. For bonus points, unify with the
+server-specified narrowspec format.
 
 narrowrepo.setnarrowpats() or narrowspec.save() need to make sure
 they're holding the wlock.

@@ -1700,7 +1700,10 @@ def addpartbundlestream2(bundler, repo, **kwargs):
     includeobsmarkers = False
     if repo.obsstore:
         remoteversions = obsmarkersversion(bundler.capabilities)
-        if repo.obsstore._version in remoteversions:
+        if not remoteversions:
+            raise error.Abort(_('server has obsolescence markers, but client '
+                                'cannot receive them via stream clone'))
+        elif repo.obsstore._version in remoteversions:
             includeobsmarkers = True
 
     filecount, bytecount, it = streamclone.generatev2(repo, includepats,

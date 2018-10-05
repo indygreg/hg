@@ -556,6 +556,12 @@ Clone non-publishing with obsolescence
   $ hg debugobsolete -R with-obsolescence
   50382b884f66690b7045cac93a540cba4d4c906f 0 {c17445101a72edac06facd130d14808dfbd5c7c2} (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
 
+  $ hg clone -U --stream --config experimental.evolution=0 http://localhost:$HGPORT with-obsolescence-no-evolution
+  streaming all changes
+  remote: abort: server has obsolescence markers, but client cannot receive them via stream clone
+  abort: pull failed on remote
+  [255]
+
   $ killdaemons.py
 
 #endif

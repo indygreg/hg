@@ -33,6 +33,7 @@ from mercurial.node import (
 )
 from mercurial import (
     bookmarks,
+    error,
     extensions,
     logexchange,
     namespaces,
@@ -355,6 +356,7 @@ def _revsetutil(repo, subset, x, rtypes):
         kind, pattern, matcher = stringutil.stringmatcher(
             revsetlang.getstring(args[0], _('argument must be a string')))
     else:
+        kind = pattern = None
         matcher = util.always
 
     nodes = set()
@@ -366,6 +368,9 @@ def _revsetutil(repo, subset, x, rtypes):
                 if not matcher(name):
                     continue
                 nodes.update(ns.nodes(repo, name))
+    if kind == 'literal' and not nodes:
+        raise error.RepoLookupError(_("remote name '%s' does not exist")
+                                    % pattern)
 
     revs = (cl.rev(n) for n in nodes if cl.hasnode(n))
     return subset & smartset.baseset(revs)

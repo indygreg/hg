@@ -478,13 +478,23 @@ Testing for a single remote name which exists
   |
   ~
 
-Testing for a single name which does not exists
+Testing for a literal name which does not exists, which should fail.
 
   $ hg log -r 'remotebranches(def)' -GT "{rev}:{node|short} {remotenames}\n"
+  abort: remote name 'def' does not exist!
+  [255]
 
   $ hg log -r 'remotebookmarks("server3")' -GT "{rev}:{node|short} {remotenames}\n"
+  abort: remote name 'server3' does not exist!
+  [255]
 
   $ hg log -r 'remotenames("server3")' -GT "{rev}:{node|short} {remotenames}\n"
+  abort: remote name 'server3' does not exist!
+  [255]
+
+Testing for a pattern which does not match anything, which shouldn't fail.
+
+  $ hg log -r 'remotenames("re:^server3$")'
 
 Testing for multiple names, which is not supported.
 

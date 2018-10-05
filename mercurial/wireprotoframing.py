@@ -668,12 +668,18 @@ class stream(object):
         return makeframe(requestid, self.streamid, streamflags, typeid, flags,
                          payload)
 
+class inputstream(stream):
+    """Represents a stream used for receiving data."""
+
     def setdecoder(self, name, extraobjs):
         """Set the decoder for this stream.
 
         Receives the stream profile name and any additional CBOR objects
         decoded from the stream encoding settings frame payloads.
         """
+
+class outputstream(stream):
+    """Represents a stream used for sending data."""
 
 def ensureserverstream(stream):
     if stream.streamid % 2:
@@ -799,7 +805,7 @@ class serverreactor(object):
                     _('received frame on unknown inactive stream without '
                       'beginning of stream flag set'))
 
-            self._incomingstreams[frame.streamid] = stream(frame.streamid)
+            self._incomingstreams[frame.streamid] = inputstream(frame.streamid)
 
         if frame.streamflags & STREAM_FLAG_ENCODING_APPLIED:
             # TODO handle decoding frames
@@ -1012,7 +1018,7 @@ class serverreactor(object):
         streamid = self._nextoutgoingstreamid
         self._nextoutgoingstreamid += 2
 
-        s = stream(streamid)
+        s = outputstream(streamid)
         self._outgoingstreams[streamid] = s
 
         return s
@@ -1372,7 +1378,7 @@ class clientreactor(object):
 
         self._nextrequestid = 1
         # We only support a single outgoing stream for now.
-        self._outgoingstream = stream(1)
+        self._outgoingstream = outputstream(1)
         self._pendingrequests = collections.deque()
         self._activerequests = {}
         self._incomingstreams = {}
@@ -1485,7 +1491,8 @@ class clientreactor(object):
                                  'without beginning of stream flag set'),
                 }
 
-            self._incomingstreams[frame.streamid] = stream(frame.streamid)
+            self._incomingstreams[frame.streamid] = inputstream(
+                frame.streamid)
 
         if frame.streamflags & STREAM_FLAG_ENCODING_APPLIED:
             raise error.ProgrammingError('support for decoding stream '

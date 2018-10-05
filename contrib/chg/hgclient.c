@@ -32,7 +32,7 @@ enum { CAP_GETENCODING = 0x0001,
        CAP_ATTACHIO = 0x0100,
        CAP_CHDIR = 0x0200,
        CAP_SETENV = 0x0800,
-       CAP_SETUMASK = 0x1000,
+       CAP_SETUMASK2 = 0x1000,
        CAP_VALIDATE = 0x2000,
        CAP_SETPROCNAME = 0x4000,
 };
@@ -48,7 +48,7 @@ static const cappair_t captable[] = {
     {"attachio", CAP_ATTACHIO},
     {"chdir", CAP_CHDIR},
     {"setenv", CAP_SETENV},
-    {"setumask", CAP_SETUMASK},
+    {"setumask2", CAP_SETUMASK2},
     {"validate", CAP_VALIDATE},
     {"setprocname", CAP_SETPROCNAME},
     {NULL, 0}, /* terminator */
@@ -425,10 +425,11 @@ static void forwardumask(hgclient_t *hgc)
 	mode_t mask = umask(0);
 	umask(mask);
 
-	static const char command[] = "setumask\n";
-	sendall(hgc->sockfd, command, sizeof(command) - 1);
 	uint32_t data = htonl(mask);
-	sendall(hgc->sockfd, &data, sizeof(data));
+	enlargecontext(&hgc->ctx, sizeof(data));
+	memcpy(hgc->ctx.data, &data, sizeof(data));
+	hgc->ctx.datasize = sizeof(data);
+	writeblockrequest(hgc, "setumask2");
 }
 
 /*!
@@ -508,7 +509,7 @@ hgclient_t *hgc_open(const char *sockname)
 		attachio(hgc);
 	if (hgc->capflags & CAP_CHDIR)
 		chdirtocwd(hgc);
-	if (hgc->capflags & CAP_SETUMASK)
+	if (hgc->capflags & CAP_SETUMASK2)
 		forwardumask(hgc);
 
 	return hgc;

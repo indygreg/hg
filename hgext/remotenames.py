@@ -41,6 +41,7 @@ from mercurial import (
     revsetlang,
     smartset,
     templateutil,
+    util,
 )
 
 from mercurial.utils import (
@@ -354,7 +355,7 @@ def _revsetutil(repo, subset, x, rtypes):
         kind, pattern, matcher = stringutil.stringmatcher(
             revsetlang.getstring(args[0], _('argument must be a string')))
     else:
-        matcher = lambda a: True
+        matcher = util.always
 
     revs = set()
     cl = repo.changelog

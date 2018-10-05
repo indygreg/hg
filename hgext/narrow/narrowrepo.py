@@ -8,7 +8,7 @@
 from __future__ import absolute_import
 
 from mercurial import (
-    wireprotoserver,
+    wireprototypes,
 )
 
 from . import (
@@ -26,8 +26,8 @@ def wraprepo(repo):
 
         def peer(self):
             peer = super(narrowrepository, self).peer()
-            peer._caps.add(wireprotoserver.NARROWCAP)
-            peer._caps.add(wireprotoserver.ELLIPSESCAP)
+            peer._caps.add(wireprototypes.NARROWCAP)
+            peer._caps.add(wireprototypes.ELLIPSESCAP)
             return peer
 
     repo.__class__ = narrowrepository

@@ -15,7 +15,6 @@ from mercurial import (
     match as matchmod,
     narrowspec,
     pycompat,
-    wireprotoserver,
     wireprototypes,
     wireprotov1peer,
     wireprotov1server,
@@ -28,9 +27,9 @@ def uisetup():
 def addnarrowcap(orig, repo, proto):
     """add the narrow capability to the server"""
     caps = orig(repo, proto)
-    caps.append(wireprotoserver.NARROWCAP)
+    caps.append(wireprototypes.NARROWCAP)
     if repo.ui.configbool('experimental', 'narrowservebrokenellipses'):
-        caps.append(wireprotoserver.ELLIPSESCAP)
+        caps.append(wireprototypes.ELLIPSESCAP)
     return caps
 
 def reposetup(repo):

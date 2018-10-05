@@ -28,6 +28,9 @@ SSHV1 = 'ssh-v1'
 SSHV2 = 'exp-ssh-v2-0002'
 HTTP_WIREPROTO_V2 = 'exp-http-v2-0002'
 
+NARROWCAP = 'exp-narrow-1'
+ELLIPSESCAP = 'exp-ellipses-1'
+
 # All available wire protocol transports.
 TRANSPORTS = {
     SSHV1: {

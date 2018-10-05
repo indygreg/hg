@@ -30,7 +30,7 @@ from mercurial import (
     repoview,
     sparse,
     util,
-    wireprotoserver,
+    wireprototypes,
 )
 
 table = {}
@@ -134,7 +134,7 @@ def pullbundle2extraprepare(orig, pullop, kwargs):
     if repository.NARROW_REQUIREMENT not in repo.requirements:
         return orig(pullop, kwargs)
 
-    if wireprotoserver.NARROWCAP not in pullop.remote.capabilities():
+    if wireprototypes.NARROWCAP not in pullop.remote.capabilities():
         raise error.Abort(_("server does not support narrow clones"))
     orig(pullop, kwargs)
     kwargs['narrow'] = True
@@ -145,7 +145,7 @@ def pullbundle2extraprepare(orig, pullop, kwargs):
     kwargs['excludepats'] = exclude
     # calculate known nodes only in ellipses cases because in non-ellipses cases
     # we have all the nodes
-    if wireprotoserver.ELLIPSESCAP in pullop.remote.capabilities():
+    if wireprototypes.ELLIPSESCAP in pullop.remote.capabilities():
         kwargs['known'] = [node.hex(ctx.node()) for ctx in
                            repo.set('::%ln', pullop.common)
                            if ctx.node() != node.nullid]
@@ -259,7 +259,7 @@ def _widen(ui, repo, remote, commoninc, oldincludes, oldexcludes,
     # then send that information to server whether we want ellipses or not.
     # Theoretically a non-ellipses repo should be able to use narrow
     # functionality from an ellipses enabled server
-    ellipsesremote = wireprotoserver.ELLIPSESCAP in remote.capabilities()
+    ellipsesremote = wireprototypes.ELLIPSESCAP in remote.capabilities()
 
     def pullbundle2extraprepare_widen(orig, pullop, kwargs):
         orig(pullop, kwargs)
@@ -427,7 +427,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
         # check narrow support before doing anything if widening needs to be
         # performed. In future we should also abort if client is ellipses and
         # server does not support ellipses
-        if widening and wireprotoserver.NARROWCAP not in remote.capabilities():
+        if widening and wireprototypes.NARROWCAP not in remote.capabilities():
             raise error.Abort(_("server does not support narrow clones"))
 
         commoninc = discovery.findcommonincoming(repo, remote)

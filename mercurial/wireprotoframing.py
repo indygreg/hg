@@ -365,75 +365,6 @@ def createcommandframes(stream, requestid, cmd, args, datafh=None,
             if done:
                 break
 
-def createcommandresponseframesfrombytes(stream, requestid, data,
-                                         maxframesize=DEFAULT_MAX_FRAME_SIZE):
-    """Create a raw frame to send a bytes response from static bytes input.
-
-    Returns a generator of bytearrays.
-    """
-    # Automatically send the overall CBOR response map.
-    overall = b''.join(cborutil.streamencode({b'status': b'ok'}))
-    if len(overall) > maxframesize:
-        raise error.ProgrammingError('not yet implemented')
-
-    # Simple case where we can fit the full response in a single frame.
-    if len(overall) + len(data) <= maxframesize:
-        flags = FLAG_COMMAND_RESPONSE_EOS
-        yield stream.makeframe(requestid=requestid,
-                               typeid=FRAME_TYPE_COMMAND_RESPONSE,
-                               flags=flags,
-                               payload=overall + data)
-        return
-
-    # It's easier to send the overall CBOR map in its own frame than to track
-    # offsets.
-    yield stream.makeframe(requestid=requestid,
-                           typeid=FRAME_TYPE_COMMAND_RESPONSE,
-                           flags=FLAG_COMMAND_RESPONSE_CONTINUATION,
-                           payload=overall)
-
-    offset = 0
-    while True:
-        chunk = data[offset:offset + maxframesize]
-        offset += len(chunk)
-        done = offset == len(data)
-
-        if done:
-            flags = FLAG_COMMAND_RESPONSE_EOS
-        else:
-            flags = FLAG_COMMAND_RESPONSE_CONTINUATION
-
-        yield stream.makeframe(requestid=requestid,
-                               typeid=FRAME_TYPE_COMMAND_RESPONSE,
-                               flags=flags,
-                               payload=chunk)
-
-        if done:
-            break
-
-def createbytesresponseframesfromgen(stream, requestid, gen,
-                                     maxframesize=DEFAULT_MAX_FRAME_SIZE):
-    """Generator of frames from a generator of byte chunks.
-
-    This assumes that another frame will follow whatever this emits. i.e.
-    this always emits the continuation flag and never emits the end-of-stream
-    flag.
-    """
-    cb = util.chunkbuffer(gen)
-    flags = FLAG_COMMAND_RESPONSE_CONTINUATION
-
-    while True:
-        chunk = cb.read(maxframesize)
-        if not chunk:
-            break
-
-        yield stream.makeframe(requestid=requestid,
-                               typeid=FRAME_TYPE_COMMAND_RESPONSE,
-                               flags=flags,
-                               payload=chunk)
-
-        flags |= FLAG_COMMAND_RESPONSE_CONTINUATION
-
 def createcommandresponseokframe(stream, requestid):
     overall = b''.join(cborutil.streamencode({b'status': b'ok'}))
 
@@ -1020,30 +951,6 @@ class serverreactor(object):
 
         return meth(frame)
 
-    def oncommandresponseready(self, stream, requestid, data):
-        """Signal that a bytes response is ready to be sent to the client.
-
-        The raw bytes response is passed as an argument.
-        """
-        ensureserverstream(stream)
-
-        def sendframes():
-            for frame in createcommandresponseframesfrombytes(stream, requestid,
-                                                              data):
-                yield frame
-
-            self._activecommands.remove(requestid)
-
-        result = sendframes()
-
-        if self._deferoutput:
-            self._bufferedframegens.append(result)
-            return 'noop', {}
-        else:
-            return 'sendframes', {
-                'framegen': result,
-            }
-
     def oncommandresponsereadyobjects(self, stream, requestid, objs):
         """Signal that objects are ready to be sent to the client.
 
@@ -1052,6 +959,10 @@ class serverreactor(object):
         client.
         """
         ensureserverstream(stream)
+
+        # A more robust solution would be to check for objs.{next,__next__}.
+        if isinstance(objs, list):
+            objs = iter(objs)
 
         # We need to take care over exception handling. Uncaught exceptions
         # when generating frames could lead to premature end of the frame

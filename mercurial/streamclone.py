@@ -532,7 +532,7 @@ def _emit2(repo, entries, totalfilesize):
             finally:
                 fp.close()
 
-def generatev2(repo, includes, excludes):
+def generatev2(repo, includes, excludes, includeobsmarkers):
     """Emit content for version 2 of a streaming clone.
 
     the data stream consists the following entries:
@@ -567,6 +567,9 @@ def generatev2(repo, includes, excludes):
             if repo.svfs.exists(name):
                 totalfilesize += repo.svfs.lstat(name).st_size
                 entries.append((_srcstore, name, _filefull, None))
+        if includeobsmarkers and repo.svfs.exists('obsstore'):
+            totalfilesize += repo.svfs.lstat('obsstore').st_size
+            entries.append((_srcstore, 'obsstore', _filefull, None))
         for name in cacheutil.cachetocopy(repo):
             if repo.cachevfs.exists(name):
                 totalfilesize += repo.cachevfs.lstat(name).st_size

@@ -1697,8 +1697,15 @@ def addpartbundlestream2(bundler, repo, **kwargs):
     if (includepats or excludepats) and not narrowstream:
         raise error.Abort(_('server does not support narrow stream clones'))
 
+    includeobsmarkers = False
+    if repo.obsstore:
+        remoteversions = obsmarkersversion(bundler.capabilities)
+        if repo.obsstore._version in remoteversions:
+            includeobsmarkers = True
+
     filecount, bytecount, it = streamclone.generatev2(repo, includepats,
-                                                      excludepats)
+                                                      excludepats,
+                                                      includeobsmarkers)
     requirements = _formatrequirementsspec(repo.requirements)
     part = bundler.newpart('stream2', data=it)
     part.addparam('bytecount', '%d' % bytecount, mandatory=True)

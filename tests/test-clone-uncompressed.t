@@ -514,3 +514,48 @@ stream v1 unsuitable for non-publishing repository.
 #endif
 
   $ killdaemons.py
+
+#if stream-legacy
+
+With v1 of the stream protocol, changeset are always cloned as public. There's
+no obsolescence markers exchange in stream v1.
+
+#endif
+#if stream-bundle2
+
+Stream repository with obsolescence
+-----------------------------------
+
+Clone non-publishing with obsolescence
+
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > evolution=all
+  > EOF
+
+  $ cd server
+  $ echo foo > foo
+  $ hg -q commit -m 'about to be pruned'
+  $ hg debugobsolete `hg log -r . -T '{node}'` -d '0 0' -u test --record-parents
+  obsoleted 1 changesets
+  $ hg up null -q
+  $ hg log -T '{rev}: {phase}\n'
+  1: draft
+  0: draft
+  $ hg serve -p $HGPORT -d --pid-file=hg.pid
+  $ cat hg.pid > $DAEMON_PIDS
+  $ cd ..
+
+  $ hg clone -U --stream http://localhost:$HGPORT with-obsolescence
+  streaming all changes
+  1035 files to transfer, 97.1 KB of data
+  transferred 97.1 KB in * seconds (* */sec) (glob)
+  $ hg -R with-obsolescence log -T '{rev}: {phase}\n'
+  1: draft
+  0: draft
+  $ hg debugobsolete -R with-obsolescence
+  50382b884f66690b7045cac93a540cba4d4c906f 0 {c17445101a72edac06facd130d14808dfbd5c7c2} (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
+
+  $ killdaemons.py
+
+#endif

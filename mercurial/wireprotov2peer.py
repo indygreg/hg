@@ -325,6 +325,8 @@ class clienthandler(object):
                 raise e
 
             return
+        elif action == 'noop':
+            return
 
         if frame.requestid not in self._requests:
             raise error.ProgrammingError(

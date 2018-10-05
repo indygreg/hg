@@ -20,7 +20,6 @@ from mercurial import (
     changegroup,
     error,
     exchange,
-    extensions,
     narrowspec,
     repair,
     repository,
@@ -31,10 +30,9 @@ from mercurial.utils import (
     stringutil,
 )
 
-NARROWCAP = 'narrow'
 _NARROWACL_SECTION = 'narrowhgacl'
-_CHANGESPECPART = NARROWCAP + ':changespec'
-_SPECPART = NARROWCAP + ':spec'
+_CHANGESPECPART = 'narrow:changespec'
+_SPECPART = 'narrow:spec'
 _SPECPART_INCLUDE = 'include'
 _SPECPART_EXCLUDE = 'exclude'
 _KILLNODESIGNAL = 'KILL'
@@ -43,12 +41,6 @@ _ELIDEDCSHEADER = '>20s20s20sl' # cset id, p1, p2, len(text)
 _ELIDEDMFHEADER = '>20s20s20s20sl' # manifest id, p1, p2, link id, len(text)
 _CSHEADERSIZE = struct.calcsize(_ELIDEDCSHEADER)
 _MFHEADERSIZE = struct.calcsize(_ELIDEDMFHEADER)
-
-# When advertising capabilities, always include narrow clone support.
-def getrepocaps_narrow(orig, repo, **kwargs):
-    caps = orig(repo, **kwargs)
-    caps[NARROWCAP] = ['v0']
-    return caps
 
 # Serve a changegroup for a client with a narrow clone.
 def getbundlechangegrouppart_narrow(bundler, repo, source,
@@ -252,8 +244,6 @@ def handlechangegroup_widen(op, inpart):
 
 def setup():
     """Enable narrow repo support in bundle2-related extension points."""
-    extensions.wrapfunction(bundle2, 'getrepocaps', getrepocaps_narrow)
-
     getbundleargs = wireprototypes.GETBUNDLE_ARGUMENTS
 
     getbundleargs['narrow'] = 'boolean'

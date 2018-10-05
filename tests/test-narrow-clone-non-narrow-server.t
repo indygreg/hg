@@ -32,7 +32,6 @@ Verify that narrow is advertised in the bundle2 capabilities:
   > EOF
   $ echo hello | hg -R . serve --stdio | \
   >   "$PYTHON" unquote.py | tr ' ' '\n' | grep narrow
-  narrow=v0
   exp-narrow-1
 
   $ cd ..

@@ -573,6 +573,14 @@ test-walkrepo.py
 test-websub.t
 test-win32text.t
 test-wireproto-clientreactor.py
+test-wireproto-command-branchmap.t
+test-wireproto-command-changesetdata.t
+test-wireproto-command-filedata.t
+test-wireproto-command-heads.t
+test-wireproto-command-listkeys.t
+test-wireproto-command-lookup.t
+test-wireproto-command-manifestdata.t
+test-wireproto-command-pushkey.t
 test-wireproto-framing.py
 test-wireproto-serverreactor.py
 test-wireproto.py

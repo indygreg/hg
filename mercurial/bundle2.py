@@ -2278,12 +2278,13 @@ def handlestreamv2bundle(op, part):
     streamclone.applybundlev2(repo, part, filecount, bytecount,
                               requirements)
 
-def widen_bundle(repo, diffmatcher, common, known, cgversion, ellipses):
+def widen_bundle(repo, oldmatcher, newmatcher, common, known, cgversion,
+                 ellipses):
     """generates bundle2 for widening a narrow clone
 
     repo is the localrepository instance
-    diffmatcher is a differencemacther of '(newincludes, newexcludes) -
-    (oldincludes, oldexcludes)'
+    oldmatcher matches what the client already has
+    newmatcher matches what the client needs (including what it already has)
     common is set of common heads between server and client
     known is a set of revs known on the client side (used in ellipses)
     cgversion is the changegroup version to send
@@ -2300,7 +2301,8 @@ def widen_bundle(repo, diffmatcher, common, known, cgversion, ellipses):
         # XXX: we should only send the filelogs (and treemanifest). user
         # already has the changelog and manifest
         packer = changegroup.getbundler(cgversion, repo,
-                                        filematcher=diffmatcher,
+                                        oldmatcher=oldmatcher,
+                                        matcher=newmatcher,
                                         fullnodes=commonnodes)
         cgdata = packer.generate(set([nodemod.nullid]), list(commonnodes),
                                  False, 'narrow_widen', changelog=False)

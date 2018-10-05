@@ -727,14 +727,17 @@ def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
         progress.complete()
 
 class cgpacker(object):
-    def __init__(self, repo, filematcher, version,
+    def __init__(self, repo, oldmatcher, matcher, version,
                  builddeltaheader, manifestsend,
                  forcedeltaparentprev=False,
                  bundlecaps=None, ellipses=False,
                  shallow=False, ellipsisroots=None, fullnodes=None):
         """Given a source repo, construct a bundler.
 
-        filematcher is a matcher that matches on files to include in the
+        oldmatcher is a matcher that matches on files the client already has.
+        These will not be included in the changegroup.
+
+        matcher is a matcher that matches on files to include in the
         changegroup. Used to facilitate sparse changegroups.
 
         forcedeltaparentprev indicates whether delta parents must be against
@@ -761,8 +764,10 @@ class cgpacker(object):
         ellipsis because for very large histories we expect this to be
         significantly smaller.
         """
-        assert filematcher
-        self._filematcher = filematcher
+        assert oldmatcher
+        assert matcher
+        self._oldmatcher = oldmatcher
+        self._matcher = matcher
 
         self.version = version
         self._forcedeltaparentprev = forcedeltaparentprev
@@ -1027,7 +1032,7 @@ class cgpacker(object):
             tree, nodes = tmfnodes.popitem()
             store = mfl.getstorage(tree)
 
-            if not self._filematcher.visitdir(store.tree[:-1] or '.'):
+            if not self._matcher.visitdir(store.tree[:-1] or '.'):
                 # No nodes to send because this directory is out of
                 # the client's view of the repository (probably
                 # because of narrow clones).
@@ -1051,7 +1056,16 @@ class cgpacker(object):
                 fullclnodes=self._fullclnodes,
                 precomputedellipsis=self._precomputedellipsis)
 
-            yield tree, deltas
+            if not self._oldmatcher.visitdir(store.tree[:-1] or '.'):
+                yield tree, deltas
+            else:
+                # 'deltas' is a generator and we need to consume it even if
+                # we are not going to send it because a side-effect is that
+                # it updates tmdnodes (via lookupfn)
+                for d in deltas:
+                    pass
+                if not tree:
+                    yield tree, []
 
     def _prunemanifests(self, store, nodes, commonrevs):
         # This is split out as a separate method to allow filtering
@@ -1066,7 +1080,8 @@ class cgpacker(object):
     # The 'source' parameter is useful for extensions
     def generatefiles(self, changedfiles, commonrevs, source,
                       mfdicts, fastpathlinkrev, fnodes, clrevs):
-        changedfiles = list(filter(self._filematcher, changedfiles))
+        changedfiles = [f for f in changedfiles
+                        if self._matcher(f) and not self._oldmatcher(f)]
 
         if not fastpathlinkrev:
             def normallinknodes(unused, fname):
@@ -1151,12 +1166,13 @@ class cgpacker(object):
 
         progress.complete()
 
-def _makecg1packer(repo, filematcher, bundlecaps, ellipses=False,
-                   shallow=False, ellipsisroots=None, fullnodes=None):
+def _makecg1packer(repo, oldmatcher, matcher, bundlecaps,
+                   ellipses=False, shallow=False, ellipsisroots=None,
+                   fullnodes=None):
     builddeltaheader = lambda d: _CHANGEGROUPV1_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.linknode)
 
-    return cgpacker(repo, filematcher, b'01',
+    return cgpacker(repo, oldmatcher, matcher, b'01',
                     builddeltaheader=builddeltaheader,
                     manifestsend=b'',
                     forcedeltaparentprev=True,
@@ -1166,12 +1182,13 @@ def _makecg1packer(repo, filematcher, bundlecaps, ellipses=False,
                     ellipsisroots=ellipsisroots,
                     fullnodes=fullnodes)
 
-def _makecg2packer(repo, filematcher, bundlecaps, ellipses=False,
-                   shallow=False, ellipsisroots=None, fullnodes=None):
+def _makecg2packer(repo, oldmatcher, matcher, bundlecaps,
+                   ellipses=False, shallow=False, ellipsisroots=None,
+                   fullnodes=None):
     builddeltaheader = lambda d: _CHANGEGROUPV2_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode)
 
-    return cgpacker(repo, filematcher, b'02',
+    return cgpacker(repo, oldmatcher, matcher, b'02',
                     builddeltaheader=builddeltaheader,
                     manifestsend=b'',
                     bundlecaps=bundlecaps,
@@ -1180,12 +1197,13 @@ def _makecg2packer(repo, filematcher, bundlecaps, ellipses=False,
                     ellipsisroots=ellipsisroots,
                     fullnodes=fullnodes)
 
-def _makecg3packer(repo, filematcher, bundlecaps, ellipses=False,
-                   shallow=False, ellipsisroots=None, fullnodes=None):
+def _makecg3packer(repo, oldmatcher, matcher, bundlecaps,
+                   ellipses=False, shallow=False, ellipsisroots=None,
+                   fullnodes=None):
     builddeltaheader = lambda d: _CHANGEGROUPV3_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags)
 
-    return cgpacker(repo, filematcher, b'03',
+    return cgpacker(repo, oldmatcher, matcher, b'03',
                     builddeltaheader=builddeltaheader,
                     manifestsend=closechunk(),
                     bundlecaps=bundlecaps,
@@ -1252,15 +1270,17 @@ def safeversion(repo):
     assert versions
     return min(versions)
 
-def getbundler(version, repo, bundlecaps=None, filematcher=None,
-               ellipses=False, shallow=False, ellipsisroots=None,
-               fullnodes=None):
+def getbundler(version, repo, bundlecaps=None, oldmatcher=None,
+               matcher=None, ellipses=False, shallow=False,
+               ellipsisroots=None, fullnodes=None):
     assert version in supportedoutgoingversions(repo)
 
-    if filematcher is None:
-        filematcher = matchmod.alwaysmatcher(repo.root, '')
+    if matcher is None:
+        matcher = matchmod.alwaysmatcher(repo.root, '')
+    if oldmatcher is None:
+        oldmatcher = matchmod.nevermatcher(repo.root, '')
 
-    if version == '01' and not filematcher.always():
+    if version == '01' and not matcher.always():
         raise error.ProgrammingError('version 01 changegroups do not support '
                                      'sparse file matchers')
 
@@ -1271,10 +1291,10 @@ def getbundler(version, repo, bundlecaps=None, filematcher=None,
 
     # Requested files could include files not in the local store. So
     # filter those out.
-    filematcher = repo.narrowmatch(filematcher)
+    matcher = repo.narrowmatch(matcher)
 
     fn = _packermap[version][0]
-    return fn(repo, filematcher, bundlecaps, ellipses=ellipses,
+    return fn(repo, oldmatcher, matcher, bundlecaps, ellipses=ellipses,
               shallow=shallow, ellipsisroots=ellipsisroots,
               fullnodes=fullnodes)
 
@@ -1297,9 +1317,9 @@ def makechangegroup(repo, outgoing, version, source, fastpath=False,
                         {'clcount': len(outgoing.missing) })
 
 def makestream(repo, outgoing, version, source, fastpath=False,
-               bundlecaps=None, filematcher=None):
+               bundlecaps=None, matcher=None):
     bundler = getbundler(version, repo, bundlecaps=bundlecaps,
-                         filematcher=filematcher)
+                         matcher=matcher)
 
     repo = repo.unfiltered()
     commonrevs = outgoing.common

@@ -2153,14 +2153,12 @@ def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
     if kwargs.get(r'narrow', False):
         include = sorted(filter(bool, kwargs.get(r'includepats', [])))
         exclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
-        filematcher = narrowspec.match(repo.root, include=include,
-                                       exclude=exclude)
+        matcher = narrowspec.match(repo.root, include=include, exclude=exclude)
     else:
-        filematcher = None
+        matcher = None
 
     cgstream = changegroup.makestream(repo, outgoing, version, source,
-                                      bundlecaps=bundlecaps,
-                                      filematcher=filematcher)
+                                      bundlecaps=bundlecaps, matcher=matcher)
 
     part = bundler.newpart('changegroup', data=cgstream)
     if cgversions:

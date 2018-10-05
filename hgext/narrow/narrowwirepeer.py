@@ -12,7 +12,6 @@ from mercurial import (
     error,
     extensions,
     hg,
-    match as matchmod,
     narrowspec,
     pycompat,
     wireprototypes,
@@ -82,9 +81,8 @@ def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
                                     exclude=newexcludes)
         oldmatch = narrowspec.match(repo.root, include=oldincludes,
                                     exclude=oldexcludes)
-        diffmatch = matchmod.differencematcher(newmatch, oldmatch)
 
-        bundler = bundle2.widen_bundle(repo, diffmatch, common, known,
+        bundler = bundle2.widen_bundle(repo, oldmatch, newmatch, common, known,
                                              cgversion, ellipses)
     except error.Abort as exc:
         bundler = bundle2.bundle20(repo.ui)

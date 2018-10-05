@@ -117,7 +117,7 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
             repo, set(), common, known, newmatch)
         if newvisit:
             packer = changegroup.getbundler(version, repo,
-                                            filematcher=newmatch,
+                                            matcher=newmatch,
                                             ellipses=True,
                                             shallow=depth is not None,
                                             ellipsisroots=newellipsis,
@@ -135,7 +135,7 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
     repo.ui.debug('Found %d relevant revs\n' % len(relevant_nodes))
     if visitnodes:
         packer = changegroup.getbundler(version, repo,
-                                        filematcher=newmatch,
+                                        matcher=newmatch,
                                         ellipses=True,
                                         shallow=depth is not None,
                                         ellipsisroots=ellipsisroots,

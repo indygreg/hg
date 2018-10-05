@@ -347,8 +347,14 @@ def remotebrancheskw(context, mapping):
     return templateutil.compatlist(context, mapping, 'remotebranch',
                                    remotebranches, plural='remotebranches')
 
-def _revsetutil(repo, subset, x, rtypes, matcher):
+def _revsetutil(repo, subset, x, rtypes):
     """utility function to return a set of revs based on the rtypes"""
+    args = revsetlang.getargs(x, 0, 1, _('only one argument accepted'))
+    if args:
+        kind, pattern, matcher = stringutil.stringmatcher(
+            revsetlang.getstring(args[0], _('argument must be a string')))
+    else:
+        matcher = lambda a: True
 
     revs = set()
     cl = repo.changelog
@@ -363,18 +369,6 @@ def _revsetutil(repo, subset, x, rtypes, matcher):
     results = (cl.rev(n) for n in revs if cl.hasnode(n))
     return subset & smartset.baseset(sorted(results))
 
-def _parseargs(x):
-    """parses the argument passed in revsets
-
-    Returns a matcher for the passed pattern.
-    """
-    args = revsetlang.getargs(x, 0, 1, _('only one argument accepted'))
-    for arg in args:
-        kind, pattern, matcher = stringutil.stringmatcher(
-            revsetlang.getstring(arg, _('argument must be a string')))
-        return matcher
-    return lambda a: True
-
 @revsetpredicate('remotenames([name])')
 def remotenamesrevset(repo, subset, x):
     """All changesets which have a remotename on them. If `name` is
@@ -382,8 +376,7 @@ def remotenamesrevset(repo, subset, x):
 
     Pattern matching is supported for `name`. See :hg:`help revisions.patterns`.
     """
-    return _revsetutil(repo, subset, x, ('remotebookmarks', 'remotebranches'),
-                       _parseargs(x))
+    return _revsetutil(repo, subset, x, ('remotebookmarks', 'remotebranches'))
 
 @revsetpredicate('remotebranches([name])')
 def remotebranchesrevset(repo, subset, x):
@@ -392,9 +385,7 @@ def remotebranchesrevset(repo, subset, x):
 
     Pattern matching is supported for `name`. See :hg:`help revisions.patterns`.
     """
-
-    args = _parseargs(x)
-    return _revsetutil(repo, subset, x, ('remotebranches',), args)
+    return _revsetutil(repo, subset, x, ('remotebranches',))
 
 @revsetpredicate('remotebookmarks([name])')
 def remotebmarksrevset(repo, subset, x):
@@ -403,6 +394,4 @@ def remotebmarksrevset(repo, subset, x):
 
     Pattern matching is supported for `name`. See :hg:`help revisions.patterns`.
     """
-
-    args = _parseargs(x)
-    return _revsetutil(repo, subset, x, ('remotebookmarks',), args)
+    return _revsetutil(repo, subset, x, ('remotebookmarks',))

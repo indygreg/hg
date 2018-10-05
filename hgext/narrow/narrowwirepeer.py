@@ -21,16 +21,7 @@ from mercurial import (
 )
 
 def uisetup():
-    extensions.wrapfunction(wireprotov1server, '_capabilities', addnarrowcap)
     wireprotov1peer.wirepeer.narrow_widen = peernarrowwiden
-
-def addnarrowcap(orig, repo, proto):
-    """add the narrow capability to the server"""
-    caps = orig(repo, proto)
-    caps.append(wireprototypes.NARROWCAP)
-    if repo.ui.configbool('experimental', 'narrowservebrokenellipses'):
-        caps.append(wireprototypes.ELLIPSESCAP)
-    return caps
 
 def reposetup(repo):
     def wirereposetup(ui, peer):

@@ -531,6 +531,9 @@ class bufferingcommandresponseemitter(object):
         # * If a chunk causes us to go over our buffering limit, we flush
         #   and then buffer the new chunk.
 
+        if not data:
+            return
+
         if len(data) > self._maxsize:
             for frame in self._flush():
                 yield frame
@@ -572,6 +575,9 @@ class bufferingcommandresponseemitter(object):
 
         self._chunks[:] = []
         self._chunkssize = 0
+
+        if not payload:
+            return
 
         yield self._stream.makeframe(
             self._requestid,

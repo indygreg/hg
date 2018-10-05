@@ -394,7 +394,6 @@ class ServerReactorTests(unittest.TestCase):
             b'1 2 0 command-response continuation Y\x80d',
             b'1 2 0 command-response continuation %s' % first,
             b'1 2 0 command-response continuation %s' % second,
-            b'1 2 0 command-response continuation ',
             b'1 2 0 command-response eos '
         ])
 

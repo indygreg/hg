@@ -1,6 +1,5 @@
 Integration with the share extension needs improvement. Right now
-we've seen some odd bugs, and the way we modify the contents of the
-.hg/shared file is unfortunate. See wrappostshare() and unsharenarrowspec().
+we've seen some odd bugs.
 
 Resolve commentary on narrowrepo.wraprepo.narrowrepository.status
 about the filtering of status being done at an awkward layer. This

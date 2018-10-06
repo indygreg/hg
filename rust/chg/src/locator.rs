@@ -6,12 +6,53 @@
 //! Utility for locating command-server process.
 
 use std::env;
+use std::ffi::{OsStr, OsString};
 use std::fs::{self, DirBuilder};
 use std::io;
+use std::os::unix::ffi::{OsStrExt, OsStringExt};
 use std::os::unix::fs::{DirBuilderExt, MetadataExt};
 use std::path::{Path, PathBuf};
+use std::process;
+use std::time::Duration;
 
 use super::procutil;
+
+/// Helper to connect to and spawn a server process.
+#[derive(Clone, Debug)]
+pub struct Locator {
+    hg_command: OsString,
+    current_dir: PathBuf,
+    env_vars: Vec<(OsString, OsString)>,
+    process_id: u32,
+    base_sock_path: PathBuf,
+    timeout: Duration,
+}
+
+impl Locator {
+    /// Creates locator capturing the current process environment.
+    ///
+    /// If no `$CHGSOCKNAME` is specified, the socket directory will be
+    /// created as necessary.
+    pub fn prepare_from_env() -> io::Result<Locator> {
+        Ok(Locator {
+            hg_command: default_hg_command(),
+            current_dir: env::current_dir()?,
+            env_vars: env::vars_os().collect(),
+            process_id: process::id(),
+            base_sock_path: prepare_server_socket_path()?,
+            timeout: default_timeout(),
+        })
+    }
+
+    /// Temporary socket path for this client process.
+    fn temp_sock_path(&self) -> PathBuf {
+        let src = self.base_sock_path.as_os_str().as_bytes();
+        let mut buf = Vec::with_capacity(src.len() + 6);
+        buf.extend_from_slice(src);
+        buf.extend_from_slice(format!(".{}", self.process_id).as_bytes());
+        OsString::from_vec(buf).into()
+    }
+}
 
 /// Determines the server socket to connect to.
 ///
@@ -45,6 +86,17 @@ pub fn default_server_socket_dir() -> PathBuf {
         path.push(format!("chg{}", procutil::get_effective_uid()));
         path
     }
+}
+
+/// Determines the default hg command.
+pub fn default_hg_command() -> OsString {
+    // TODO: maybe allow embedding the path at compile time (or load from hgrc)
+    env::var_os("CHGHG").or(env::var_os("HG")).unwrap_or(OsStr::new("hg").to_owned())
+}
+
+fn default_timeout() -> Duration {
+    let secs = env::var("CHGTIMEOUT").ok().and_then(|s| s.parse().ok()).unwrap_or(60);
+    Duration::from_secs(secs)
 }
 
 /// Creates a directory which the other users cannot access to.

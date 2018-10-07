@@ -5,6 +5,7 @@
 
 extern crate chg;
 extern crate futures;
+extern crate log;
 extern crate tokio;
 extern crate tokio_hglib;
 
@@ -15,10 +16,48 @@ use futures::sync::oneshot;
 use std::env;
 use std::io;
 use std::process;
+use std::time::Instant;
 use tokio::prelude::*;
 use tokio_hglib::UnixClient;
 
+struct DebugLogger {
+    start: Instant,
+}
+
+impl DebugLogger {
+    pub fn new() -> DebugLogger {
+        DebugLogger {
+            start: Instant::now(),
+        }
+    }
+}
+
+impl log::Log for DebugLogger {
+    fn enabled(&self, metadata: &log::Metadata) -> bool {
+        metadata.target().starts_with("chg::")
+    }
+
+    fn log(&self, record: &log::Record) {
+        if self.enabled(record.metadata()) {
+            // just make the output looks similar to chg of C
+            let l = format!("{}", record.level()).to_lowercase();
+            let t = self.start.elapsed();
+            writeln!(io::stderr(), "chg: {}: {}.{:06} {}",
+                     l, t.as_secs(), t.subsec_micros(), record.args()).unwrap_or(());
+        }
+    }
+
+    fn flush(&self) {
+    }
+}
+
 fn main() {
+    if env::var_os("CHGDEBUG").is_some() {
+        log::set_boxed_logger(Box::new(DebugLogger::new()))
+            .expect("any logger should not be installed yet");
+        log::set_max_level(log::LevelFilter::Debug);
+    }
+
     let code = run().unwrap_or_else(|err| {
         writeln!(io::stderr(), "chg: abort: {}", err).unwrap_or(());
         255

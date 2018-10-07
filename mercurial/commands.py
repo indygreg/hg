@@ -6008,7 +6008,23 @@ def verify(ui, repo):
 @command('version', [] + formatteropts, norepo=True,
          intents={INTENT_READONLY})
 def version_(ui, **opts):
-    """output version and copyright information"""
+    """output version and copyright information
+
+    .. container:: verbose
+
+      Template:
+
+      The following keywords are supported. See also :hg:`help templates`.
+
+      :extensions: List of extensions.
+      :ver:     String. Version number.
+
+      And each entry of ``{extensions}`` provides the following sub-keywords
+      in addition to ``{ver}``.
+
+      :bundled: Boolean. True if included in the release.
+      :name:    String. Extension name.
+    """
     opts = pycompat.byteskwargs(opts)
     if ui.verbose:
         ui.pager('version')

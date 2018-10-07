@@ -4099,6 +4099,16 @@ def paths(ui, repo, search=None, **opts):
 
     See :hg:`help urls` for more information.
 
+    .. container:: verbose
+
+      Template:
+
+      The following keywords are supported. See also :hg:`help templates`.
+
+      :name:    String. Symbolic name of the path alias.
+      :pushurl: String. URL for push operations.
+      :url:     String. URL or directory path for the other operations.
+
     Returns 0 on success.
     """
 

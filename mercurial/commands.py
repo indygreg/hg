@@ -3056,6 +3056,16 @@ def identify(ui, repo, source=None, rev=None,
 
     .. container:: verbose
 
+      Template:
+
+      The following keywords are supported in addition to the common template
+      keywords and functions. See also :hg:`help templates`.
+
+      :dirty:   String. Character ``+`` denoting if the working directory has
+                uncommitted changes.
+      :id:      String. One or two nodes, optionally followed by ``+``.
+      :parents: List of strings. Parent nodes of the changeset.
+
       Examples:
 
       - generate a build identifier for the working directory::

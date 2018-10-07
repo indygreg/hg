@@ -4678,6 +4678,16 @@ def resolve(ui, repo, *pats, **opts):
        conflicts. You must use :hg:`resolve -m ...` before you can
        commit after a conflicting merge.
 
+    .. container:: verbose
+
+      Template:
+
+      The following keywords are supported in addition to the common template
+      keywords and functions. See also :hg:`help templates`.
+
+      :mergestatus: String. Character denoting merge conflicts, ``U`` or ``R``.
+      :path:    String. Repository-absolute path of the file.
+
     Returns 0 on success, 1 if any files fail a resolve attempt.
     """
 

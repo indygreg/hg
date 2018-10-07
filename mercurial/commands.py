@@ -5764,6 +5764,16 @@ def tags(ui, repo, **opts):
     switch is used, a third column "local" is printed for local tags.
     When the -q/--quiet switch is used, only the tag name is printed.
 
+    .. container:: verbose
+
+      Template:
+
+      The following keywords are supported in addition to the common template
+      keywords and functions such as ``{tag}``. See also
+      :hg:`help templates`.
+
+      :type:    String. ``local`` for local tags.
+
     Returns 0 on success.
     """
 

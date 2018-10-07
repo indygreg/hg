@@ -20,7 +20,7 @@ use tokio_hglib::UnixClient;
 
 fn main() {
     let code = run().unwrap_or_else(|err| {
-        eprintln!("chg: abort: {}", err);
+        writeln!(io::stderr(), "chg: abort: {}", err).unwrap_or(());
         255
     });
     process::exit(code);

@@ -425,6 +425,13 @@ class chgcmdserver(commandserver.server):
             self.ui.flush()
             self.cresult.write('exit 255')
             return
+        except error.Abort as inst:
+            self.ui.error(_("abort: %s\n") % inst)
+            if inst.hint:
+                self.ui.error(_("(%s)\n") % inst.hint)
+            self.ui.flush()
+            self.cresult.write('exit 255')
+            return
         newhash = hashstate.fromui(lui, self.hashstate.mtimepaths)
         insts = []
         if newhash.mtimehash != self.hashstate.mtimehash:

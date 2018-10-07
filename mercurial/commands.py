@@ -2645,6 +2645,26 @@ def grep(ui, repo, pattern, *pats, **opts):
     the repository are searched, including those that don't exist in the
     current branch or have been deleted in a prior changeset.
 
+    .. container:: verbose
+
+      Template:
+
+      The following keywords are supported in addition to the common template
+      keywords and functions. See also :hg:`help templates`.
+
+      :change:  String. Character denoting insertion ``+`` or removal ``-``.
+                Available if ``--diff`` is specified.
+      :lineno:  Integer. Line number of the match.
+      :path:    String. Repository-absolute path of the file.
+      :texts:   List of text chunks.
+
+      And each entry of ``{texts}`` provides the following sub-keywords.
+
+      :matched: Boolean. True if the chunk matches the specified pattern.
+      :text:    String. Chunk content.
+
+      See :hg:`help templates.operators` for the list expansion syntax.
+
     Returns 0 if a match is found, 1 otherwise.
     """
     opts = pycompat.byteskwargs(opts)

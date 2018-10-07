@@ -5229,6 +5229,16 @@ def status(ui, repo, *pats, **opts):
       ``commands.status.skipstates`` to one or more of: 'bisect', 'graft',
       'histedit', 'merge', 'rebase', or 'unshelve'.
 
+      Template:
+
+      The following keywords are supported in addition to the common template
+      keywords and functions. See also :hg:`help templates`.
+
+      :path:    String. Repository-absolute path of the file.
+      :source:  String. Repository-absolute path of the file originated from.
+                Available if ``--copies`` is specified.
+      :status:  String. Character denoting file's status.
+
       Examples:
 
       - show changes in the working directory relative to a

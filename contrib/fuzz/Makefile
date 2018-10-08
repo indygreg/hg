@@ -117,15 +117,12 @@ manifest_fuzzer: sanpy manifest.cc manifest.o charencode.o parsers.o dirs.o path
 manifest_corpus.zip:
 	python manifest_corpus.py $$OUT/manifest_fuzzer_seed_corpus.zip
 
-copy_options:
-	cp *.options $$OUT
-
 clean:
 	$(RM) *.o *_fuzzer \
 	  bdiff \
 	  mpatch \
 	  xdiff
 
-oss-fuzz: bdiff_fuzzer mpatch_fuzzer mpatch_corpus.zip xdiff_fuzzer manifest_fuzzer manifest_corpus.zip copy_options
+oss-fuzz: bdiff_fuzzer mpatch_fuzzer mpatch_corpus.zip xdiff_fuzzer manifest_fuzzer manifest_corpus.zip
 
-.PHONY: all clean oss-fuzz sanpy copy_options
+.PHONY: all clean oss-fuzz sanpy

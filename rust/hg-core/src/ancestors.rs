@@ -80,6 +80,26 @@ impl<G: Graph> AncestorsIterator<G> {
         self.conditionally_push_rev(parents.1);
         Ok(())
     }
+
+    /// Consumes partially the iterator to tell if the given target
+    /// revision
+    /// is in the ancestors it emits.
+    /// This is meant for iterators actually dedicated to that kind of
+    /// purpose
+    pub fn contains(&mut self, target: Revision) -> bool {
+        if self.seen.contains(&target) && target != NULL_REVISION {
+            return true;
+        }
+        for rev in self {
+            if rev == target {
+                return true;
+            }
+            if rev < target {
+                return false;
+            }
+        }
+        false
+    }
 }
 
 /// Main implementation.
@@ -201,6 +221,18 @@ mod tests {
         let mut iter =
             AncestorsIterator::new(Stub, vec![-1], 0, false).unwrap();
         assert_eq!(iter.next(), None)
+    }
+
+    #[test]
+    fn test_contains() {
+        let mut lazy =
+            AncestorsIterator::new(Stub, vec![10, 1], 0, true).unwrap();
+        assert!(lazy.contains(1));
+        assert!(!lazy.contains(3));
+
+        let mut lazy =
+            AncestorsIterator::new(Stub, vec![0], 0, false).unwrap();
+        assert!(!lazy.contains(NULL_REVISION));
     }
 
     /// A corrupted Graph, supporting error handling tests

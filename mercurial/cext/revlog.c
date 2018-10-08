@@ -2316,6 +2316,7 @@ rustlazyancestorsObject *rustlazyancestors_init(
 	int inclusive);
 void rustlazyancestors_drop(rustlazyancestorsObject *self);
 int rustlazyancestors_next(rustlazyancestorsObject *self);
+int rustlazyancestors_contains(rustlazyancestorsObject *self, long rev);
 
 /* CPython instance methods */
 static int rustla_init(rustlazyancestorsObject *self,
@@ -2395,6 +2396,24 @@ static PyObject *rustla_next(rustlazyancestorsObject *self) {
 	return PyInt_FromLong(res);
 }
 
+static int rustla_contains(rustlazyancestorsObject *self, PyObject *rev) {
+	if (!(PyInt_Check(rev))) {
+		return 0;
+	}
+	return rustlazyancestors_contains(self->iter, PyInt_AS_LONG(rev));
+}
+
+static PySequenceMethods rustla_sequence_methods = {
+	0,                       /* sq_length */
+	0,                       /* sq_concat */
+	0,                       /* sq_repeat */
+	0,                       /* sq_item */
+	0,                       /* sq_slice */
+	0,                       /* sq_ass_item */
+	0,                       /* sq_ass_slice */
+	(objobjproc)rustla_contains, /* sq_contains */
+};
+
 static PyTypeObject rustlazyancestorsType = {
 	PyVarObject_HEAD_INIT(NULL, 0) /* header */
 	"parsers.rustlazyancestors",           /* tp_name */
@@ -2407,7 +2426,7 @@ static PyTypeObject rustlazyancestorsType = {
 	0,                         /* tp_compare */
 	0,                         /* tp_repr */
 	0,                         /* tp_as_number */
-	0,                         /* tp_as_sequence */
+	&rustla_sequence_methods,  /* tp_as_sequence */
 	0,                         /* tp_as_mapping */
 	0,                         /* tp_hash */
 	0,                         /* tp_call */

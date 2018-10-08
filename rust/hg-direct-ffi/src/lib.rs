@@ -13,4 +13,7 @@ extern crate hg;
 extern crate libc;
 
 mod ancestors;
-pub use ancestors::{rustlazyancestors_drop, rustlazyancestors_init, rustlazyancestors_next};
+pub use ancestors::{
+    rustlazyancestors_contains, rustlazyancestors_drop,
+    rustlazyancestors_init, rustlazyancestors_next,
+};

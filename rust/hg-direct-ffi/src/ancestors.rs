@@ -139,6 +139,27 @@ fn raw_next<G: Graph>(raw: *mut AncestorsIterator<G>) -> c_long {
     as_ref.next().unwrap_or(NULL_REVISION) as c_long
 }
 
+#[no_mangle]
+pub extern "C" fn rustlazyancestors_contains(
+    raw: *mut AncestorsIterator<Index>,
+    target: c_long,
+) -> c_int {
+    raw_contains(raw, target)
+}
+
+/// Testable (for any Graph) version of rustlazayancestors_next
+#[inline]
+fn raw_contains<G: Graph>(
+    raw: *mut AncestorsIterator<G>,
+    target: c_long,
+) -> c_int {
+    let as_ref = unsafe { &mut *raw };
+    if as_ref.contains(target as Revision) {
+        return 1;
+    }
+    0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -225,5 +246,19 @@ mod tests {
     #[test]
     fn test_init_err_out_of_range() {
         assert!(stub_raw_init_from_vec(vec![25], 0, 0).is_null());
+    }
+
+    #[test]
+    fn test_contains() {
+        let raw = stub_raw_init_from_vec(vec![5, 6], 0, 1);
+        assert_eq!(raw_contains(raw, 5), 1);
+        assert_eq!(raw_contains(raw, 2), 1);
+    }
+
+    #[test]
+    fn test_contains_exclusive() {
+        let raw = stub_raw_init_from_vec(vec![5, 6], 0, 0);
+        assert_eq!(raw_contains(raw, 5), 0);
+        assert_eq!(raw_contains(raw, 2), 1);
     }
 }

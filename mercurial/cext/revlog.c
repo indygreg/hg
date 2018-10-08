@@ -94,8 +94,8 @@ static Py_ssize_t index_length(const indexObject *self)
 	return self->length + PyList_GET_SIZE(self->added);
 }
 
-static PyObject *nullentry;
-static const char nullid[20];
+static PyObject *nullentry = NULL;
+static const char nullid[20] = {0};
 
 static Py_ssize_t inline_scan(indexObject *self, const char **offsets);
 

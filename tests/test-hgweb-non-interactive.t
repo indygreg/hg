@@ -19,9 +19,7 @@ by the WSGI standard and strictly implemented by mod_wsgi.
   >     util,
   > )
   > ui = uimod.ui
-  > from mercurial.hgweb.hgweb_mod import (
-  >     hgweb,
-  > )
+  > from mercurial.hgweb import hgweb_mod
   > stringio = util.stringio
   > 
   > class FileLike(object):
@@ -67,7 +65,7 @@ by the WSGI standard and strictly implemented by mod_wsgi.
   >     'SERVER_PROTOCOL': 'HTTP/1.0'
   > }
   > 
-  > i = hgweb(b'.')
+  > i = hgweb_mod.hgweb(b'.')
   > for c in i(env, startrsp):
   >     pass
   > sys.stdout.flush()

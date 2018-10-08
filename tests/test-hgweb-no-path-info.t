@@ -18,11 +18,8 @@ should be used from d74fc8dec2b4 onward to route the request.
   > from __future__ import absolute_import
   > import os
   > import sys
-  > from mercurial.hgweb import (
-  >     hgweb,
-  >     hgwebdir,
-  > )
   > from mercurial import (
+  >     hgweb,
   >     util,
   > )
   > stringio = util.stringio
@@ -72,11 +69,11 @@ should be used from d74fc8dec2b4 onward to route the request.
   > 
   > output = stringio()
   > env['QUERY_STRING'] = 'style=atom'
-  > process(hgweb(b'.', name=b'repo'))
+  > process(hgweb.hgweb(b'.', name=b'repo'))
   > 
   > output = stringio()
   > env['QUERY_STRING'] = 'style=raw'
-  > process(hgwebdir({b'repo': b'.'}))
+  > process(hgweb.hgwebdir({b'repo': b'.'}))
   > EOF
   $ "$PYTHON" request.py
   ---- STATUS

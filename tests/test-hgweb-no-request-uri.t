@@ -18,12 +18,9 @@ should be used from d74fc8dec2b4 onward to route the request.
   > from __future__ import absolute_import
   > import os
   > import sys
-  > from mercurial.hgweb import (
-  >     hgweb,
-  >     hgwebdir,
-  > )
   > from mercurial import (
   >     encoding,
+  >     hgweb,
   >     util,
   > )
   > stringio = util.stringio
@@ -65,22 +62,22 @@ should be used from d74fc8dec2b4 onward to route the request.
   > output = stringio()
   > env['PATH_INFO'] = '/'
   > env['QUERY_STRING'] = 'style=atom'
-  > process(hgweb(b'.', name = b'repo'))
+  > process(hgweb.hgweb(b'.', name = b'repo'))
   > 
   > output = stringio()
   > env['PATH_INFO'] = '/file/tip/'
   > env['QUERY_STRING'] = 'style=raw'
-  > process(hgweb(b'.', name = b'repo'))
+  > process(hgweb.hgweb(b'.', name = b'repo'))
   > 
   > output = stringio()
   > env['PATH_INFO'] = '/'
   > env['QUERY_STRING'] = 'style=raw'
-  > process(hgwebdir({b'repo': b'.'}))
+  > process(hgweb.hgwebdir({b'repo': b'.'}))
   > 
   > output = stringio()
   > env['PATH_INFO'] = '/repo/file/tip/'
   > env['QUERY_STRING'] = 'style=raw'
-  > process(hgwebdir({b'repo': b'.'}))
+  > process(hgweb.hgwebdir({b'repo': b'.'}))
   > EOF
   $ "$PYTHON" request.py
   ---- STATUS

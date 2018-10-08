@@ -2304,8 +2304,10 @@ void revlog_module_init(PyObject *mod)
 	Py_INCREF(&nodetreeType);
 	PyModule_AddObject(mod, "nodetree", (PyObject *)&nodetreeType);
 
-	nullentry = Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0,
-				  -1, -1, -1, -1, nullid, 20);
+	if (!nullentry) {
+		nullentry = Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0,
+					  -1, -1, -1, -1, nullid, 20);
+	}
 	if (nullentry)
 		PyObject_GC_UnTrack(nullentry);
 }

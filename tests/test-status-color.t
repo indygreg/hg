@@ -240,8 +240,8 @@ hg status -A (with terminfo color):
 
 #if tic
 
-  $ mkdir "$TESTTMP/terminfo"
-  $ TERMINFO="$TESTTMP/terminfo" tic "$TESTDIR/hgterm.ti"
+  $ tic -o "$TESTTMP/terminfo" "$TESTDIR/hgterm.ti"
+  $ ln -s "$TESTTMP/terminfo" "$TESTTMP/terminfo.cdb"
   $ TERM=hgterm TERMINFO="$TESTTMP/terminfo" hg status --config color.mode=terminfo -A
   \x1b[30m\x1b[32m\x1b[1mA \x1b[30m\x1b[30m\x1b[32m\x1b[1madded\x1b[30m (esc)
   \x1b[30m\x1b[32m\x1b[1mA \x1b[30m\x1b[30m\x1b[32m\x1b[1mcopied\x1b[30m (esc)

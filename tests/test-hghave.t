@@ -35,9 +35,9 @@ Testing hghave extensibility for third party tools
 (terminate with exit code 2 at failure of importing hghaveaddon.py)
 
   $ rm hghaveaddon.*
-  $ cat > hghaveaddon.py <<EOF
+  $ cat > hghaveaddon.py <<NO_CHECK_EOF
   > importing this file should cause syntax error
-  > EOF
+  > NO_CHECK_EOF
 
   $ hghave custom
   failed to import hghaveaddon.py from '.': invalid syntax (hghaveaddon.py, line 1)

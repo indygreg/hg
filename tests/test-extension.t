@@ -1251,9 +1251,9 @@ Broken disabled extension and command:
 
   $ mkdir hgext
   $ echo > hgext/__init__.py
-  $ cat > hgext/broken.py <<EOF
+  $ cat > hgext/broken.py <<NO_CHECK_EOF
   > "broken extension'
-  > EOF
+  > NO_CHECK_EOF
   $ cat > path.py <<EOF
   > import os, sys
   > sys.path.insert(0, os.environ['HGEXTPATH'])

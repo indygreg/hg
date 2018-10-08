@@ -31,12 +31,12 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 	strncpy(cpypath, pypath.c_str(), pypath.size());
 	setenv("PYTHONPATH", cpypath, 1);
 	Py_SetPythonHome(cpypath);
+	Py_InitializeEx(0);
 	return 0;
 }
 
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 {
-	Py_InitializeEx(0);
 	initparsers();
 	PyObject *mtext =
 	    PyBytes_FromStringAndSize((const char *)Data, (Py_ssize_t)Size);
@@ -69,7 +69,6 @@ except Exception as e:
 	Py_DECREF(code);
 	Py_DECREF(locals);
 	Py_DECREF(mtext);
-	Py_Finalize();
 	return 0; // Non-zero return values are reserved for future use.
 }
 }

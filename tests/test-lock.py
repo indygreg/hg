@@ -2,10 +2,11 @@ from __future__ import absolute_import
 
 import copy
 import errno
-import silenttestrunner
 import tempfile
 import types
 import unittest
+
+import silenttestrunner
 
 from mercurial import (
     encoding,

@@ -28,7 +28,7 @@ testedwith = 'ships-with-hg-core'
 
 commitopts = cmdutil.commitopts
 commitopts2 = cmdutil.commitopts2
-commitopts3 = [('r', 'rev', '',
+commitopts3 = [('r', 'rev', [],
                _('revision to check'), _('REV'))]
 
 @command('close-head|close-heads', commitopts + commitopts2 + commitopts3,

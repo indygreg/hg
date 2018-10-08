@@ -135,6 +135,7 @@ class commandresponse(object):
         self._serviceable = threading.Event()
 
         self._pendingevents = []
+        self._pendingerror = None
         self._decoder = cborutil.bufferingdecoder()
         self._seeninitial = False
         self._redirect = None
@@ -167,6 +168,12 @@ class commandresponse(object):
 
                 self._pendingevents.append(o)
 
+            self._serviceable.set()
+
+    def _onerror(self, e):
+        self._pendingerror = e
+
+        with self._lock:
             self._serviceable.set()
 
     def _handleinitial(self, o):
@@ -211,6 +218,9 @@ class commandresponse(object):
             # to that of the background thread receiving frames and updating
             # our state.
             self._serviceable.wait(1.0)
+
+            if self._pendingerror:
+                raise self._pendingerror
 
             with self._lock:
                 self._serviceable.clear()
@@ -342,9 +352,18 @@ class clienthandler(object):
             try:
                 self._processresponsedata(frame, meta, response)
             except BaseException as e:
-                self._futures[frame.requestid].set_exception(e)
-                del self._futures[frame.requestid]
-                response._oninputcomplete()
+                # If an exception occurs before the future is resolved,
+                # fail the future. Otherwise, we stuff the exception on
+                # the response object so it can be raised during objects()
+                # iteration. If nothing is consuming objects(), we could
+                # silently swallow this exception. That's a risk we'll have to
+                # take.
+                if frame.requestid in self._futures:
+                    self._futures[frame.requestid].set_exception(e)
+                    del self._futures[frame.requestid]
+                    response._oninputcomplete()
+                else:
+                    response._onerror(e)
         else:
             raise error.ProgrammingError(
                 'unhandled action from clientreactor: %s' % action)

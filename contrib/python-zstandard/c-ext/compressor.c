@@ -11,14 +11,12 @@
 
 extern PyObject* ZstdError;
 
-int ensure_cctx(ZstdCompressor* compressor) {
+int setup_cctx(ZstdCompressor* compressor) {
 	size_t zresult;
 
 	assert(compressor);
 	assert(compressor->cctx);
 	assert(compressor->params);
-
-	ZSTD_CCtx_reset(compressor->cctx);
 
 	zresult = ZSTD_CCtx_setParametersUsingCCtxParams(compressor->cctx, compressor->params);
 	if (ZSTD_isError(zresult)) {
@@ -237,9 +235,9 @@ static int ZstdCompressor_init(ZstdCompressor* self, PyObject* args, PyObject* k
 		Py_INCREF(dict);
 	}
 
-	if (ensure_cctx(self)) {
-		return -1;
-	}
+    if (setup_cctx(self)) {
+        return -1;
+    }
 
 	return 0;
 }
@@ -346,9 +344,7 @@ static PyObject* ZstdCompressor_copy_stream(ZstdCompressor* self, PyObject* args
 		return NULL;
 	}
 
-	if (ensure_cctx(self)) {
-		return NULL;
-	}
+	ZSTD_CCtx_reset(self->cctx);
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
 	if (ZSTD_isError(zresult)) {
@@ -489,6 +485,7 @@ static ZstdCompressionReader* ZstdCompressor_stream_reader(ZstdCompressor* self,
 	unsigned long long sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
 	size_t readSize = ZSTD_CStreamInSize();
 	ZstdCompressionReader* result = NULL;
+	size_t zresult;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Kk:stream_reader", kwlist,
 		&source, &sourceSize, &readSize)) {
@@ -520,13 +517,17 @@ static ZstdCompressionReader* ZstdCompressor_stream_reader(ZstdCompressor* self,
 		goto except;
 	}
 
-	if (ensure_cctx(self)) {
+	ZSTD_CCtx_reset(self->cctx);
+
+	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "error setting source source: %s",
+			ZSTD_getErrorName(zresult));
 		goto except;
 	}
 
 	result->compressor = self;
 	Py_INCREF(self);
-	result->sourceSize = sourceSize;
 
 	return result;
 
@@ -576,9 +577,7 @@ static PyObject* ZstdCompressor_compress(ZstdCompressor* self, PyObject* args, P
 		goto finally;
 	}
 
-	if (ensure_cctx(self)) {
-		goto finally;
-	}
+	ZSTD_CCtx_reset(self->cctx);
 
 	destSize = ZSTD_compressBound(source.len);
 	output = PyBytes_FromStringAndSize(NULL, destSize);
@@ -652,9 +651,7 @@ static ZstdCompressionObj* ZstdCompressor_compressobj(ZstdCompressor* self, PyOb
 		return NULL;
 	}
 
-	if (ensure_cctx(self)) {
-		return NULL;
-	}
+	ZSTD_CCtx_reset(self->cctx);
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, inSize);
 	if (ZSTD_isError(zresult)) {
@@ -743,9 +740,7 @@ static ZstdCompressorIterator* ZstdCompressor_read_to_iter(ZstdCompressor* self,
 		goto except;
 	}
 
-	if (ensure_cctx(self)) {
-		return NULL;
-	}
+	ZSTD_CCtx_reset(self->cctx);
 
 	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
 	if (ZSTD_isError(zresult)) {
@@ -817,9 +812,7 @@ static ZstdCompressionWriter* ZstdCompressor_stream_writer(ZstdCompressor* self,
 		return NULL;
 	}
 
-	if (ensure_cctx(self)) {
-		return NULL;
-	}
+	ZSTD_CCtx_reset(self->cctx);
 
 	result = (ZstdCompressionWriter*)PyObject_CallObject((PyObject*)&ZstdCompressionWriterType, NULL);
 	if (!result) {
@@ -837,6 +830,58 @@ static ZstdCompressionWriter* ZstdCompressor_stream_writer(ZstdCompressor* self,
 	result->bytesCompressed = 0;
 
 	return result;
+}
+
+PyDoc_STRVAR(ZstdCompressor_chunker__doc__,
+"Create an object for iterative compressing to same-sized chunks.\n"
+);
+
+static ZstdCompressionChunker* ZstdCompressor_chunker(ZstdCompressor* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"size",
+		"chunk_size",
+		NULL
+	};
+
+	unsigned long long sourceSize = ZSTD_CONTENTSIZE_UNKNOWN;
+	size_t chunkSize = ZSTD_CStreamOutSize();
+	ZstdCompressionChunker* chunker;
+	size_t zresult;
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Kk:chunker", kwlist,
+		&sourceSize, &chunkSize)) {
+		return NULL;
+	}
+
+	ZSTD_CCtx_reset(self->cctx);
+
+	zresult = ZSTD_CCtx_setPledgedSrcSize(self->cctx, sourceSize);
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "error setting source size: %s",
+			ZSTD_getErrorName(zresult));
+		return NULL;
+	}
+
+	chunker = (ZstdCompressionChunker*)PyObject_CallObject((PyObject*)&ZstdCompressionChunkerType, NULL);
+	if (!chunker) {
+		return NULL;
+	}
+
+	chunker->output.dst = PyMem_Malloc(chunkSize);
+	if (!chunker->output.dst) {
+		PyErr_NoMemory();
+		Py_DECREF(chunker);
+		return NULL;
+	}
+	chunker->output.size = chunkSize;
+	chunker->output.pos = 0;
+
+	chunker->compressor = self;
+	Py_INCREF(chunker->compressor);
+
+	chunker->chunkSize = chunkSize;
+
+	return chunker;
 }
 
 typedef struct {
@@ -1524,6 +1569,8 @@ finally:
 }
 
 static PyMethodDef ZstdCompressor_methods[] = {
+	{ "chunker", (PyCFunction)ZstdCompressor_chunker,
+	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_chunker__doc__ },
 	{ "compress", (PyCFunction)ZstdCompressor_compress,
 	METH_VARARGS | METH_KEYWORDS, ZstdCompressor_compress__doc__ },
 	{ "compressobj", (PyCFunction)ZstdCompressor_compressobj,

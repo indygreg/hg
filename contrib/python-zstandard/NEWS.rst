@@ -30,6 +30,19 @@ Actions Blocking Release
 * Remove low-level compression parameters from ``ZstdCompressor.__init__`` and
   require use of ``CompressionParameters``.
 * Expose ``ZSTD_getFrameProgression()`` from more compressor types.
+* Support modifying compression parameters mid operation when supported by
+  zstd API.
+* Expose ``ZSTD_CLEVEL_DEFAULT`` constant.
+* Support ``ZSTD_p_forceAttachDict`` compression parameter.
+* Use ``ZSTD_CCtx_getParameter()``/``ZSTD_CCtxParam_getParameter()`` for retrieving
+  compression parameters.
+* Consider exposing ``ZSTDMT_toFlushNow()``.
+* Expose ``ZDICT_trainFromBuffer_fastCover()``,
+  ``ZDICT_optimizeTrainFromBuffer_fastCover``.
+* Expose and enforce ``ZSTD_minCLevel()`` for minimum compression level.
+* Consider a ``chunker()`` API for decompression.
+* Consider stats for ``chunker()`` API, including finding the last consumed
+  offset of input data.
 
 Other Actions Not Blocking Release
 ---------------------------------------
@@ -37,6 +50,111 @@ Other Actions Not Blocking Release
 * Support for block compression APIs.
 * API for ensuring max memory ceiling isn't exceeded.
 * Move off nose for testing.
+
+0.10.1 (released 2018-10-08)
+============================
+
+Backwards Compatibility Notes
+-----------------------------
+
+* ``ZstdCompressor.stream_reader().closed`` is now a property instead of a
+  method (#58).
+* ``ZstdDecompressor.stream_reader().closed`` is now a property instead of a
+  method (#58).
+
+Changes
+-------
+
+* Stop attempting to package Python 3.6 for Miniconda. The latest version of
+  Miniconda is using Python 3.7. The Python 3.6 Miniconda packages were a lie
+  since this were built against Python 3.7.
+* ``ZstdCompressor.stream_reader()``'s and ``ZstdDecompressor.stream_reader()``'s
+  ``closed`` attribute is now a read-only property instead of a method. This now
+  properly matches the ``IOBase`` API and allows instances to be used in more
+  places that accept ``IOBase`` instances.
+
+0.10.0 (released 2018-10-08)
+============================
+
+Backwards Compatibility Notes
+-----------------------------
+
+* ``ZstdDecompressor.stream_reader().read()`` now consistently requires an
+  argument in both the C and CFFI backends. Before, the CFFI implementation
+  would assume a default value of ``-1``, which was later rejected.
+* The ``compress_literals`` argument and attribute has been removed from
+  ``zstd.ZstdCompressionParameters`` because it was removed by the zstd 1.3.5
+  API.
+* ``ZSTD_CCtx_setParametersUsingCCtxParams()`` is no longer called on every
+  operation performed against ``ZstdCompressor`` instances. The reason for this
+  change is that the zstd 1.3.5 API no longer allows this without calling
+  ``ZSTD_CCtx_resetParameters()`` first. But if we called
+  ``ZSTD_CCtx_resetParameters()`` on every operation, we'd have to redo
+  potentially expensive setup when using dictionaries. We now call
+  ``ZSTD_CCtx_reset()`` on every operation and don't attempt to change
+  compression parameters.
+* Objects returned by ``ZstdCompressor.stream_reader()`` no longer need to be
+  used as a context manager. The context manager interface still exists and its
+  behavior is unchanged.
+* Objects returned by ``ZstdDecompressor.stream_reader()`` no longer need to be
+  used as a context manager. The context manager interface still exists and its
+  behavior is unchanged.
+
+Bug Fixes
+---------
+
+* ``ZstdDecompressor.decompressobj().decompress()`` should now return all data
+  from internal buffers in more scenarios. Before, it was possible for data to
+  remain in internal buffers. This data would be emitted on a subsequent call
+  to ``decompress()``. The overall output stream would still be valid. But if
+  callers were expecting input data to exactly map to output data (say the
+  producer had used ``flush(COMPRESSOBJ_FLUSH_BLOCK)`` and was attempting to
+  map input chunks to output chunks), then the previous behavior would be
+  wrong. The new behavior is such that output from
+  ``flush(COMPRESSOBJ_FLUSH_BLOCK)`` fed into ``decompressobj().decompress()``
+  should produce all available compressed input.
+* ``ZstdDecompressor.stream_reader().read()`` should no longer segfault after
+  a previous context manager resulted in error (#56).
+* ``ZstdCompressor.compressobj().flush(COMPRESSOBJ_FLUSH_BLOCK)`` now returns
+  all data necessary to flush a block. Before, it was possible for the
+  ``flush()`` to not emit all data necessary to fully represent a block. This
+  would mean decompressors wouldn't be able to decompress all data that had been
+  fed into the compressor and ``flush()``ed. (#55).
+
+New Features
+------------
+
+* New module constants ``BLOCKSIZELOG_MAX``, ``BLOCKSIZE_MAX``,
+  ``TARGETLENGTH_MAX`` that expose constants from libzstd.
+* New ``ZstdCompressor.chunker()`` API for manually feeding data into a
+  compressor and emitting chunks of a fixed size. Like ``compressobj()``, the
+  API doesn't impose restrictions on the input or output types for the
+  data streams. Unlike ``compressobj()``, it ensures output chunks are of a
+  fixed size. This makes this API useful when the compressed output is being
+  fed into an I/O layer, where uniform write sizes are useful.
+* ``ZstdCompressor.stream_reader()`` no longer needs to be used as a context
+  manager (#34).
+* ``ZstdDecompressor.stream_reader()`` no longer needs to be used as a context
+  manager (#34).
+* Bundled zstandard library upgraded from 1.3.4 to 1.3.6.
+
+Changes
+-------
+
+* Added ``zstd_cffi.py`` and ``NEWS.rst`` to ``MANIFEST.in``.
+* ``zstandard.__version__`` is now defined (#50).
+* Upgrade pip, setuptools, wheel, and cibuildwheel packages to latest versions.
+* Upgrade various packages used in CI to latest versions. Notably tox (in
+  order to support Python 3.7).
+* Use relative paths in setup.py to appease Python 3.7 (#51).
+* Added CI for Python 3.7.
+
+0.9.1 (released 2018-06-04)
+===========================
+
+* Debian packaging support.
+* Fix typo in setup.py (#44).
+* Support building with mingw compiler (#46).
 
 0.9.0 (released 2018-04-08)
 ===========================
@@ -90,7 +208,7 @@ Bug Fixes
 New Features
 ------------
 
-* Bundlded zstandard library upgraded from 1.1.3 to 1.3.4. This delivers various
+* Bundled zstandard library upgraded from 1.1.3 to 1.3.4. This delivers various
   bug fixes and performance improvements. It also gives us access to newer
   features.
 * Support for negative compression levels.

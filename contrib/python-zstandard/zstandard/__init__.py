@@ -60,3 +60,6 @@ elif _module_policy == 'cffi':
 else:
     raise ImportError('unknown module import policy: %s; use default, cffi_fallback, '
                       'cext, or cffi' % _module_policy)
+
+# Keep this in sync with python-zstandard.h.
+__version__ = '0.10.1'

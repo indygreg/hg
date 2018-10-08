@@ -43,17 +43,8 @@ static void reader_dealloc(ZstdCompressionReader* self) {
 }
 
 static ZstdCompressionReader* reader_enter(ZstdCompressionReader* self) {
-	size_t zresult;
-
 	if (self->entered) {
 		PyErr_SetString(PyExc_ValueError, "cannot __enter__ multiple times");
-		return NULL;
-	}
-
-	zresult = ZSTD_CCtx_setPledgedSrcSize(self->compressor->cctx, self->sourceSize);
-	if (ZSTD_isError(zresult)) {
-		PyErr_Format(ZstdError, "error setting source size: %s",
-			ZSTD_getErrorName(zresult));
 		return NULL;
 	}
 
@@ -132,15 +123,6 @@ static PyObject* reader_close(ZstdCompressionReader* self) {
 	Py_RETURN_NONE;
 }
 
-static PyObject* reader_closed(ZstdCompressionReader* self) {
-	if (self->closed) {
-		Py_RETURN_TRUE;
-	}
-	else {
-		Py_RETURN_FALSE;
-	}
-}
-
 static PyObject* reader_tell(ZstdCompressionReader* self) {
 	/* TODO should this raise OSError since stream isn't seekable? */
 	return PyLong_FromUnsignedLongLong(self->bytesCompressed);
@@ -158,11 +140,6 @@ static PyObject* reader_read(ZstdCompressionReader* self, PyObject* args, PyObje
 	Py_ssize_t resultSize;
 	size_t zresult;
 	size_t oldPos;
-
-	if (!self->entered) {
-		PyErr_SetString(ZstdError, "read() must be called from an active context manager");
-		return NULL;
-	}
 
 	if (self->closed) {
 		PyErr_SetString(PyExc_ValueError, "stream is closed");
@@ -333,8 +310,6 @@ static PyMethodDef reader_methods[] = {
 	PyDoc_STR("Exit a compression context") },
 	{ "close", (PyCFunction)reader_close, METH_NOARGS,
 	PyDoc_STR("Close the stream so it cannot perform any more operations") },
-	{ "closed", (PyCFunction)reader_closed, METH_NOARGS,
-	PyDoc_STR("Whether stream is closed") },
 	{ "flush", (PyCFunction)reader_flush, METH_NOARGS, PyDoc_STR("no-ops") },
 	{ "isatty", (PyCFunction)reader_isatty, METH_NOARGS, PyDoc_STR("Returns False") },
 	{ "readable", (PyCFunction)reader_readable, METH_NOARGS,
@@ -352,6 +327,12 @@ static PyMethodDef reader_methods[] = {
 	{ "write", reader_write, METH_VARARGS, PyDoc_STR("Raises OSError") },
 	{ "writelines", reader_writelines, METH_VARARGS, PyDoc_STR("Not implemented") },
 	{ NULL, NULL }
+};
+
+static PyMemberDef reader_members[] = {
+	{ "closed", T_BOOL, offsetof(ZstdCompressionReader, closed),
+	  READONLY, "whether stream is closed" },
+	{ NULL }
 };
 
 PyTypeObject ZstdCompressionReaderType = {
@@ -383,7 +364,7 @@ PyTypeObject ZstdCompressionReaderType = {
 	reader_iter, /* tp_iter */
 	reader_iternext, /* tp_iternext */
 	reader_methods, /* tp_methods */
-	0, /* tp_members */
+	reader_members, /* tp_members */
 	0, /* tp_getset */
 	0, /* tp_base */
 	0, /* tp_dict */

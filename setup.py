@@ -919,7 +919,9 @@ extmodules = [
 
 sys.path.insert(0, 'contrib/python-zstandard')
 import setup_zstd
-extmodules.append(setup_zstd.get_c_extension(name='mercurial.zstd'))
+extmodules.append(setup_zstd.get_c_extension(
+    name='mercurial.zstd',
+    root=os.path.abspath(os.path.dirname(__file__))))
 
 try:
     from distutils import cygwinccompiler

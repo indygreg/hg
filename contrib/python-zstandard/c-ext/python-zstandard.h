@@ -15,7 +15,8 @@
 #include <zstd.h>
 #include <zdict.h>
 
-#define PYTHON_ZSTANDARD_VERSION "0.9.0"
+/* Remember to change the string in zstandard/__init__ as well */
+#define PYTHON_ZSTANDARD_VERSION "0.10.1"
 
 typedef enum {
 	compressorobj_flush_finish,
@@ -45,7 +46,6 @@ typedef struct {
 	unsigned threads;
 	unsigned jobSize;
 	unsigned overlapSizeLog;
-	unsigned compressLiterals;
 	unsigned forceMaxWindow;
 	unsigned enableLongDistanceMatching;
 	unsigned ldmHashLog;
@@ -162,7 +162,6 @@ typedef struct {
 	ZstdCompressor* compressor;
 	PyObject* reader;
 	Py_buffer buffer;
-	unsigned long long sourceSize;
 	size_t readSize;
 
 	int entered;
@@ -177,6 +176,34 @@ typedef struct {
 } ZstdCompressionReader;
 
 extern PyTypeObject ZstdCompressionReaderType;
+
+typedef struct {
+	PyObject_HEAD
+
+	ZstdCompressor* compressor;
+	ZSTD_inBuffer input;
+	ZSTD_outBuffer output;
+	Py_buffer inBuffer;
+	int finished;
+	size_t chunkSize;
+} ZstdCompressionChunker;
+
+extern PyTypeObject ZstdCompressionChunkerType;
+
+typedef enum {
+	compressionchunker_mode_normal,
+	compressionchunker_mode_flush,
+	compressionchunker_mode_finish,
+} CompressionChunkerMode;
+
+typedef struct {
+	PyObject_HEAD
+
+	ZstdCompressionChunker* chunker;
+	CompressionChunkerMode mode;
+} ZstdCompressionChunkerIterator;
+
+extern PyTypeObject ZstdCompressionChunkerIteratorType;
 
 typedef struct {
 	PyObject_HEAD

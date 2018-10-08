@@ -47,8 +47,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 	PyCodeObject *code =
 	    (PyCodeObject *)Py_CompileString(R"py(
 from parsers import lazymanifest
-lm = lazymanifest(mdata)
 try:
+  lm = lazymanifest(mdata)
   # iterate the whole thing, which causes the code to fully parse
   # every line in the manifest
   list(lm.iterentries())
@@ -65,7 +65,11 @@ except Exception as e:
   # print e
 )py",
 	                                     "fuzzer", Py_file_input);
-	PyEval_EvalCode(code, globals, locals);
+	PyObject *res = PyEval_EvalCode(code, globals, locals);
+	if (!res) {
+		PyErr_Print();
+	}
+	Py_XDECREF(res);
 	Py_DECREF(code);
 	Py_DECREF(locals);
 	Py_DECREF(mtext);

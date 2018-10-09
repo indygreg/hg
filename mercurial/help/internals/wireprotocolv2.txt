@@ -87,16 +87,6 @@ commands
       permissions
          An array of permissions required to execute this command.
 
-compression
-   An array of maps defining available compression format support.
-
-   The array is sorted from most preferred to least preferred.
-
-   Each entry has the following bytestring keys:
-
-      name
-         Name of the compression engine. e.g. ``zstd`` or ``zlib``.
-
 framingmediatypes
    An array of bytestrings defining the supported framing protocol
    media types. Servers will not accept media types not in this list.

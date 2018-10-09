@@ -383,14 +383,6 @@ A non-cacheable command does not instantiate cacher
           ]
         }
       },
-      b'compression': [
-        {
-          b'name': b'zstd'
-        },
-        {
-          b'name': b'zlib'
-        }
-      ],
       b'framingmediatypes': [
         b'application/mercurial-exp-framing-0005'
       ],

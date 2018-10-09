@@ -20,7 +20,6 @@ from . import (
     error,
     narrowspec,
     pycompat,
-    util,
     wireprotoframing,
     wireprototypes,
 )
@@ -486,15 +485,8 @@ def _capabilitiesv2(repo, proto):
     These capabilities are distinct from the capabilities for version 1
     transports.
     """
-    compression = []
-    for engine in wireprototypes.supportedcompengines(repo.ui, util.SERVERROLE):
-        compression.append({
-            b'name': engine.wireprotosupport().name,
-        })
-
     caps = {
         'commands': {},
-        'compression': compression,
         'framingmediatypes': [FRAMINGTYPE],
         'pathfilterprefixes': set(narrowspec.VALID_PREFIXES),
     }

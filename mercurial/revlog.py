@@ -2213,6 +2213,12 @@ class revlog(object):
         if nodesorder is None and not self._generaldelta:
             nodesorder = 'storage'
 
+        deltamode = repository.CG_DELTAMODE_STD
+        if deltaprevious:
+            deltamode = repository.CG_DELTAMODE_PREV
+        elif not self._storedeltachains:
+            deltamode = repository.CG_DELTAMODE_FULL
+
         return storageutil.emitrevisions(
             self, nodes, nodesorder, revlogrevisiondelta,
             deltaparentfn=self.deltaparent,
@@ -2220,10 +2226,9 @@ class revlog(object):
             rawsizefn=self.rawsize,
             revdifffn=self.revdiff,
             flagsfn=self.flags,
-            sendfulltext=not self._storedeltachains,
+            deltamode=deltamode,
             revisiondata=revisiondata,
-            assumehaveparentrevisions=assumehaveparentrevisions,
-            deltaprevious=deltaprevious)
+            assumehaveparentrevisions=assumehaveparentrevisions)
 
     DELTAREUSEALWAYS = 'always'
     DELTAREUSESAMEREVS = 'samerevs'

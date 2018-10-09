@@ -39,6 +39,10 @@ REVISION_FLAG_EXTSTORED = 1 << 13
 REVISION_FLAGS_KNOWN = (
     REVISION_FLAG_CENSORED | REVISION_FLAG_ELLIPSIS | REVISION_FLAG_EXTSTORED)
 
+CG_DELTAMODE_STD = b'default'
+CG_DELTAMODE_PREV = b'previous'
+CG_DELTAMODE_FULL = b'fulltext'
+
 class ipeerconnection(interfaceutil.Interface):
     """Represents a "connection" to a repository.
 

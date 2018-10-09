@@ -22,6 +22,7 @@ from .. import (
     error,
     mdiff,
     pycompat,
+    repository,
 )
 
 _nullhash = hashlib.sha1(nullid)
@@ -269,9 +270,8 @@ def resolvestripinfo(minlinkrev, tiprev, headrevs, linkrevfn, parentrevsfn):
 
 def emitrevisions(store, nodes, nodesorder, resultcls, deltaparentfn=None,
                   candeltafn=None, rawsizefn=None, revdifffn=None, flagsfn=None,
-                  sendfulltext=False,
-                  revisiondata=False, assumehaveparentrevisions=False,
-                  deltaprevious=False):
+                  deltamode=repository.CG_DELTAMODE_STD,
+                  revisiondata=False, assumehaveparentrevisions=False):
     """Generic implementation of ifiledata.emitrevisions().
 
     Emitting revision data is subtly complex. This function attempts to
@@ -322,14 +322,17 @@ def emitrevisions(store, nodes, nodesorder, resultcls, deltaparentfn=None,
        Callable receiving a revision number and returns the integer flags
        value for it. If not defined, flags value will be 0.
 
-    ``sendfulltext``
+    ``deltamode``
+       constaint on delta to be sent:
+       * CG_DELTAMODE_STD  - normal mode, try to reuse storage deltas,
+       * CG_DELTAMODE_PREV - only delta against "prev",
+       * CG_DELTAMODE_FULL - only issue full snapshot.
+
        Whether to send fulltext revisions instead of deltas, if allowed.
 
     ``nodesorder``
     ``revisiondata``
     ``assumehaveparentrevisions``
-    ``deltaprevious``
-       See ``ifiledata.emitrevisions()`` interface documentation.
     """
 
     fnode = store.node
@@ -345,7 +348,7 @@ def emitrevisions(store, nodes, nodesorder, resultcls, deltaparentfn=None,
 
     prevrev = None
 
-    if deltaprevious or assumehaveparentrevisions:
+    if deltamode == repository.CG_DELTAMODE_PREV or assumehaveparentrevisions:
         prevrev = store.parentrevs(revs[0])[0]
 
     # Set of revs available to delta against.
@@ -364,11 +367,11 @@ def emitrevisions(store, nodes, nodesorder, resultcls, deltaparentfn=None,
             deltaparentrev = nullrev
 
         # Forced delta against previous mode.
-        if deltaprevious:
+        if deltamode == repository.CG_DELTAMODE_PREV:
             baserev = prevrev
 
         # We're instructed to send fulltext. Honor that.
-        elif sendfulltext:
+        elif deltamode == repository.CG_DELTAMODE_FULL:
             baserev = nullrev
 
         # There is a delta in storage. We try to use that because it
@@ -427,7 +430,8 @@ def emitrevisions(store, nodes, nodesorder, resultcls, deltaparentfn=None,
                         baserevisionsize = len(store.revision(baserev,
                                                               raw=True))
 
-            elif baserev == nullrev and not deltaprevious:
+            elif (baserev == nullrev
+                    and deltamode != repository.CG_DELTAMODE_PREV):
                 revision = store.revision(node, raw=True)
                 available.add(rev)
             else:

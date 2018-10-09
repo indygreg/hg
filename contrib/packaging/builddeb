@@ -16,7 +16,7 @@ DEBFLAGS=-b
 
 cleanup() {
     if [ '$CLEANUP' ]; then
-        rm -r '$PWD/debian';
+        rm -r "$PWD/debian";
     fi
 }
 

@@ -15,7 +15,7 @@ CODENAME=`lsb_release -cs 2> /dev/null || echo unknown`
 DEBFLAGS=-b
 
 cleanup() {
-    if [ '$CLEANUP' ]; then
+    if [ "$CLEANUP" ]; then
         rm -r "$PWD/debian";
     fi
 }

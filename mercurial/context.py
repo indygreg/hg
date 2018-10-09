@@ -769,10 +769,17 @@ class basefilectx(object):
         'linkrev-shadowing' when a file revision is used by multiple
         changesets.
         """
+        toprev = None
         attrs = vars(self)
-        hastoprev = (r'_changeid' in attrs or r'_changectx' in attrs)
-        if hastoprev:
-            return self._adjustlinkrev(self.rev(), inclusive=True)
+        if r'_changeid' in attrs:
+            # We have a cached value already
+            toprev = self._changeid
+        elif r'_changectx' in attrs:
+            # We know which changelog entry we are coming from
+            toprev = self._changectx.rev()
+
+        if toprev is not None:
+            return self._adjustlinkrev(toprev, inclusive=True)
         else:
             return self.linkrev()
 

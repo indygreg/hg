@@ -121,13 +121,13 @@ Sending different request doesn't yield cache hit.
 
   $ cat .hg/blackbox.log
   *> cacher constructed for manifestdata (glob)
-  *> cache miss for 64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca (glob)
-  *> storing cache entry for 64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca (glob)
+  *> cache miss for 47abb8efa5f01b8964d74917793ad2464db0fa2c (glob)
+  *> storing cache entry for 47abb8efa5f01b8964d74917793ad2464db0fa2c (glob)
   *> cacher constructed for manifestdata (glob)
-  *> cache hit for 64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca (glob)
+  *> cache hit for 47abb8efa5f01b8964d74917793ad2464db0fa2c (glob)
   *> cacher constructed for manifestdata (glob)
-  *> cache miss for 1cf89363ec234c6b92d5961281eaa5713e7493f9 (glob)
-  *> storing cache entry for 1cf89363ec234c6b92d5961281eaa5713e7493f9 (glob)
+  *> cache miss for 37326a83e9843f15161fce9d1e92d06b795d5e8e (glob)
+  *> storing cache entry for 37326a83e9843f15161fce9d1e92d06b795d5e8e (glob)
 
   $ cat error.log
 
@@ -188,10 +188,10 @@ Try with object caching mode
 
   $ cat .hg/blackbox.log
   *> cacher constructed for manifestdata (glob)
-  *> cache miss for 64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca (glob)
-  *> storing cache entry for 64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca (glob)
+  *> cache miss for 47abb8efa5f01b8964d74917793ad2464db0fa2c (glob)
+  *> storing cache entry for 47abb8efa5f01b8964d74917793ad2464db0fa2c (glob)
   *> cacher constructed for manifestdata (glob)
-  *> cache hit for 64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca (glob)
+  *> cache hit for 47abb8efa5f01b8964d74917793ad2464db0fa2c (glob)
 
   $ cat error.log
 
@@ -235,20 +235,9 @@ A non-cacheable command does not instantiate cacher
                 b'revision'
               ])
             },
-            b'noderange': {
-              b'default': None,
-              b'required': False,
+            b'revisions': {
+              b'required': True,
               b'type': b'list'
-            },
-            b'nodes': {
-              b'default': None,
-              b'required': False,
-              b'type': b'list'
-            },
-            b'nodesdepth': {
-              b'default': None,
-              b'required': False,
-              b'type': b'int'
             }
           },
           b'permissions': [
@@ -416,7 +405,7 @@ An error is not cached
 
   $ cat .hg/blackbox.log
   *> cacher constructed for manifestdata (glob)
-  *> cache miss for 904560928eb95650358f0829d9399b256822eb26 (glob)
+  *> cache miss for 2cba2a7d0d1575fea2fe68f597e97a7c2ac2f705 (glob)
   *> cacher exiting due to error (glob)
 
   $ killdaemons.py

@@ -105,7 +105,11 @@ def _fetchchangesets(repo, tr, remote, common, fetch, remoteheads):
     # to smaller segments, etc.
     with remote.commandexecutor() as e:
         objs = e.callcommand(b'changesetdata', {
-            b'noderange': [sorted(common), sorted(remoteheads)],
+            b'revisions': [{
+                b'type': b'changesetdagrange',
+                b'roots': sorted(common),
+                b'heads': sorted(remoteheads),
+            }],
             b'fields': {b'bookmarks', b'parents', b'phase', b'revision'},
         }).result()
 

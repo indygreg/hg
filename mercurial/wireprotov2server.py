@@ -777,6 +777,78 @@ def makeresponsecacher(repo, proto, command, args, objencoderfn,
     """
     return None
 
+def resolvenodes(repo, revisions):
+    """Resolve nodes from a revisions specifier data structure."""
+    cl = repo.changelog
+    clhasnode = cl.hasnode
+
+    seen = set()
+    nodes = []
+
+    if not isinstance(revisions, list):
+        raise error.WireprotoCommandError('revisions must be defined as an '
+                                          'array')
+
+    for spec in revisions:
+        if b'type' not in spec:
+            raise error.WireprotoCommandError(
+                'type key not present in revision specifier')
+
+        typ = spec[b'type']
+
+        if typ == b'changesetexplicit':
+            if b'nodes' not in spec:
+                raise error.WireprotoCommandError(
+                    'nodes key not present in changesetexplicit revision '
+                    'specifier')
+
+            for node in spec[b'nodes']:
+                if node not in seen:
+                    nodes.append(node)
+                    seen.add(node)
+
+        elif typ == b'changesetexplicitdepth':
+            for key in (b'nodes', b'depth'):
+                if key not in spec:
+                    raise error.WireprotoCommandError(
+                        '%s key not present in changesetexplicitdepth revision '
+                        'specifier', (key,))
+
+            for rev in repo.revs(b'ancestors(%ln, %d)', spec[b'nodes'],
+                                 spec[b'depth'] - 1):
+                node = cl.node(rev)
+
+                if node not in seen:
+                    nodes.append(node)
+                    seen.add(node)
+
+        elif typ == b'changesetdagrange':
+            for key in (b'roots', b'heads'):
+                if key not in spec:
+                    raise error.WireprotoCommandError(
+                        '%s key not present in changesetdagrange revision '
+                        'specifier', (key,))
+
+            if not spec[b'heads']:
+                raise error.WireprotoCommandError(
+                    'heads key in changesetdagrange cannot be empty')
+
+            if spec[b'roots']:
+                common = [n for n in spec[b'roots'] if clhasnode(n)]
+            else:
+                common = [nullid]
+
+            for n in discovery.outgoing(repo, common, spec[b'heads']).missing:
+                if n not in seen:
+                    nodes.append(n)
+                    seen.add(n)
+
+        else:
+            raise error.WireprotoCommandError(
+                'unknown revision specifier type: %s', (typ,))
+
+    return nodes
+
 @wireprotocommand('branchmap', permission='pull')
 def branchmapv2(repo, proto):
     yield {encoding.fromlocal(k): v
@@ -789,20 +861,12 @@ def capabilitiesv2(repo, proto):
 @wireprotocommand(
     'changesetdata',
     args={
-        'noderange': {
+        'revisions': {
             'type': 'list',
-            'default': lambda: None,
-            'example': [[b'0123456...'], [b'abcdef...']],
-        },
-        'nodes': {
-            'type': 'list',
-            'default': lambda: None,
-            'example': [b'0123456...'],
-        },
-        'nodesdepth': {
-            'type': 'int',
-            'default': lambda: None,
-            'example': 10,
+            'example': [{
+                b'type': b'changesetexplicit',
+                b'nodes': [b'abcdef...'],
+            }],
         },
         'fields': {
             'type': 'set',
@@ -812,57 +876,12 @@ def capabilitiesv2(repo, proto):
         },
     },
     permission='pull')
-def changesetdata(repo, proto, noderange, nodes, nodesdepth, fields):
+def changesetdata(repo, proto, revisions, fields):
     # TODO look for unknown fields and abort when they can't be serviced.
     # This could probably be validated by dispatcher using validvalues.
 
-    if noderange is None and nodes is None:
-        raise error.WireprotoCommandError(
-            'noderange or nodes must be defined')
-
-    if nodesdepth is not None and nodes is None:
-        raise error.WireprotoCommandError(
-            'nodesdepth requires the nodes argument')
-
-    if noderange is not None:
-        if len(noderange) != 2:
-            raise error.WireprotoCommandError(
-                'noderange must consist of 2 elements')
-
-        if not noderange[1]:
-            raise error.WireprotoCommandError(
-                'heads in noderange request cannot be empty')
-
     cl = repo.changelog
-    hasnode = cl.hasnode
-
-    seen = set()
-    outgoing = []
-
-    if nodes is not None:
-        outgoing = [n for n in nodes if hasnode(n)]
-
-        if nodesdepth:
-            outgoing = [cl.node(r) for r in
-                        repo.revs(b'ancestors(%ln, %d)', outgoing,
-                                  nodesdepth - 1)]
-
-        seen |= set(outgoing)
-
-    if noderange is not None:
-        if noderange[0]:
-            common = [n for n in noderange[0] if hasnode(n)]
-        else:
-            common = [nullid]
-
-        for n in discovery.outgoing(repo, common, noderange[1]).missing:
-            if n not in seen:
-                outgoing.append(n)
-            # Don't need to add to seen here because this is the final
-            # source of nodes and there should be no duplicates in this
-            # list.
-
-    seen.clear()
+    outgoing = resolvenodes(repo, revisions)
     publishing = repo.publishing()
 
     if outgoing:

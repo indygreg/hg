@@ -44,37 +44,100 @@ No arguments is an invalid request
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  abort: noderange or nodes must be defined!
+  abort: missing required arguments: revisions!
   [255]
 
-Empty noderange heads results in an error
+Missing nodes for changesetexplicit results in error
 
   $ sendhttpv2peer << EOF
   > command changesetdata
-  >     noderange eval:[[],[]]
+  >     revisions eval:[{b'type': b'changesetexplicit'}]
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  abort: heads in noderange request cannot be empty!
+  abort: nodes key not present in changesetexplicit revision specifier!
   [255]
 
-nodesdepth requires nodes argument
+changesetexplicitdepth requires nodes and depth keys
 
   $ sendhttpv2peer << EOF
   > command changesetdata
-  >     nodesdepth 42
-  >     noderange eval:[[], [b'ignored']]
+  >     revisions eval:[{b'type': b'changesetexplicitdepth'}]
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
-  abort: nodesdepth requires the nodes argument!
+  abort: nodes key not present in changesetexplicitdepth revision specifier!
   [255]
-
-Sending just noderange heads sends all revisions
 
   $ sendhttpv2peer << EOF
   > command changesetdata
-  >     noderange eval:[[], [b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd', b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11']]
+  >     revisions eval:[{b'type': b'changesetexplicitdepth', b'nodes': []}]
+  > EOF
+  creating http peer for wire protocol version 2
+  sending changesetdata command
+  abort: depth key not present in changesetexplicitdepth revision specifier!
+  [255]
+
+  $ sendhttpv2peer << EOF
+  > command changesetdata
+  >     revisions eval:[{b'type': b'changesetexplicitdepth', b'depth': 42}]
+  > EOF
+  creating http peer for wire protocol version 2
+  sending changesetdata command
+  abort: nodes key not present in changesetexplicitdepth revision specifier!
+  [255]
+
+changesetdagrange requires roots and heads keys
+
+  $ sendhttpv2peer << EOF
+  > command changesetdata
+  >     revisions eval:[{b'type': b'changesetdagrange'}]
+  > EOF
+  creating http peer for wire protocol version 2
+  sending changesetdata command
+  abort: roots key not present in changesetdagrange revision specifier!
+  [255]
+
+  $ sendhttpv2peer << EOF
+  > command changesetdata
+  >     revisions eval:[{b'type': b'changesetdagrange', b'roots': []}]
+  > EOF
+  creating http peer for wire protocol version 2
+  sending changesetdata command
+  abort: heads key not present in changesetdagrange revision specifier!
+  [255]
+
+  $ sendhttpv2peer << EOF
+  > command changesetdata
+  >     revisions eval:[{b'type': b'changesetdagrange', b'heads': [b'dummy']}]
+  > EOF
+  creating http peer for wire protocol version 2
+  sending changesetdata command
+  abort: roots key not present in changesetdagrange revision specifier!
+  [255]
+
+Empty changesetdagrange heads results in an error
+
+  $ sendhttpv2peer << EOF
+  > command changesetdata
+  >     revisions eval:[{b'type': b'changesetdagrange', b'heads': [], b'roots': []}]
+  > EOF
+  creating http peer for wire protocol version 2
+  sending changesetdata command
+  abort: heads key in changesetdagrange cannot be empty!
+  [255]
+
+Sending just dagrange heads sends all revisions
+
+  $ sendhttpv2peer << EOF
+  > command changesetdata
+  >     revisions eval:[{
+  >         b'type': b'changesetdagrange',
+  >         b'roots': [],
+  >         b'heads': [
+  >             b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd',
+  >             b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11',
+  >         ]}]
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
@@ -100,7 +163,12 @@ Sending root nodes limits what data is sent
 
   $ sendhttpv2peer << EOF
   > command changesetdata
-  >     noderange eval:[[b'\x33\x90\xef\x85\x00\x73\xfb\xc2\xf0\xdf\xff\x22\x44\x34\x2c\x8e\x92\x29\x01\x3a'], [b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd']]
+  >     revisions eval:[{
+  >         b'type': b'changesetdagrange',
+  >         b'roots': [b'\x33\x90\xef\x85\x00\x73\xfb\xc2\xf0\xdf\xff\x22\x44\x34\x2c\x8e\x92\x29\x01\x3a'],
+  >         b'heads': [
+  >             b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd',
+  >         ]}]
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
@@ -120,7 +188,9 @@ Requesting data on a single node by node works
 
   $ sendhttpv2peer << EOF
   > command changesetdata
-  >     nodes eval:[b'\x33\x90\xef\x85\x00\x73\xfb\xc2\xf0\xdf\xff\x22\x44\x34\x2c\x8e\x92\x29\x01\x3a']
+  >     revisions eval:[{
+  >         b'type': b'changesetexplicit',
+  >         b'nodes': [b'\x33\x90\xef\x85\x00\x73\xfb\xc2\xf0\xdf\xff\x22\x44\x34\x2c\x8e\x92\x29\x01\x3a']}]
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
@@ -137,8 +207,16 @@ Specifying a noderange and nodes takes union
 
   $ sendhttpv2peer << EOF
   > command changesetdata
-  >     noderange eval:[[b'\x75\x92\x91\x7e\x1c\x3e\x82\x67\x7c\xb0\xa4\xbc\x71\x5c\xa2\x5d\xd1\x2d\x28\xc1'], [b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd']]
-  >     nodes eval:[b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11']
+  >     revisions eval:[
+  >         {
+  >             b'type': b'changesetexplicit',
+  >             b'nodes': [b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11'],
+  >         },
+  >         {
+  >             b'type': b'changesetdagrange',
+  >             b'roots': [b'\x75\x92\x91\x7e\x1c\x3e\x82\x67\x7c\xb0\xa4\xbc\x71\x5c\xa2\x5d\xd1\x2d\x28\xc1'],
+  >             b'heads': [b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd'],
+  >         }]
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
@@ -158,8 +236,10 @@ nodesdepth of 1 limits to exactly requested nodes
 
   $ sendhttpv2peer << EOF
   > command changesetdata
-  >     nodes eval:[b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11']
-  >     nodesdepth eval:1
+  >     revisions eval:[{
+  >         b'type': b'changesetexplicitdepth',
+  >         b'nodes': [b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11'],
+  >         b'depth': 1}] 
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
@@ -176,8 +256,10 @@ nodesdepth of 2 limits to first ancestor
 
   $ sendhttpv2peer << EOF
   > command changesetdata
-  >     nodes eval:[b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11']
-  >     nodesdepth eval:2
+  >     revisions eval:[{
+  >         b'type': b'changesetexplicitdepth',
+  >         b'nodes': [b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11'],
+  >         b'depth': 2}]
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
@@ -197,8 +279,10 @@ nodesdepth with multiple nodes
 
   $ sendhttpv2peer << EOF
   > command changesetdata
-  >     nodes eval:[b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11', b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd']
-  >     nodesdepth eval:2
+  >     revisions eval:[{
+  >         b'type': b'changesetexplicitdepth',
+  >         b'nodes': [b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11', b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd'],
+  >         b'depth': 2}]
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
@@ -225,7 +309,11 @@ Parents data is transferred upon request
   $ sendhttpv2peer << EOF
   > command changesetdata
   >     fields eval:[b'parents']
-  >     nodes eval:[b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11']
+  >     revisions eval:[{
+  >         b'type': b'changesetexplicit',
+  >         b'nodes': [
+  >             b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11',
+  >         ]}]
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
@@ -247,7 +335,11 @@ Phase data is transferred upon request
   $ sendhttpv2peer << EOF
   > command changesetdata
   >     fields eval:[b'phase']
-  >     nodes eval:[b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd']
+  >     revisions eval:[{
+  >         b'type': b'changesetexplicit',
+  >         b'nodes': [
+  >             b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd',
+  >         ]}]
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
@@ -266,7 +358,11 @@ Revision data is transferred upon request
   $ sendhttpv2peer << EOF
   > command changesetdata
   >     fields eval:[b'revision']
-  >     nodes eval:[b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11']
+  >     revisions eval:[{
+  >         b'type': b'changesetexplicit',
+  >         b'nodes': [
+  >             b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11',
+  >         ]}]
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
@@ -291,7 +387,13 @@ Bookmarks key isn't present if no bookmarks data
   $ sendhttpv2peer << EOF
   > command changesetdata
   >     fields eval:[b'bookmarks']
-  >     noderange eval:[[], [b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd', b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11']]
+  >     revisions eval:[{
+  >         b'type': b'changesetdagrange',
+  >         b'roots': [],
+  >         b'heads': [
+  >             b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd',
+  >             b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11',
+  >         ]}]
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
@@ -322,7 +424,13 @@ Bookmarks are sent when requested
   $ sendhttpv2peer << EOF
   > command changesetdata
   >     fields eval:[b'bookmarks']
-  >     noderange eval:[[], [b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd', b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11']]
+  >     revisions eval:[{
+  >         b'type': b'changesetdagrange',
+  >         b'roots': [],
+  >         b'heads': [
+  >             b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd',
+  >             b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11',
+  >         ]}]
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
@@ -356,7 +464,13 @@ Bookmarks are sent when we make a no-new-revisions request
   $ sendhttpv2peer << EOF
   > command changesetdata
   >     fields eval:[b'bookmarks', b'revision']
-  >     noderange eval:[[b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11'], [b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd', b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11']]
+  >     revisions eval:[{
+  >         b'type': b'changesetdagrange',
+  >         b'roots': [b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11'],
+  >         b'heads': [
+  >             b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd',
+  >             b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11',
+  >         ]}]
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
@@ -401,7 +515,11 @@ Multiple fields can be transferred
   $ sendhttpv2peer << EOF
   > command changesetdata
   >     fields eval:[b'parents', b'revision']
-  >     nodes eval:[b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11']
+  >     revisions eval:[{
+  >         b'type': b'changesetexplicit',
+  >         b'nodes': [
+  >             b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11',
+  >         ]}]
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command
@@ -431,7 +549,13 @@ TODO this doesn't work
   $ sendhttpv2peer << EOF
   > command changesetdata
   >     fields eval:[b'phase', b'parents', b'revision']
-  >     noderange eval:[[b'\x33\x90\xef\x85\x00\x73\xfb\xc2\xf0\xdf\xff\x22\x44\x34\x2c\x8e\x92\x29\x01\x3a'], [b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd', b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11']]
+  >     revisions eval:[{
+  >         b'type': b'changesetdagrange',
+  >         b'roots': [b'\x33\x90\xef\x85\x00\x73\xfb\xc2\xf0\xdf\xff\x22\x44\x34\x2c\x8e\x92\x29\x01\x3a'],
+  >         b'heads': [
+  >             b'\x0b\xb8\xad\x89\x4a\x15\xb1\x53\x80\xb2\xa2\xa5\xb1\x83\xe2\x0f\x2a\x4b\x28\xdd',
+  >             b'\xea\xe5\xf8\x2c\x2e\x62\x23\x68\xd2\x7d\xae\xcb\x76\xb7\xe3\x93\xd0\xf2\x42\x11',
+  >         ]}]
   > EOF
   creating http peer for wire protocol version 2
   sending changesetdata command

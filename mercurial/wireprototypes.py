@@ -25,8 +25,8 @@ from .utils import (
 SSHV1 = 'ssh-v1'
 # These are advertised over the wire. Increment the counters at the end
 # to reflect BC breakages.
-SSHV2 = 'exp-ssh-v2-0002'
-HTTP_WIREPROTO_V2 = 'exp-http-v2-0002'
+SSHV2 = 'exp-ssh-v2-0003'
+HTTP_WIREPROTO_V2 = 'exp-http-v2-0003'
 
 NARROWCAP = 'exp-narrow-1'
 ELLIPSESCAP = 'exp-ellipses-1'

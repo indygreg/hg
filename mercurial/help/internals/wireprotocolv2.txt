@@ -144,22 +144,15 @@ Obtain various data related to changesets.
 
 The command accepts the following arguments:
 
-noderange
-   (array of arrays of bytestrings) An array of 2 elements, each being an
-   array of node bytestrings. The first array denotes the changelog revisions
-   that are already known to the client. The second array denotes the changelog
-   revision DAG heads to fetch. The argument essentially defines a DAG range
-   bounded by root and head nodes to fetch.
+revisions
+   (array of maps) Specifies revisions whose data is being requested. Each
+   value in the array is a map describing revisions. See the
+   *Revisions Specifiers* section below for the format of this map.
 
-   The roots array may be empty. The heads array must be defined.
+   Data will be sent for the union of all revisions resolved by all
+   revision specifiers.
 
-nodes
-   (array of bytestrings) Changelog revisions to request explicitly.
-
-nodesdepth
-   (unsigned integer) Number of ancestor revisions of elements in ``nodes``
-   to also fetch. When defined, for each element in ``nodes``, DAG ancestors
-   will be walked until at most N total revisions are emitted.
+   Only revision specifiers operating on changeset revisions are allowed.
 
 fields
    (set of bytestring) Which data associated with changelog revisions to
@@ -177,10 +170,6 @@ fields
    revision
       The raw, revision data for the changelog entry. The hash of this data
       will match the revision's node value.
-
-The server resolves the set of revisions relevant to the request by taking
-the union of the ``noderange`` and ``nodes`` arguments. At least one of these
-arguments must be defined.
 
 The response bytestream starts with a CBOR map describing the data that follows.
 This map has the following bytestring keys:
@@ -237,13 +226,6 @@ phase (optional)
    (bytestring) The phase that a revision is in. Recognized values are
    ``secret``, ``draft``, and ``public``. Only present if ``phase`` data
    is being requested.
-
-If nodes are requested via ``noderange``, they will be emitted in DAG order,
-parents always before children.
-
-If nodes are requested via ``nodes``, they will be emitted in requested order.
-
-Nodes from ``nodes`` are emitted before nodes from ``noderange``.
 
 The set of changeset revisions emitted may not match the exact set of
 changesets requested. Furthermore, the set of keys present on each
@@ -540,3 +522,40 @@ new
 
 TODO consider using binary to represent nodes is certain pushkey namespaces.
 TODO better define response type and meaning.
+
+Revision Specifiers
+===================
+
+A *revision specifier* is a map that evaluates to a set of revisions.
+
+A *revision specifier* has a ``type`` key that defines the revision
+selection type to perform. Other keys in the map are used in a
+type-specific manner.
+
+The following types are defined:
+
+changesetexplicit
+   An explicit set of enumerated changeset revisions.
+
+   The ``nodes`` key MUST contain an array of full binary nodes, expressed
+   as bytestrings.
+
+changesetexplicitdepth
+   Like ``changesetexplicit``, but contains a ``depth`` key defining the
+   unsigned integer number of ancestor revisions to also resolve. For each
+   value in ``nodes``, DAG ancestors will be walked until up to N total
+   revisions from that ancestry walk are present in the final resolved set.
+
+changesetdagrange
+   Defines revisions via a DAG range of changesets on the changelog.
+
+   The ``roots`` key MUST contain an array of full, binary node values
+   representing the *root* revisions.
+
+   The ``heads`` key MUST contain an array of full, binary nodes values
+   representing the *head* revisions.
+
+   The DAG range between ``roots`` and ``heads`` will be resolved and all
+   revisions between will be used. Nodes in ``roots`` are not part of the
+   resolved set. Nodes in ``heads`` are. The ``roots`` array may be empty.
+   The ``heads`` array MUST be defined.

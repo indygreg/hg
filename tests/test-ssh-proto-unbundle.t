@@ -100,14 +100,14 @@ Test pushing bundle1 payload to a server with bundle1 disabled
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0002\n (glob)
+  o>     upgraded * exp-ssh-v2-0003\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -285,14 +285,14 @@ ui.write() in hook is redirected to stderr
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0002\n (glob)
+  o>     upgraded * exp-ssh-v2-0003\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -412,14 +412,14 @@ And a variation that writes multiple lines using ui.write
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0002\n (glob)
+  o>     upgraded * exp-ssh-v2-0003\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -539,14 +539,14 @@ And a variation that does a ui.flush() after writing output
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0002\n (glob)
+  o>     upgraded * exp-ssh-v2-0003\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -666,14 +666,14 @@ Multiple writes + flush
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0002\n (glob)
+  o>     upgraded * exp-ssh-v2-0003\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -796,14 +796,14 @@ ui.write() + ui.write_err() output is captured
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0002\n (glob)
+  o>     upgraded * exp-ssh-v2-0003\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -925,14 +925,14 @@ print() output is captured
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0002\n (glob)
+  o>     upgraded * exp-ssh-v2-0003\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -1054,14 +1054,14 @@ Mixed print() and ui.write() are both captured
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0002\n (glob)
+  o>     upgraded * exp-ssh-v2-0003\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -1186,14 +1186,14 @@ print() to stdout and stderr both get captured
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0002\n (glob)
+  o>     upgraded * exp-ssh-v2-0003\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -1322,14 +1322,14 @@ Shell hook writing to stdout has output captured
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0002\n (glob)
+  o>     upgraded * exp-ssh-v2-0003\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -1451,14 +1451,14 @@ Shell hook writing to stderr has output captured
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0002\n (glob)
+  o>     upgraded * exp-ssh-v2-0003\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -1584,14 +1584,14 @@ Shell hook writing to stdout and stderr has output captured
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0002\n (glob)
+  o>     upgraded * exp-ssh-v2-0003\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -1729,14 +1729,14 @@ Shell and Python hooks writing to stdout and stderr have output captured
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0002\n (glob)
+  o>     upgraded * exp-ssh-v2-0003\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -1858,14 +1858,14 @@ Pushing a bundle1 with no output
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0002\n (glob)
+  o>     upgraded * exp-ssh-v2-0003\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -1992,14 +1992,14 @@ Pushing a bundle1 with ui.write() and ui.write_err()
   testing ssh2
   creating ssh peer from handshake results
   i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0002\n (glob)
+  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0002\n (glob)
+  o>     upgraded * exp-ssh-v2-0003\n (glob)
   o> readline() -> 4:
   o>     426\n
   o> read(426) -> 426: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash

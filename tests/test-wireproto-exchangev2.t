@@ -60,12 +60,15 @@ Test basic clone
       'phase',
       'revision'
     ]),
-    'noderange': [
-      [],
-      [
-        '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
-        '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
-      ]
+    'revisions': [
+      {
+        'heads': [
+          '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
+          '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
+        ],
+        'roots': [],
+        'type': 'changesetdagrange'
+      }
     ]
   }
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
@@ -202,11 +205,14 @@ Cloning only a specific revision works
       'phase',
       'revision'
     ]),
-    'noderange': [
-      [],
-      [
-        'D2\xd86&\xe8\xa9\x86U\xf0b\xec\x1f*C\xb0\x7f\x7f\xbb\xb0'
-      ]
+    'revisions': [
+      {
+        'heads': [
+          'D2\xd86&\xe8\xa9\x86U\xf0b\xec\x1f*C\xb0\x7f\x7f\xbb\xb0'
+        ],
+        'roots': [],
+        'type': 'changesetdagrange'
+      }
     ]
   }
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
@@ -312,14 +318,17 @@ Incremental pull works
       'phase',
       'revision'
     ]),
-    'noderange': [
-      [
-        'D2\xd86&\xe8\xa9\x86U\xf0b\xec\x1f*C\xb0\x7f\x7f\xbb\xb0'
-      ],
-      [
-        '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
-        '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
-      ]
+    'revisions': [
+      {
+        'heads': [
+          '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
+          '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
+        ],
+        'roots': [
+          'D2\xd86&\xe8\xa9\x86U\xf0b\xec\x1f*C\xb0\x7f\x7f\xbb\xb0'
+        ],
+        'type': 'changesetdagrange'
+      }
     ]
   }
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
@@ -440,15 +449,18 @@ TODO this doesn't work
       'phase',
       'revision'
     ]),
-    'noderange': [
-      [
-        '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
-        '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
-      ],
-      [
-        '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
-        '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
-      ]
+    'revisions': [
+      {
+        'heads': [
+          '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
+          '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
+        ],
+        'roots': [
+          '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
+          '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
+        ],
+        'type': 'changesetdagrange'
+      }
     ]
   }
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
@@ -502,12 +514,15 @@ Bookmarks are transferred on clone
       'phase',
       'revision'
     ]),
-    'noderange': [
-      [],
-      [
-        '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
-        '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
-      ]
+    'revisions': [
+      {
+        'heads': [
+          '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
+          '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
+        ],
+        'roots': [],
+        'type': 'changesetdagrange'
+      }
     ]
   }
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
@@ -619,15 +634,18 @@ Server-side bookmark moves are reflected during `hg pull`
       'phase',
       'revision'
     ]),
-    'noderange': [
-      [
-        '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
-        '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
-      ],
-      [
-        '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
-        '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
-      ]
+    'revisions': [
+      {
+        'heads': [
+          '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
+          '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
+        ],
+        'roots': [
+          '\xca\xa2\xa4eE\x1d\xd1\xfa\xcd\xa0\xf5\xb1#\x12\xc3UXA\x88\xa1',
+          '\xcd%4vk\xec\xe18\xc7\xc1\xaf\xdch%0/\x0fb\xd8\x1f'
+        ],
+        'type': 'changesetdagrange'
+      }
     ]
   }
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)

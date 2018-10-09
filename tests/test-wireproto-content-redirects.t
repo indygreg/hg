@@ -55,7 +55,7 @@ Redirect targets advertised when configured
   s>     Accept-Encoding: identity\r\n
   s>     vary: X-HgProto-1,X-HgUpgrade-1\r\n
   s>     x-hgproto-1: cbor\r\n
-  s>     x-hgupgrade-1: exp-http-v2-0002\r\n
+  s>     x-hgupgrade-1: exp-http-v2-0003\r\n
   s>     accept: application/mercurial-0.1\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
@@ -65,12 +65,12 @@ Redirect targets advertised when configured
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: application/mercurial-cbor\r\n
-  s>     Content-Length: 1956\r\n
+  s>     Content-Length: 1871\r\n
   s>     \r\n
-  s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0002\xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionInoderange\xa3Gdefault\xf6Hrequired\xf4DtypeDlistEnodes\xa3Gdefault\xf6Hrequired\xf4DtypeDlistJnodesdepth\xa3Gdefault\xf6Hrequired\xf4DtypeCintKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Hredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81\xa5DnameHtarget-aHprotocolDhttpKsnirequired\xf4Ktlsversions\x82C1.2C1.3Duris\x81Shttp://example.com/Nv1capabilitiesY\x01\xd3batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0003\xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa2Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionIrevisions\xa2Hrequired\xf5DtypeDlistKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Hredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81\xa5DnameHtarget-aHprotocolDhttpKsnirequired\xf4Ktlsversions\x82C1.2C1.3Duris\x81Shttp://example.com/Nv1capabilitiesY\x01\xd3batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   (remote redirect target target-a is compatible)
   sending capabilities command
-  s>     POST /api/exp-http-v2-0002/ro/capabilities HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0003/ro/capabilities HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0006\r\n
   s>     content-type: application/mercurial-exp-framing-0006\r\n
@@ -96,11 +96,11 @@ Redirect targets advertised when configured
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  s>     5a2\r\n
-  s>     \x9a\x05\x00\x01\x00\x02\x041
-  s>     \xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionInoderange\xa3Gdefault\xf6Hrequired\xf4DtypeDlistEnodes\xa3Gdefault\xf6Hrequired\xf4DtypeDlistJnodesdepth\xa3Gdefault\xf6Hrequired\xf4DtypeCintKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Hredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81\xa5DnameHtarget-aHprotocolDhttpKsnirequired\xf4Ktlsversions\x82C1.2C1.3Duris\x81Shttp://example.com/
+  s>     54d\r\n
+  s>     E\x05\x00\x01\x00\x02\x041
+  s>     \xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa2Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionIrevisions\xa2Hrequired\xf5DtypeDlistKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Hredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81\xa5DnameHtarget-aHprotocolDhttpKsnirequired\xf4Ktlsversions\x82C1.2C1.3Duris\x81Shttp://example.com/
   s>     \r\n
-  received frame(size=1434; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1349; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -135,20 +135,9 @@ Redirect targets advertised when configured
                 b'revision'
               ])
             },
-            b'noderange': {
-              b'default': None,
-              b'required': False,
+            b'revisions': {
+              b'required': True,
               b'type': b'list'
-            },
-            b'nodes': {
-              b'default': None,
-              b'required': False,
-              b'type': b'list'
-            },
-            b'nodesdepth': {
-              b'default': None,
-              b'required': False,
-              b'type': b'int'
             }
           },
           b'permissions': [
@@ -344,7 +333,7 @@ Unknown protocol is filtered from compatible targets
   s>     Accept-Encoding: identity\r\n
   s>     vary: X-HgProto-1,X-HgUpgrade-1\r\n
   s>     x-hgproto-1: cbor\r\n
-  s>     x-hgupgrade-1: exp-http-v2-0002\r\n
+  s>     x-hgupgrade-1: exp-http-v2-0003\r\n
   s>     accept: application/mercurial-0.1\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
@@ -354,13 +343,13 @@ Unknown protocol is filtered from compatible targets
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: application/mercurial-cbor\r\n
-  s>     Content-Length: 1983\r\n
+  s>     Content-Length: 1898\r\n
   s>     \r\n
-  s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0002\xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionInoderange\xa3Gdefault\xf6Hrequired\xf4DtypeDlistEnodes\xa3Gdefault\xf6Hrequired\xf4DtypeDlistJnodesdepth\xa3Gdefault\xf6Hrequired\xf4DtypeCintKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Hredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x82\xa3DnameHtarget-aHprotocolDhttpDuris\x81Shttp://example.com/\xa3DnameHtarget-bHprotocolGunknownDuris\x81Vunknown://example.com/Nv1capabilitiesY\x01\xd3batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0003\xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa2Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionIrevisions\xa2Hrequired\xf5DtypeDlistKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Hredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x82\xa3DnameHtarget-aHprotocolDhttpDuris\x81Shttp://example.com/\xa3DnameHtarget-bHprotocolGunknownDuris\x81Vunknown://example.com/Nv1capabilitiesY\x01\xd3batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   (remote redirect target target-a is compatible)
   (remote redirect target target-b uses unsupported protocol: unknown)
   sending capabilities command
-  s>     POST /api/exp-http-v2-0002/ro/capabilities HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0003/ro/capabilities HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0006\r\n
   s>     content-type: application/mercurial-exp-framing-0006\r\n
@@ -386,11 +375,11 @@ Unknown protocol is filtered from compatible targets
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  s>     5bd\r\n
-  s>     \xb5\x05\x00\x01\x00\x02\x041
-  s>     \xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionInoderange\xa3Gdefault\xf6Hrequired\xf4DtypeDlistEnodes\xa3Gdefault\xf6Hrequired\xf4DtypeDlistJnodesdepth\xa3Gdefault\xf6Hrequired\xf4DtypeCintKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Hredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x82\xa3DnameHtarget-aHprotocolDhttpDuris\x81Shttp://example.com/\xa3DnameHtarget-bHprotocolGunknownDuris\x81Vunknown://example.com/
+  s>     568\r\n
+  s>     `\x05\x00\x01\x00\x02\x041
+  s>     \xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa2Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionIrevisions\xa2Hrequired\xf5DtypeDlistKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Hredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x82\xa3DnameHtarget-aHprotocolDhttpDuris\x81Shttp://example.com/\xa3DnameHtarget-bHprotocolGunknownDuris\x81Vunknown://example.com/
   s>     \r\n
-  received frame(size=1461; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1376; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -425,20 +414,9 @@ Unknown protocol is filtered from compatible targets
                 b'revision'
               ])
             },
-            b'noderange': {
-              b'default': None,
-              b'required': False,
+            b'revisions': {
+              b'required': True,
               b'type': b'list'
-            },
-            b'nodes': {
-              b'default': None,
-              b'required': False,
-              b'type': b'list'
-            },
-            b'nodesdepth': {
-              b'default': None,
-              b'required': False,
-              b'type': b'int'
             }
           },
           b'permissions': [
@@ -641,7 +619,7 @@ Missing SNI support filters targets that require SNI
   s>     Accept-Encoding: identity\r\n
   s>     vary: X-HgProto-1,X-HgUpgrade-1\r\n
   s>     x-hgproto-1: cbor\r\n
-  s>     x-hgupgrade-1: exp-http-v2-0002\r\n
+  s>     x-hgupgrade-1: exp-http-v2-0003\r\n
   s>     accept: application/mercurial-0.1\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
@@ -651,12 +629,12 @@ Missing SNI support filters targets that require SNI
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: application/mercurial-cbor\r\n
-  s>     Content-Length: 1943\r\n
+  s>     Content-Length: 1858\r\n
   s>     \r\n
-  s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0002\xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionInoderange\xa3Gdefault\xf6Hrequired\xf4DtypeDlistEnodes\xa3Gdefault\xf6Hrequired\xf4DtypeDlistJnodesdepth\xa3Gdefault\xf6Hrequired\xf4DtypeCintKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Hredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81\xa4DnameNtarget-bad-tlsHprotocolEhttpsKsnirequired\xf5Duris\x81Thttps://example.com/Nv1capabilitiesY\x01\xd3batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0003\xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa2Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionIrevisions\xa2Hrequired\xf5DtypeDlistKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Hredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81\xa4DnameNtarget-bad-tlsHprotocolEhttpsKsnirequired\xf5Duris\x81Thttps://example.com/Nv1capabilitiesY\x01\xd3batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   (redirect target target-bad-tls requires SNI, which is unsupported)
   sending capabilities command
-  s>     POST /api/exp-http-v2-0002/ro/capabilities HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0003/ro/capabilities HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0006\r\n
   s>     content-type: application/mercurial-exp-framing-0006\r\n
@@ -682,11 +660,11 @@ Missing SNI support filters targets that require SNI
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  s>     595\r\n
-  s>     \x8d\x05\x00\x01\x00\x02\x041
-  s>     \xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionInoderange\xa3Gdefault\xf6Hrequired\xf4DtypeDlistEnodes\xa3Gdefault\xf6Hrequired\xf4DtypeDlistJnodesdepth\xa3Gdefault\xf6Hrequired\xf4DtypeCintKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Hredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81\xa4DnameNtarget-bad-tlsHprotocolEhttpsKsnirequired\xf5Duris\x81Thttps://example.com/
+  s>     540\r\n
+  s>     8\x05\x00\x01\x00\x02\x041
+  s>     \xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa2Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionIrevisions\xa2Hrequired\xf5DtypeDlistKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Hredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81\xa4DnameNtarget-bad-tlsHprotocolEhttpsKsnirequired\xf5Duris\x81Thttps://example.com/
   s>     \r\n
-  received frame(size=1421; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1336; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -721,20 +699,9 @@ Missing SNI support filters targets that require SNI
                 b'revision'
               ])
             },
-            b'noderange': {
-              b'default': None,
-              b'required': False,
+            b'revisions': {
+              b'required': True,
               b'type': b'list'
-            },
-            b'nodes': {
-              b'default': None,
-              b'required': False,
-              b'type': b'list'
-            },
-            b'nodesdepth': {
-              b'default': None,
-              b'required': False,
-              b'type': b'int'
             }
           },
           b'permissions': [
@@ -927,7 +894,7 @@ Unknown tls value is filtered from compatible targets
   s>     Accept-Encoding: identity\r\n
   s>     vary: X-HgProto-1,X-HgUpgrade-1\r\n
   s>     x-hgproto-1: cbor\r\n
-  s>     x-hgupgrade-1: exp-http-v2-0002\r\n
+  s>     x-hgupgrade-1: exp-http-v2-0003\r\n
   s>     accept: application/mercurial-0.1\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
@@ -937,12 +904,12 @@ Unknown tls value is filtered from compatible targets
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: application/mercurial-cbor\r\n
-  s>     Content-Length: 1949\r\n
+  s>     Content-Length: 1864\r\n
   s>     \r\n
-  s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0002\xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionInoderange\xa3Gdefault\xf6Hrequired\xf4DtypeDlistEnodes\xa3Gdefault\xf6Hrequired\xf4DtypeDlistJnodesdepth\xa3Gdefault\xf6Hrequired\xf4DtypeCintKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Hredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81\xa4DnameNtarget-bad-tlsHprotocolEhttpsKtlsversions\x82B42B39Duris\x81Thttps://example.com/Nv1capabilitiesY\x01\xd3batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0003\xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa2Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionIrevisions\xa2Hrequired\xf5DtypeDlistKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Hredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81\xa4DnameNtarget-bad-tlsHprotocolEhttpsKtlsversions\x82B42B39Duris\x81Thttps://example.com/Nv1capabilitiesY\x01\xd3batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   (remote redirect target target-bad-tls requires unsupported TLS versions: 39, 42)
   sending capabilities command
-  s>     POST /api/exp-http-v2-0002/ro/capabilities HTTP/1.1\r\n
+  s>     POST /api/exp-http-v2-0003/ro/capabilities HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0006\r\n
   s>     content-type: application/mercurial-exp-framing-0006\r\n
@@ -968,11 +935,11 @@ Unknown tls value is filtered from compatible targets
   s>     \xa1FstatusBok
   s>     \r\n
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  s>     59b\r\n
-  s>     \x93\x05\x00\x01\x00\x02\x041
-  s>     \xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionInoderange\xa3Gdefault\xf6Hrequired\xf4DtypeDlistEnodes\xa3Gdefault\xf6Hrequired\xf4DtypeDlistJnodesdepth\xa3Gdefault\xf6Hrequired\xf4DtypeCintKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Hredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81\xa4DnameNtarget-bad-tlsHprotocolEhttpsKtlsversions\x82B42B39Duris\x81Thttps://example.com/
+  s>     546\r\n
+  s>     >\x05\x00\x01\x00\x02\x041
+  s>     \xa5Hcommands\xaaIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa2Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionIrevisions\xa2Hrequired\xf5DtypeDlistKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Hredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81\xa4DnameNtarget-bad-tlsHprotocolEhttpsKtlsversions\x82B42B39Duris\x81Thttps://example.com/
   s>     \r\n
-  received frame(size=1427; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1342; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -1007,20 +974,9 @@ Unknown tls value is filtered from compatible targets
                 b'revision'
               ])
             },
-            b'noderange': {
-              b'default': None,
-              b'required': False,
+            b'revisions': {
+              b'required': True,
               b'type': b'list'
-            },
-            b'nodes': {
-              b'default': None,
-              b'required': False,
-              b'type': b'list'
-            },
-            b'nodesdepth': {
-              b'default': None,
-              b'required': False,
-              b'type': b'int'
             }
           },
           b'permissions': [
@@ -1249,11 +1205,11 @@ Send a cacheable request
 Cached entry should be available on server
 
   $ sendhttpraw << EOF
-  > httprequest GET api/simplecache/64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca
+  > httprequest GET api/simplecache/47abb8efa5f01b8964d74917793ad2464db0fa2c
   >     user-agent: test
   > EOF
   using raw connection to peer
-  s>     GET /api/simplecache/64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca HTTP/1.1\r\n
+  s>     GET /api/simplecache/47abb8efa5f01b8964d74917793ad2464db0fa2c HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     user-agent: test\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
@@ -1307,8 +1263,8 @@ Cached entry should be available on server
 
   $ cat .hg/blackbox.log
   *> cacher constructed for manifestdata (glob)
-  *> cache miss for 64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca (glob)
-  *> storing cache entry for 64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca (glob)
+  *> cache miss for 47abb8efa5f01b8964d74917793ad2464db0fa2c (glob)
+  *> storing cache entry for 47abb8efa5f01b8964d74917793ad2464db0fa2c (glob)
   *> cacher constructed for manifestdata (glob)
-  *> cache hit for 64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca (glob)
-  *> sending content redirect for 64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca to http://*:$HGPORT/api/simplecache/64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca (glob)
+  *> cache hit for 47abb8efa5f01b8964d74917793ad2464db0fa2c (glob)
+  *> sending content redirect for 47abb8efa5f01b8964d74917793ad2464db0fa2c to http://*:$HGPORT/api/simplecache/47abb8efa5f01b8964d74917793ad2464db0fa2c (glob)

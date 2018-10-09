@@ -1548,7 +1548,8 @@ class clientreactor(object):
        is expected to follow or we're at the end of the response stream,
        respectively.
     """
-    def __init__(self, ui, hasmultiplesend=False, buffersends=True):
+    def __init__(self, ui, hasmultiplesend=False, buffersends=True,
+                 clientcontentencoders=None):
         """Create a new instance.
 
         ``hasmultiplesend`` indicates whether multiple sends are supported
@@ -1558,13 +1559,20 @@ class clientreactor(object):
 
         ``buffercommands`` indicates whether sends should be buffered until the
         last request has been issued.
+
+        ``clientcontentencoders`` is an iterable of content encoders the client
+        will advertise to the server and that the server can use for encoding
+        data. If not defined, the client will not advertise content encoders
+        to the server.
         """
         self._ui = ui
         self._hasmultiplesend = hasmultiplesend
         self._buffersends = buffersends
+        self._clientcontentencoders = clientcontentencoders
 
         self._canissuecommands = True
         self._cansend = True
+        self._protocolsettingssent = False
 
         self._nextrequestid = 1
         # We only support a single outgoing stream for now.
@@ -1650,6 +1658,19 @@ class clientreactor(object):
         """
         self._activerequests[request.requestid] = request
         request.state = 'sending'
+
+        if not self._protocolsettingssent and self._clientcontentencoders:
+            self._protocolsettingssent = True
+
+            payload = b''.join(cborutil.streamencode({
+                b'contentencodings': self._clientcontentencoders,
+            }))
+
+            yield self._outgoingstream.makeframe(
+                requestid=request.requestid,
+                typeid=FRAME_TYPE_SENDER_PROTOCOL_SETTINGS,
+                flags=FLAG_SENDER_PROTOCOL_SETTINGS_EOS,
+                payload=payload)
 
         res = createcommandframes(self._outgoingstream,
                                   request.requestid,

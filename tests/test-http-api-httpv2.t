@@ -100,7 +100,7 @@ Missing Accept header results in 406
   s>     Content-Type: text/plain\r\n
   s>     Content-Length: 85\r\n
   s>     \r\n
-  s>     client MUST specify Accept header with value: application/mercurial-exp-framing-0005\n
+  s>     client MUST specify Accept header with value: application/mercurial-exp-framing-0006\n
 
 Bad Accept header results in 406
 
@@ -123,7 +123,7 @@ Bad Accept header results in 406
   s>     Content-Type: text/plain\r\n
   s>     Content-Length: 85\r\n
   s>     \r\n
-  s>     client MUST specify Accept header with value: application/mercurial-exp-framing-0005\n
+  s>     client MUST specify Accept header with value: application/mercurial-exp-framing-0006\n
 
 Bad Content-Type header results in 415
 
@@ -136,7 +136,7 @@ Bad Content-Type header results in 415
   using raw connection to peer
   s>     POST /api/exp-http-v2-0002/ro/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
+  s>     accept: application/mercurial-exp-framing-0006\r\n
   s>     content-type: badmedia\r\n
   s>     user-agent: test\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
@@ -148,7 +148,7 @@ Bad Content-Type header results in 415
   s>     Content-Type: text/plain\r\n
   s>     Content-Length: 88\r\n
   s>     \r\n
-  s>     client MUST send Content-Type header with value: application/mercurial-exp-framing-0005\n
+  s>     client MUST send Content-Type header with value: application/mercurial-exp-framing-0006\n
 
 Request to read-only command works out of the box
 
@@ -163,7 +163,7 @@ Request to read-only command works out of the box
   s>     POST /api/exp-http-v2-0002/ro/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     *\r\n (glob)
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
+  s>     content-type: application/mercurial-exp-framing-0006\r\n
   s>     user-agent: test\r\n
   s>     content-length: 29\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
@@ -173,7 +173,7 @@ Request to read-only command works out of the box
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0006\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     13\r\n
@@ -195,18 +195,18 @@ Request to read-only command works out of the box
   sending customreadonly command
   s>     POST /api/exp-http-v2-0002/ro/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 29\r\n
+  s>     accept: application/mercurial-exp-framing-0006\r\n
+  s>     content-type: application/mercurial-exp-framing-0006\r\n
+  s>     content-length: 65\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
   s>     \r\n
-  s>     \x15\x00\x00\x01\x00\x01\x01\x11\xa1DnameNcustomreadonly
+  s>     \x1c\x00\x00\x01\x00\x01\x01\x82\xa1Pcontentencodings\x81Hidentity\x15\x00\x00\x01\x00\x01\x00\x11\xa1DnameNcustomreadonly
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0006\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     13\r\n
@@ -321,8 +321,8 @@ Authorized request for valid read-write command works
   using raw connection to peer
   s>     POST /api/exp-http-v2-0002/rw/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
+  s>     accept: application/mercurial-exp-framing-0006\r\n
+  s>     content-type: application/mercurial-exp-framing-0006\r\n
   s>     user-agent: test\r\n
   s>     content-length: 29\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
@@ -332,7 +332,7 @@ Authorized request for valid read-write command works
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0006\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     13\r\n
@@ -357,7 +357,7 @@ Authorized request for unknown command is rejected
   using raw connection to peer
   s>     POST /api/exp-http-v2-0002/rw/badcommand HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
+  s>     accept: application/mercurial-exp-framing-0006\r\n
   s>     user-agent: test\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n
@@ -419,8 +419,8 @@ Command frames can be reflected via debugreflect
   using raw connection to peer
   s>     POST /api/exp-http-v2-0002/ro/debugreflect HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
+  s>     accept: application/mercurial-exp-framing-0006\r\n
+  s>     content-type: application/mercurial-exp-framing-0006\r\n
   s>     user-agent: test\r\n
   s>     content-length: 47\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
@@ -450,8 +450,8 @@ Multiple requests to regular command URL are not allowed
   using raw connection to peer
   s>     POST /api/exp-http-v2-0002/ro/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
+  s>     accept: application/mercurial-exp-framing-0006\r\n
+  s>     content-type: application/mercurial-exp-framing-0006\r\n
   s>     user-agent: test\r\n
   s>     content-length: 29\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
@@ -461,7 +461,7 @@ Multiple requests to regular command URL are not allowed
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0006\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     13\r\n
@@ -500,7 +500,7 @@ Multiple requests to "multirequest" URL are allowed
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0006\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     13\r\n
@@ -539,8 +539,8 @@ Interleaved requests to "multirequest" are processed
   using raw connection to peer
   s>     POST /api/exp-http-v2-0002/ro/multirequest HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
+  s>     accept: application/mercurial-exp-framing-0006\r\n
+  s>     content-type: application/mercurial-exp-framing-0006\r\n
   s>     user-agent: test\r\n
   s>     content-length: 115\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
@@ -550,7 +550,7 @@ Interleaved requests to "multirequest" are processed
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0006\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     13\r\n
@@ -601,8 +601,8 @@ Attempting to run a read-write command via multirequest on read-only URL is not 
   using raw connection to peer
   s>     POST /api/exp-http-v2-0002/ro/multirequest HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
+  s>     accept: application/mercurial-exp-framing-0006\r\n
+  s>     content-type: application/mercurial-exp-framing-0006\r\n
   s>     user-agent: test\r\n
   s>     content-length: 22\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
@@ -616,5 +616,96 @@ Attempting to run a read-write command via multirequest on read-only URL is not 
   s>     Content-Length: 52\r\n
   s>     \r\n
   s>     insufficient permissions to execute command: pushkey
+
+Defining an invalid content encoding results in warning
+
+  $ hg --config experimental.httppeer.v2-encoder-order=identity,badencoder --verbose debugwireproto --nologhandshake --peer http2 http://$LOCALIP:$HGPORT/ << EOF
+  > command heads
+  > EOF
+  creating http peer for wire protocol version 2
+  sending heads command
+  wire protocol version 2 encoder referenced in config (badencoder) is not known; ignoring
+  s>     POST /api/exp-http-v2-0002/ro/heads HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-exp-framing-0006\r\n
+  s>     content-type: application/mercurial-exp-framing-0006\r\n
+  s>     content-length: 56\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s>     \x1c\x00\x00\x01\x00\x01\x01\x82\xa1Pcontentencodings\x81Hidentity\x0c\x00\x00\x01\x00\x01\x00\x11\xa1DnameEheads
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0006\r\n
+  s>     Transfer-Encoding: chunked\r\n
+  s>     \r\n
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
+  s>     \r\n
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     1e\r\n
+  s>     \x16\x00\x00\x01\x00\x02\x001
+  s>     \x81T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
+  s>     \r\n
+  received frame(size=22; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
+  s>     0\r\n
+  s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  response: [
+    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+  ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+#if zstd
+
+  $ hg --verbose debugwireproto --nologhandshake --peer http2 http://$LOCALIP:$HGPORT/ << EOF
+  > command heads
+  > EOF
+  creating http peer for wire protocol version 2
+  sending heads command
+  s>     POST /api/exp-http-v2-0002/ro/heads HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-exp-framing-0006\r\n
+  s>     content-type: application/mercurial-exp-framing-0006\r\n
+  s>     content-length: 70\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s>     *\x00\x00\x01\x00\x01\x01\x82\xa1Pcontentencodings\x83Hzstd-8mbDzlibHidentity\x0c\x00\x00\x01\x00\x01\x00\x11\xa1DnameEheads
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0006\r\n
+  s>     Transfer-Encoding: chunked\r\n
+  s>     \r\n
+  s>     13\r\n
+  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \xa1FstatusBok
+  s>     \r\n
+  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  s>     1e\r\n
+  s>     \x16\x00\x00\x01\x00\x02\x001
+  s>     \x81T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
+  s>     \r\n
+  received frame(size=22; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x002
+  s>     \r\n
+  s>     0\r\n
+  s>     \r\n
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  response: [
+    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+  ]
+  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
+
+#endif
 
   $ cat error.log

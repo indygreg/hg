@@ -121,13 +121,13 @@ Sending different request doesn't yield cache hit.
 
   $ cat .hg/blackbox.log
   *> cacher constructed for manifestdata (glob)
-  *> cache miss for c045a581599d58608efd3d93d8129841f2af04a0 (glob)
-  *> storing cache entry for c045a581599d58608efd3d93d8129841f2af04a0 (glob)
+  *> cache miss for 64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca (glob)
+  *> storing cache entry for 64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca (glob)
   *> cacher constructed for manifestdata (glob)
-  *> cache hit for c045a581599d58608efd3d93d8129841f2af04a0 (glob)
+  *> cache hit for 64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca (glob)
   *> cacher constructed for manifestdata (glob)
-  *> cache miss for 6ed2f740a1cdd12c9e99c4f27695543143c26a11 (glob)
-  *> storing cache entry for 6ed2f740a1cdd12c9e99c4f27695543143c26a11 (glob)
+  *> cache miss for 1cf89363ec234c6b92d5961281eaa5713e7493f9 (glob)
+  *> storing cache entry for 1cf89363ec234c6b92d5961281eaa5713e7493f9 (glob)
 
   $ cat error.log
 
@@ -188,10 +188,10 @@ Try with object caching mode
 
   $ cat .hg/blackbox.log
   *> cacher constructed for manifestdata (glob)
-  *> cache miss for c045a581599d58608efd3d93d8129841f2af04a0 (glob)
-  *> storing cache entry for c045a581599d58608efd3d93d8129841f2af04a0 (glob)
+  *> cache miss for 64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca (glob)
+  *> storing cache entry for 64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca (glob)
   *> cacher constructed for manifestdata (glob)
-  *> cache hit for c045a581599d58608efd3d93d8129841f2af04a0 (glob)
+  *> cache hit for 64b3162af49ea3c88e8ce2785e03ed7b88a2d6ca (glob)
 
   $ cat error.log
 
@@ -384,7 +384,7 @@ A non-cacheable command does not instantiate cacher
         }
       },
       b'framingmediatypes': [
-        b'application/mercurial-exp-framing-0005'
+        b'application/mercurial-exp-framing-0006'
       ],
       b'pathfilterprefixes': set([
         b'path:',
@@ -415,7 +415,7 @@ An error is not cached
 
   $ cat .hg/blackbox.log
   *> cacher constructed for manifestdata (glob)
-  *> cache miss for 9d1bb421d99e913d45f2d099aa49728514292dd2 (glob)
+  *> cache miss for 904560928eb95650358f0829d9399b256822eb26 (glob)
   *> cacher exiting due to error (glob)
 
   $ killdaemons.py

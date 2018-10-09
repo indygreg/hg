@@ -29,7 +29,7 @@ from .utils import (
     stringutil,
 )
 
-FRAMINGTYPE = b'application/mercurial-exp-framing-0005'
+FRAMINGTYPE = b'application/mercurial-exp-framing-0006'
 
 HTTP_WIREPROTO_V2 = wireprototypes.HTTP_WIREPROTO_V2
 

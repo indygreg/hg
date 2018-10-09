@@ -1,20 +1,20 @@
 HTTPV2=exp-http-v2-0002
-MEDIATYPE=application/mercurial-exp-framing-0005
+MEDIATYPE=application/mercurial-exp-framing-0006
 
 sendhttpraw() {
   hg --verbose debugwireproto --peer raw http://$LOCALIP:$HGPORT/
 }
 
 sendhttpv2peer() {
-  hg debugwireproto --nologhandshake --peer http2 http://$LOCALIP:$HGPORT/
+  hg --config experimental.httppeer.v2-encoder-order=identity debugwireproto --nologhandshake --peer http2 http://$LOCALIP:$HGPORT/
 }
 
 sendhttpv2peerverbose() {
-  hg --verbose debugwireproto --nologhandshake --peer http2 http://$LOCALIP:$HGPORT/
+  hg --config experimental.httppeer.v2-encoder-order=identity --verbose debugwireproto --nologhandshake --peer http2 http://$LOCALIP:$HGPORT/
 }
 
 sendhttpv2peerhandshake() {
-  hg --verbose debugwireproto --peer http2 http://$LOCALIP:$HGPORT/
+  hg --config experimental.httppeer.v2-encoder-order=identity --verbose debugwireproto --peer http2 http://$LOCALIP:$HGPORT/
 }
 
 cat > dummycommands.py << EOF
@@ -65,5 +65,8 @@ enablehttpv2client() {
   cat >> $HGRCPATH << EOF
 [experimental]
 httppeer.advertise-v2 = true
+# So tests are in plain text. Also, zstd isn't available in all installs,
+# which would make tests non-deterministic.
+httppeer.v2-encoder-order = identity
 EOF
 }

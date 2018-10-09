@@ -574,6 +574,9 @@ coreconfigitem('experimental', 'hook-track-tags',
 coreconfigitem('experimental', 'httppeer.advertise-v2',
     default=False,
 )
+coreconfigitem('experimental', 'httppeer.v2-encoder-order',
+    default=None,
+)
 coreconfigitem('experimental', 'httppostargs',
     default=False,
 )

@@ -514,9 +514,27 @@ class httppeer(wireprotov1peer.wirepeer):
 
 def sendv2request(ui, opener, requestbuilder, apiurl, permission, requests,
                   redirect):
+    wireprotoframing.populatestreamencoders()
+
+    uiencoders = ui.configlist(b'experimental', b'httppeer.v2-encoder-order')
+
+    if uiencoders:
+        encoders = []
+
+        for encoder in uiencoders:
+            if encoder not in wireprotoframing.STREAM_ENCODERS:
+                ui.warn(_(b'wire protocol version 2 encoder referenced in '
+                          b'config (%s) is not known; ignoring\n') % encoder)
+            else:
+                encoders.append(encoder)
+
+    else:
+        encoders = wireprotoframing.STREAM_ENCODERS_ORDER
+
     reactor = wireprotoframing.clientreactor(ui,
                                              hasmultiplesend=False,
-                                             buffersends=True)
+                                             buffersends=True,
+                                             clientcontentencoders=encoders)
 
     handler = wireprotov2peer.clienthandler(ui, reactor,
                                             opener=opener,

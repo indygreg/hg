@@ -13,6 +13,13 @@ CLEANUP=1
 DISTID=`(lsb_release -is 2> /dev/null | tr '[:upper:]' '[:lower:]') || echo debian`
 CODENAME=`lsb_release -cs 2> /dev/null || echo unknown`
 DEBFLAGS=-b
+
+cleanup() {
+    if [ '$CLEANUP' ]; then
+        rm -r '$PWD/debian';
+    fi
+}
+
 while [ "$1" ]; do
     case "$1" in
     --distid )
@@ -44,7 +51,7 @@ while [ "$1" ]; do
     esac
 done
 
-trap "if [ '$CLEANUP' ] ; then rm -r '$PWD/debian' ; fi" EXIT
+trap 'cleanup' EXIT
 
 set -u
 

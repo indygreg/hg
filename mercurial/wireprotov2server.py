@@ -875,15 +875,11 @@ def changesetdata(repo, proto, noderange, nodes, nodesdepth, fields):
     # The phases of nodes already transferred to the client may have changed
     # since the client last requested data. We send phase-only records
     # for these revisions, if requested.
-    if b'phase' in fields and noderange is not None:
-        # TODO skip nodes whose phase will be reflected by a node in the
-        # outgoing set. This is purely an optimization to reduce data
-        # size.
-        for node in noderange[0]:
-            yield {
-                b'node': node,
-                b'phase': b'public' if publishing else repo[node].phasestr()
-            }
+    # TODO actually do this. We'll probably want to emit phase heads
+    # in the ancestry set of the outgoing revisions. This will ensure
+    # that phase updates within that set are seen.
+    if b'phase' in fields:
+        pass
 
     nodebookmarks = {}
     for mark, node in repo._bookmarks.items():

@@ -324,7 +324,7 @@ Incremental pull works
   }
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=613; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=573; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   add changeset cd2534766bec
   add changeset e96ae20f4188
@@ -407,6 +407,7 @@ Incremental pull works
        4       4 379cb0c2e664 045c7f3927da 000000000000
 
 Phase-only update works
+TODO this doesn't work
 
   $ hg -R ../server-simple phase --public -r caa2a465451dd
   $ hg --debug pull
@@ -452,17 +453,16 @@ Phase-only update works
   }
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=92; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=13; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   checking for updated bookmarks
-  2 local changesets published
   (run 'hg update' to get a working copy)
   (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ hg log -G -T '{rev} {node} {phase}\n'
-  o  4 caa2a465451dd1facda0f5b12312c355584188a1 public
+  o  4 caa2a465451dd1facda0f5b12312c355584188a1 draft
   |
-  o  3 e96ae20f4188487b9ae4ef3941c27c81143146e5 public
+  o  3 e96ae20f4188487b9ae4ef3941c27c81143146e5 draft
   |
   | o  2 cd2534766bece138c7c1afdc6825302f0f62d81f draft
   | |
@@ -632,7 +632,7 @@ Server-side bookmark moves are reflected during `hg pull`
   }
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=144; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=65; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   checking for updated bookmarks
   updating bookmark book-1

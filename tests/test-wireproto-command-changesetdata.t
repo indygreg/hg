@@ -426,6 +426,7 @@ Multiple fields can be transferred
   ]
 
 Base nodes have just their metadata (e.g. phase) transferred
+TODO this doesn't work
 
   $ sendhttpv2peer << EOF
   > command changesetdata
@@ -437,10 +438,6 @@ Base nodes have just their metadata (e.g. phase) transferred
   response: gen[
     {
       b'totalitems': 3
-    },
-    {
-      b'node': b'3\x90\xef\x85\x00s\xfb\xc2\xf0\xdf\xff"D4,\x8e\x92)\x01:',
-      b'phase': b'public'
     },
     {
       b'fieldsfollowing': [

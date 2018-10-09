@@ -176,11 +176,14 @@ Request to read-only command works out of the box
   s>     Content-Type: application/mercurial-exp-framing-0006\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
+  s>     11\r\n
+  s>     \t\x00\x00\x01\x00\x02\x01\x92Hidentity
+  s>     \r\n
   s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011\xa1FstatusBok
+  s>     \x0b\x00\x00\x01\x00\x02\x041\xa1FstatusBok
   s>     \r\n
   s>     27\r\n
-  s>     \x1f\x00\x00\x01\x00\x02\x001X\x1dcustomreadonly bytes response
+  s>     \x1f\x00\x00\x01\x00\x02\x041X\x1dcustomreadonly bytes response
   s>     \r\n
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
@@ -209,16 +212,21 @@ Request to read-only command works out of the box
   s>     Content-Type: application/mercurial-exp-framing-0006\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
+  s>     11\r\n
+  s>     \t\x00\x00\x01\x00\x02\x01\x92
+  s>     Hidentity
+  s>     \r\n
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \x0b\x00\x00\x01\x00\x02\x041
   s>     \xa1FstatusBok
   s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     27\r\n
-  s>     \x1f\x00\x00\x01\x00\x02\x001
+  s>     \x1f\x00\x00\x01\x00\x02\x041
   s>     X\x1dcustomreadonly bytes response
   s>     \r\n
-  received frame(size=31; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=31; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -335,11 +343,14 @@ Authorized request for valid read-write command works
   s>     Content-Type: application/mercurial-exp-framing-0006\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
+  s>     11\r\n
+  s>     \t\x00\x00\x01\x00\x02\x01\x92Hidentity
+  s>     \r\n
   s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011\xa1FstatusBok
+  s>     \x0b\x00\x00\x01\x00\x02\x041\xa1FstatusBok
   s>     \r\n
   s>     27\r\n
-  s>     \x1f\x00\x00\x01\x00\x02\x001X\x1dcustomreadonly bytes response
+  s>     \x1f\x00\x00\x01\x00\x02\x041X\x1dcustomreadonly bytes response
   s>     \r\n
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
@@ -464,11 +475,14 @@ Multiple requests to regular command URL are not allowed
   s>     Content-Type: application/mercurial-exp-framing-0006\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
+  s>     11\r\n
+  s>     \t\x00\x00\x01\x00\x02\x01\x92Hidentity
+  s>     \r\n
   s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011\xa1FstatusBok
+  s>     \x0b\x00\x00\x01\x00\x02\x041\xa1FstatusBok
   s>     \r\n
   s>     27\r\n
-  s>     \x1f\x00\x00\x01\x00\x02\x001X\x1dcustomreadonly bytes response
+  s>     \x1f\x00\x00\x01\x00\x02\x041X\x1dcustomreadonly bytes response
   s>     \r\n
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
@@ -503,20 +517,23 @@ Multiple requests to "multirequest" URL are allowed
   s>     Content-Type: application/mercurial-exp-framing-0006\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
+  s>     11\r\n
+  s>     \t\x00\x00\x01\x00\x02\x01\x92Hidentity
+  s>     \r\n
   s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011\xa1FstatusBok
+  s>     \x0b\x00\x00\x01\x00\x02\x041\xa1FstatusBok
   s>     \r\n
   s>     27\r\n
-  s>     \x1f\x00\x00\x01\x00\x02\x001X\x1dcustomreadonly bytes response
+  s>     \x1f\x00\x00\x01\x00\x02\x041X\x1dcustomreadonly bytes response
   s>     \r\n
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
   s>     13\r\n
-  s>     \x0b\x00\x00\x03\x00\x02\x001\xa1FstatusBok
+  s>     \x0b\x00\x00\x03\x00\x02\x041\xa1FstatusBok
   s>     \r\n
   s>     27\r\n
-  s>     \x1f\x00\x00\x03\x00\x02\x001X\x1dcustomreadonly bytes response
+  s>     \x1f\x00\x00\x03\x00\x02\x041X\x1dcustomreadonly bytes response
   s>     \r\n
   s>     8\r\n
   s>     \x00\x00\x00\x03\x00\x02\x002
@@ -553,20 +570,23 @@ Interleaved requests to "multirequest" are processed
   s>     Content-Type: application/mercurial-exp-framing-0006\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
+  s>     11\r\n
+  s>     \t\x00\x00\x03\x00\x02\x01\x92Hidentity
+  s>     \r\n
   s>     13\r\n
-  s>     \x0b\x00\x00\x03\x00\x02\x011\xa1FstatusBok
+  s>     \x0b\x00\x00\x03\x00\x02\x041\xa1FstatusBok
   s>     \r\n
   s>     28\r\n
-  s>      \x00\x00\x03\x00\x02\x001\xa3Ibookmarks@Jnamespaces@Fphases@
+  s>      \x00\x00\x03\x00\x02\x041\xa3Ibookmarks@Jnamespaces@Fphases@
   s>     \r\n
   s>     8\r\n
   s>     \x00\x00\x00\x03\x00\x02\x002
   s>     \r\n
   s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x001\xa1FstatusBok
+  s>     \x0b\x00\x00\x01\x00\x02\x041\xa1FstatusBok
   s>     \r\n
   s>     9\r\n
-  s>     \x01\x00\x00\x01\x00\x02\x001\xa0
+  s>     \x01\x00\x00\x01\x00\x02\x041\xa0
   s>     \r\n
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
@@ -641,16 +661,21 @@ Defining an invalid content encoding results in warning
   s>     Content-Type: application/mercurial-exp-framing-0006\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
+  s>     11\r\n
+  s>     \t\x00\x00\x01\x00\x02\x01\x92
+  s>     Hidentity
+  s>     \r\n
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
+  s>     \x0b\x00\x00\x01\x00\x02\x041
   s>     \xa1FstatusBok
   s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     1e\r\n
-  s>     \x16\x00\x00\x01\x00\x02\x001
+  s>     \x16\x00\x00\x01\x00\x02\x041
   s>     \x81T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
   s>     \r\n
-  received frame(size=22; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
+  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x002
   s>     \r\n
@@ -685,22 +710,18 @@ Defining an invalid content encoding results in warning
   s>     Content-Type: application/mercurial-exp-framing-0006\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x011
-  s>     \xa1FstatusBok
+  s>     11\r\n
+  s>     \t\x00\x00\x01\x00\x02\x01\x92
+  s>     Hzstd-8mb
   s>     \r\n
-  received frame(size=11; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=continuation)
-  s>     1e\r\n
-  s>     \x16\x00\x00\x01\x00\x02\x001
-  s>     \x81T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  s>     25\r\n
+  s>     \x1d\x00\x00\x01\x00\x02\x042
+  s>     (\xb5/\xfd\x00P\xa4\x00\x00p\xa1FstatusBok\x81T\x00\x01\x00\tP\x02
   s>     \r\n
-  received frame(size=22; request=1; stream=2; streamflags=; type=command-response; flags=continuation)
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
+  received frame(size=29; request=1; stream=2; streamflags=encoded; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
-  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   response: [
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
   ]

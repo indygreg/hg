@@ -194,7 +194,7 @@ def _processhttpv2request(ui, repo, req, res, authedperm, reqcommand, proto):
     reactor = wireprotoframing.serverreactor(ui, deferoutput=True)
     seencommand = False
 
-    outstream = reactor.makeoutputstream()
+    outstream = None
 
     while True:
         frame = wireprotoframing.readframe(req.bodyfh)
@@ -207,6 +207,11 @@ def _processhttpv2request(ui, repo, req, res, authedperm, reqcommand, proto):
             # Need more data before we can do anything.
             continue
         elif action == 'runcommand':
+            # Defer creating output stream because we need to wait for
+            # protocol settings frames so proper encoding can be applied.
+            if not outstream:
+                outstream = reactor.makeoutputstream()
+
             sentoutput = _httpv2runcommand(ui, repo, req, res, authedperm,
                                            reqcommand, reactor, outstream,
                                            meta, issubsequent=seencommand)

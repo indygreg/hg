@@ -371,8 +371,9 @@ class ServerReactorTests(unittest.TestCase):
             outstream, 1, [b'response'])
         self.assertaction(result, b'sendframes')
         self.assertframesequal(result[1][b'framegen'], [
-            b'1 2 stream-begin command-response continuation %s' % OK,
-            b'1 2 0 command-response continuation cbor:b"response"',
+            b'1 2 stream-begin stream-settings eos cbor:b"identity"',
+            b'1 2 encoded command-response continuation %s' % OK,
+            b'1 2 encoded command-response continuation cbor:b"response"',
             b'1 2 0 command-response eos ',
         ])
 
@@ -390,10 +391,11 @@ class ServerReactorTests(unittest.TestCase):
             outstream, 1, [first + second])
         self.assertaction(result, b'sendframes')
         self.assertframesequal(result[1][b'framegen'], [
-            b'1 2 stream-begin command-response continuation %s' % OK,
-            b'1 2 0 command-response continuation Y\x80d',
-            b'1 2 0 command-response continuation %s' % first,
-            b'1 2 0 command-response continuation %s' % second,
+            b'1 2 stream-begin stream-settings eos cbor:b"identity"',
+            b'1 2 encoded command-response continuation %s' % OK,
+            b'1 2 encoded command-response continuation Y\x80d',
+            b'1 2 encoded command-response continuation %s' % first,
+            b'1 2 encoded command-response continuation %s' % second,
             b'1 2 0 command-response eos '
         ])
 
@@ -427,8 +429,9 @@ class ServerReactorTests(unittest.TestCase):
         result = reactor.oninputeof()
         self.assertaction(result, b'sendframes')
         self.assertframesequal(result[1][b'framegen'], [
-            b'1 2 stream-begin command-response continuation %s' % OK,
-            b'1 2 0 command-response continuation cbor:b"response"',
+            b'1 2 stream-begin stream-settings eos cbor:b"identity"',
+            b'1 2 encoded command-response continuation %s' % OK,
+            b'1 2 encoded command-response continuation cbor:b"response"',
             b'1 2 0 command-response eos ',
         ])
 
@@ -448,11 +451,12 @@ class ServerReactorTests(unittest.TestCase):
         result = reactor.oninputeof()
         self.assertaction(result, b'sendframes')
         self.assertframesequal(result[1][b'framegen'], [
-            b'1 2 stream-begin command-response continuation %s' % OK,
-            b'1 2 0 command-response continuation cbor:b"response1"',
+            b'1 2 stream-begin stream-settings eos cbor:b"identity"',
+            b'1 2 encoded command-response continuation %s' % OK,
+            b'1 2 encoded command-response continuation cbor:b"response1"',
             b'1 2 0 command-response eos ',
-            b'3 2 0 command-response continuation %s' % OK,
-            b'3 2 0 command-response continuation cbor:b"response2"',
+            b'3 2 encoded command-response continuation %s' % OK,
+            b'3 2 encoded command-response continuation cbor:b"response2"',
             b'3 2 0 command-response eos ',
         ])
 
@@ -472,14 +476,15 @@ class ServerReactorTests(unittest.TestCase):
         result = reactor.oninputeof()
         self.assertaction(result, b'sendframes')
         self.assertframesequal(result[1][b'framegen'], [
-            b'3 2 stream-begin command-response continuation %s' % OK,
-            b'3 2 0 command-response continuation cbor:b"response3"',
+            b'3 2 stream-begin stream-settings eos cbor:b"identity"',
+            b'3 2 encoded command-response continuation %s' % OK,
+            b'3 2 encoded command-response continuation cbor:b"response3"',
             b'3 2 0 command-response eos ',
-            b'1 2 0 command-response continuation %s' % OK,
-            b'1 2 0 command-response continuation cbor:b"response1"',
+            b'1 2 encoded command-response continuation %s' % OK,
+            b'1 2 encoded command-response continuation cbor:b"response1"',
             b'1 2 0 command-response eos ',
-            b'5 2 0 command-response continuation %s' % OK,
-            b'5 2 0 command-response continuation cbor:b"response5"',
+            b'5 2 encoded command-response continuation %s' % OK,
+            b'5 2 encoded command-response continuation cbor:b"response5"',
             b'5 2 0 command-response eos ',
         ])
 

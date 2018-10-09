@@ -2205,7 +2205,8 @@ class revlog(object):
         return res
 
     def emitrevisions(self, nodes, nodesorder=None, revisiondata=False,
-                      assumehaveparentrevisions=False, deltaprevious=False):
+                      assumehaveparentrevisions=False,
+                      deltamode=repository.CG_DELTAMODE_STD):
         if nodesorder not in ('nodes', 'storage', None):
             raise error.ProgrammingError('unhandled value for nodesorder: %s' %
                                          nodesorder)
@@ -2213,10 +2214,8 @@ class revlog(object):
         if nodesorder is None and not self._generaldelta:
             nodesorder = 'storage'
 
-        deltamode = repository.CG_DELTAMODE_STD
-        if deltaprevious:
-            deltamode = repository.CG_DELTAMODE_PREV
-        elif not self._storedeltachains:
+        if (not self._storedeltachains and
+                deltamode != repository.CG_DELTAMODE_PREV):
             deltamode = repository.CG_DELTAMODE_FULL
 
         return storageutil.emitrevisions(

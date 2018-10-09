@@ -697,12 +697,16 @@ def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
         progress = repo.ui.makeprogress(topic, unit=_('chunks'),
                                         total=len(nodes))
 
+    deltamode = repository.CG_DELTAMODE_STD
+    if forcedeltaparentprev:
+        deltamode = repository.CG_DELTAMODE_PREV
+
     revisions = store.emitrevisions(
         nodes,
         nodesorder=nodesorder,
         revisiondata=True,
         assumehaveparentrevisions=not ellipses,
-        deltaprevious=forcedeltaparentprev)
+        deltamode=deltamode)
 
     for i, revision in enumerate(revisions):
         if progress:

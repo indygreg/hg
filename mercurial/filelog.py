@@ -92,11 +92,11 @@ class filelog(object):
 
     def emitrevisions(self, nodes, nodesorder=None,
                       revisiondata=False, assumehaveparentrevisions=False,
-                      deltaprevious=False):
+                      deltamode=repository.CG_DELTAMODE_STD):
         return self._revlog.emitrevisions(
             nodes, nodesorder=nodesorder, revisiondata=revisiondata,
             assumehaveparentrevisions=assumehaveparentrevisions,
-            deltaprevious=deltaprevious)
+            deltamode=deltamode)
 
     def addrevision(self, revisiondata, transaction, linkrev, p1, p2,
                     node=None, flags=revlog.REVIDX_DEFAULT_FLAGS,

@@ -618,7 +618,7 @@ class ifiledata(interfaceutil.Interface):
                       nodesorder=None,
                       revisiondata=False,
                       assumehaveparentrevisions=False,
-                      deltaprevious=False):
+                      deltamode=CG_DELTAMODE_STD):
         """Produce ``irevisiondelta`` for revisions.
 
         Given an iterable of nodes, emits objects conforming to the
@@ -661,10 +661,10 @@ class ifiledata(interfaceutil.Interface):
         The ``linknode`` attribute on the returned ``irevisiondelta`` may not
         be set and it is the caller's responsibility to resolve it, if needed.
 
-        If ``deltaprevious`` is True and revision data is requested, all
-        revision data should be emitted as deltas against the revision
-        emitted just prior. The initial revision should be a delta against
-        its 1st parent.
+        If ``deltamode`` is CG_DELTAMODE_PREV and revision data is requested,
+        all revision data should be emitted as deltas against the revision
+        emitted just prior. The initial revision should be a delta against its
+        1st parent.
         """
 
 class ifilemutation(interfaceutil.Interface):

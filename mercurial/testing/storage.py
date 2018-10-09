@@ -741,7 +741,8 @@ class ifiledatatests(basetestcase):
 
         # forceprevious=True forces a delta against the previous revision.
         # Special case for initial revision.
-        gen = f.emitrevisions([node0], revisiondata=True, deltaprevious=True)
+        gen = f.emitrevisions([node0], revisiondata=True,
+                              deltamode=repository.CG_DELTAMODE_PREV)
 
         rev = next(gen)
         self.assertEqual(rev.node, node0)
@@ -758,7 +759,7 @@ class ifiledatatests(basetestcase):
             next(gen)
 
         gen = f.emitrevisions([node0, node2], revisiondata=True,
-                              deltaprevious=True)
+                              deltamode=repository.CG_DELTAMODE_PREV)
 
         rev = next(gen)
         self.assertEqual(rev.node, node0)

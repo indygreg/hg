@@ -1575,11 +1575,11 @@ class manifestrevlog(object):
 
     def emitrevisions(self, nodes, nodesorder=None,
                       revisiondata=False, assumehaveparentrevisions=False,
-                      deltaprevious=False):
+                      deltamode=repository.CG_DELTAMODE_STD):
         return self._revlog.emitrevisions(
             nodes, nodesorder=nodesorder, revisiondata=revisiondata,
             assumehaveparentrevisions=assumehaveparentrevisions,
-            deltaprevious=deltaprevious)
+            deltamode=deltamode)
 
     def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None):
         return self._revlog.addgroup(deltas, linkmapper, transaction,

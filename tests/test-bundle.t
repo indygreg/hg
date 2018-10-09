@@ -900,3 +900,8 @@ the warning shouldn't be emitted
   $ hg update -R ../update2bundled.hg -r 0
   0 files updated, 0 files merged, 2 files removed, 0 files unresolved
 #endif
+
+Test the option that create slim bundle
+
+  $ hg bundle -a --config devel.bundle.delta=p1 ./slim.hg
+  3 changesets found

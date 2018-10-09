@@ -329,6 +329,9 @@ coreconfigitem('devel', 'all-warnings',
 coreconfigitem('devel', 'bundle2.debug',
     default=False,
 )
+coreconfigitem('devel', 'bundle.delta',
+    default='',
+)
 coreconfigitem('devel', 'cache-vfs',
     default=None,
 )

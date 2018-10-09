@@ -697,9 +697,16 @@ def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
         progress = repo.ui.makeprogress(topic, unit=_('chunks'),
                                         total=len(nodes))
 
+    configtarget = repo.ui.config('devel', 'bundle.delta')
+    if configtarget not in ('', 'p1'):
+        msg = _("""config "devel.bundle.delta" as unknown value: %s""")
+        repo.ui.warn(msg % configtarget)
+
     deltamode = repository.CG_DELTAMODE_STD
     if forcedeltaparentprev:
         deltamode = repository.CG_DELTAMODE_PREV
+    elif configtarget == 'p1':
+        deltamode = repository.CG_DELTAMODE_P1
 
     revisions = store.emitrevisions(
         nodes,

@@ -42,6 +42,7 @@ REVISION_FLAGS_KNOWN = (
 CG_DELTAMODE_STD = b'default'
 CG_DELTAMODE_PREV = b'previous'
 CG_DELTAMODE_FULL = b'fulltext'
+CG_DELTAMODE_P1 = b'p1'
 
 class ipeerconnection(interfaceutil.Interface):
     """Represents a "connection" to a repository.

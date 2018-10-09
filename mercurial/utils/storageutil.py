@@ -373,6 +373,9 @@ def emitrevisions(store, nodes, nodesorder, resultcls, deltaparentfn=None,
         # We're instructed to send fulltext. Honor that.
         elif deltamode == repository.CG_DELTAMODE_FULL:
             baserev = nullrev
+        # We're instructed to use p1. Honor that
+        elif deltamode == repository.CG_DELTAMODE_P1:
+            baserev = p1rev
 
         # There is a delta in storage. We try to use that because it
         # amounts to effectively copying data from storage and is

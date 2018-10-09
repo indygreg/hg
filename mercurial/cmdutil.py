@@ -581,7 +581,7 @@ def _conflictsmsg(repo):
     if unresolvedlist:
         mergeliststr = '\n'.join(
             ['    %s' % util.pathto(repo.root, encoding.getcwd(), path)
-             for path in unresolvedlist])
+             for path in sorted(unresolvedlist)])
         msg = _('''Unresolved merge conflicts:
 
 %s

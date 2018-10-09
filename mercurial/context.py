@@ -712,7 +712,7 @@ class basefilectx(object):
 
         return True
 
-    def _adjustlinkrev(self, srcrev, inclusive=False):
+    def _adjustlinkrev(self, srcrev, inclusive=False, stoprev=None):
         """return the first ancestor of <srcrev> introducing <fnode>
 
         If the linkrev of the file revision does not point to an ancestor of
@@ -721,6 +721,10 @@ class basefilectx(object):
 
         :srcrev: the changeset revision we search ancestors from
         :inclusive: if true, the src revision will also be checked
+        :stoprev: an optional revision to stop the walk at. If no introduction
+                  of this file content could be found before this floor
+                  revision, the function will returns "None" and stops its
+                  iteration.
         """
         repo = self._repo
         cl = repo.unfiltered().changelog
@@ -748,6 +752,8 @@ class basefilectx(object):
             fnode = self._filenode
             path = self._path
             for a in iteranc:
+                if stoprev is not None and a < stoprev:
+                    return None
                 ac = cl.read(a) # get changeset data (we avoid object creation)
                 if path in ac[3]: # checking the 'files' field.
                     # The file has been touched, check if the content is
@@ -765,7 +771,9 @@ class basefilectx(object):
         """
         if self.linkrev() >= changelogrev:
             return True
-        introrev = self._introrev()
+        introrev = self._introrev(stoprev=changelogrev)
+        if introrev is None:
+            return False
         return introrev >= changelogrev
 
     def introrev(self):
@@ -779,7 +787,15 @@ class basefilectx(object):
         """
         return self._introrev()
 
-    def _introrev(self):
+    def _introrev(self, stoprev=None):
+        """
+        Same as `introrev` but, with an extra argument to limit changelog
+        iteration range in some internal usecase.
+
+        If `stoprev` is set, the `introrev` will not be searched past that
+        `stoprev` revision and "None" might be returned. This is useful to
+        limit the iteration range.
+        """
         toprev = None
         attrs = vars(self)
         if r'_changeid' in attrs:
@@ -790,11 +806,12 @@ class basefilectx(object):
             toprev = self._changectx.rev()
 
         if toprev is not None:
-            return self._adjustlinkrev(toprev, inclusive=True)
+            return self._adjustlinkrev(toprev, inclusive=True, stoprev=stoprev)
         elif r'_descendantrev' in attrs:
-            introrev = self._adjustlinkrev(self._descendantrev)
+            introrev = self._adjustlinkrev(self._descendantrev, stoprev=stoprev)
             # be nice and cache the result of the computation
-            self._changeid = introrev
+            if introrev is not None:
+                self._changeid = introrev
             return introrev
         else:
             return self.linkrev()

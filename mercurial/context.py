@@ -780,6 +780,11 @@ class basefilectx(object):
 
         if toprev is not None:
             return self._adjustlinkrev(toprev, inclusive=True)
+        elif r'_descendantrev' in attrs:
+            introrev = self._adjustlinkrev(self._descendantrev)
+            # be nice and cache the result of the computation
+            self._changeid = introrev
+            return introrev
         else:
             return self.linkrev()
 

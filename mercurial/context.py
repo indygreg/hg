@@ -764,7 +764,7 @@ class basefilectx(object):
         """True if a filectx has been introduced after a given floor revision
         """
         return (self.linkrev() >= changelogrev
-                or self.introrev() >= changelogrev)
+                or self._introrev() >= changelogrev)
 
     def introrev(self):
         """return the rev of the changeset which introduced this file revision
@@ -775,6 +775,9 @@ class basefilectx(object):
         'linkrev-shadowing' when a file revision is used by multiple
         changesets.
         """
+        return self._introrev()
+
+    def _introrev(self):
         toprev = None
         attrs = vars(self)
         if r'_changeid' in attrs:

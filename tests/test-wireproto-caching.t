@@ -357,7 +357,8 @@ A non-cacheable command does not instantiate cacher
           },
           b'permissions': [
             b'pull'
-          ]
+          ],
+          b'recommendedbatchsize': 100000
         },
         b'pushkey': {
           b'args': {

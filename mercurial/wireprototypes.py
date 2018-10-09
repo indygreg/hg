@@ -235,12 +235,13 @@ class baseprotocolhandler(interfaceutil.Interface):
 class commandentry(object):
     """Represents a declared wire protocol command."""
     def __init__(self, func, args='', transports=None,
-                 permission='push', cachekeyfn=None):
+                 permission='push', cachekeyfn=None, extracapabilitiesfn=None):
         self.func = func
         self.args = args
         self.transports = transports or set()
         self.permission = permission
         self.cachekeyfn = cachekeyfn
+        self.extracapabilitiesfn = extracapabilitiesfn
 
     def _merge(self, func, args):
         """Merge this instance with an incoming 2-tuple.

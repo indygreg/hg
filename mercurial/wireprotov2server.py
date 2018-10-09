@@ -518,6 +518,10 @@ def _capabilitiesv2(repo, proto):
             'permissions': [entry.permission],
         }
 
+        if entry.extracapabilitiesfn:
+            extracaps = entry.extracapabilitiesfn(repo, proto)
+            caps['commands'][command].update(extracaps)
+
     caps['rawrepoformats'] = sorted(repo.requirements &
                                     repo.supportedformats)
 
@@ -581,7 +585,8 @@ def getadvertisedredirecttargets(repo, proto):
     """
     return []
 
-def wireprotocommand(name, args=None, permission='push', cachekeyfn=None):
+def wireprotocommand(name, args=None, permission='push', cachekeyfn=None,
+                     extracapabilitiesfn=None):
     """Decorator to declare a wire protocol command.
 
     ``name`` is the name of the wire protocol command being provided.
@@ -612,6 +617,12 @@ def wireprotocommand(name, args=None, permission='push', cachekeyfn=None):
 
     ``cachekeyfn`` defines an optional callable that can derive the
     cache key for this request.
+
+    ``extracapabilitiesfn`` defines an optional callable that defines extra
+    command capabilities/parameters that are advertised next to the command
+    in the capabilities data structure describing the server. The callable
+    receives as arguments the repository and protocol objects. It returns
+    a dict of extra fields to add to the command descriptor.
 
     Wire protocol commands are generators of objects to be serialized and
     sent to the client.
@@ -675,7 +686,7 @@ def wireprotocommand(name, args=None, permission='push', cachekeyfn=None):
 
         COMMANDS[name] = wireprototypes.commandentry(
             func, args=args, transports=transports, permission=permission,
-            cachekeyfn=cachekeyfn)
+            cachekeyfn=cachekeyfn, extracapabilitiesfn=extracapabilitiesfn)
 
         return func
 
@@ -1091,6 +1102,14 @@ def lookupv2(repo, proto, key):
 
     yield node
 
+def manifestdatacapabilities(repo, proto):
+    batchsize = repo.ui.configint(
+        b'experimental', b'server.manifestdata.recommended-batch-size')
+
+    return {
+        b'recommendedbatchsize': batchsize,
+    }
+
 @wireprotocommand(
     'manifestdata',
     args={
@@ -1115,7 +1134,8 @@ def lookupv2(repo, proto, key):
         },
     },
     permission='pull',
-    cachekeyfn=makecommandcachekeyfn('manifestdata', 1, allargs=True))
+    cachekeyfn=makecommandcachekeyfn('manifestdata', 1, allargs=True),
+    extracapabilitiesfn=manifestdatacapabilities)
 def manifestdata(repo, proto, haveparents, nodes, fields, tree):
     store = repo.manifestlog.getstorage(tree)
 

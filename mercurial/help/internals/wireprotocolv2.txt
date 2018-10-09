@@ -87,6 +87,10 @@ commands
       permissions
          An array of permissions required to execute this command.
 
+      *
+         (various) Individual commands may define extra keys that supplement
+         generic command metadata. See the command definition for more.
+
 framingmediatypes
    An array of bytestrings defining the supported framing protocol
    media types. Servers will not accept media types not in this list.
@@ -508,6 +512,15 @@ parents
 When ``revision`` data is requested, the server chooses to emit either fulltext
 revision data or a delta. What the server decides can be inferred by looking
 for the presence of ``delta`` or ``revision`` in the ``fieldsfollowing`` array.
+
+Servers MAY advertise the following extra fields in the capabilities
+descriptor for this command:
+
+recommendedbatchsize
+   (unsigned integer) Number of revisions the server recommends as a batch
+   query size. If defined, clients needing to issue multiple ``manifestdata``
+   commands to obtain needed data SHOULD construct their commands to have
+   this many revisions per request.
 
 pushkey
 -------

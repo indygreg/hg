@@ -787,6 +787,16 @@ def has_repobundlerepo():
 def has_repofncache():
     return 'fncache' in getrepofeatures()
 
+@check('sqlite', 'sqlite3 module is available')
+def has_sqlite():
+    try:
+        import sqlite3
+        sqlite3.sqlite_version
+    except ImportError:
+        return False
+
+    return matchoutput('sqlite3 -version', b'^3\.\d+')
+
 @check('vcr', 'vcr http mocking library')
 def has_vcr():
     try:

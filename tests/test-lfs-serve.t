@@ -220,6 +220,30 @@ should have an 'lfs' requirement after it picks up its first commit with a blob.
   $TESTTMP/client3_pull/.hg/requires:lfs (lfsremote-on !)
   $TESTTMP/server/.hg/requires:lfs (lfsremote-on !)
 
+Test that the commit/changegroup requirement check hook can be run multiple
+times.
+
+  $ hg clone -qr 0 http://localhost:$HGPORT $TESTTMP/cmdserve_client3
+
+  $ cd ../cmdserve_client3
+
+  >>> from __future__ import absolute_import
+  >>> from hgclient import check, readchannel, runcommand
+  >>> @check
+  ... def addrequirement(server):
+  ...     readchannel(server)
+  ...     # change the repo in a way that adds the lfs requirement
+  ...     runcommand(server, ['pull', '-qu'])
+  ...     # Now cause the requirement adding hook to fire again, without going
+  ...     # through reposetup() again.
+  ...     with open('file.txt', 'wb') as fp:
+  ...         fp.write('data')
+  ...     runcommand(server, ['ci', '-Aqm', 'non-lfs'])
+  *** runcommand pull -qu
+  *** runcommand ci -Aqm non-lfs
+
+  $ cd ../client
+
 The difference here is the push failed above when the extension isn't
 enabled on the server.
   $ hg identify http://localhost:$HGPORT

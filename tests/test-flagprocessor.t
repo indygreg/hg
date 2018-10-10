@@ -206,6 +206,8 @@ Ensure the data got to the server OK
     File "*/tests/flagprocessorext.py", line *, in extsetup (glob)
       validatehash,
     File "*/mercurial/revlog.py", line *, in addflagprocessor (glob)
+      _insertflagprocessor(flag, processor, _flagprocessors)
+    File "*/mercurial/revlog.py", line *, in _insertflagprocessor (glob)
       raise error.Abort(msg)
   Abort: cannot register multiple processors on flag '0x8'.
   *** failed to set up extension duplicate: cannot register multiple processors on flag '0x8'.

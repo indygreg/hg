@@ -151,16 +151,19 @@ def addflagprocessor(flag, processor):
       debug commands. In this case the transform only indicates whether the
       contents can be used for hash integrity checks.
     """
+    _insertflagprocessor(flag, processor, _flagprocessors)
+
+def _insertflagprocessor(flag, processor, flagprocessors):
     if not flag & REVIDX_KNOWN_FLAGS:
         msg = _("cannot register processor on unknown flag '%#x'.") % (flag)
         raise error.ProgrammingError(msg)
     if flag not in REVIDX_FLAGS_ORDER:
         msg = _("flag '%#x' undefined in REVIDX_FLAGS_ORDER.") % (flag)
         raise error.ProgrammingError(msg)
-    if flag in _flagprocessors:
+    if flag in flagprocessors:
         msg = _("cannot register multiple processors on flag '%#x'.") % (flag)
         raise error.Abort(msg)
-    _flagprocessors[flag] = processor
+    flagprocessors[flag] = processor
 
 def getoffset(q):
     return int(q >> 16)
@@ -407,6 +410,10 @@ class revlog(object):
                 self._srmingapsize = opts['sparse-read-min-gap-size']
             if opts.get('enableellipsis'):
                 self._flagprocessors[REVIDX_ELLIPSIS] = ellipsisprocessor
+
+            # revlog v0 doesn't have flag processors
+            for flag, processor in opts.get(b'flagprocessors', {}).iteritems():
+                _insertflagprocessor(flag, processor, self._flagprocessors)
 
         if self._chunkcachesize <= 0:
             raise error.RevlogError(_('revlog chunk cache size %r is not '

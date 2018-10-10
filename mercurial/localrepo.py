@@ -708,6 +708,7 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
     """Resolve opener options specific to revlogs."""
 
     options = {}
+    options[b'flagprocessors'] = {}
 
     if b'revlogv1' in requirements:
         options[b'revlogv1'] = True

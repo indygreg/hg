@@ -57,6 +57,7 @@ def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
     ellipses: whether to send ellipses data or not
     """
 
+    preferuncompressed = False
     try:
         oldincludes = wireprototypes.decodelist(oldincludes)
         newincludes = wireprototypes.decodelist(newincludes)
@@ -92,9 +93,11 @@ def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
         if exc.hint is not None:
             advargs.append(('hint', exc.hint))
         bundler.addpart(bundle2.bundlepart('error:abort', manargs, advargs))
+        preferuncompressed = True
 
     chunks = bundler.getchunks()
-    return wireprototypes.streamres(gen=chunks)
+    return wireprototypes.streamres(gen=chunks,
+                                    prefer_uncompressed=preferuncompressed)
 
 def peernarrowwiden(remote, **kwargs):
     for ch in ('oldincludes', 'newincludes', 'oldexcludes', 'newexcludes',

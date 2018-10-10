@@ -1907,6 +1907,7 @@ def applynarrowacl(repo, kwargs):
     new_args = {}
     new_args.update(kwargs)
     new_args[r'narrow'] = True
+    new_args[r'narrow_acl'] = True
     new_args[r'includepats'] = req_includes
     if req_excludes:
         new_args[r'excludepats'] = req_excludes
@@ -2171,7 +2172,8 @@ def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
     if 'treemanifest' in repo.requirements:
         part.addparam('treemanifest', '1')
 
-    if kwargs.get(r'narrow', False) and (include or exclude):
+    if (kwargs.get(r'narrow', False) and kwargs.get('narrow_acl', False)
+        and (include or exclude)):
         narrowspecpart = bundler.newpart('narrow:spec')
         if include:
             narrowspecpart.addparam(

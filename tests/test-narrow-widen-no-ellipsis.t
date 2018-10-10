@@ -137,7 +137,6 @@ Pull down the newly added upstream revision.
   adding file changes
   added 5 changesets with 4 changes to 2 files
   new changesets *:* (glob)
-  3 local changesets published
   (run 'hg update' to get a working copy)
   $ hg update -r 'desc("add wider")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved

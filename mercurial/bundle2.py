@@ -1900,11 +1900,11 @@ def handlecheckbookmarks(op, inpart):
     """
     bookdata = bookmarks.binarydecode(inpart)
 
-    msgstandard = ('repository changed while pushing - please try again '
+    msgstandard = ('remote repository changed while pushing - please try again '
                    '(bookmark "%s" move from %s to %s)')
-    msgmissing = ('repository changed while pushing - please try again '
+    msgmissing = ('remote repository changed while pushing - please try again '
                   '(bookmark "%s" is missing, expected %s)')
-    msgexist = ('repository changed while pushing - please try again '
+    msgexist = ('remote repository changed while pushing - please try again '
                 '(bookmark "%s" set on %s, expected missing)')
     for book, node in bookdata:
         currentnode = op.repo._bookmarks.get(book)
@@ -1934,7 +1934,7 @@ def handlecheckheads(op, inpart):
     if op.ui.configbool('experimental', 'bundle2lazylocking'):
         op.gettransaction()
     if sorted(heads) != sorted(op.repo.heads()):
-        raise error.PushRaced('repository changed while pushing - '
+        raise error.PushRaced('remote repository changed while pushing - '
                               'please try again')
 
 @parthandler('check:updated-heads')
@@ -1963,7 +1963,7 @@ def handlecheckupdatedheads(op, inpart):
 
     for h in heads:
         if h not in currentheads:
-            raise error.PushRaced('repository changed while pushing - '
+            raise error.PushRaced('remote repository changed while pushing - '
                                   'please try again')
 
 @parthandler('check:phases')
@@ -1976,7 +1976,7 @@ def handlecheckphases(op, inpart):
     unfi = op.repo.unfiltered()
     cl = unfi.changelog
     phasecache = unfi._phasecache
-    msg = ('repository changed while pushing - please try again '
+    msg = ('remote repository changed while pushing - please try again '
            '(%s is %s expected %s)')
     for expectedphase, nodes in enumerate(phasetonodes):
         for n in nodes:

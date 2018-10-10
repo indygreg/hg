@@ -824,7 +824,7 @@ Test push race detection
 
   $ hg unbundle2 < ../part-race.hg2
   0 unread bytes
-  abort: push race: repository changed while pushing - please try again
+  abort: push race: remote repository changed while pushing - please try again
   [255]
 
 Support for changegroup

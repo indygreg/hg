@@ -587,21 +587,21 @@ Doing the actual push: race
   pushing to other
   searching for changes
   abort: push failed:
-  'repository changed while pushing - please try again'
+  'remote repository changed while pushing - please try again'
   [255]
 
   $ hg -R main push ssh://user@dummy/other -r e7ec4e813ba6
   pushing to ssh://user@dummy/other
   searching for changes
   abort: push failed:
-  'repository changed while pushing - please try again'
+  'remote repository changed while pushing - please try again'
   [255]
 
   $ hg -R main push http://localhost:$HGPORT2/ -r e7ec4e813ba6
   pushing to http://localhost:$HGPORT2/
   searching for changes
   abort: push failed:
-  'repository changed while pushing - please try again'
+  'remote repository changed while pushing - please try again'
   [255]
 
 Doing the actual push: hook abort

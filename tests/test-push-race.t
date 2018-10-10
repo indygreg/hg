@@ -214,7 +214,7 @@ Check the result of the push
   wrote ready: $TESTTMP/readyfile
   waiting on: $TESTTMP/watchfile
   abort: push failed:
-  'repository changed while pushing - please try again'
+  'remote repository changed while pushing - please try again'
 
   $ hg -R server graph
   o  98217d5a1659 C-A (default)
@@ -303,7 +303,7 @@ Check the result of the push
   wrote ready: $TESTTMP/readyfile
   waiting on: $TESTTMP/watchfile
   abort: push failed:
-  'repository changed while pushing - please try again'
+  'remote repository changed while pushing - please try again'
 
   $ hg -R server graph
   o  51c544a58128 C-C (default)
@@ -451,7 +451,7 @@ Check the result of the push
   wrote ready: $TESTTMP/readyfile
   waiting on: $TESTTMP/watchfile
   abort: push failed:
-  'repository changed while pushing - please try again'
+  'remote repository changed while pushing - please try again'
 
   $ hg -R server graph
   o  d603e2c0cdd7 C-E (default)
@@ -614,7 +614,7 @@ Check the result of the push
   wrote ready: $TESTTMP/readyfile
   waiting on: $TESTTMP/watchfile
   abort: push failed:
-  'repository changed while pushing - please try again'
+  'remote repository changed while pushing - please try again'
 
   $ hg -R server graph
   o  75d69cba5402 C-G (default)
@@ -789,7 +789,7 @@ Check the result of the push
   wrote ready: $TESTTMP/readyfile
   waiting on: $TESTTMP/watchfile
   abort: push failed:
-  'repository changed while pushing - please try again'
+  'remote repository changed while pushing - please try again'
 
   $ hg -R server graph
   o  b35ed749f288 C-I (my-second-test-branch)
@@ -977,7 +977,7 @@ Check the result of the push
   wrote ready: $TESTTMP/readyfile
   waiting on: $TESTTMP/watchfile
   abort: push failed:
-  'repository changed while pushing - please try again'
+  'remote repository changed while pushing - please try again'
 
   $ hg -R server graph
   o    be705100c623 C-K (default)
@@ -1113,7 +1113,7 @@ Check the result of the push
   wrote ready: $TESTTMP/readyfile
   waiting on: $TESTTMP/watchfile
   abort: push failed:
-  'repository changed while pushing - please try again'
+  'remote repository changed while pushing - please try again'
 
   $ hg -R server graph
   o  6fd3090135df C-M (default)
@@ -1285,7 +1285,7 @@ Check the result of the push
   wrote ready: $TESTTMP/readyfile
   waiting on: $TESTTMP/watchfile
   abort: push failed:
-  'repository changed while pushing - please try again'
+  'remote repository changed while pushing - please try again'
 
   $ hg -R server graph
   o  1b58ee3f79e5 C-P (default)
@@ -1458,7 +1458,7 @@ Check the result of the push
   wrote ready: $TESTTMP/readyfile
   waiting on: $TESTTMP/watchfile
   abort: push failed:
-  'repository changed while pushing - please try again'
+  'remote repository changed while pushing - please try again'
 
   $ hg -R server graph
   o  de7b9e2ba3f6 C-R (other)
@@ -1634,7 +1634,7 @@ Check the result of the push
   wrote ready: $TESTTMP/readyfile
   waiting on: $TESTTMP/watchfile
   abort: push failed:
-  'repository changed while pushing - please try again'
+  'remote repository changed while pushing - please try again'
 
   $ hg -R server debugobsolete
   $ hg -R server graph
@@ -1834,7 +1834,7 @@ Check the result of the push
   wrote ready: $TESTTMP/readyfile
   waiting on: $TESTTMP/watchfile
   abort: push failed:
-  'repository changed while pushing - please try again'
+  'remote repository changed while pushing - please try again'
 
   $ hg -R server debugobsolete
   b0ee3d6f51bc4c0ca6d4f2907708027a6c376233 720c5163ecf64dcc6216bee2d62bf3edb1882499 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}

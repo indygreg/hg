@@ -337,6 +337,11 @@ class clienthandler(object):
             return
         elif action == 'noop':
             return
+        elif action == 'responsedata':
+            # Handled below.
+            pass
+        else:
+            raise error.ProgrammingError('action not handled: %s' % action)
 
         if frame.requestid not in self._requests:
             raise error.ProgrammingError(

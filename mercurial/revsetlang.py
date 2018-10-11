@@ -355,9 +355,6 @@ def _analyze(x):
     elif op == 'keyvalue':
         return (op, x[1], _analyze(x[2]))
     elif op == 'func':
-        f = getsymbol(x[1])
-        if f == 'revset':
-            return _analyze(x[2])
         return (op, x[1], _analyze(x[2]))
     raise ValueError('invalid operator %r' % op)
 

@@ -2926,16 +2926,20 @@ test multiline revset with errors
         (symbol '0'))))
   * analyzed:
   (func
-    (symbol 'first')
+    (symbol 'revset')
     (func
-      (symbol 'rev')
-      (symbol '0')))
+      (symbol 'first')
+      (func
+        (symbol 'rev')
+        (symbol '0'))))
   * optimized:
   (func
-    (symbol 'first')
+    (symbol 'revset')
     (func
-      (symbol 'rev')
-      (symbol '0')))
+      (symbol 'first')
+      (func
+        (symbol 'rev')
+        (symbol '0'))))
   * set:
   <baseset+ [0]>
   0

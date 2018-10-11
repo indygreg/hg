@@ -127,7 +127,7 @@ class memorycacher(object):
             paths.append(b'simplecache')
             paths.append(self.key)
 
-            url = b'%s/%s' % (self.req.advertisedbaseurl, b'/'.join(paths))
+            url = b'%s/%s' % (self.req.baseurl, b'/'.join(paths))
 
             #url = b'http://example.com/%s' % self.key
             self.ui.log('simplecache', 'sending content redirect for %s to '

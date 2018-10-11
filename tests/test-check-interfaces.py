@@ -99,7 +99,7 @@ class dummypipe(object):
 def main():
     ui = uimod.ui()
     # Needed so we can open a local repo with obsstore without a warning.
-    ui.setconfig('experimental', 'evolution.createmarkers', True)
+    ui.setconfig(b'experimental', b'evolution.createmarkers', True)
 
     checkzobject(badpeer())
 

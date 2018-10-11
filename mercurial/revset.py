@@ -1751,6 +1751,16 @@ def rev(repo, subset, x):
         return baseset()
     return subset & baseset([l])
 
+@predicate('revset(set)', safe=True, takeorder=True)
+def revsetpredicate(repo, subset, x, order):
+    """Strictly interpret the content as a revset.
+
+    The content of this special predicate will be strictly interpreted as a
+    revset. For example, ``revset(id(0))`` will be interpreted as "id(0)"
+    without possible ambiguity with a "id(0)" bookmark or tag.
+    """
+    return getset(repo, subset, x, order)
+
 @predicate('matching(revision [, field])', safe=True)
 def matching(repo, subset, x):
     """Changesets in which a given set of fields match the set of fields in the

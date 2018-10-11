@@ -123,12 +123,15 @@ def rawfile(web):
     text = fctx.data()
     mt = 'application/binary'
     if guessmime:
-        mt = mimetypes.guess_type(path)[0]
+        mt = mimetypes.guess_type(pycompat.fsdecode(path))[0]
         if mt is None:
             if stringutil.binary(text):
                 mt = 'application/binary'
             else:
                 mt = 'text/plain'
+        else:
+            mt = pycompat.sysbytes(mt)
+
     if mt.startswith('text/'):
         mt += '; charset="%s"' % encoding.encoding
 
@@ -146,7 +149,9 @@ def _filerevision(web, fctx):
     ishead = fctx.filenode() in fctx.filelog().heads()
 
     if stringutil.binary(text):
-        mt = mimetypes.guess_type(f)[0] or 'application/octet-stream'
+        mt = pycompat.sysbytes(
+            mimetypes.guess_type(pycompat.fsdecode(f))[0]
+            or 'application/octet-stream')
         text = '(binary:%s)' % mt
 
     def lines(context):
@@ -857,9 +862,9 @@ def comparison(web):
 
     def filelines(f):
         if f.isbinary():
-            mt = mimetypes.guess_type(f.path())[0]
-            if not mt:
-                mt = 'application/octet-stream'
+            mt = pycompat.sysbytes(
+                mimetypes.guess_type(pycompat.fsdecode(f.path()))[0]
+                or 'application/octet-stream')
             return [_('(binary file %s, hash: %s)') % (mt, hex(f.filenode()))]
         return f.data().splitlines()
 
@@ -945,8 +950,9 @@ def annotate(web):
 
     def annotate(context):
         if fctx.isbinary():
-            mt = (mimetypes.guess_type(fctx.path())[0]
-                  or 'application/octet-stream')
+            mt = pycompat.sysbytes(
+                mimetypes.guess_type(pycompat.fsdecode(fctx.path()))[0]
+                or 'application/octet-stream')
             lines = [dagop.annotateline(fctx=fctx.filectx(fctx.filerev()),
                                         lineno=1, text='(binary:%s)' % mt)]
         else:

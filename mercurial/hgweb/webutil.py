@@ -618,6 +618,7 @@ def _compline(type, leftlineno, leftline, rightlineno, rightline):
 
 def _getcompblockgen(context, leftlines, rightlines, opcodes):
     for type, llo, lhi, rlo, rhi in opcodes:
+        type = pycompat.sysbytes(type)
         len1 = lhi - llo
         len2 = rhi - rlo
         count = min(len1, len2)

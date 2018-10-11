@@ -36,7 +36,7 @@ Set up the repo
   > stable.width = 3
   > stable.color = FF0000
   > [websub]
-  > append = s|(.*)|\1(websub)|
+  > append = s|(.+)|\1(websub)|
   > EOF
 
   $ hg serve --config server.uncompressed=False -n test -p $HGPORT -d --pid-file=hg.pid -E errors.log

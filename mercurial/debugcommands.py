@@ -2829,6 +2829,7 @@ def debugwireargs(ui, repopath, *vals, **opts):
 def _parsewirelangblocks(fh):
     activeaction = None
     blocklines = []
+    lastindent = 0
 
     for line in fh:
         line = line.rstrip()
@@ -2845,6 +2846,7 @@ def _parsewirelangblocks(fh):
 
             activeaction = line
             blocklines = []
+            lastindent = 0
             continue
 
         # Else we start with an indent.
@@ -2852,7 +2854,14 @@ def _parsewirelangblocks(fh):
         if not activeaction:
             raise error.Abort(_('indented line outside of block'))
 
-        blocklines.append(line)
+        indent = len(line) - len(line.lstrip())
+
+        # If this line is indented more than the last line, concatenate it.
+        if indent > lastindent and blocklines:
+            blocklines[-1] += line.lstrip()
+        else:
+            blocklines.append(line)
+            lastindent = indent
 
     # Flush last block.
     if activeaction:

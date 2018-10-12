@@ -85,21 +85,21 @@ show traceback for ImportError of hgext.name if devel.debug.extensions is set
   > | egrep 'extension..[^p]|^Exception|Traceback|ImportError|not import|ModuleNotFound'
   debug.extensions: loading extensions
   debug.extensions: - processing 5 entries
-  debug.extensions:   - loading extension: 'gpg'
-  debug.extensions:   > 'gpg' extension loaded in * (glob)
-  debug.extensions:     - validating extension tables: 'gpg'
-  debug.extensions:     - invoking registered callbacks: 'gpg'
+  debug.extensions:   - loading extension: gpg
+  debug.extensions:   > gpg extension loaded in * (glob)
+  debug.extensions:     - validating extension tables: gpg
+  debug.extensions:     - invoking registered callbacks: gpg
   debug.extensions:     > callbacks completed in * (glob)
-  debug.extensions:   - loading extension: 'badext'
+  debug.extensions:   - loading extension: badext
   *** failed to import extension badext from $TESTTMP/badext.py: bit bucket overflow
   Traceback (most recent call last):
   Exception: bit bucket overflow
-  debug.extensions:   - loading extension: 'baddocext'
-  debug.extensions:   > 'baddocext' extension loaded in * (glob)
-  debug.extensions:     - validating extension tables: 'baddocext'
-  debug.extensions:     - invoking registered callbacks: 'baddocext'
+  debug.extensions:   - loading extension: baddocext
+  debug.extensions:   > baddocext extension loaded in * (glob)
+  debug.extensions:     - validating extension tables: baddocext
+  debug.extensions:     - invoking registered callbacks: baddocext
   debug.extensions:     > callbacks completed in * (glob)
-  debug.extensions:   - loading extension: 'badext2'
+  debug.extensions:   - loading extension: badext2
   debug.extensions:     - could not import hgext.badext2 (No module named *badext2*): trying hgext3rd.badext2 (glob)
   Traceback (most recent call last):
   ImportError: No module named badext2 (no-py3 !)
@@ -121,16 +121,16 @@ show traceback for ImportError of hgext.name if devel.debug.extensions is set
   debug.extensions: > loaded 2 extensions, total time * (glob)
   debug.extensions: - loading configtable attributes
   debug.extensions: - executing uisetup hooks
-  debug.extensions:   - running uisetup for 'gpg'
-  debug.extensions:   > uisetup for 'gpg' took * (glob)
-  debug.extensions:   - running uisetup for 'baddocext'
-  debug.extensions:   > uisetup for 'baddocext' took * (glob)
+  debug.extensions:   - running uisetup for gpg
+  debug.extensions:   > uisetup for gpg took * (glob)
+  debug.extensions:   - running uisetup for baddocext
+  debug.extensions:   > uisetup for baddocext took * (glob)
   debug.extensions: > all uisetup took * (glob)
   debug.extensions: - executing extsetup hooks
-  debug.extensions:   - running extsetup for 'gpg'
-  debug.extensions:   > extsetup for 'gpg' took * (glob)
-  debug.extensions:   - running extsetup for 'baddocext'
-  debug.extensions:   > extsetup for 'baddocext' took * (glob)
+  debug.extensions:   - running extsetup for gpg
+  debug.extensions:   > extsetup for gpg took * (glob)
+  debug.extensions:   - running extsetup for baddocext
+  debug.extensions:   > extsetup for baddocext took * (glob)
   debug.extensions: > all extsetup took * (glob)
   debug.extensions: - executing remaining aftercallbacks
   debug.extensions: > remaining aftercallbacks completed in * (glob)

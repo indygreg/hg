@@ -175,11 +175,11 @@ def load(ui, name, path, log=lambda *a: None, loadingtime=None):
         return None
     if shortname in _extensions:
         return _extensions[shortname]
-    log('  - loading extension: %r\n', shortname)
+    log('  - loading extension: %s\n', shortname)
     _extensions[shortname] = None
-    with util.timedcm('load extension %r', shortname) as stats:
+    with util.timedcm('load extension %s', shortname) as stats:
         mod = _importext(name, path, bind(_reportimporterror, ui))
-    log('  > %r extension loaded in %s\n', shortname, stats)
+    log('  > %s extension loaded in %s\n', shortname, stats)
     if loadingtime is not None:
         loadingtime[shortname] += stats.elapsed
 
@@ -192,13 +192,13 @@ def load(ui, name, path, log=lambda *a: None, loadingtime=None):
         ui.warn(_('(third party extension %s requires version %s or newer '
                   'of Mercurial; disabling)\n') % (shortname, minver))
         return
-    log('    - validating extension tables: %r\n', shortname)
+    log('    - validating extension tables: %s\n', shortname)
     _validatetables(ui, mod)
 
     _extensions[shortname] = mod
     _order.append(shortname)
-    log('    - invoking registered callbacks: %r\n', shortname)
-    with util.timedcm('callbacks extension %r', shortname) as stats:
+    log('    - invoking registered callbacks: %s\n', shortname)
+    with util.timedcm('callbacks extension %s', shortname) as stats:
         for fn in _aftercallbacks.get(shortname, []):
             fn(loaded=True)
     log('    > callbacks completed in %s\n', stats)
@@ -251,7 +251,7 @@ def loadall(ui, whitelist=None):
             if path:
                 if path[0:1] == '!':
                     if name not in _disabledextensions:
-                        log('  - skipping disabled extension: %r\n', name)
+                        log('  - skipping disabled extension: %s\n', name)
                     _disabledextensions[name] = path[1:]
                     continue
             try:
@@ -289,12 +289,12 @@ def loadall(ui, whitelist=None):
     log('- executing uisetup hooks\n')
     with util.timedcm('all uisetup') as alluisetupstats:
         for name in _order[newindex:]:
-            log('  - running uisetup for %r\n', name)
-            with util.timedcm('uisetup %r', name) as stats:
+            log('  - running uisetup for %s\n', name)
+            with util.timedcm('uisetup %s', name) as stats:
                 if not _runuisetup(name, ui):
-                    log('    - the %r extension uisetup failed\n', name)
+                    log('    - the %s extension uisetup failed\n', name)
                     broken.add(name)
-            log('  > uisetup for %r took %s\n', name, stats)
+            log('  > uisetup for %s took %s\n', name, stats)
             loadingtime[name] += stats.elapsed
     log('> all uisetup took %s\n', alluisetupstats)
 
@@ -303,17 +303,17 @@ def loadall(ui, whitelist=None):
         for name in _order[newindex:]:
             if name in broken:
                 continue
-            log('  - running extsetup for %r\n', name)
-            with util.timedcm('extsetup %r', name) as stats:
+            log('  - running extsetup for %s\n', name)
+            with util.timedcm('extsetup %s', name) as stats:
                 if not _runextsetup(name, ui):
-                    log('    - the %r extension extsetup failed\n', name)
+                    log('    - the %s extension extsetup failed\n', name)
                     broken.add(name)
-            log('  > extsetup for %r took %s\n', name, stats)
+            log('  > extsetup for %s took %s\n', name, stats)
             loadingtime[name] += stats.elapsed
     log('> all extsetup took %s\n', allextetupstats)
 
     for name in broken:
-        log('    - disabling broken %r extension\n', name)
+        log('    - disabling broken %s extension\n', name)
         _extensions[name] = None
 
     # Call aftercallbacks that were never met.
@@ -324,7 +324,7 @@ def loadall(ui, whitelist=None):
                 continue
 
             for fn in _aftercallbacks[shortname]:
-                log('  - extension %r not loaded, notify callbacks\n',
+                log('  - extension %s not loaded, notify callbacks\n',
                     shortname)
                 fn(loaded=False)
     log('> remaining aftercallbacks completed in %s\n', stats)

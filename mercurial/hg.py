@@ -175,7 +175,7 @@ def _peerorrepo(ui, path, create=False, presetupfuncs=None,
             if hook:
                 with util.timedcm('reposetup %r', name) as stats:
                     hook(ui, obj)
-                log('  > reposetup for %r took %s\n', name, stats)
+                log('  > reposetup for %s took %s\n', name, stats)
     log('> all reposetup took %s\n', allreposetupstats)
     if not obj.local():
         for f in wirepeersetupfuncs:

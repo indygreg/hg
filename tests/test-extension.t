@@ -236,20 +236,21 @@ Check absolute/relative import of extension specific modules
 
   $ mkdir $TESTTMP/extroot
   $ cat > $TESTTMP/extroot/bar.py <<EOF
-  > s = 'this is extroot.bar'
+  > s = b'this is extroot.bar'
   > EOF
   $ mkdir $TESTTMP/extroot/sub1
   $ cat > $TESTTMP/extroot/sub1/__init__.py <<EOF
-  > s = 'this is extroot.sub1.__init__'
+  > s = b'this is extroot.sub1.__init__'
   > EOF
   $ cat > $TESTTMP/extroot/sub1/baz.py <<EOF
-  > s = 'this is extroot.sub1.baz'
+  > s = b'this is extroot.sub1.baz'
   > EOF
   $ cat > $TESTTMP/extroot/__init__.py <<EOF
-  > s = 'this is extroot.__init__'
-  > import foo
+  > from __future__ import absolute_import
+  > s = b'this is extroot.__init__'
+  > from . import foo
   > def extsetup(ui):
-  >     ui.write('(extroot) ', foo.func(), '\n')
+  >     ui.write(b'(extroot) ', foo.func(), b'\n')
   >     ui.flush()
   > EOF
 
@@ -259,20 +260,20 @@ Check absolute/relative import of extension specific modules
   > def func():
   >     # "not locals" case
   >     import extroot.bar
-  >     buf.append('import extroot.bar in func(): %s' % extroot.bar.s)
-  >     return '\n(extroot) '.join(buf)
-  > # "fromlist == ('*',)" case
+  >     buf.append(b'import extroot.bar in func(): %s' % extroot.bar.s)
+  >     return b'\n(extroot) '.join(buf)
+  > # b"fromlist == ('*',)" case
   > from extroot.bar import *
-  > buf.append('from extroot.bar import *: %s' % s)
+  > buf.append(b'from extroot.bar import *: %s' % s)
   > # "not fromlist" and "if '.' in name" case
   > import extroot.sub1.baz
-  > buf.append('import extroot.sub1.baz: %s' % extroot.sub1.baz.s)
+  > buf.append(b'import extroot.sub1.baz: %s' % extroot.sub1.baz.s)
   > # "not fromlist" and NOT "if '.' in name" case
   > import extroot
-  > buf.append('import extroot: %s' % extroot.s)
+  > buf.append(b'import extroot: %s' % extroot.s)
   > # NOT "not fromlist" and NOT "level != -1" case
   > from extroot.bar import s
-  > buf.append('from extroot.bar import s: %s' % s)
+  > buf.append(b'from extroot.bar import s: %s' % s)
   > EOF
   $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}; hg --config extensions.extroot=$TESTTMP/extroot root)
   (extroot) from extroot.bar import *: this is extroot.bar
@@ -475,12 +476,12 @@ Setup main procedure of extension.
   > @command(b'showabsolute', [], norepo=True)
   > def showabsolute(ui, *args, **opts):
   >     from absextroot import absolute
-  >     ui.write(b'ABS: %s\n' % '\nABS: '.join(absolute.getresult()))
+  >     ui.write(b'ABS: %s\n' % b'\nABS: '.join(absolute.getresult()))
   > 
   > @command(b'showrelative', [], norepo=True)
   > def showrelative(ui, *args, **opts):
   >     from . import relative
-  >     ui.write(b'REL: %s\n' % '\nREL: '.join(relative.getresult()))
+  >     ui.write(b'REL: %s\n' % b'\nREL: '.join(relative.getresult()))
   > 
   > # import modules from external library
   > from extlibroot.lsub1.lsub2 import used as lused, unused as lunused
@@ -495,7 +496,7 @@ Setup main procedure of extension.
   >     result.append(absdetail)
   >     result.append(legacydetail)
   >     result.append(proxied.detail)
-  >     ui.write(b'LIB: %s\n' % '\nLIB: '.join(result))
+  >     ui.write(b'LIB: %s\n' % b'\nLIB: '.join(result))
   > EOF
 
 Examine module importing.

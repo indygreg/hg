@@ -386,6 +386,7 @@ test-obsolete-checkheads.t
 test-obsolete-distributed.t
 test-obsolete-divergent.t
 test-obsolete-tag-cache.t
+test-obsolete.t
 test-pager.t
 test-parents.t
 test-parseindex2.py

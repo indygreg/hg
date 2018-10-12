@@ -100,10 +100,10 @@ def narrow_widen(repo, proto, oldincludes, oldexcludes, newincludes,
                                     prefer_uncompressed=preferuncompressed)
 
 def peernarrowwiden(remote, **kwargs):
-    for ch in ('oldincludes', 'newincludes', 'oldexcludes', 'newexcludes',
-               'commonheads', 'known'):
+    for ch in (r'oldincludes', r'newincludes', r'oldexcludes', r'newexcludes',
+               r'commonheads', r'known'):
         kwargs[ch] = wireprototypes.encodelist(kwargs[ch])
 
-    kwargs['ellipses'] = '%i' % bool(kwargs['ellipses'])
+    kwargs[r'ellipses'] = '%i' % bool(kwargs[r'ellipses'])
     f = remote._callcompressable('narrow_widen', **kwargs)
     return bundle2.getunbundler(remote.ui, f)

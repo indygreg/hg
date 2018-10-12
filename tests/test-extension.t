@@ -421,8 +421,10 @@ works as expected in "level > 1" case.
   > EOF
   $ cat > $TESTTMP/absextroot/xsub1/xsub2/relimporter.py <<EOF
   > from __future__ import absolute_import
+  > from mercurial import pycompat
   > from ... import relimportee
-  > detail = b"this relimporter imports %r" % (relimportee.detail)
+  > detail = b"this relimporter imports %r" % (
+  >     pycompat.bytestr(relimportee.detail))
   > EOF
 
 Setup modules, which actually import extension local modules at

@@ -203,10 +203,15 @@ test-hgignore.t
 test-hgk.t
 test-hgrc.t
 test-hgweb-bundle.t
+test-hgweb-csp.t
 test-hgweb-descend-empties.t
+test-hgweb-diffs.t
 test-hgweb-empty.t
+test-hgweb-filelog.t
 test-hgweb-non-interactive.t
+test-hgweb-raw.t
 test-hgweb-removed.t
+test-hgweb.t
 test-hgwebdir-paths.py
 test-hgwebdirsym.t
 test-histedit-arguments.t

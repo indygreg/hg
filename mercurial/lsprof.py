@@ -91,6 +91,8 @@ _fn2mod = {}
 
 def label(code):
     if isinstance(code, str):
+        if sys.version_info.major >= 3:
+            code = code.encode('latin-1')
         return code
     try:
         mname = _fn2mod[code.co_filename]
@@ -104,10 +106,14 @@ def label(code):
                 mname = _fn2mod[code.co_filename] = k
                 break
         else:
-            mname = _fn2mod[code.co_filename] = '<%s>' % code.co_filename
+            mname = _fn2mod[code.co_filename] = r'<%s>' % code.co_filename
 
-    return '%s:%d(%s)' % (mname, code.co_firstlineno, code.co_name)
+    res = r'%s:%d(%s)' % (mname, code.co_firstlineno, code.co_name)
 
+    if sys.version_info.major >= 3:
+        res = res.encode('latin-1')
+
+    return res
 
 if __name__ == '__main__':
     import os

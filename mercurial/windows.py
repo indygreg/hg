@@ -583,7 +583,8 @@ def lookupreg(key, valname=None, scope=None):
     for s in scope:
         try:
             with winreg.OpenKey(s, encoding.strfromlocal(key)) as hkey:
-                val = winreg.QueryValueEx(hkey, valname)[0]
+                name = valname and encoding.strfromlocal(valname) or valname
+                val = winreg.QueryValueEx(hkey, name)[0]
                 # never let a Unicode string escape into the wild
                 return encoding.unitolocal(val)
         except EnvironmentError:

@@ -63,3 +63,7 @@ Prevent adding modules which could be shadowed by ancient .so/.dylib.
   > mercurial/parsers.py \
   > mercurial/zstd.py
   [1]
+
+Keep python3 tests sorted:
+  $ sort < contrib/python3-whitelist > $TESTTMP/py3sorted
+  $ cmp contrib/python3-whitelist $TESTTMP/py3sorted || echo 'Please sort passing tests!'

@@ -22,7 +22,7 @@ Do not strip innocent children. See https://bitbucket.org/facebook/hg-experiment
   $ hg up E -q
   $ echo 1 >> B
   $ echo 2 >> D
-  $ hg absorb
+  $ hg absorb -a
   saved backup bundle to * (glob)
   2 of 2 chunk(s) applied
 

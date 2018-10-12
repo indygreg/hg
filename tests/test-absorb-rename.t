@@ -34,7 +34,7 @@ rename a to b, then b to a
   2 0b888b00216c a: 3
 
   $ sedi 's/$/a/' a
-  $ hg absorb -pq
+  $ hg absorb -apq
   showing changes for a
           @@ -0,3 +0,3 @@
   eff892d -1
@@ -62,7 +62,7 @@ when the first changeset is public
 
   $ sedi 's/a/A/' a
 
-  $ hg absorb -pq
+  $ hg absorb -apq
   showing changes for a
           @@ -0,3 +0,3 @@
           -1a
@@ -105,7 +105,7 @@ copy a to b
   $ sedi 's/$/a/' a
   $ sedi 's/$/b/' b
 
-  $ hg absorb -pq
+  $ hg absorb -apq
   showing changes for a
           @@ -0,1 +0,1 @@
   eff892d -1
@@ -149,7 +149,7 @@ copy b to a
   $ sedi 's/$/a/' a
   $ sedi 's/$/a/' b
 
-  $ hg absorb -pq
+  $ hg absorb -apq
   showing changes for a
           @@ -0,2 +0,2 @@
           -1
@@ -196,7 +196,7 @@ copy b to a
   $ sedi 's/$/a/' a
   $ sedi 's/$/c/' c
 
-  $ hg absorb -pq
+  $ hg absorb -apq
   showing changes for a
           @@ -0,2 +0,2 @@
   55105f9 -1
@@ -244,7 +244,7 @@ copy b to a
   
 run absorb again would apply the change to c
 
-  $ hg absorb -pq
+  $ hg absorb -apq
   showing changes for c
           @@ -0,1 +0,1 @@
   7060601 -1
@@ -309,7 +309,7 @@ run absorb again would apply the change to c
   $ sedi 's/$/e/' e
   $ sedi 's/$/d/' d
 
-  $ hg absorb -pq
+  $ hg absorb -apq
   showing changes for d
           @@ -0,2 +0,2 @@
   55105f9 -1

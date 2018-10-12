@@ -19,7 +19,7 @@
   $ hg update C -q
   $ printf B1 > B
 
-  $ hg absorb -q
+  $ hg absorb -aq
 
   $ hg log -G -T '{desc} {phase}'
   @  C secret

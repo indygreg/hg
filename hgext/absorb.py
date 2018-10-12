@@ -952,7 +952,7 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
         chunks = cmdutil.recordfilter(ui, origchunks)[0]
         targetctx = overlaydiffcontext(stack[-1], chunks)
     fm = None
-    if opts.get('print_changes'):
+    if opts.get('print_changes') or not opts.get('apply_changes'):
         fm = ui.formatter('absorb', opts)
     state.diffwith(targetctx, matcher, fm)
     if fm is not None:
@@ -971,6 +971,10 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
                      label='absorb.description')
         fm.end()
     if not opts.get('dry_run'):
+        if not opts.get('apply_changes'):
+            if ui.promptchoice("apply changes (yn)? $$ &Yes $$ &No", default=1):
+                raise error.Abort(_('absorb cancelled\n'))
+
         state.apply()
         if state.commit():
             state.printchunkstats()
@@ -979,8 +983,10 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
     return state
 
 @command('^absorb',
-         [('p', 'print-changes', None,
-           _('print which changesets are modified by which changes')),
+         [('a', 'apply-changes', None,
+           _('apply changes without prompting for confirmation')),
+          ('p', 'print-changes', None,
+           _('just print which changesets are modified by which changes')),
           ('i', 'interactive', None,
            _('interactively select which chunks to apply (EXPERIMENTAL)')),
           ('e', 'edit-lines', None,

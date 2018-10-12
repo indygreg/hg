@@ -68,7 +68,7 @@ Preview absorb changes:
 
 Run absorb:
 
-  $ hg absorb
+  $ hg absorb --apply-changes
   saved backup bundle to * (glob)
   2 of 2 chunk(s) applied
   $ hg annotate a
@@ -84,7 +84,20 @@ Delete a few lines and related commits will be removed if they will be empty:
   > 2b
   > 4d
   > EOF
-  $ hg absorb
+  $ echo y | hg absorb --config ui.interactive=1
+  showing changes for a
+          @@ -0,1 +0,0 @@
+  f548282 -1a
+          @@ -2,1 +1,0 @@
+  ff5d556 -3
+          @@ -4,1 +2,0 @@
+  84e5416 -5e
+  
+  3 changesets affected
+  84e5416 commit 5
+  ff5d556 commit 3
+  f548282 commit 1
+  apply changes (yn)?  y
   saved backup bundle to * (glob)
   3 of 3 chunk(s) applied
   $ hg annotate a
@@ -112,7 +125,7 @@ Delete a few lines and related commits will be removed if they will be empty:
 Non 1:1 map changes will be ignored:
 
   $ echo 1 > a
-  $ hg absorb
+  $ hg absorb --apply-changes
   nothing applied
   [1]
 
@@ -124,7 +137,7 @@ Insertaions:
   > 4d
   > insert aftert 4d
   > EOF
-  $ hg absorb -q
+  $ hg absorb -q --apply-changes
   $ hg status
   $ hg annotate a
   1: insert before 2b
@@ -142,7 +155,7 @@ Bookmarks are moved:
      b2                        2:946e4bc87915
    * ba                        2:946e4bc87915
   $ sedi 's/insert/INSERT/' a
-  $ hg absorb -q
+  $ hg absorb -q --apply-changes
   $ hg status
   $ hg bookmarks
      b1                        1:a4183e9b3d31
@@ -156,11 +169,11 @@ Non-mofified files are ignored:
   $ touch c
   $ hg add c
   $ hg rm b
-  $ hg absorb
+  $ hg absorb --apply-changes
   nothing applied
   [1]
   $ sedi 's/INSERT/Insert/' a
-  $ hg absorb
+  $ hg absorb --apply-changes
   saved backup bundle to * (glob)
   2 of 2 chunk(s) applied
   $ hg status
@@ -182,7 +195,7 @@ Public commits will not be changed:
   
   1 changesets affected
   85b4e0e commit 4
-  $ hg absorb
+  $ hg absorb --apply-changes
   saved backup bundle to * (glob)
   1 of 2 chunk(s) applied
   $ hg diff -U 0
@@ -233,7 +246,7 @@ Merge commit will not be changed:
   
   $ echo 2 >> m1
   $ echo 2 >> m2
-  $ hg absorb
+  $ hg absorb --apply-changes
   abort: no mutable changeset to change
   [255]
   $ hg revert -q -C m1 m2
@@ -259,15 +272,15 @@ Use pattern to select files to be fixed up:
   $ hg status
   M a
   M b
-  $ hg absorb a
+  $ hg absorb --apply-changes a
   saved backup bundle to * (glob)
   1 of 1 chunk(s) applied
   $ hg status
   M b
-  $ hg absorb --exclude b
+  $ hg absorb --apply-changes --exclude b
   nothing applied
   [1]
-  $ hg absorb b
+  $ hg absorb --apply-changes b
   saved backup bundle to * (glob)
   1 of 1 chunk(s) applied
   $ hg status
@@ -312,7 +325,7 @@ Test obsolete markers creation:
   > add-noise=1
   > EOF
 
-  $ hg --config absorb.max-stack-size=3 absorb
+  $ hg --config absorb.max-stack-size=3 absorb -a
   absorb: only the recent 3 changesets will be analysed
   2 of 2 chunk(s) applied
   $ hg log -T '{rev}:{node|short} {desc} {get(extras, "absorb_source")}\n'
@@ -320,7 +333,7 @@ Test obsolete markers creation:
   5:99cfab7da5ff commit b 1 74cfa6294160149d60adbf7582b99ce37a4597ec
   4:fec2b3bd9e08 commit a 2 28f10dcf96158f84985358a2e5d5b3505ca69c22
   0:f9a81da8dc53 commit a 1 
-  $ hg absorb
+  $ hg absorb --apply-changes
   1 of 1 chunk(s) applied
   $ hg log -T '{rev}:{node|short} {desc} {get(extras, "absorb_source")}\n'
   10:e1c8c1e030a4 commit b 2 3dfde4199b4610ea6e3c6fa9f5bdad8939d69524
@@ -367,7 +380,7 @@ Executable files:
   
   1 changesets affected
   99b4ae7 foo
-  $ hg absorb
+  $ hg absorb --apply-changes
   1 of 1 chunk(s) applied
   $ hg diff -c .
   diff --git a/foo.py b/foo.py
@@ -414,7 +427,7 @@ Remove lines may delete changesets:
   30970db b3
   1154859 b12
   bfafb49 a12
-  $ hg absorb -v | grep became
+  $ hg absorb -av | grep became
   0:bfafb49242db: 1 file(s) changed, became 4:1a2de97fc652
   1:115485984805: 2 file(s) changed, became 5:0c930dfab74c
   2:30970dbf7b40: became empty and was dropped
@@ -468,7 +481,7 @@ This should move us to the non-obsolete ancestor.
   2 changesets affected
   82dbe7f a1234
   f1c23dd a123
-  $ hg absorb --verbose
+  $ hg absorb --apply-changes --verbose
   1:f1c23dd5d08d: became empty and was dropped
   2:82dbe7fd19f0: became empty and was dropped
   a: 1 of 1 chunk(s) applied

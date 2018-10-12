@@ -696,6 +696,12 @@ pad() should interact well with color codes (issue5416)
   > '{pad(label(red, "red"), 5, label(cyan, "-"))}\n'
   \x1b[0;31mred\x1b[0m\x1b[0;36m-\x1b[0m\x1b[0;36m-\x1b[0m (esc)
 
+pad() with truncate has to strip color codes, though
+
+  $ hg debugtemplate --color=always \
+  > '{pad(label(red, "scarlet"), 5, truncate=true)}\n'
+  scarl
+
 label should be no-op if color is disabled:
 
   $ hg log --color=never -l 1 --template '{label(red, "text\n")}'
@@ -927,6 +933,15 @@ Test pad function
   2------------------- test
   1------------------- {node|short}
   0------------------- test
+
+  $ hg log --template '{pad(author, 5, "-", False, True)}\n'
+  test-
+  {node
+  test-
+  $ hg log --template '{pad(author, 5, "-", True, True)}\n'
+  -test
+  hort}
+  -test
 
 Test template string in pad function
 

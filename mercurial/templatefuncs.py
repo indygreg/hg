@@ -216,8 +216,9 @@ def mailmap(context, mapping, args):
 
     return stringutil.mapname(cache['mailmap'], author)
 
-@templatefunc('pad(text, width[, fillchar=\' \'[, left=False]])',
-              argspec='text width fillchar left')
+@templatefunc(
+    'pad(text, width[, fillchar=\' \'[, left=False[, truncate=False]]])',
+    argspec='text width fillchar left truncate')
 def pad(context, mapping, args):
     """Pad text with a
     fill character."""
@@ -231,6 +232,7 @@ def pad(context, mapping, args):
 
     text = evalstring(context, mapping, args['text'])
 
+    truncate = False
     left = False
     fillchar = ' '
     if 'fillchar' in args:
@@ -240,8 +242,12 @@ def pad(context, mapping, args):
             raise error.ParseError(_("pad() expects a single fill character"))
     if 'left' in args:
         left = evalboolean(context, mapping, args['left'])
+    if 'truncate' in args:
+        truncate = evalboolean(context, mapping, args['truncate'])
 
     fillwidth = width - encoding.colwidth(color.stripeffects(text))
+    if fillwidth < 0 and truncate:
+        return encoding.trim(color.stripeffects(text), width, leftside=left)
     if fillwidth <= 0:
         return text
     if left:

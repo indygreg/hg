@@ -84,6 +84,7 @@ test-confused-revert.t
 test-context.py
 test-contrib-check-code.t
 test-contrib-check-commit.t
+test-contrib-dumprevlog.t
 test-convert-authormap.t
 test-convert-clonebranches.t
 test-convert-cvs-branch.t
@@ -92,7 +93,6 @@ test-convert-cvs-synthetic.t
 test-convert-cvs.t
 test-convert-cvsnt-mergepoints.t
 test-convert-datesort.t
-test-contrib-dumprevlog.t
 test-convert-filemap.t
 test-convert-hg-sink.t
 test-convert-hg-source.t

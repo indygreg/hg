@@ -125,13 +125,21 @@ contextmanager = contextlib.contextmanager
 
 __all__ = ['start', 'stop', 'reset', 'display', 'profile']
 
-skips = {"util.py:check", "extensions.py:closure",
-         "color.py:colorcmd", "dispatch.py:checkargs",
-         "dispatch.py:<lambda>", "dispatch.py:_runcatch",
-         "dispatch.py:_dispatch", "dispatch.py:_runcommand",
-         "pager.py:pagecmd", "dispatch.py:run",
-         "dispatch.py:dispatch", "dispatch.py:runcommand",
-         "hg.py:<module>", "evolve.py:warnobserrors",
+skips = {
+    r"util.py:check",
+    r"extensions.py:closure",
+    r"color.py:colorcmd",
+    r"dispatch.py:checkargs",
+    r"dispatch.py:<lambda>",
+    r"dispatch.py:_runcatch",
+    r"dispatch.py:_dispatch",
+    r"dispatch.py:_runcommand",
+    r"pager.py:pagecmd",
+    r"dispatch.py:run",
+    r"dispatch.py:dispatch",
+    r"dispatch.py:runcommand",
+    r"hg.py:<module>",
+    r"evolve.py:warnobserrors",
 }
 
 ###########################################################################
@@ -647,7 +655,8 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
             if len(stack) > 1:
                 i = 1
                 # Skip boiler plate parts of the stack
-                while i < len(stack) and '%s:%s' % (stack[i].filename(), stack[i].function) in skips:
+                name = r'%s:%s' % (stack[i].filename(), stack[i].function)
+                while i < len(stack) and name in skips:
                     i += 1
                 if i < len(stack):
                     child.add(stack[i:], time)

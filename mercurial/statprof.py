@@ -362,7 +362,7 @@ def save_data(path):
         for sample in state.samples:
             time = sample.time
             stack = sample.stack
-            sites = ['\1'.join([s.path, str(s.lineno), s.function])
+            sites = ['\1'.join([s.path, b'%d' % s.lineno, s.function])
                      for s in stack]
             file.write("%d\0%s\n" % (time, '\0'.join(sites)))
 
@@ -507,7 +507,9 @@ def display_by_line(data, fp):
 
     for stat in stats:
         site = stat.site
-        sitelabel = '%s:%d:%s' % (site.filename(), site.lineno, site.function)
+        sitelabel = '%s:%d:%s' % (pycompat.fsencode(site.filename()),
+                                  site.lineno,
+                                  pycompat.sysbytes(site.function))
         fp.write(b'%6.2f %9.2f %9.2f  %s\n' % (
             stat.selfpercent(), stat.totalseconds(),
             stat.selfseconds(), sitelabel))
@@ -525,7 +527,7 @@ def display_by_method(data, fp):
 
     grouped = defaultdict(list)
     for stat in stats:
-        grouped[stat.site.filename() + ":" + stat.site.function].append(stat)
+        grouped[stat.site.filename() + r":" + stat.site.function].append(stat)
 
     # compute sums for each function
     functiondata = []
@@ -554,13 +556,16 @@ def display_by_method(data, fp):
             function[3], # total percent
             function[1], # total cum sec
             function[2], # total self sec
-            function[0])) # file:function
+            pycompat.sysbytes(function[0]))) # file:function
 
         function[4].sort(reverse=True, key=lambda i: i.selfseconds())
         for stat in function[4]:
             # only show line numbers for significant locations (>1% time spent)
             if stat.selfpercent() > 1:
                 source = stat.site.getsource(25)
+                if sys.version_info.major >= 3 and not isinstance(source, bytes):
+                    source = pycompat.bytestr(source)
+
                 stattuple = (stat.selfpercent(), stat.selfseconds(),
                              stat.site.lineno, source)
 
@@ -599,8 +604,11 @@ def display_about_method(data, fp, function=None, **kwargs):
     parents.sort(reverse=True, key=lambda x: x[1])
     for parent, count in parents:
         fp.write(b'%6.2f%%   %s:%s   line %s: %s\n' %
-            (count / relevant_samples * 100, parent.filename(),
-            parent.function, parent.lineno, parent.getsource(50)))
+            (count / relevant_samples * 100,
+             pycompat.fsencode(parent.filename()),
+             pycompat.sysbytes(parent.function),
+             parent.lineno,
+             pycompat.sysbytes(parent.getsource(50))))
 
     stats = SiteStats.buildstats(data.samples)
     stats = [s for s in stats
@@ -620,8 +628,8 @@ def display_about_method(data, fp, function=None, **kwargs):
     fp.write(
         b'\n    %s:%s    Total: %0.2fs (%0.2f%%)    Self: %0.2fs (%0.2f%%)\n\n'
         % (
-        filename or '___',
-        function,
+        pycompat.sysbytes(filename or '___'),
+        pycompat.sysbytes(function),
         total_cum_sec,
         total_cum_percent,
         total_self_sec,
@@ -633,7 +641,7 @@ def display_about_method(data, fp, function=None, **kwargs):
     for child, count in children:
         fp.write(b'        %6.2f%%   line %s: %s\n' %
               (count / relevant_samples * 100, child.lineno,
-               child.getsource(50)))
+               pycompat.sysbytes(child.getsource(50))))
 
 def display_hotpath(data, fp, limit=0.05, **kwargs):
     class HotNode(object):

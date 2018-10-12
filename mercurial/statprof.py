@@ -763,7 +763,11 @@ def write_to_json(data, fp):
 
         samples.append((sample.time, stack))
 
-    print(json.dumps(samples), file=fp)
+    data = json.dumps(samples)
+    if not isinstance(data, bytes):
+        data = data.encode('utf-8')
+
+    fp.write(data)
 
 def write_to_chrome(data, fp, minthreshold=0.005, maxthreshold=0.999):
     samples = []

@@ -394,10 +394,10 @@ Remove lines may delete changesets:
   30970db -3
   a393a58 -4
   $ hg absorb -v | grep became
-  bfafb49242db: 1 file(s) changed, became 1a2de97fc652
-  115485984805: 2 file(s) changed, became 0c930dfab74c
-  30970dbf7b40: became empty and was dropped
-  a393a58b9a85: became empty and was dropped
+  0:bfafb49242db: 1 file(s) changed, became 4:1a2de97fc652
+  1:115485984805: 2 file(s) changed, became 5:0c930dfab74c
+  2:30970dbf7b40: became empty and was dropped
+  3:a393a58b9a85: became empty and was dropped
   $ hg log -T '{rev} {desc}\n' -Gp
   @  5 b12
   |  diff --git a/b b/b
@@ -444,8 +444,8 @@ This should move us to the non-obsolete ancestor.
   f1c23dd -3
   82dbe7f -4
   $ hg absorb --verbose
-  f1c23dd5d08d: became empty and was dropped
-  82dbe7fd19f0: became empty and was dropped
+  1:f1c23dd5d08d: became empty and was dropped
+  2:82dbe7fd19f0: became empty and was dropped
   a: 1 of 1 chunk(s) applied
   $ hg id
   bfafb49242db tip

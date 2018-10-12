@@ -727,9 +727,9 @@ class fixupstate(object):
 
     def _ctx2str(self, ctx):
         if self.ui.debugflag:
-            return ctx.hex()
+            return '%d:%s' % (ctx.rev(), ctx.hex())
         else:
-            return node.short(ctx.node())
+            return '%d:%s' % (ctx.rev(), node.short(ctx.node()))
 
     def _getnewfilecontents(self, ctx):
         """(ctx) -> {path: str}

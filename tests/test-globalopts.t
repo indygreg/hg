@@ -382,29 +382,43 @@ Testing -h/--help:
   
   additional help topics:
   
-   bundlespec    Bundle File Formats
+  Mercurial identifiers:
+  
+   filesets      Specifying File Sets
+   hgignore      Syntax for Mercurial Ignore Files
+   patterns      File Name Patterns
+   revisions     Specifying Revisions
+   urls          URL Paths
+  
+  Mercurial output:
+  
    color         Colorizing Outputs
-   config        Configuration Files
    dates         Date Formats
-   deprecated    Deprecated Features
    diffs         Diff Formats
+   templating    Template Usage
+  
+  Mercurial configuration:
+  
+   config        Configuration Files
    environment   Environment Variables
    extensions    Using Additional Features
-   filesets      Specifying File Sets
    flags         Command-line flags
-   glossary      Glossary
-   hgignore      Syntax for Mercurial Ignore Files
    hgweb         Configuring hgweb
-   internals     Technical implementation topics
    merge-tools   Merge Tools
    pager         Pager Support
-   patterns      File Name Patterns
+  
+  Concepts:
+  
+   bundlespec    Bundle File Formats
+   glossary      Glossary
    phases        Working with Phases
-   revisions     Specifying Revisions
-   scripting     Using Mercurial from scripts and automation
    subrepos      Subrepositories
-   templating    Template Usage
-   urls          URL Paths
+  
+  Miscellaneous:
+  
+   deprecated    Deprecated Features
+   internals     Technical implementation topics
+   scripting     Using Mercurial from scripts and automation
   
   (use 'hg help -v' to show built-in aliases and global options)
 
@@ -498,29 +512,43 @@ Testing -h/--help:
   
   additional help topics:
   
-   bundlespec    Bundle File Formats
+  Mercurial identifiers:
+  
+   filesets      Specifying File Sets
+   hgignore      Syntax for Mercurial Ignore Files
+   patterns      File Name Patterns
+   revisions     Specifying Revisions
+   urls          URL Paths
+  
+  Mercurial output:
+  
    color         Colorizing Outputs
-   config        Configuration Files
    dates         Date Formats
-   deprecated    Deprecated Features
    diffs         Diff Formats
+   templating    Template Usage
+  
+  Mercurial configuration:
+  
+   config        Configuration Files
    environment   Environment Variables
    extensions    Using Additional Features
-   filesets      Specifying File Sets
    flags         Command-line flags
-   glossary      Glossary
-   hgignore      Syntax for Mercurial Ignore Files
    hgweb         Configuring hgweb
-   internals     Technical implementation topics
    merge-tools   Merge Tools
    pager         Pager Support
-   patterns      File Name Patterns
+  
+  Concepts:
+  
+   bundlespec    Bundle File Formats
+   glossary      Glossary
    phases        Working with Phases
-   revisions     Specifying Revisions
-   scripting     Using Mercurial from scripts and automation
    subrepos      Subrepositories
-   templating    Template Usage
-   urls          URL Paths
+  
+  Miscellaneous:
+  
+   deprecated    Deprecated Features
+   internals     Technical implementation topics
+   scripting     Using Mercurial from scripts and automation
   
   (use 'hg help -v' to show built-in aliases and global options)
 

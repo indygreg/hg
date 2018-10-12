@@ -89,6 +89,11 @@ CATEGORY_NAMES = {
 }
 
 # Topic categories.
+TOPIC_CATEGORY_IDS = 'ids'
+TOPIC_CATEGORY_OUTPUT = 'output'
+TOPIC_CATEGORY_CONFIG = 'config'
+TOPIC_CATEGORY_CONCEPTS = 'concepts'
+TOPIC_CATEGORY_MISC = 'misc'
 TOPIC_CATEGORY_NONE = 'none'
 
 # The order in which topic categories will be displayed.
@@ -96,11 +101,22 @@ TOPIC_CATEGORY_NONE = 'none'
 # after/before the appropriate item, rather than replacing the list or
 # assuming absolute positions.
 TOPIC_CATEGORY_ORDER = [
+    TOPIC_CATEGORY_IDS,
+    TOPIC_CATEGORY_OUTPUT,
+    TOPIC_CATEGORY_CONFIG,
+    TOPIC_CATEGORY_CONCEPTS,
+    TOPIC_CATEGORY_MISC,
     TOPIC_CATEGORY_NONE,
 ]
 
 # Human-readable topic category names. These are translated.
 TOPIC_CATEGORY_NAMES = {
+    TOPIC_CATEGORY_IDS: 'Mercurial identifiers',
+    TOPIC_CATEGORY_OUTPUT: 'Mercurial output',
+    TOPIC_CATEGORY_CONFIG: 'Mercurial configuration',
+    TOPIC_CATEGORY_CONCEPTS: 'Concepts',
+    TOPIC_CATEGORY_MISC: 'Miscellaneous',
+    TOPIC_CATEGORY_NONE: 'Uncategorized topics',
     TOPIC_CATEGORY_NONE: 'Uncategorized topics',
 }
 
@@ -293,36 +309,47 @@ def internalshelp(ui):
     return ''.join(lines)
 
 helptable = sorted([
-    (['bundlespec'], _("Bundle File Formats"), loaddoc('bundlespec')),
-    (['color'], _("Colorizing Outputs"), loaddoc('color')),
-    (["config", "hgrc"], _("Configuration Files"), loaddoc('config')),
-    (['deprecated'], _("Deprecated Features"), loaddoc('deprecated')),
-    (["dates"], _("Date Formats"), loaddoc('dates')),
-    (["flags"], _("Command-line flags"), loaddoc('flags')),
-    (["patterns"], _("File Name Patterns"), loaddoc('patterns')),
+    (['bundlespec'], _("Bundle File Formats"), loaddoc('bundlespec'),
+     TOPIC_CATEGORY_CONCEPTS),
+    (['color'], _("Colorizing Outputs"), loaddoc('color'),
+     TOPIC_CATEGORY_OUTPUT),
+    (["config", "hgrc"], _("Configuration Files"), loaddoc('config'),
+     TOPIC_CATEGORY_CONFIG),
+    (['deprecated'], _("Deprecated Features"), loaddoc('deprecated'),
+     TOPIC_CATEGORY_MISC),
+    (["dates"], _("Date Formats"), loaddoc('dates'), TOPIC_CATEGORY_OUTPUT),
+    (["flags"], _("Command-line flags"), loaddoc('flags'),
+     TOPIC_CATEGORY_CONFIG),
+    (["patterns"], _("File Name Patterns"), loaddoc('patterns'),
+     TOPIC_CATEGORY_IDS),
     (['environment', 'env'], _('Environment Variables'),
-     loaddoc('environment')),
+     loaddoc('environment'), TOPIC_CATEGORY_CONFIG),
     (['revisions', 'revs', 'revsets', 'revset', 'multirevs', 'mrevs'],
-      _('Specifying Revisions'), loaddoc('revisions')),
-    (['filesets', 'fileset'], _("Specifying File Sets"), loaddoc('filesets')),
-    (['diffs'], _('Diff Formats'), loaddoc('diffs')),
+      _('Specifying Revisions'), loaddoc('revisions'), TOPIC_CATEGORY_IDS),
+    (['filesets', 'fileset'], _("Specifying File Sets"), loaddoc('filesets'),
+     TOPIC_CATEGORY_IDS),
+    (['diffs'], _('Diff Formats'), loaddoc('diffs'), TOPIC_CATEGORY_OUTPUT),
     (['merge-tools', 'mergetools', 'mergetool'], _('Merge Tools'),
-     loaddoc('merge-tools')),
+     loaddoc('merge-tools'), TOPIC_CATEGORY_CONFIG),
     (['templating', 'templates', 'template', 'style'], _('Template Usage'),
-     loaddoc('templates')),
-    (['urls'], _('URL Paths'), loaddoc('urls')),
-    (["extensions"], _("Using Additional Features"), extshelp),
-    (["subrepos", "subrepo"], _("Subrepositories"), loaddoc('subrepos')),
-    (["hgweb"], _("Configuring hgweb"), loaddoc('hgweb')),
-    (["glossary"], _("Glossary"), loaddoc('glossary')),
+     loaddoc('templates'), TOPIC_CATEGORY_OUTPUT),
+    (['urls'], _('URL Paths'), loaddoc('urls'), TOPIC_CATEGORY_IDS),
+    (["extensions"], _("Using Additional Features"), extshelp,
+     TOPIC_CATEGORY_CONFIG),
+    (["subrepos", "subrepo"], _("Subrepositories"), loaddoc('subrepos'),
+     TOPIC_CATEGORY_CONCEPTS),
+    (["hgweb"], _("Configuring hgweb"), loaddoc('hgweb'),
+     TOPIC_CATEGORY_CONFIG),
+    (["glossary"], _("Glossary"), loaddoc('glossary'), TOPIC_CATEGORY_CONCEPTS),
     (["hgignore", "ignore"], _("Syntax for Mercurial Ignore Files"),
-     loaddoc('hgignore')),
-    (["phases"], _("Working with Phases"), loaddoc('phases')),
+     loaddoc('hgignore'), TOPIC_CATEGORY_IDS),
+    (["phases"], _("Working with Phases"), loaddoc('phases'),
+     TOPIC_CATEGORY_CONCEPTS),
     (['scripting'], _('Using Mercurial from scripts and automation'),
-     loaddoc('scripting')),
-    (['internals'], _("Technical implementation topics"),
-     internalshelp),
-    (['pager'], _("Pager Support"), loaddoc('pager')),
+     loaddoc('scripting'), TOPIC_CATEGORY_MISC),
+    (['internals'], _("Technical implementation topics"), internalshelp,
+     TOPIC_CATEGORY_MISC),
+    (['pager'], _("Pager Support"), loaddoc('pager'), TOPIC_CATEGORY_CONFIG),
 ])
 
 # Maps topics with sub-topics to a list of their sub-topics.

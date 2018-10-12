@@ -1937,6 +1937,11 @@ class revlog(object):
         self.index.append(e)
         self.nodemap[node] = curr
 
+        # Reset the pure node cache start lookup offset to account for new
+        # revision.
+        if self._nodepos is not None:
+            self._nodepos = curr
+
         entry = self._io.packentry(e, self.node, self.version, curr)
         self._writeentry(transaction, ifh, dfh, entry, deltainfo.data,
                          link, offset)

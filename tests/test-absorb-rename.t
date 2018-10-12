@@ -43,6 +43,11 @@ rename a to b, then b to a
   eff892d +1a
   bf56e1f +2a
   0b888b0 +3a
+  
+  3 changesets affected
+  0b888b0 3
+  bf56e1f 2
+  eff892d 1
 
   $ hg status
 
@@ -66,6 +71,10 @@ when the first changeset is public
           +1A
   9a14ffe +2A
   9191d12 +3A
+  
+  2 changesets affected
+  9191d12 3
+  9a14ffe 2
 
   $ hg diff
   diff --git a/a b/a
@@ -107,6 +116,10 @@ copy a to b
   17b7212 -2
           +1b
   17b7212 +2b
+  
+  2 changesets affected
+  17b7212 2
+  eff892d 1
 
   $ hg diff
   diff --git a/b b/b
@@ -147,6 +160,10 @@ copy b to a
           @@ -0,1 +0,1 @@
   55105f9 -1
   55105f9 +1a
+  
+  2 changesets affected
+  e62c256 2
+  55105f9 1
 
   $ hg diff
   diff --git a/a b/a
@@ -192,6 +209,10 @@ copy b to a
   366daad -3
           +1c
   366daad +3c
+  
+  2 changesets affected
+  366daad cp
+  55105f9 1
 
   $ hg log -G -p -T '{rev}:{node|short} {desc}\n'
   @  1:70606019f91b cp
@@ -228,6 +249,9 @@ run absorb again would apply the change to c
           @@ -0,1 +0,1 @@
   7060601 -1
   7060601 +1c
+  
+  1 changesets affected
+  7060601 cp
 
   $ hg log -G -p -T '{rev}:{node|short} {desc}\n'
   @  1:8bd536cce368 cp
@@ -298,6 +322,10 @@ run absorb again would apply the change to c
   7bc3d43 -2
           +1e
   7bc3d43 +2e
+  
+  2 changesets affected
+  7bc3d43 cp
+  55105f9 1
 
   $ hg diff
   diff --git a/e b/e

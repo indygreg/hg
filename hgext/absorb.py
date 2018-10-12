@@ -21,6 +21,7 @@ amend modified chunks into the corresponding non-public changesets.
     amend-flag = correlated
 
     [color]
+    absorb.description = yellow
     absorb.node = blue bold
     absorb.path = bold
 """
@@ -74,6 +75,7 @@ configitem('absorb', 'amend-flag', default=None)
 configitem('absorb', 'max-stack-size', default=50)
 
 colortable = {
+    'absorb.description': 'yellow',
     'absorb.node': 'blue bold',
     'absorb.path': 'bold',
 }
@@ -297,6 +299,7 @@ class filefixupstate(object):
         self.targetlines = [] # [str]
         self.fixups = [] # [(linelog rev, a1, a2, b1, b2)]
         self.finalcontents = [] # [str]
+        self.ctxaffected = set()
 
     def diffwith(self, targetfctx, fm=None):
         """calculate fixups needed by examining the differences between
@@ -577,6 +580,7 @@ class filefixupstate(object):
                 ctx = self.fctxs[idx]
                 fm.context(fctx=ctx)
                 node = ctx.hex()
+                self.ctxaffected.add(ctx.changectx())
             fm.write('node', '%-7.7s ', node, label='absorb.node')
             fm.write('diffchar ' + linetype, '%s%s\n', diffchar, line,
                      label=linelabel)
@@ -621,6 +625,7 @@ class fixupstate(object):
         self.fixupmap = {} # {path: filefixupstate}
         self.replacemap = {} # {oldnode: newnode or None}
         self.finalnode = None # head after all fixups
+        self.ctxaffected = set() # ctx that will be absorbed into
 
     def diffwith(self, targetctx, match=None, fm=None):
         """diff and prepare fixups. update self.fixupmap, self.paths"""
@@ -660,6 +665,7 @@ class fixupstate(object):
             fstate.diffwith(targetfctx, fm)
             self.fixupmap[path] = fstate
             self.paths.append(path)
+            self.ctxaffected.update(fstate.ctxaffected)
 
     def apply(self):
         """apply fixups to individual filefixupstates"""
@@ -950,6 +956,19 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
         fm = ui.formatter('absorb', opts)
     state.diffwith(targetctx, matcher, fm)
     if fm is not None:
+        fm.startitem()
+        fm.write("count", "\n%d changesets affected\n", len(state.ctxaffected))
+        fm.data(linetype='summary')
+        for ctx in reversed(stack):
+            if ctx not in state.ctxaffected:
+                continue
+            fm.startitem()
+            fm.context(ctx=ctx)
+            fm.data(linetype='changeset')
+            fm.write('node', '%-7.7s ', ctx.hex(), label='absorb.node')
+            descfirstline = ctx.description().splitlines()[0]
+            fm.write('descfirstline', '%s\n', descfirstline,
+                     label='absorb.description')
         fm.end()
     if not opts.get('dry_run'):
         state.apply()

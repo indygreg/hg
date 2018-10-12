@@ -59,6 +59,12 @@ Preview absorb changes:
   4f55fa6 -5
   ad8b8b7 +4d
   4f55fa6 +5e
+  
+  4 changesets affected
+  4f55fa6 commit 5
+  ad8b8b7 commit 4
+  5c5f952 commit 2
+  4ec16f8 commit 1
 
 Run absorb:
 
@@ -173,6 +179,9 @@ Public commits will not be changed:
           @@ -3,1 +3,1 @@
   85b4e0e -Insert aftert 4d
   85b4e0e +insert aftert 4d
+  
+  1 changesets affected
+  85b4e0e commit 4
   $ hg absorb
   saved backup bundle to * (glob)
   1 of 2 chunk(s) applied
@@ -290,6 +299,9 @@ Test config option absorb.max-stack-size:
   712d16a -b Line 2
           +b line 1
   712d16a +b line 2
+  
+  1 changesets affected
+  712d16a commit b 2
 
 Test obsolete markers creation:
 
@@ -352,6 +364,9 @@ Executable files:
           @@ -0,1 +0,1 @@
   99b4ae7 -
   99b4ae7 +bla
+  
+  1 changesets affected
+  99b4ae7 foo
   $ hg absorb
   1 of 1 chunk(s) applied
   $ hg diff -c .
@@ -393,6 +408,12 @@ Remove lines may delete changesets:
   1154859 -2
   30970db -3
   a393a58 -4
+  
+  4 changesets affected
+  a393a58 b4
+  30970db b3
+  1154859 b12
+  bfafb49 a12
   $ hg absorb -v | grep became
   0:bfafb49242db: 1 file(s) changed, became 4:1a2de97fc652
   1:115485984805: 2 file(s) changed, became 5:0c930dfab74c
@@ -443,6 +464,10 @@ This should move us to the non-obsolete ancestor.
           @@ -2,2 +2,0 @@
   f1c23dd -3
   82dbe7f -4
+  
+  2 changesets affected
+  82dbe7f a1234
+  f1c23dd a123
   $ hg absorb --verbose
   1:f1c23dd5d08d: became empty and was dropped
   2:82dbe7fd19f0: became empty and was dropped

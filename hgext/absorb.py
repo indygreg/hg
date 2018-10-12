@@ -274,13 +274,14 @@ class filefixupstate(object):
         4. read results from "finalcontents", or call getfinalcontent
     """
 
-    def __init__(self, fctxs, ui=None, opts=None):
+    def __init__(self, fctxs, path, ui=None, opts=None):
         """([fctx], ui or None) -> None
 
         fctxs should be linear, and sorted by topo order - oldest first.
         fctxs[0] will be considered as "immutable" and will not be changed.
         """
         self.fctxs = fctxs
+        self.path = path
         self.ui = ui or nullui()
         self.opts = opts or {}
 
@@ -297,7 +298,7 @@ class filefixupstate(object):
         self.fixups = [] # [(linelog rev, a1, a2, b1, b2)]
         self.finalcontents = [] # [str]
 
-    def diffwith(self, targetfctx, showchanges=False):
+    def diffwith(self, targetfctx, fm=None):
         """calculate fixups needed by examining the differences between
         self.fctxs[-1] and targetfctx, chunk by chunk.
 
@@ -329,8 +330,8 @@ class filefixupstate(object):
             self.chunkstats[0] += bool(newfixups) # 1 or 0
             self.chunkstats[1] += 1
             self.fixups += newfixups
-            if showchanges:
-                self._showchanges(alines, blines, chunk, newfixups)
+            if fm is not None:
+                self._showchanges(fm, alines, blines, chunk, newfixups)
 
     def apply(self):
         """apply self.fixups. update self.linelog, self.finalcontents.
@@ -546,13 +547,12 @@ class filefixupstate(object):
         pushchunk()
         return result
 
-    def _showchanges(self, alines, blines, chunk, fixups):
-        ui = self.ui
+    def _showchanges(self, fm, alines, blines, chunk, fixups):
 
-        def label(line, label):
+        def trim(line):
             if line.endswith('\n'):
                 line = line[:-1]
-            return ui.label(line, label)
+            return line
 
         # this is not optimized for perf but _showchanges only gets executed
         # with an extra command-line flag.
@@ -564,17 +564,30 @@ class filefixupstate(object):
             for i in pycompat.xrange(fb1, fb2):
                 bidxs[i - b1] = (max(idx, 1) - 1) // 2
 
-        buf = [] # [(idx, content)]
-        buf.append((0, label('@@ -%d,%d +%d,%d @@'
-                             % (a1, a2 - a1, b1, b2 - b1), 'diff.hunk')))
-        buf += [(aidxs[i - a1], label('-' + alines[i], 'diff.deleted'))
-                for i in pycompat.xrange(a1, a2)]
-        buf += [(bidxs[i - b1], label('+' + blines[i], 'diff.inserted'))
-                for i in pycompat.xrange(b1, b2)]
-        for idx, line in buf:
-            shortnode = idx and node.short(self.fctxs[idx].node()) or ''
-            ui.write(ui.label(shortnode[0:7].ljust(8), 'absorb.node') +
-                     line + '\n')
+        fm.startitem()
+        fm.write('hunk', '        %s\n',
+                 '@@ -%d,%d +%d,%d @@'
+                 % (a1, a2 - a1, b1, b2 - b1), label='diff.hunk')
+        fm.data(path=self.path, linetype='hunk')
+
+        def writeline(idx, diffchar, line, linetype, linelabel):
+            fm.startitem()
+            node = ''
+            if idx:
+                ctx = self.fctxs[idx]
+                fm.context(fctx=ctx)
+                node = ctx.hex()
+            fm.write('node', '%-7.7s ', node, label='absorb.node')
+            fm.write('diffchar ' + linetype, '%s%s\n', diffchar, line,
+                     label=linelabel)
+            fm.data(path=self.path, linetype=linetype)
+
+        for i in pycompat.xrange(a1, a2):
+            writeline(aidxs[i - a1], '-', trim(alines[i]), 'deleted',
+                      'diff.deleted')
+        for i in pycompat.xrange(b1, b2):
+            writeline(bidxs[i - b1], '+', trim(blines[i]), 'inserted',
+                      'diff.inserted')
 
 class fixupstate(object):
     """state needed to run absorb
@@ -609,7 +622,7 @@ class fixupstate(object):
         self.replacemap = {} # {oldnode: newnode or None}
         self.finalnode = None # head after all fixups
 
-    def diffwith(self, targetctx, match=None, showchanges=False):
+    def diffwith(self, targetctx, match=None, fm=None):
         """diff and prepare fixups. update self.fixupmap, self.paths"""
         # only care about modified files
         self.status = self.stack[-1].status(targetctx, match)
@@ -638,12 +651,13 @@ class fixupstate(object):
                 continue
             seenfctxs.update(fctxs[1:])
             self.fctxmap[path] = ctx2fctx
-            fstate = filefixupstate(fctxs, ui=self.ui, opts=self.opts)
-            if showchanges:
-                colorpath = self.ui.label(path, 'absorb.path')
-                header = 'showing changes for ' + colorpath
-                self.ui.write(header + '\n')
-            fstate.diffwith(targetfctx, showchanges=showchanges)
+            fstate = filefixupstate(fctxs, path, ui=self.ui, opts=self.opts)
+            if fm is not None:
+                fm.startitem()
+                fm.plain('showing changes for ')
+                fm.write('path', '%s\n', path, label='absorb.path')
+                fm.data(linetype='path')
+            fstate.diffwith(targetfctx, fm)
             self.fixupmap[path] = fstate
             self.paths.append(path)
 
@@ -931,7 +945,12 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
         origchunks = patch.parsepatch(diff)
         chunks = cmdutil.recordfilter(ui, origchunks)[0]
         targetctx = overlaydiffcontext(stack[-1], chunks)
-    state.diffwith(targetctx, matcher, showchanges=opts.get('print_changes'))
+    fm = None
+    if opts.get('print_changes'):
+        fm = ui.formatter('absorb', opts)
+    state.diffwith(targetctx, matcher, fm)
+    if fm is not None:
+        fm.end()
     if not opts.get('dry_run'):
         state.apply()
         if state.commit():
@@ -948,7 +967,7 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
           ('e', 'edit-lines', None,
            _('edit what lines belong to which changesets before commit '
              '(EXPERIMENTAL)')),
-         ] + commands.dryrunopts + commands.walkopts,
+         ] + commands.dryrunopts + commands.templateopts + commands.walkopts,
          _('hg absorb [OPTION] [FILE]...'))
 def absorbcmd(ui, repo, *pats, **opts):
     """incorporate corrections into the stack of draft changesets

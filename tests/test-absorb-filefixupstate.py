@@ -43,7 +43,8 @@ def testfilefixup(oldcontents, workingcopy, expectedcontents, fixups=None):
     expectedcontents = insertreturns(expectedcontents)
     oldcontents = insertreturns(oldcontents)
     workingcopy = insertreturns(workingcopy)
-    state = absorb.filefixupstate(pycompat.maplist(simplefctx, oldcontents))
+    state = absorb.filefixupstate(pycompat.maplist(simplefctx, oldcontents),
+                                  'path')
     state.diffwith(simplefctx(workingcopy))
     if fixups is not None:
         assertlistequal(state.fixups, fixups)

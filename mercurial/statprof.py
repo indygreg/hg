@@ -902,17 +902,17 @@ def main(argv=None):
 
     optstart = 2
     displayargs['function'] = None
-    if argv[1] == 'hotpath':
+    if argv[1] == r'hotpath':
         displayargs['format'] = DisplayFormats.Hotpath
-    elif argv[1] == 'lines':
+    elif argv[1] == r'lines':
         displayargs['format'] = DisplayFormats.ByLine
-    elif argv[1] == 'functions':
+    elif argv[1] == r'functions':
         displayargs['format'] = DisplayFormats.ByMethod
-    elif argv[1] == 'function':
+    elif argv[1] == r'function':
         displayargs['format'] = DisplayFormats.AboutMethod
         displayargs['function'] = argv[2]
         optstart = 3
-    elif argv[1] == 'flame':
+    elif argv[1] == r'flame':
         displayargs['format'] = DisplayFormats.FlameGraph
     else:
         printusage()
@@ -930,22 +930,22 @@ def main(argv=None):
     displayargs['limit'] = 0.05
     path = None
     for o, value in opts:
-        if o in ("-l", "--limit"):
+        if o in (r"-l", r"--limit"):
             displayargs['limit'] = float(value)
-        elif o in ("-f", "--file"):
+        elif o in (r"-f", r"--file"):
             path = value
-        elif o in ("-o", "--output-file"):
+        elif o in (r"-o", r"--output-file"):
             displayargs['outputfile'] = value
-        elif o in ("-p", "--script-path"):
+        elif o in (r"-p", r"--script-path"):
             displayargs['scriptpath'] = value
-        elif o in ("-h", "help"):
+        elif o in (r"-h", r"help"):
             printusage()
             return 0
         else:
             assert False, "unhandled option %s" % o
 
     if not path:
-        print('must specify --file to load')
+        print(r'must specify --file to load')
         return 1
 
     load_data(path=path)
@@ -954,5 +954,5 @@ def main(argv=None):
 
     return 0
 
-if __name__ == "__main__":
+if __name__ == r"__main__":
     sys.exit(main())

@@ -151,7 +151,7 @@ def _filerevision(web, fctx):
     if stringutil.binary(text):
         mt = pycompat.sysbytes(
             mimetypes.guess_type(pycompat.fsdecode(f))[0]
-            or 'application/octet-stream')
+            or r'application/octet-stream')
         text = '(binary:%s)' % mt
 
     def lines(context):
@@ -864,7 +864,7 @@ def comparison(web):
         if f.isbinary():
             mt = pycompat.sysbytes(
                 mimetypes.guess_type(pycompat.fsdecode(f.path()))[0]
-                or 'application/octet-stream')
+                or r'application/octet-stream')
             return [_('(binary file %s, hash: %s)') % (mt, hex(f.filenode()))]
         return f.data().splitlines()
 
@@ -952,7 +952,7 @@ def annotate(web):
         if fctx.isbinary():
             mt = pycompat.sysbytes(
                 mimetypes.guess_type(pycompat.fsdecode(fctx.path()))[0]
-                or 'application/octet-stream')
+                or r'application/octet-stream')
             lines = [dagop.annotateline(fctx=fctx.filectx(fctx.filerev()),
                                         lineno=1, text='(binary:%s)' % mt)]
         else:

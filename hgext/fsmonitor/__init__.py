@@ -460,7 +460,7 @@ def overridestatus(
                 f = open(fn, 'wb')
             else:
                 fn = 'fsmonitorfail.log'
-                f = self.opener(fn, 'wb')
+                f = self.vfs.open(fn, 'wb')
         except (IOError, OSError):
             self.ui.warn(_('warning: unable to write to %s\n') % fn)
             return
@@ -564,8 +564,10 @@ def overridestatus(
             self.ui.fout, self.ui.ferr = fout, ferr
 
         # clean isn't tested since it's set to True above
-        _cmpsets([modified, added, removed, deleted, unknown, ignored, clean],
-                 rv2)
+        with self.wlock():
+            _cmpsets(
+                [modified, added, removed, deleted, unknown, ignored, clean],
+                rv2)
         modified, added, removed, deleted, unknown, ignored, clean = rv2
 
     return scmutil.status(

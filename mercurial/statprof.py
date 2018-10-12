@@ -360,11 +360,11 @@ def save_data(path):
     with open(path, 'w+') as file:
         file.write("%f %f\n" % state.accumulated_time)
         for sample in state.samples:
-            time = str(sample.time)
+            time = sample.time
             stack = sample.stack
             sites = ['\1'.join([s.path, str(s.lineno), s.function])
                      for s in stack]
-            file.write("%s\0%s\n" % (time, '\0'.join(sites)))
+            file.write("%d\0%s\n" % (time, '\0'.join(sites)))
 
 def load_data(path):
     lines = open(path, 'r').read().splitlines()
@@ -566,7 +566,7 @@ def display_by_method(data, fp):
                 stattuple = (stat.selfpercent(), stat.selfseconds(),
                              stat.site.lineno, source)
 
-                print('%33.0f%% %6.2f   line %s: %s' % (stattuple), file=fp)
+                print('%33.0f%% %6.2f   line %d: %s' % (stattuple), file=fp)
 
 def display_about_method(data, fp, function=None, **kwargs):
     if function is None:
@@ -734,7 +734,7 @@ def write_to_flame(data, fp, scriptpath=None, outputfile=None, **kwargs):
             lines[line] = 1
 
     for line, count in lines.iteritems():
-        file.write("%s %s\n" % (line, count))
+        file.write("%s %d\n" % (line, count))
 
     file.close()
 

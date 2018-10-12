@@ -62,6 +62,22 @@ CATEGORY_NAMES = {
     registrar.command.CATEGORY_NONE: 'Uncategorized commands',
 }
 
+# Topic categories.
+TOPIC_CATEGORY_NONE = 'none'
+
+# The order in which topic categories will be displayed.
+# Extensions with custom categories should insert them into this list
+# after/before the appropriate item, rather than replacing the list or
+# assuming absolute positions.
+TOPIC_CATEGORY_ORDER = [
+    TOPIC_CATEGORY_NONE,
+]
+
+# Human-readable topic category names. These are translated.
+TOPIC_CATEGORY_NAMES = {
+    TOPIC_CATEGORY_NONE: 'Uncategorized topics',
+}
+
 def listexts(header, exts, indent=1, showdeprecated=False):
     '''return a text listing of the given extensions'''
     rst = []
@@ -152,7 +168,8 @@ def topicmatch(ui, commands, kw):
                'extensions': [],
                'extensioncommands': [],
                }
-    for names, header, doc in helptable:
+    for topic in helptable:
+        names, header, doc = topic[0:3]
         # Old extensions may use a str as doc.
         if (sum(map(lowercontains, names))
             or lowercontains(header)
@@ -519,12 +536,35 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
                 rst.append('\n')
                 rst.extend(exts)
 
-            rst.append(_("\nadditional help topics:\n\n"))
-            topics = []
-            for names, header, doc in helptable:
-                topics.append((names[0], header))
-            for t, desc in topics:
-                rst.append(" :%s: %s\n" % (t, desc))
+            rst.append(_("\nadditional help topics:\n"))
+            # Group commands by category.
+            topiccats = {}
+            for topic in helptable:
+                names, header, doc = topic[0:3]
+                if len(topic) > 3 and topic[3]:
+                    category = topic[3]
+                else:
+                    category = TOPIC_CATEGORY_NONE
+
+                topiccats.setdefault(category, []).append((names[0], header))
+
+            # Check that all categories have an order.
+            missing_order = set(topiccats.keys()) - set(TOPIC_CATEGORY_ORDER)
+            if missing_order:
+                ui.develwarn(
+                    'help categories missing from TOPIC_CATEGORY_ORDER: %s' %
+                    missing_order)
+
+            # Output topics per category.
+            for cat in TOPIC_CATEGORY_ORDER:
+                topics = topiccats.get(cat, [])
+                if topics:
+                    if len(topiccats) > 1:
+                        catname = gettext(TOPIC_CATEGORY_NAMES[cat])
+                        rst.append("\n%s:\n" % catname)
+                    rst.append("\n")
+                    for t, desc in topics:
+                        rst.append(" :%s: %s\n" % (t, desc))
 
         if ui.quiet:
             pass
@@ -559,7 +599,8 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
                     break
 
         if not header:
-            for names, header, doc in helptable:
+            for topic in helptable:
+                names, header, doc = topic[0:3]
                 if name in names:
                     break
             else:

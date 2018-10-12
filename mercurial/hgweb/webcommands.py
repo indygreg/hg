@@ -1407,7 +1407,8 @@ def help(web):
     topicname = web.req.qsparams.get('node')
     if not topicname:
         def topics(context):
-            for entries, summary, _doc in helpmod.helptable:
+            for h in helpmod.helptable:
+                entries, summary, _doc = h[0:3]
                 yield {'topic': entries[0], 'summary': summary}
 
         early, other = [], []

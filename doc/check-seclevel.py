@@ -87,7 +87,8 @@ def checkcmdtable(ui, cmdtable, namefmt, initlevel):
 
 def checkhghelps(ui):
     errorcnt = 0
-    for names, sec, doc in helptable:
+    for h in helptable:
+        names, sec, doc = h[0:3]
         if callable(doc):
             doc = doc(ui)
         errorcnt += checkseclevel(ui, doc,

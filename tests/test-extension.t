@@ -567,8 +567,8 @@ Even though the extension fails during uisetup, hg is still basically usable:
       uisetup(ui)
     File "$TESTTMP/baduisetup.py", line 2, in uisetup
       1/0
-  ZeroDivisionError: integer division or modulo by zero
-  *** failed to set up extension baduisetup: integer division or modulo by zero
+  ZeroDivisionError: * by zero (glob)
+  *** failed to set up extension baduisetup: * by zero (glob)
   Mercurial Distributed SCM (version *) (glob)
   (see https://mercurial-scm.org for more information)
   
@@ -1772,7 +1772,7 @@ Prohibit the use of unicode strings as the default value of options
   > test_unicode_default_value = $TESTTMP/test_unicode_default_value.py
   > EOF
   $ hg -R $TESTTMP/opt-unicode-default dummy
-  *** failed to import extension test_unicode_default_value from $TESTTMP/test_unicode_default_value.py: unicode u'value' found in cmdtable.dummy
+  *** failed to import extension test_unicode_default_value from $TESTTMP/test_unicode_default_value.py: unicode *'value' found in cmdtable.dummy (glob)
   *** (use b'' to make it byte string)
   hg: unknown command 'dummy'
   (did you mean summary?)

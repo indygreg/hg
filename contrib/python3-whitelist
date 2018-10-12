@@ -20,6 +20,7 @@ test-audit-subrepo.t
 test-automv.t
 test-backout.t
 test-backwards-remove.t
+test-bad-extension.t
 test-bad-pull.t
 test-basic.t
 test-bdiff.py

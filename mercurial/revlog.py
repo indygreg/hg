@@ -648,6 +648,9 @@ class revlog(object):
 
         return entry[5], entry[6]
 
+    # fast parentrevs(rev) where rev isn't filtered
+    _uncheckedparentrevs = parentrevs
+
     def node(self, rev):
         try:
             return self.index[rev][7]
@@ -747,8 +750,14 @@ class revlog(object):
 
         See the documentation for ancestor.lazyancestors for more details."""
 
-        return ancestor.lazyancestors(self.parentrevs, revs, stoprev=stoprev,
-                                      inclusive=inclusive)
+        # first, make sure start revisions aren't filtered
+        revs = list(revs)
+        checkrev = self.node
+        for r in revs:
+            checkrev(r)
+        # and we're sure ancestors aren't filtered as well
+        return ancestor.lazyancestors(self._uncheckedparentrevs, revs,
+                                      stoprev=stoprev, inclusive=inclusive)
 
     def descendants(self, revs):
         return dagop.descendantrevs(revs, self.revs, self.parentrevs)

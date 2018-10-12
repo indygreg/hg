@@ -224,14 +224,6 @@ be separated by whitespaces::
         failures, tests = doctest.testmod()
         sys.exit(failures and 1 or 0)
 
-    # replace polib._POFileParser to show linenum of problematic msgstr
-    class ExtPOFileParser(polib._POFileParser):
-        def process(self, symbol, linenum):
-            super(ExtPOFileParser, self).process(symbol, linenum)
-            if symbol == 'MS': # msgstr
-                self.current_entry.linenum = linenum
-    polib._POFileParser = ExtPOFileParser
-
     detected = []
     warning = options.warning
     for f in args:

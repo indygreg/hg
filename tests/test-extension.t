@@ -1,4 +1,15 @@
 Test basic extension support
+  $ cat > unflush.py <<EOF
+  > import sys
+  > from mercurial import pycompat
+  > if pycompat.ispy3:
+  >     # no changes required
+  >     sys.exit(0)
+  > with open(sys.argv[1], 'rb') as f:
+  >     data = f.read()
+  > with open(sys.argv[1], 'wb') as f:
+  >     f.write(data.replace(b', flush=True', b''))
+  > EOF
 
   $ cat > foobar.py <<EOF
   > import os
@@ -95,15 +106,16 @@ module/__init__.py-style
 Check that extensions are loaded in phases:
 
   $ cat > foo.py <<EOF
+  > from __future__ import print_function
   > import os
   > name = os.path.basename(__file__).rsplit('.', 1)[0]
-  > print("1) %s imported" % name)
+  > print("1) %s imported" % name, flush=True)
   > def uisetup(ui):
-  >     print("2) %s uisetup" % name)
+  >     print("2) %s uisetup" % name, flush=True)
   > def extsetup():
-  >     print("3) %s extsetup" % name)
+  >     print("3) %s extsetup" % name, flush=True)
   > def reposetup(ui, repo):
-  >    print("4) %s reposetup" % name)
+  >    print("4) %s reposetup" % name, flush=True)
   > 
   > bytesname = name.encode('utf-8')
   > # custom predicate to check registration of functions at loading
@@ -116,6 +128,7 @@ Check that extensions are loaded in phases:
   > def custompredicate(repo, subset, x):
   >     return smartset.baseset([r for r in subset if r in {0}])
   > EOF
+  $ $PYTHON $TESTTMP/unflush.py foo.py
 
   $ cp foo.py bar.py
   $ echo 'foo = foo.py' >> $HGRCPATH
@@ -188,29 +201,32 @@ Check "from __future__ import absolute_import" support for external libraries
   $ echo "s = 'libroot/mod/ambig.py'" > $TESTTMP/libroot/mod/ambig.py
 
   $ cat > $TESTTMP/libroot/mod/ambigabs.py <<EOF
-  > from __future__ import absolute_import
+  > from __future__ import absolute_import, print_function
   > import ambig # should load "libroot/ambig.py"
   > s = ambig.s
   > EOF
   $ cat > loadabs.py <<EOF
   > import mod.ambigabs as ambigabs
   > def extsetup():
-  >     print('ambigabs.s=%s' % ambigabs.s)
+  >     print('ambigabs.s=%s' % ambigabs.s, flush=True)
   > EOF
+  $ $PYTHON $TESTTMP/unflush.py loadabs.py
   $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}/libroot; hg --config extensions.loadabs=loadabs.py root)
   ambigabs.s=libroot/ambig.py
   $TESTTMP/a
 
 #if no-py3k
   $ cat > $TESTTMP/libroot/mod/ambigrel.py <<EOF
+  > from __future__ import print_function
   > import ambig # should load "libroot/mod/ambig.py"
   > s = ambig.s
   > EOF
   $ cat > loadrel.py <<EOF
   > import mod.ambigrel as ambigrel
   > def extsetup():
-  >     print('ambigrel.s=%s' % ambigrel.s)
+  >     print('ambigrel.s=%s' % ambigrel.s, flush=True)
   > EOF
+  $ $PYTHON $TESTTMP/unflush.py loadrel.py
   $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}/libroot; hg --config extensions.loadrel=loadrel.py root)
   ambigrel.s=libroot/mod/ambig.py
   $TESTTMP/a
@@ -1739,13 +1755,15 @@ Prohibit the use of unicode strings as the default value of options
   $ hg init $TESTTMP/opt-unicode-default
 
   $ cat > $TESTTMP/test_unicode_default_value.py << EOF
+  > from __future__ import print_function
   > from mercurial import registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > @command(b'dummy', [(b'', b'opt', u'value', u'help')], 'ext [OPTIONS]')
   > def ext(*args, **opts):
-  >     print(opts[b'opt'])
+  >     print(opts[b'opt'], flush=True)
   > EOF
+  $ $PYTHON $TESTTMP/unflush.py $TESTTMP/test_unicode_default_value.py
   $ cat > $TESTTMP/opt-unicode-default/.hg/hgrc << EOF
   > [extensions]
   > test_unicode_default_value = $TESTTMP/test_unicode_default_value.py

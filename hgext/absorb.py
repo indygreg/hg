@@ -986,7 +986,7 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
          [('a', 'apply-changes', None,
            _('apply changes without prompting for confirmation')),
           ('p', 'print-changes', None,
-           _('just print which changesets are modified by which changes')),
+           _('always print which changesets are modified by which changes')),
           ('i', 'interactive', None,
            _('interactively select which chunks to apply (EXPERIMENTAL)')),
           ('e', 'edit-lines', None,
@@ -1011,8 +1011,10 @@ def absorbcmd(ui, repo, *pats, **opts):
 
     Changesets that become empty after applying the changes will be deleted.
 
-    If in doubt, run :hg:`absorb -pn` to preview what changesets will
-    be amended by what changed lines, without actually changing anything.
+    By default, absorb will show what it plans to do and prompt for
+    confirmation.  If you are confident that the changes will be absorbed
+    to the correct place, run :hg:`absorb -a` to apply the changes
+    immediately.
 
     Returns 0 on success, 1 if all chunks were ignored and nothing amended.
     """

@@ -12,12 +12,17 @@ of the GNU General Public License, incorporated herein by reference.
 
 from __future__ import absolute_import
 
+from . import (
+    pycompat,
+)
+
 def label(code):
     if isinstance(code, str):
-        return '~' + code    # built-in functions ('~' sorts at the end)
+        # built-in functions ('~' sorts at the end)
+        return '~' + pycompat.sysbytes(code)
     else:
-        return '%s %s:%d' % (code.co_name,
-                             code.co_filename,
+        return '%s %s:%d' % (pycompat.sysbytes(code.co_name),
+                             pycompat.sysbytes(code.co_filename),
                              code.co_firstlineno)
 
 class KCacheGrind(object):
@@ -46,7 +51,7 @@ class KCacheGrind(object):
         if isinstance(code, str):
             out_file.write(b'fi=~\n')
         else:
-            out_file.write(b'fi=%s\n' % code.co_filename)
+            out_file.write(b'fi=%s\n' % pycompat.sysbytes(code.co_filename))
 
         out_file.write(b'fn=%s\n' % label(code))
 
@@ -80,7 +85,7 @@ class KCacheGrind(object):
             out_file.write(b'cfi=~\n')
             out_file.write(b'calls=%d 0\n' % subentry.callcount)
         else:
-            out_file.write(b'cfi=%s\n' % code.co_filename)
+            out_file.write(b'cfi=%s\n' % pycompat.sysbytes(code.co_filename))
             out_file.write(b'calls=%d %d\n' % (
                 subentry.callcount, code.co_firstlineno))
 

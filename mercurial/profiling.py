@@ -61,7 +61,7 @@ def lsprofile(ui, fp):
         else:
             # format == 'text'
             stats = lsprof.Stats(p.getstats())
-            stats.sort(field)
+            stats.sort(pycompat.sysstr(field))
             stats.pprint(limit=limit, file=fp, climit=climit)
 
 @contextlib.contextmanager

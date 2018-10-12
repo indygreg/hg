@@ -185,7 +185,7 @@ def newandmodified(chunks, originalchunks):
     return newlyaddedandmodifiedfiles
 
 def parsealiases(cmd):
-    return cmd.lstrip("^").split("|")
+    return cmd.split("|")
 
 def setupwrapcolorwrite(ui):
     # wrap ui.write so diff output can be labeled/colorized
@@ -673,7 +673,7 @@ def findpossible(cmd, table, strict=False):
     debugchoice = {}
 
     if cmd in table:
-        # short-circuit exact matches, "log" alias beats "^log|history"
+        # short-circuit exact matches, "log" alias beats "log|history"
         keys = [cmd]
     else:
         keys = table.keys()

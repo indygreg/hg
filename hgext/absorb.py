@@ -982,7 +982,7 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
             ui.write(_('nothing applied\n'))
     return state
 
-@command('^absorb',
+@command('absorb',
          [('a', 'apply-changes', None,
            _('apply changes without prompting for confirmation')),
           ('p', 'print-changes', None,
@@ -994,7 +994,8 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
              '(EXPERIMENTAL)')),
          ] + commands.dryrunopts + commands.templateopts + commands.walkopts,
          _('hg absorb [OPTION] [FILE]...'),
-         helpcategory=command.CATEGORY_COMMITTING)
+         helpcategory=command.CATEGORY_COMMITTING,
+         helpbasic=True)
 def absorbcmd(ui, repo, *pats, **opts):
     """incorporate corrections into the stack of draft changesets
 

@@ -191,7 +191,8 @@ def predecessormarkers(ctx):
     for data in ctx.repo().obsstore.predecessors.get(ctx.node(), ()):
         yield obsutil.marker(ctx.repo(), data)
 
-@command('^unamend', [], helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
+@command('unamend', [], helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
+         helpbasic=True)
 def unamend(ui, repo, **opts):
     """undo the most recent amend operation on a current changeset
 

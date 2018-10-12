@@ -2433,10 +2433,11 @@ def qinit(ui, repo, create):
         commands.add(ui, r)
     return 0
 
-@command("^qinit",
+@command("qinit",
          [('c', 'create-repo', None, _('create queue repository'))],
          _('hg qinit [-c]'),
-         helpcategory=command.CATEGORY_REPO_CREATION)
+         helpcategory=command.CATEGORY_REPO_CREATION,
+         helpbasic=True)
 def init(ui, repo, **opts):
     """init a new queue repository (DEPRECATED)
 
@@ -2540,7 +2541,7 @@ def clone(ui, source, dest=None, **opts):
             hg.update(repo, repo.changelog.tip())
 
 @command("qcommit|qci",
-         commands.table["^commit|ci"][1],
+         commands.table["commit|ci"][1],
          _('hg qcommit [OPTION]... [FILE]...'),
          helpcategory=command.CATEGORY_COMMITTING,
          inferrepo=True)
@@ -2623,7 +2624,7 @@ def setupheaderopts(ui, opts):
     if not opts.get('date') and opts.get('currentdate'):
         opts['date'] = "%d %d" % dateutil.makedate()
 
-@command("^qnew",
+@command("qnew",
          [('e', 'edit', None, _('invoke editor on commit messages')),
           ('f', 'force', None, _('import uncommitted changes (DEPRECATED)')),
           ('g', 'git', None, _('use git extended diff format')),
@@ -2635,7 +2636,7 @@ def setupheaderopts(ui, opts):
            _('add "Date: <DATE>" to patch'), _('DATE'))
           ] + cmdutil.walkopts + cmdutil.commitopts,
          _('hg qnew [-e] [-m TEXT] [-l FILE] PATCH [FILE]...'),
-         helpcategory=command.CATEGORY_COMMITTING,
+         helpcategory=command.CATEGORY_COMMITTING, helpbasic=True,
          inferrepo=True)
 def new(ui, repo, patch, *args, **opts):
     """create a new patch
@@ -2671,7 +2672,7 @@ def new(ui, repo, patch, *args, **opts):
     q.savedirty()
     return 0
 
-@command("^qrefresh",
+@command("qrefresh",
          [('e', 'edit', None, _('invoke editor on commit messages')),
           ('g', 'git', None, _('use git extended diff format')),
           ('s', 'short', None,
@@ -2686,7 +2687,7 @@ def new(ui, repo, patch, *args, **opts):
            _('add/update date field in patch with given date'), _('DATE'))
           ] + cmdutil.walkopts + cmdutil.commitopts,
          _('hg qrefresh [-I] [-X] [-e] [-m TEXT] [-l FILE] [-s] [FILE]...'),
-         helpcategory=command.CATEGORY_COMMITTING,
+         helpcategory=command.CATEGORY_COMMITTING, helpbasic=True,
          inferrepo=True)
 def refresh(ui, repo, *pats, **opts):
     """update the current patch
@@ -2718,10 +2719,10 @@ def refresh(ui, repo, *pats, **opts):
         q.savedirty()
         return ret
 
-@command("^qdiff",
+@command("qdiff",
          cmdutil.diffopts + cmdutil.diffopts2 + cmdutil.walkopts,
          _('hg qdiff [OPTION]... [FILE]...'),
-         helpcategory=command.CATEGORY_FILE_CONTENTS,
+         helpcategory=command.CATEGORY_FILE_CONTENTS, helpbasic=True,
          inferrepo=True)
 def diff(ui, repo, *pats, **opts):
     """diff of the current patch and subsequent modifications
@@ -2956,7 +2957,7 @@ def savename(path):
     newpath = path + ".%d" % (index + 1)
     return newpath
 
-@command("^qpush",
+@command("qpush",
          [('', 'keep-changes', None,
            _('tolerate non-conflicting local changes')),
           ('f', 'force', None, _('apply on top of local changes')),
@@ -2971,7 +2972,8 @@ def savename(path):
            _('reorder patch series and apply only the patch')),
           ('', 'no-backup', None, _('do not save backup copies of files'))],
          _('hg qpush [-f] [-l] [-a] [--move] [PATCH | INDEX]'),
-         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION,
+         helpbasic=True)
 def push(ui, repo, patch=None, **opts):
     """push the next patch onto the stack
 
@@ -3003,7 +3005,7 @@ def push(ui, repo, patch=None, **opts):
                  keepchanges=opts.get('keep_changes'))
     return ret
 
-@command("^qpop",
+@command("qpop",
          [('a', 'all', None, _('pop all patches')),
           ('n', 'name', '',
            _('queue name to pop (DEPRECATED)'), _('NAME')),
@@ -3012,7 +3014,8 @@ def push(ui, repo, patch=None, **opts):
           ('f', 'force', None, _('forget any local changes to patched files')),
           ('', 'no-backup', None, _('do not save backup copies of files'))],
          _('hg qpop [-a] [-f] [PATCH | INDEX]'),
-         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION,
+         helpbasic=True)
 def pop(ui, repo, patch=None, **opts):
     """pop the current patch off the stack
 

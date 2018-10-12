@@ -152,7 +152,7 @@ cmdtable = {}
 # define parsealiases locally, because cmdutil.parsealiases has been
 # available since 1.5 (or 6252852b4332)
 def parsealiases(cmd):
-    return cmd.lstrip(b"^").split(b"|")
+    return cmd.split(b"|")
 
 if safehasattr(registrar, 'command'):
     command = registrar.command(cmdtable)

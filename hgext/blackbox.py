@@ -226,11 +226,12 @@ def reposetup(ui, repo):
 
     repo._wlockfreeprefix.add('blackbox.log')
 
-@command('^blackbox',
+@command('blackbox',
     [('l', 'limit', 10, _('the number of events to show')),
     ],
     _('hg blackbox [OPTION]...'),
-    helpcategory=command.CATEGORY_MAINTENANCE)
+    helpcategory=command.CATEGORY_MAINTENANCE,
+    helpbasic=True)
 def blackbox(ui, repo, *revs, **opts):
     '''view the recent repository events
     '''

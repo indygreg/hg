@@ -516,16 +516,14 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             f = fs[0]
             syns[f] = ', '.join(fs)
             func = e[0]
-            p = ''
-            if c.startswith("^"):
-                p = '^'
-            if select and not select(p + f):
+            if select and not select(f):
                 continue
             if (not select and name != 'shortlist' and
                 func.__module__ != commands.__name__):
                 continue
-            if name == "shortlist" and not p:
-                continue
+            if name == "shortlist":
+                if not getattr(func, 'helpbasic', False):
+                    continue
             doc = pycompat.getdoc(func)
             if filtercmd(ui, f, name, doc):
                 continue

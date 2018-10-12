@@ -185,12 +185,13 @@ class command(_funcregistrarbase):
 
     def _doregister(self, func, name, options=(), synopsis=None,
                     norepo=False, optionalrepo=False, inferrepo=False,
-                    intents=None, helpcategory=None):
+                    intents=None, helpcategory=None, helpbasic=False):
         func.norepo = norepo
         func.optionalrepo = optionalrepo
         func.inferrepo = inferrepo
         func.intents = intents or set()
         func.helpcategory = helpcategory
+        func.helpbasic = helpbasic
         if synopsis:
             self._table[name] = func, list(options), synopsis
         else:

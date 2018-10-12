@@ -131,11 +131,11 @@ debugrevlogopts = cmdutil.debugrevlogopts
 
 # Commands start here, listed alphabetically
 
-@command('^add',
+@command('add',
     walkopts + subrepoopts + dryrunopts,
     _('[OPTION]... [FILE]...'),
     helpcategory=command.CATEGORY_WORKING_DIRECTORY,
-    inferrepo=True)
+    helpbasic=True, inferrepo=True)
 def add(ui, repo, *pats, **opts):
     """add the specified files on the next commit
 
@@ -256,7 +256,7 @@ def addremove(ui, repo, *pats, **opts):
     matcher = scmutil.match(repo[None], pats, opts)
     return scmutil.addremove(repo, matcher, "", opts)
 
-@command('^annotate|blame',
+@command('annotate|blame',
     [('r', 'rev', '', _('annotate the specified revision'), _('REV')),
     ('', 'follow', None,
      _('follow copies/renames and list the filename (DEPRECATED)')),
@@ -272,7 +272,7 @@ def addremove(ui, repo, *pats, **opts):
     ] + diffwsopts + walkopts + formatteropts,
     _('[-r REV] [-f] [-a] [-u] [-d] [-n] [-c] [-l] FILE...'),
     helpcategory=command.CATEGORY_FILE_CONTENTS,
-    inferrepo=True)
+    helpbasic=True, inferrepo=True)
 def annotate(ui, repo, *pats, **opts):
     """show changeset information by line for each file
 
@@ -1399,7 +1399,7 @@ def cat(ui, repo, file1, *pats, **opts):
         return cmdutil.cat(ui, repo, ctx, m, fm, fntemplate, '',
                            **pycompat.strkwargs(opts))
 
-@command('^clone',
+@command('clone',
     [('U', 'noupdate', None, _('the clone will include an empty working '
                                'directory (only a repository)')),
     ('u', 'updaterev', '', _('revision, tag, or branch to check out'),
@@ -1416,7 +1416,7 @@ def cat(ui, repo, file1, *pats, **opts):
     ] + remoteopts,
     _('[OPTION]... SOURCE [DEST]'),
     helpcategory=command.CATEGORY_REPO_CREATION,
-    norepo=True)
+    helpbasic=True, norepo=True)
 def clone(ui, source, dest=None, **opts):
     """make a copy of an existing repository
 
@@ -1555,7 +1555,7 @@ def clone(ui, source, dest=None, **opts):
 
     return r is None
 
-@command('^commit|ci',
+@command('commit|ci',
     [('A', 'addremove', None,
      _('mark new/missing files as added/removed before committing')),
     ('', 'close-branch', None,
@@ -1566,7 +1566,7 @@ def clone(ui, source, dest=None, **opts):
     ('i', 'interactive', None, _('use interactive mode')),
     ] + walkopts + commitopts + commitopts2 + subrepoopts,
     _('[OPTION]... [FILE]...'),
-    helpcategory=command.CATEGORY_COMMITTING,
+    helpcategory=command.CATEGORY_COMMITTING, helpbasic=True,
     inferrepo=True)
 def commit(ui, repo, *pats, **opts):
     """commit the specified files or all outstanding changes
@@ -1867,7 +1867,7 @@ def copy(ui, repo, *pats, **opts):
 def debugcommands(ui, cmd='', *args):
     """list all available commands and options"""
     for cmd, vals in sorted(table.iteritems()):
-        cmd = cmd.split('|')[0].strip('^')
+        cmd = cmd.split('|')[0]
         opts = ', '.join([i[1] for i in vals[1]])
         ui.write('%s: %s\n' % (cmd, opts))
 
@@ -1900,14 +1900,13 @@ def debugcomplete(ui, cmd='', **opts):
         cmdlist = [' '.join(c[0]) for c in cmdlist.values()]
     ui.write("%s\n" % "\n".join(sorted(cmdlist)))
 
-@command('^diff',
+@command('diff',
     [('r', 'rev', [], _('revision'), _('REV')),
     ('c', 'change', '', _('change made by revision'), _('REV'))
     ] + diffopts + diffopts2 + walkopts + subrepoopts,
     _('[OPTION]... ([-c REV] | [-r REV1 [-r REV2]]) [FILE]...'),
     helpcategory=command.CATEGORY_FILE_CONTENTS,
-    inferrepo=True,
-    intents={INTENT_READONLY})
+    helpbasic=True, inferrepo=True, intents={INTENT_READONLY})
 def diff(ui, repo, *pats, **opts):
     """diff repository (or selected files)
 
@@ -1995,7 +1994,7 @@ def diff(ui, repo, *pats, **opts):
                               listsubrepos=opts.get('subrepos'),
                               root=opts.get('root'))
 
-@command('^export',
+@command('export',
     [('B', 'bookmark', '',
      _('export changes only reachable by given bookmark')),
     ('o', 'output', '',
@@ -2005,7 +2004,7 @@ def diff(ui, repo, *pats, **opts):
     ] + diffopts + formatteropts,
     _('[OPTION]... [-o OUTFILESPEC] [-r] [REV]...'),
     helpcategory=command.CATEGORY_IMPORT_EXPORT,
-    intents={INTENT_READONLY})
+    helpbasic=True, intents={INTENT_READONLY})
 def export(ui, repo, *changesets, **opts):
     """dump the header and diffs for one or more changesets
 
@@ -2198,12 +2197,12 @@ def files(ui, repo, *pats, **opts):
         return cmdutil.files(ui, ctx, m, fm, fmt, opts.get('subrepos'))
 
 @command(
-    '^forget',
+    'forget',
     [('i', 'interactive', None, _('use interactive mode')),
     ] + walkopts + dryrunopts,
     _('[OPTION]... FILE...'),
     helpcategory=command.CATEGORY_WORKING_DIRECTORY,
-    inferrepo=True)
+    helpbasic=True, inferrepo=True)
 def forget(ui, repo, *pats, **opts):
     """forget the specified files on the next commit
 
@@ -3549,9 +3548,9 @@ def incoming(ui, repo, source="default", **opts):
         del repo._subtoppath
 
 
-@command('^init', remoteopts, _('[-e CMD] [--remotecmd CMD] [DEST]'),
-        helpcategory=command.CATEGORY_REPO_CREATION,
-         norepo=True)
+@command('init', remoteopts, _('[-e CMD] [--remotecmd CMD] [DEST]'),
+         helpcategory=command.CATEGORY_REPO_CREATION,
+         helpbasic=True, norepo=True)
 def init(ui, dest=".", **opts):
     """create a new repository in the given directory
 
@@ -3624,7 +3623,7 @@ def locate(ui, repo, *pats, **opts):
 
     return ret
 
-@command('^log|history',
+@command('log|history',
     [('f', 'follow', None,
      _('follow changeset history, or file history across copies and renames')),
     ('', 'follow-first', None,
@@ -3650,7 +3649,7 @@ def locate(ui, repo, *pats, **opts):
     ] + logopts + walkopts,
     _('[OPTION]... [FILE]'),
     helpcategory=command.CATEGORY_CHANGE_NAVIGATION,
-    inferrepo=True,
+    helpbasic=True, inferrepo=True,
     intents={INTENT_READONLY})
 def log(ui, repo, *pats, **opts):
     """show revision history of entire repository or files
@@ -3878,7 +3877,7 @@ def manifest(ui, repo, node=None, rev=None, **opts):
         fm.write('path', '%s\n', f)
     fm.end()
 
-@command('^merge',
+@command('merge',
     [('f', 'force', None,
       _('force a merge including outstanding changes (DEPRECATED)')),
     ('r', 'rev', '', _('revision to merge'), _('REV')),
@@ -3887,7 +3886,7 @@ def manifest(ui, repo, node=None, rev=None, **opts):
     ('', 'abort', None, _('abort the ongoing merge')),
      ] + mergetoolopts,
     _('[-P] [[-r] REV]'),
-    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
+    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT, helpbasic=True)
 def merge(ui, repo, node=None, **opts):
     """merge another revision into working directory
 
@@ -4305,7 +4304,7 @@ def postincoming(ui, repo, modheads, optupdate, checkout, brev):
     elif not ui.configbool('commands', 'update.requiredest'):
         ui.status(_("(run 'hg update' to get a working copy)\n"))
 
-@command('^pull',
+@command('pull',
     [('u', 'update', None,
      _('update to new branch head if new descendants were pulled')),
     ('f', 'force', None, _('run even when remote repository is unrelated')),
@@ -4315,7 +4314,8 @@ def postincoming(ui, repo, modheads, optupdate, checkout, brev):
      _('BRANCH')),
     ] + remoteopts,
     _('[-u] [-f] [-r REV]... [-e CMD] [--remotecmd CMD] [SOURCE]'),
-    helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT)
+    helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT,
+    helpbasic=True)
 def pull(ui, repo, source="default", **opts):
     """pull changes from the specified source
 
@@ -4435,7 +4435,7 @@ def pull(ui, repo, source="default", **opts):
         other.close()
     return ret
 
-@command('^push',
+@command('push',
     [('f', 'force', None, _('force push')),
     ('r', 'rev', [],
      _('a changeset intended to be included in the destination'),
@@ -4447,7 +4447,8 @@ def pull(ui, repo, source="default", **opts):
     ('', 'pushvars', [], _('variables that can be sent to server (ADVANCED)')),
     ] + remoteopts,
     _('[-f] [-r REV]... [-e CMD] [--remotecmd CMD] [DEST]'),
-    helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT)
+    helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT,
+    helpbasic=True)
 def push(ui, repo, dest=None, **opts):
     """push changes to the specified destination
 
@@ -4589,14 +4590,14 @@ def recover(ui, repo):
         return hg.verify(repo)
     return 1
 
-@command('^remove|rm',
+@command('remove|rm',
     [('A', 'after', None, _('record delete for missing files')),
     ('f', 'force', None,
      _('forget added files, delete modified files')),
     ] + subrepoopts + walkopts + dryrunopts,
     _('[OPTION]... FILE...'),
     helpcategory=command.CATEGORY_WORKING_DIRECTORY,
-    inferrepo=True)
+    helpbasic=True, inferrepo=True)
 def remove(ui, repo, *pats, **opts):
     """remove the specified files on the next commit
 
@@ -5132,7 +5133,7 @@ def root(ui, repo):
     """
     ui.write(repo.root + "\n")
 
-@command('^serve',
+@command('serve',
     [('A', 'accesslog', '', _('name of access log file to write to'),
      _('FILE')),
     ('d', 'daemon', None, _('run server in background')),
@@ -5161,7 +5162,7 @@ def root(ui, repo):
      + subrepoopts,
     _('[OPTION]...'),
     helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT,
-    optionalrepo=True)
+    helpbasic=True, optionalrepo=True)
 def serve(ui, repo, **opts):
     """start stand-alone webserver
 
@@ -5205,7 +5206,7 @@ def serve(ui, repo, **opts):
 
 _NOTTERSE = 'nothing'
 
-@command('^status|st',
+@command('status|st',
     [('A', 'all', None, _('show status of all files')),
     ('m', 'modified', None, _('show only modified files')),
     ('a', 'added', None, _('show only added files')),
@@ -5223,7 +5224,7 @@ _NOTTERSE = 'nothing'
     ] + walkopts + subrepoopts + formatteropts,
     _('[OPTION]... [FILE]...'),
     helpcategory=command.CATEGORY_WORKING_DIRECTORY,
-    inferrepo=True,
+    helpbasic=True, inferrepo=True,
     intents={INTENT_READONLY})
 def status(ui, repo, *pats, **opts):
     """show changed files in the working directory
@@ -5409,10 +5410,11 @@ def status(ui, repo, *pats, **opts):
         cmdutil.morestatus(repo, fm)
     fm.end()
 
-@command('^summary|sum',
+@command('summary|sum',
     [('', 'remote', None, _('check for push and pull'))],
     '[--remote]',
     helpcategory=command.CATEGORY_WORKING_DIRECTORY,
+    helpbasic=True,
     intents={INTENT_READONLY})
 def summary(ui, repo, **opts):
     """summarize working directory state
@@ -5927,7 +5929,7 @@ def unbundle(ui, repo, fname1, *fnames, **opts):
 
     return postincoming(ui, repo, modheads, opts.get(r'update'), None, None)
 
-@command('^update|up|checkout|co',
+@command('update|up|checkout|co',
     [('C', 'clean', None, _('discard uncommitted changes (no backup)')),
     ('c', 'check', None, _('require clean working directory')),
     ('m', 'merge', None, _('merge uncommitted changes')),
@@ -5935,7 +5937,8 @@ def unbundle(ui, repo, fname1, *fnames, **opts):
     ('r', 'rev', '', _('revision'), _('REV'))
      ] + mergetoolopts,
     _('[-C|-c|-m] [-d DATE] [[-r] REV]'),
-    helpcategory=command.CATEGORY_WORKING_DIRECTORY)
+    helpcategory=command.CATEGORY_WORKING_DIRECTORY,
+    helpbasic=True)
 def update(ui, repo, node=None, **opts):
     """update working directory (or switch revisions)
 

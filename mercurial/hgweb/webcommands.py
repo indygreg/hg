@@ -1418,8 +1418,8 @@ def help(web):
             if 'DEPRECATED' in doc or c.startswith('debug'):
                 continue
             cmd = primary(c)
-            if cmd.startswith('^'):
-                early.append((cmd[1:], doc))
+            if getattr(e[0], 'helpbasic', False):
+                early.append((cmd, doc))
             else:
                 other.append((cmd, doc))
 

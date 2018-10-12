@@ -600,7 +600,7 @@ class obsstore(object):
                 raise ValueError(succ)
         if prec in succs:
             raise ValueError(
-                pycompat.sysstr(_('in-marker cycle with %s') % node.hex(prec)))
+                r'in-marker cycle with %s' % pycompat.sysstr(node.hex(prec)))
 
         metadata = tuple(sorted(metadata.iteritems()))
         for k, v in metadata:

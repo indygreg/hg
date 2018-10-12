@@ -117,11 +117,14 @@ profiler extension could be loaded before other extensions
   $ cat > fooprof.py <<EOF
   > from __future__ import absolute_import
   > import contextlib
+  > import sys
   > @contextlib.contextmanager
   > def profile(ui, fp):
   >     print('fooprof: start profile')
+  >     sys.stdout.flush()
   >     yield
   >     print('fooprof: end profile')
+  >     sys.stdout.flush()
   > def extsetup(ui):
   >     ui.write(b'fooprof: loaded\n')
   > EOF

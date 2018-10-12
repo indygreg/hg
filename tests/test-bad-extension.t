@@ -47,7 +47,7 @@ another bad extension
 
   $ hg -q help help 2>&1 |grep extension
   *** failed to import extension badext from $TESTTMP/badext.py: bit bucket overflow
-  *** failed to import extension badext2: No module named badext2
+  *** failed to import extension badext2: No module named *badext2* (glob)
 
 show traceback
 
@@ -55,9 +55,11 @@ show traceback
   *** failed to import extension badext from $TESTTMP/badext.py: bit bucket overflow
   Traceback (most recent call last):
   Exception: bit bucket overflow
-  *** failed to import extension badext2: No module named badext2
+  *** failed to import extension badext2: No module named *badext2* (glob)
   Traceback (most recent call last):
-  ImportError: No module named badext2
+  ImportError: No module named badext2 (no-py3k !)
+  Traceback (most recent call last): (py3k !)
+  Traceback (most recent call last): (py3k !)
 
 names of extensions failed to load can be accessed via extensions.notloaded()
 
@@ -95,15 +97,18 @@ show traceback for ImportError of hgext.name if devel.debug.extensions is set
   debug.extensions:     - invoking registered callbacks: 'baddocext'
   debug.extensions:     > callbacks completed in * (glob)
   debug.extensions:   - loading extension: 'badext2'
-  debug.extensions:     - could not import hgext.badext2 (No module named badext2): trying hgext3rd.badext2
+  debug.extensions:     - could not import hgext.badext2 (No module named *badext2*): trying hgext3rd.badext2 (glob)
   Traceback (most recent call last):
-  ImportError: No module named *badext2 (glob)
-  debug.extensions:     - could not import hgext3rd.badext2 (No module named badext2): trying badext2
+  ImportError: No module named badext2 (no-py3k !)
+  debug.extensions:     - could not import hgext3rd.badext2 (No module named *badext2*): trying badext2 (glob)
   Traceback (most recent call last):
-  ImportError: No module named *badext2 (glob)
-  *** failed to import extension badext2: No module named badext2
+  ImportError: No module named badext2 (no-py3k !)
+  Traceback (most recent call last): (py3k !)
+  *** failed to import extension badext2: No module named *badext2* (glob)
   Traceback (most recent call last):
-  ImportError: No module named badext2
+  Traceback (most recent call last): (py3k !)
+  Traceback (most recent call last): (py3k !)
+  ImportError: No module named badext2 (no-py3k !)
   debug.extensions: > loaded 2 extensions, total time * (glob)
   debug.extensions: - loading configtable attributes
   debug.extensions: - executing uisetup hooks
@@ -131,7 +136,7 @@ confirm that there's no crash when an extension's documentation is bad
 
   $ hg help --keyword baddocext
   *** failed to import extension badext from $TESTTMP/badext.py: bit bucket overflow
-  *** failed to import extension badext2: No module named badext2
+  *** failed to import extension badext2: No module named *badext2* (glob)
   Topics:
   
    extensions Using Additional Features

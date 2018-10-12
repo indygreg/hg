@@ -399,6 +399,7 @@ test-pathconflicts-update.t
 test-pathencode.py
 test-pending.t
 test-permissions.t
+test-phases-exchange.t
 test-phases.t
 test-pull-branch.t
 test-pull-http.t

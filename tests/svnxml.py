@@ -35,7 +35,10 @@ def parselog(data):
     return entries
 
 def printentries(entries):
-    fp = sys.stdout
+    try:
+        fp = sys.stdout.buffer
+    except AttributeError:
+        fp = sys.stdout
     for e in entries:
         for k in ('revision', 'author', 'msg'):
             fp.write(('%s: %s\n' % (k, e[k])).encode('utf-8'))

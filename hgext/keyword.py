@@ -430,6 +430,8 @@ def demo(ui, repo, *args, **opts):
     def demoitems(section, items):
         ui.write('[%s]\n' % section)
         for k, v in sorted(items):
+            if isinstance(v, bool):
+                v = stringutil.pprint(v)
             ui.write('%s = %s\n' % (k, v))
 
     fn = 'demo.txt'

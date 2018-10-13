@@ -703,6 +703,10 @@ coreconfigitem('help', 'hidden-command\..*',
     default=False,
     generic=True,
 )
+coreconfigitem('help', 'hidden-topic\..*',
+    default=False,
+    generic=True,
+)
 coreconfigitem('hooks', '.*',
     default=dynamicdefault,
     generic=True,

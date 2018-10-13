@@ -198,6 +198,9 @@ def filtercmd(ui, cmd, kw, doc):
         return True
     return False
 
+def filtertopic(ui, topic):
+    return ui.configbool('help', 'hidden-topic.%s' % topic, False)
+
 def topicmatch(ui, commands, kw):
     """Return help topics matching kw.
 
@@ -218,7 +221,9 @@ def topicmatch(ui, commands, kw):
         if (sum(map(lowercontains, names))
             or lowercontains(header)
             or (callable(doc) and lowercontains(doc(ui)))):
-            results['topics'].append((names[0], header))
+            name = names[0]
+            if not filtertopic(ui, name):
+                results['topics'].append((names[0], header))
     for cmd, entry in commands.table.iteritems():
         if len(entry) == 3:
             summary = entry[2]
@@ -599,7 +604,10 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
                 else:
                     category = TOPIC_CATEGORY_NONE
 
-                topiccats.setdefault(category, []).append((names[0], header))
+                topicname = names[0]
+                if not filtertopic(ui, topicname):
+                    topiccats.setdefault(category, []).append(
+                        (topicname, header))
 
             # Check that all categories have an order.
             missing_order = set(topiccats.keys()) - set(TOPIC_CATEGORY_ORDER)

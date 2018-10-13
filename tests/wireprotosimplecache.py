@@ -26,16 +26,16 @@ CACHE = None
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('simplecache', 'cacheapi',
+configitem(b'simplecache', b'cacheapi',
            default=False)
-configitem('simplecache', 'cacheobjects',
+configitem(b'simplecache', b'cacheobjects',
            default=False)
-configitem('simplecache', 'redirectsfile',
+configitem(b'simplecache', b'redirectsfile',
            default=None)
 
 # API handler that makes cached keys available.
 def handlecacherequest(rctx, req, res, checkperm, urlparts):
-    if rctx.repo.ui.configbool('simplecache', 'cacheobjects'):
+    if rctx.repo.ui.configbool(b'simplecache', b'cacheobjects'):
         res.status = b'500 Internal Server Error'
         res.setbodybytes(b'cacheobjects not supported for api server')
         return
@@ -62,9 +62,9 @@ def cachedescriptor(req, repo):
     return {}
 
 wireprotoserver.API_HANDLERS[b'simplecache'] = {
-    'config': (b'simplecache', b'cacheapi'),
-    'handler': handlecacherequest,
-    'apidescriptor': cachedescriptor,
+    b'config': (b'simplecache', b'cacheapi'),
+    b'handler': handlecacherequest,
+    b'apidescriptor': cachedescriptor,
 }
 
 @interfaceutil.implementer(repository.iwireprotocolcommandcacher)
@@ -77,18 +77,18 @@ class memorycacher(object):
         self.redirecthashes = redirecthashes
         self.req = req
         self.key = None
-        self.cacheobjects = ui.configbool('simplecache', 'cacheobjects')
-        self.cacheapi = ui.configbool('simplecache', 'cacheapi')
+        self.cacheobjects = ui.configbool(b'simplecache', b'cacheobjects')
+        self.cacheapi = ui.configbool(b'simplecache', b'cacheapi')
         self.buffered = []
 
-        ui.log('simplecache', 'cacher constructed for %s\n', command)
+        ui.log(b'simplecache', b'cacher constructed for %s\n', command)
 
     def __enter__(self):
         return self
 
     def __exit__(self, exctype, excvalue, exctb):
         if exctype:
-            self.ui.log('simplecache', 'cacher exiting due to error\n')
+            self.ui.log(b'simplecache', b'cacher exiting due to error\n')
 
     def adjustcachekeystate(self, state):
         # Needed in order to make tests deterministic. Don't copy this
@@ -101,11 +101,11 @@ class memorycacher(object):
 
     def lookup(self):
         if self.key not in CACHE:
-            self.ui.log('simplecache', 'cache miss for %s\n', self.key)
+            self.ui.log(b'simplecache', b'cache miss for %s\n', self.key)
             return None
 
         entry = CACHE[self.key]
-        self.ui.log('simplecache', 'cache hit for %s\n', self.key)
+        self.ui.log(b'simplecache', b'cache hit for %s\n', self.key)
 
         redirectable = True
 
@@ -130,21 +130,21 @@ class memorycacher(object):
             url = b'%s/%s' % (self.req.baseurl, b'/'.join(paths))
 
             #url = b'http://example.com/%s' % self.key
-            self.ui.log('simplecache', 'sending content redirect for %s to '
-                                       '%s\n', self.key, url)
+            self.ui.log(b'simplecache', b'sending content redirect for %s to '
+                                        b'%s\n', self.key, url)
             response = wireprototypes.alternatelocationresponse(
                 url=url,
                 mediatype=b'application/mercurial-cbor')
 
-            return {'objs': [response]}
+            return {b'objs': [response]}
 
         if self.cacheobjects:
             return {
-                'objs': entry,
+                b'objs': entry,
             }
         else:
             return {
-                'objs': [wireprototypes.encodedresponse(entry)],
+                b'objs': [wireprototypes.encodedresponse(entry)],
             }
 
     def onobject(self, obj):
@@ -156,7 +156,7 @@ class memorycacher(object):
         yield obj
 
     def onfinished(self):
-        self.ui.log('simplecache', 'storing cache entry for %s\n', self.key)
+        self.ui.log(b'simplecache', b'storing cache entry for %s\n', self.key)
         if self.cacheobjects:
             CACHE[self.key] = self.buffered
         else:
@@ -170,7 +170,7 @@ def makeresponsecacher(orig, repo, proto, command, args, objencoderfn,
                         redirecthashes, proto._req)
 
 def loadredirecttargets(ui):
-    path = ui.config('simplecache', 'redirectsfile')
+    path = ui.config(b'simplecache', b'redirectsfile')
     if not path:
         return []
 
@@ -187,7 +187,7 @@ def extsetup(ui):
 
     CACHE = util.lrucachedict(10000)
 
-    extensions.wrapfunction(wireprotov2server, 'makeresponsecacher',
+    extensions.wrapfunction(wireprotov2server, b'makeresponsecacher',
                             makeresponsecacher)
-    extensions.wrapfunction(wireprotov2server, 'getadvertisedredirecttargets',
+    extensions.wrapfunction(wireprotov2server, b'getadvertisedredirecttargets',
                             getadvertisedredirecttargets)

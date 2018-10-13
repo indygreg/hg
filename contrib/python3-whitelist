@@ -406,6 +406,7 @@ test-pending.t
 test-permissions.t
 test-phases-exchange.t
 test-phases.t
+test-progress.t
 test-pull-branch.t
 test-pull-http.t
 test-pull-permission.t

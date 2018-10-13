@@ -480,7 +480,7 @@ class revbranchcache(object):
         #   self.branchinfo = self._branchinfo
         #
         # Since we now have data in the cache, we need to drop this bypassing.
-        if 'branchinfo' in vars(self):
+        if r'branchinfo' in vars(self):
             del self.branchinfo
 
     def _setcachedata(self, rev, node, branchidx):

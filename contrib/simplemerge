@@ -28,7 +28,7 @@ options = [(b'L', b'label', [], _(b'labels to use on conflict markers')),
            (b'h', b'help', None, _(b'display help and exit')),
            (b'q', b'quiet', None, _(b'suppress output'))]
 
-usage = _('''simplemerge [OPTS] LOCAL BASE OTHER
+usage = _(b'''simplemerge [OPTS] LOCAL BASE OTHER
 
     Simple three-way file merge utility with a minimal feature set.
 
@@ -41,7 +41,7 @@ class ParseError(Exception):
     """Exception raised on errors in parsing the command line."""
 
 def showhelp():
-    pycompat.stdout.write(usage.encode('utf8'))
+    pycompat.stdout.write(usage)
     pycompat.stdout.write(b'\noptions:\n')
 
     out_opts = []

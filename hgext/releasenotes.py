@@ -16,7 +16,6 @@ from __future__ import absolute_import
 import difflib
 import errno
 import re
-import sys
 import textwrap
 
 from mercurial.i18n import _
@@ -55,7 +54,7 @@ DEFAULT_SECTIONS = [
 ]
 
 RE_DIRECTIVE = re.compile('^\.\. ([a-zA-Z0-9_]+)::\s*([^$]+)?$')
-RE_ISSUE = r'\bissue ?[0-9]{4,6}(?![0-9])\b'
+RE_ISSUE = br'\bissue ?[0-9]{4,6}(?![0-9])\b'
 
 BULLET_SECTION = _('Other Changes')
 
@@ -631,7 +630,7 @@ def releasenotes(ui, repo, file_=None, **opts):
 def debugparsereleasenotes(ui, path, repo=None):
     """parse release notes and print resulting data structure"""
     if path == '-':
-        text = sys.stdin.read()
+        text = pycompat.stdin.read()
     else:
         with open(path, 'rb') as fh:
             text = fh.read()

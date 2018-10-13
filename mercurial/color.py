@@ -296,9 +296,9 @@ def configstyles(ui):
                 if valideffect(ui, e):
                     good.append(e)
                 else:
-                    ui.warn(_("ignoring unknown color/effect %r "
+                    ui.warn(_("ignoring unknown color/effect %s "
                               "(configured in color.%s)\n")
-                            % (e, status))
+                            % (stringutil.pprint(e), status))
             ui._styles[status] = ' '.join(good)
 
 def _activeeffects(ui):

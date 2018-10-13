@@ -205,7 +205,7 @@ def churn(ui, repo, *pats, **opts):
                                     '*' * charnum(sum(count)))
 
     def charnum(count):
-        return int(round(count * width // maxcount))
+        return int(count * width // maxcount)
 
     for name, count in rate:
         ui.write(format(name, count))

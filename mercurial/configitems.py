@@ -616,9 +616,6 @@ coreconfigitem('experimental', 'single-head-per-branch',
 coreconfigitem('experimental', 'sshserver.support-v2',
     default=False,
 )
-coreconfigitem('experimental', 'spacemovesdown',
-    default=False,
-)
 coreconfigitem('experimental', 'sparse-read',
     default=False,
 )

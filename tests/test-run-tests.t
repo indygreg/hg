@@ -15,7 +15,7 @@ Define a helper to avoid the install step
 =============
   $ rt()
   > {
-  >     "$PYTHON" $TESTDIR/run-tests.py --with-hg=`which hg` "$@"
+  >     "$PYTHON" $TESTDIR/run-tests.py --with-hg=`which hg` -j1 "$@"
   > }
 
 error paths
@@ -1329,7 +1329,7 @@ Test globbing of local IP addresses
 Add support for external test formatter
 =======================================
 
-  $ CUSTOM_TEST_RESULT=basic_test_result "$PYTHON" $TESTDIR/run-tests.py --with-hg=`which hg` "$@" test-success.t test-failure.t
+  $ CUSTOM_TEST_RESULT=basic_test_result "$PYTHON" $TESTDIR/run-tests.py --with-hg=`which hg` -j1 "$@" test-success.t test-failure.t
   running 2 tests using 1 parallel processes 
   
   # Ran 2 tests, 0 skipped, 0 failed.

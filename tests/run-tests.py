@@ -51,6 +51,7 @@ import difflib
 import distutils.version as version
 import errno
 import json
+import multiprocessing
 import os
 import random
 import re
@@ -287,7 +288,7 @@ if 'java' in sys.platform:
     IMPL_PATH = b'JYTHONPATH'
 
 defaults = {
-    'jobs': ('HGTEST_JOBS', 1),
+    'jobs': ('HGTEST_JOBS', multiprocessing.cpu_count()),
     'timeout': ('HGTEST_TIMEOUT', 180),
     'slowtimeout': ('HGTEST_SLOWTIMEOUT', 500),
     'port': ('HGTEST_PORT', 20059),

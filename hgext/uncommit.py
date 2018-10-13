@@ -138,7 +138,8 @@ def _fixdirstate(repo, oldctx, newctx, status):
 @command('uncommit',
     [('', 'keep', False, _('allow an empty commit after uncommiting')),
     ] + commands.walkopts,
-    _('[OPTION]... [FILE]...'))
+    _('[OPTION]... [FILE]...'),
+    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
 def uncommit(ui, repo, *pats, **opts):
     """uncommit part or all of a local changeset
 
@@ -190,7 +191,7 @@ def predecessormarkers(ctx):
     for data in ctx.repo().obsstore.predecessors.get(ctx.node(), ()):
         yield obsutil.marker(ctx.repo(), data)
 
-@command('^unamend', [])
+@command('^unamend', [], helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
 def unamend(ui, repo, **opts):
     """undo the most recent amend operation on a current changeset
 

@@ -41,7 +41,8 @@ testedwith = 'ships-with-hg-core'
     ('', 'force-editor', None, _('edit commit message (DEPRECATED)')),
     ('', 'switch-parent', None, _('switch parents when merging')),
     ] + cmdutil.commitopts + cmdutil.commitopts2 + cmdutil.remoteopts,
-    _('hg fetch [SOURCE]'))
+    _('hg fetch [SOURCE]'),
+    helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT)
 def fetch(ui, repo, source='default', **opts):
     '''pull changes from a remote repository, merge new changes if needed.
 

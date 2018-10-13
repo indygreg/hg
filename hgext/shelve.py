@@ -903,7 +903,8 @@ def _checkunshelveuntrackedproblems(ui, repo, shelvectx):
           ('t', 'tool', '', _('specify merge tool')),
           ('', 'date', '',
            _('set date for temporary commits (DEPRECATED)'), _('DATE'))],
-         _('hg unshelve [[-n] SHELVED]'))
+         _('hg unshelve [[-n] SHELVED]'),
+         helpcategory=command.CATEGORY_WORKING_DIRECTORY)
 def unshelve(ui, repo, *shelved, **opts):
     """restore a shelved change to the working directory
 
@@ -1073,7 +1074,8 @@ def _dounshelve(ui, repo, *shelved, **opts):
            _('output diffstat-style summary of changes (provide the names of '
              'the shelved changes as positional arguments)')
            )] + cmdutil.walkopts,
-         _('hg shelve [OPTION]... [FILE]...'))
+         _('hg shelve [OPTION]... [FILE]...'),
+         helpcategory=command.CATEGORY_WORKING_DIRECTORY)
 def shelvecmd(ui, repo, *pats, **opts):
     '''save and set aside changes from the working directory
 

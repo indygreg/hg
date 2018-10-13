@@ -929,7 +929,8 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
       _('force outgoing even for unrelated repositories')),
      ('r', 'rev', [], _('first revision to be edited'), _('REV'))] +
     cmdutil.formatteropts,
-     _("[OPTIONS] ([ANCESTOR] | --outgoing [URL])"))
+     _("[OPTIONS] ([ANCESTOR] | --outgoing [URL])"),
+    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
 def histedit(ui, repo, *freeargs, **opts):
     """interactively edit changeset history
 

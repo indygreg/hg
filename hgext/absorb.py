@@ -993,7 +993,8 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
            _('edit what lines belong to which changesets before commit '
              '(EXPERIMENTAL)')),
          ] + commands.dryrunopts + commands.templateopts + commands.walkopts,
-         _('hg absorb [OPTION] [FILE]...'))
+         _('hg absorb [OPTION] [FILE]...'),
+         helpcategory=command.CATEGORY_COMMITTING)
 def absorbcmd(ui, repo, *pats, **opts):
     """incorporate corrections into the stack of draft changesets
 

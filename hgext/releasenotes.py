@@ -492,7 +492,8 @@ def serializenotes(sections, notes):
         _('REV')),
     ('l', 'list', False, _('list the available admonitions with their title'),
         None)],
-    _('hg releasenotes [-r REV] [-c] FILE'))
+    _('hg releasenotes [-r REV] [-c] FILE'),
+    helpcategory=command.CATEGORY_CHANGE_NAVIGATION)
 def releasenotes(ui, repo, file_=None, **opts):
     """parse release notes from commit messages into an output file
 

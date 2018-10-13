@@ -53,55 +53,87 @@ the extension is unknown.
   
   list of commands:
   
-   add           add the specified files on the next commit
-   addremove     add all new files, delete all missing files
-   annotate      show changeset information by line for each file
-   archive       create an unversioned archive of a repository revision
+  Repository creation:
+  
+   clone         make a copy of an existing repository
+   init          create a new repository in the given directory
+  
+  Remote repository management:
+  
+   incoming      show new changesets found in source
+   outgoing      show changesets not found in the destination
+   paths         show aliases for remote repositories
+   pull          pull changes from the specified source
+   push          push changes to the specified destination
+   serve         start stand-alone webserver
+  
+  Change creation:
+  
+   commit        commit the specified files or all outstanding changes
+  
+  Change manipulation:
+  
    backout       reverse effect of earlier changeset
-   bisect        subdivision search of changesets
+   graft         copy changes from other branches onto the current branch
+   merge         merge another revision into working directory
+  
+  Change organization:
+  
    bookmarks     create a new bookmark or list existing bookmarks
    branch        set or show the current branch name
    branches      list repository named branches
-   bundle        create a bundle file
+   phase         set or show the current phase name
+   tag           add one or more tags for the current or given revision
+   tags          list repository tags
+  
+  File content management:
+  
+   annotate      show changeset information by line for each file
    cat           output the current or given revision of files
-   clone         make a copy of an existing repository
-   commit        commit the specified files or all outstanding changes
-   config        show combined config settings from all hgrc files
    copy          mark files as copied for the next commit
    diff          diff repository (or selected files)
-   export        dump the header and diffs for one or more changesets
+   grep          search revision history for a pattern in specified files
+  
+  Change navigation:
+  
+   bisect        subdivision search of changesets
+   heads         show branch heads
+   identify      identify the working directory or specified revision
+   log           show revision history of entire repository or files
+  
+  Working directory management:
+  
+   add           add the specified files on the next commit
+   addremove     add all new files, delete all missing files
    files         list tracked files
    forget        forget the specified files on the next commit
-   graft         copy changes from other branches onto the current branch
-   grep          search revision history for a pattern in specified files
-   heads         show branch heads
-   help          show help for a given topic or a help overview
-   identify      identify the working directory or specified revision
-   import        import an ordered set of patches
-   incoming      show new changesets found in source
-   init          create a new repository in the given directory
-   log           show revision history of entire repository or files
-   manifest      output the current or given revision of the project manifest
-   merge         merge another revision into working directory
-   outgoing      show changesets not found in the destination
-   paths         show aliases for remote repositories
-   phase         set or show the current phase name
-   pull          pull changes from the specified source
-   push          push changes to the specified destination
-   recover       roll back an interrupted transaction
    remove        remove the specified files on the next commit
    rename        rename files; equivalent of copy + remove
    resolve       redo merges or set/view the merge status of files
    revert        restore files to their checkout state
    root          print the root (top) of the current working directory
-   serve         start stand-alone webserver
    status        show changed files in the working directory
    summary       summarize working directory state
-   tag           add one or more tags for the current or given revision
-   tags          list repository tags
-   unbundle      apply one or more bundle files
    update        update working directory (or switch revisions)
+  
+  Change import/export:
+  
+   archive       create an unversioned archive of a repository revision
+   bundle        create a bundle file
+   export        dump the header and diffs for one or more changesets
+   import        import an ordered set of patches
+   unbundle      apply one or more bundle files
+  
+  Repository maintenance:
+  
+   manifest      output the current or given revision of the project manifest
+   recover       roll back an interrupted transaction
    verify        verify the integrity of the repository
+  
+  Help:
+  
+   config        show combined config settings from all hgrc files
+   help          show help for a given topic or a help overview
    version       output version and copyright information
   
   additional help topics:
@@ -133,55 +165,87 @@ the extension is unknown.
   (use 'hg help -v' to show built-in aliases and global options)
 
   $ hg -q help
-   add           add the specified files on the next commit
-   addremove     add all new files, delete all missing files
-   annotate      show changeset information by line for each file
-   archive       create an unversioned archive of a repository revision
+  Repository creation:
+  
+   clone         make a copy of an existing repository
+   init          create a new repository in the given directory
+  
+  Remote repository management:
+  
+   incoming      show new changesets found in source
+   outgoing      show changesets not found in the destination
+   paths         show aliases for remote repositories
+   pull          pull changes from the specified source
+   push          push changes to the specified destination
+   serve         start stand-alone webserver
+  
+  Change creation:
+  
+   commit        commit the specified files or all outstanding changes
+  
+  Change manipulation:
+  
    backout       reverse effect of earlier changeset
-   bisect        subdivision search of changesets
+   graft         copy changes from other branches onto the current branch
+   merge         merge another revision into working directory
+  
+  Change organization:
+  
    bookmarks     create a new bookmark or list existing bookmarks
    branch        set or show the current branch name
    branches      list repository named branches
-   bundle        create a bundle file
+   phase         set or show the current phase name
+   tag           add one or more tags for the current or given revision
+   tags          list repository tags
+  
+  File content management:
+  
+   annotate      show changeset information by line for each file
    cat           output the current or given revision of files
-   clone         make a copy of an existing repository
-   commit        commit the specified files or all outstanding changes
-   config        show combined config settings from all hgrc files
    copy          mark files as copied for the next commit
    diff          diff repository (or selected files)
-   export        dump the header and diffs for one or more changesets
+   grep          search revision history for a pattern in specified files
+  
+  Change navigation:
+  
+   bisect        subdivision search of changesets
+   heads         show branch heads
+   identify      identify the working directory or specified revision
+   log           show revision history of entire repository or files
+  
+  Working directory management:
+  
+   add           add the specified files on the next commit
+   addremove     add all new files, delete all missing files
    files         list tracked files
    forget        forget the specified files on the next commit
-   graft         copy changes from other branches onto the current branch
-   grep          search revision history for a pattern in specified files
-   heads         show branch heads
-   help          show help for a given topic or a help overview
-   identify      identify the working directory or specified revision
-   import        import an ordered set of patches
-   incoming      show new changesets found in source
-   init          create a new repository in the given directory
-   log           show revision history of entire repository or files
-   manifest      output the current or given revision of the project manifest
-   merge         merge another revision into working directory
-   outgoing      show changesets not found in the destination
-   paths         show aliases for remote repositories
-   phase         set or show the current phase name
-   pull          pull changes from the specified source
-   push          push changes to the specified destination
-   recover       roll back an interrupted transaction
    remove        remove the specified files on the next commit
    rename        rename files; equivalent of copy + remove
    resolve       redo merges or set/view the merge status of files
    revert        restore files to their checkout state
    root          print the root (top) of the current working directory
-   serve         start stand-alone webserver
    status        show changed files in the working directory
    summary       summarize working directory state
-   tag           add one or more tags for the current or given revision
-   tags          list repository tags
-   unbundle      apply one or more bundle files
    update        update working directory (or switch revisions)
+  
+  Change import/export:
+  
+   archive       create an unversioned archive of a repository revision
+   bundle        create a bundle file
+   export        dump the header and diffs for one or more changesets
+   import        import an ordered set of patches
+   unbundle      apply one or more bundle files
+  
+  Repository maintenance:
+  
+   manifest      output the current or given revision of the project manifest
+   recover       roll back an interrupted transaction
    verify        verify the integrity of the repository
+  
+  Help:
+  
+   config        show combined config settings from all hgrc files
+   help          show help for a given topic or a help overview
    version       output version and copyright information
   
   additional help topics:
@@ -810,55 +874,87 @@ Test that default list of commands omits extension commands
   
   list of commands:
   
-   add           add the specified files on the next commit
-   addremove     add all new files, delete all missing files
-   annotate      show changeset information by line for each file
-   archive       create an unversioned archive of a repository revision
+  Repository creation:
+  
+   clone         make a copy of an existing repository
+   init          create a new repository in the given directory
+  
+  Remote repository management:
+  
+   incoming      show new changesets found in source
+   outgoing      show changesets not found in the destination
+   paths         show aliases for remote repositories
+   pull          pull changes from the specified source
+   push          push changes to the specified destination
+   serve         start stand-alone webserver
+  
+  Change creation:
+  
+   commit        commit the specified files or all outstanding changes
+  
+  Change manipulation:
+  
    backout       reverse effect of earlier changeset
-   bisect        subdivision search of changesets
+   graft         copy changes from other branches onto the current branch
+   merge         merge another revision into working directory
+  
+  Change organization:
+  
    bookmarks     create a new bookmark or list existing bookmarks
    branch        set or show the current branch name
    branches      list repository named branches
-   bundle        create a bundle file
+   phase         set or show the current phase name
+   tag           add one or more tags for the current or given revision
+   tags          list repository tags
+  
+  File content management:
+  
+   annotate      show changeset information by line for each file
    cat           output the current or given revision of files
-   clone         make a copy of an existing repository
-   commit        commit the specified files or all outstanding changes
-   config        show combined config settings from all hgrc files
    copy          mark files as copied for the next commit
    diff          diff repository (or selected files)
-   export        dump the header and diffs for one or more changesets
+   grep          search revision history for a pattern in specified files
+  
+  Change navigation:
+  
+   bisect        subdivision search of changesets
+   heads         show branch heads
+   identify      identify the working directory or specified revision
+   log           show revision history of entire repository or files
+  
+  Working directory management:
+  
+   add           add the specified files on the next commit
+   addremove     add all new files, delete all missing files
    files         list tracked files
    forget        forget the specified files on the next commit
-   graft         copy changes from other branches onto the current branch
-   grep          search revision history for a pattern in specified files
-   heads         show branch heads
-   help          show help for a given topic or a help overview
-   identify      identify the working directory or specified revision
-   import        import an ordered set of patches
-   incoming      show new changesets found in source
-   init          create a new repository in the given directory
-   log           show revision history of entire repository or files
-   manifest      output the current or given revision of the project manifest
-   merge         merge another revision into working directory
-   outgoing      show changesets not found in the destination
-   paths         show aliases for remote repositories
-   phase         set or show the current phase name
-   pull          pull changes from the specified source
-   push          push changes to the specified destination
-   recover       roll back an interrupted transaction
    remove        remove the specified files on the next commit
    rename        rename files; equivalent of copy + remove
    resolve       redo merges or set/view the merge status of files
    revert        restore files to their checkout state
    root          print the root (top) of the current working directory
-   serve         start stand-alone webserver
    status        show changed files in the working directory
    summary       summarize working directory state
-   tag           add one or more tags for the current or given revision
-   tags          list repository tags
-   unbundle      apply one or more bundle files
    update        update working directory (or switch revisions)
+  
+  Change import/export:
+  
+   archive       create an unversioned archive of a repository revision
+   bundle        create a bundle file
+   export        dump the header and diffs for one or more changesets
+   import        import an ordered set of patches
+   unbundle      apply one or more bundle files
+  
+  Repository maintenance:
+  
+   manifest      output the current or given revision of the project manifest
+   recover       roll back an interrupted transaction
    verify        verify the integrity of the repository
+  
+  Help:
+  
+   config        show combined config settings from all hgrc files
+   help          show help for a given topic or a help overview
    version       output version and copyright information
   
   enabled extensions:

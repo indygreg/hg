@@ -679,7 +679,8 @@ class rebaseruntime(object):
     ('', 'auto-orphans', '', _('automatically rebase orphan revisions '
                                'in the specified revset (EXPERIMENTAL)')),
      ] + cmdutil.dryrunopts + cmdutil.formatteropts + cmdutil.confirmopts,
-    _('[-s REV | -b REV] [-d REV] [OPTION]'))
+    _('[-s REV | -b REV] [-d REV] [OPTION]'),
+    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
 def rebase(ui, repo, **opts):
     """move changeset (and descendants) to a different branch
 

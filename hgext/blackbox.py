@@ -229,7 +229,8 @@ def reposetup(ui, repo):
 @command('^blackbox',
     [('l', 'limit', 10, _('the number of events to show')),
     ],
-    _('hg blackbox [OPTION]...'))
+    _('hg blackbox [OPTION]...'),
+    helpcategory=command.CATEGORY_MAINTENANCE)
 def blackbox(ui, repo, *revs, **opts):
     '''view the recent repository events
     '''

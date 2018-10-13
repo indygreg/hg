@@ -14,6 +14,7 @@ from mercurial.i18n import _
 from mercurial import (
     cmdutil,
     error,
+    help,
     match,
     node as hgnode,
     pycompat,
@@ -45,6 +46,9 @@ configitem('gpg', '.*',
     default=None,
     generic=True,
 )
+
+# Custom help category
+_HELP_CATEGORY = 'gpg'
 
 class gpg(object):
     def __init__(self, path, key=None):
@@ -169,7 +173,7 @@ def getkeys(ui, repo, mygpg, sigdata, context):
         validkeys.append((key[1], key[2], key[3]))
     return validkeys
 
-@command("sigs", [], _('hg sigs'))
+@command("sigs", [], _('hg sigs'), helpcategory=_HELP_CATEGORY)
 def sigs(ui, repo):
     """list signed changesets"""
     mygpg = newgpg(ui)
@@ -194,7 +198,7 @@ def sigs(ui, repo):
             r = "%5d:%s" % (rev, hgnode.hex(repo.changelog.node(rev)))
             ui.write("%-30s %s\n" % (keystr(ui, k), r))
 
-@command("sigcheck", [], _('hg sigcheck REV'))
+@command("sigcheck", [], _('hg sigcheck REV'), helpcategory=_HELP_CATEGORY)
 def sigcheck(ui, repo, rev):
     """verify all the signatures there may be for a particular revision"""
     mygpg = newgpg(ui)
@@ -237,7 +241,8 @@ def keystr(ui, key):
            _('use text as commit message'), _('TEXT')),
           ('e', 'edit', False, _('invoke editor on commit messages')),
          ] + cmdutil.commitopts2,
-         _('hg sign [OPTION]... [REV]...'))
+         _('hg sign [OPTION]... [REV]...'),
+         helpcategory=_HELP_CATEGORY)
 def sign(ui, repo, *revs, **opts):
     """add a signature for the current or given revision
 
@@ -327,3 +332,10 @@ def node2txt(repo, node, ver):
         return "%s\n" % hgnode.hex(node)
     else:
         raise error.Abort(_("unknown signature version"))
+
+def extsetup(ui):
+    # Add our category before "Repository maintenance".
+    help.CATEGORY_ORDER.insert(
+        help.CATEGORY_ORDER.index(command.CATEGORY_MAINTENANCE),
+        _HELP_CATEGORY)
+    help.CATEGORY_NAMES[_HELP_CATEGORY] = 'GPG signing'

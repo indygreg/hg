@@ -116,6 +116,7 @@ def countrate(ui, repo, amap, *pats, **opts):
     ('', 'aliases', '', _('file with email aliases'), _('FILE')),
     ] + cmdutil.walkopts,
     _("hg churn [-d DATE] [-r REV] [--aliases FILE] [FILE]"),
+    helpcategory=command.CATEGORY_MAINTENANCE,
     inferrepo=True)
 def churn(ui, repo, *pats, **opts):
     '''histogram of changes to the repository

@@ -2266,7 +2266,8 @@ def fixkeepchangesopts(ui, opts):
          [('k', 'keep', None, _('keep patch file')),
           ('r', 'rev', [],
            _('stop managing a revision (DEPRECATED)'), _('REV'))],
-         _('hg qdelete [-k] [PATCH]...'))
+         _('hg qdelete [-k] [PATCH]...'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def delete(ui, repo, *patches, **opts):
     """remove patches from queue
 
@@ -2284,7 +2285,8 @@ def delete(ui, repo, *patches, **opts):
 @command("qapplied",
          [('1', 'last', None, _('show only the preceding applied patch'))
           ] + seriesopts,
-         _('hg qapplied [-1] [-s] [PATCH]'))
+         _('hg qapplied [-1] [-s] [PATCH]'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def applied(ui, repo, patch=None, **opts):
     """print the patches already applied
 
@@ -2318,7 +2320,8 @@ def applied(ui, repo, patch=None, **opts):
 
 @command("qunapplied",
          [('1', 'first', None, _('show only the first patch'))] + seriesopts,
-         _('hg qunapplied [-1] [-s] [PATCH]'))
+         _('hg qunapplied [-1] [-s] [PATCH]'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def unapplied(ui, repo, patch=None, **opts):
     """print the patches not yet applied
 
@@ -2353,7 +2356,8 @@ def unapplied(ui, repo, patch=None, **opts):
            _('place existing revisions under mq control'), _('REV')),
           ('g', 'git', None, _('use git extended diff format')),
           ('P', 'push', None, _('qpush after importing'))],
-         _('hg qimport [-e] [-n NAME] [-f] [-g] [-P] [-r REV]... [FILE]...'))
+         _('hg qimport [-e] [-n NAME] [-f] [-g] [-P] [-r REV]... [FILE]...'),
+         helpcategory=command.CATEGORY_IMPORT_EXPORT)
 def qimport(ui, repo, *filename, **opts):
     """import a patch or existing changeset
 
@@ -2431,7 +2435,8 @@ def qinit(ui, repo, create):
 
 @command("^qinit",
          [('c', 'create-repo', None, _('create queue repository'))],
-         _('hg qinit [-c]'))
+         _('hg qinit [-c]'),
+         helpcategory=command.CATEGORY_REPO_CREATION)
 def init(ui, repo, **opts):
     """init a new queue repository (DEPRECATED)
 
@@ -2455,6 +2460,7 @@ def init(ui, repo, **opts):
            _('location of source patch repository'), _('REPO')),
          ] + cmdutil.remoteopts,
          _('hg qclone [OPTION]... SOURCE [DEST]'),
+         helpcategory=command.CATEGORY_REPO_CREATION,
          norepo=True)
 def clone(ui, source, dest=None, **opts):
     '''clone main and patch repository at same time
@@ -2536,6 +2542,7 @@ def clone(ui, source, dest=None, **opts):
 @command("qcommit|qci",
          commands.table["^commit|ci"][1],
          _('hg qcommit [OPTION]... [FILE]...'),
+         helpcategory=command.CATEGORY_COMMITTING,
          inferrepo=True)
 def commit(ui, repo, *pats, **opts):
     """commit changes in the queue repository (DEPRECATED)
@@ -2550,7 +2557,8 @@ def commit(ui, repo, *pats, **opts):
 @command("qseries",
          [('m', 'missing', None, _('print patches not in series')),
          ] + seriesopts,
-          _('hg qseries [-ms]'))
+          _('hg qseries [-ms]'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def series(ui, repo, **opts):
     """print the entire series file
 
@@ -2559,7 +2567,8 @@ def series(ui, repo, **opts):
                     summary=opts.get(r'summary'))
     return 0
 
-@command("qtop", seriesopts, _('hg qtop [-s]'))
+@command("qtop", seriesopts, _('hg qtop [-s]'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def top(ui, repo, **opts):
     """print the name of the current patch
 
@@ -2577,7 +2586,8 @@ def top(ui, repo, **opts):
         ui.write(_("no patches applied\n"))
         return 1
 
-@command("qnext", seriesopts, _('hg qnext [-s]'))
+@command("qnext", seriesopts, _('hg qnext [-s]'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def next(ui, repo, **opts):
     """print the name of the next pushable patch
 
@@ -2589,7 +2599,8 @@ def next(ui, repo, **opts):
         return 1
     q.qseries(repo, start=end, length=1, summary=opts.get(r'summary'))
 
-@command("qprev", seriesopts, _('hg qprev [-s]'))
+@command("qprev", seriesopts, _('hg qprev [-s]'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def prev(ui, repo, **opts):
     """print the name of the preceding applied patch
 
@@ -2624,6 +2635,7 @@ def setupheaderopts(ui, opts):
            _('add "Date: <DATE>" to patch'), _('DATE'))
           ] + cmdutil.walkopts + cmdutil.commitopts,
          _('hg qnew [-e] [-m TEXT] [-l FILE] PATCH [FILE]...'),
+         helpcategory=command.CATEGORY_COMMITTING,
          inferrepo=True)
 def new(ui, repo, patch, *args, **opts):
     """create a new patch
@@ -2674,6 +2686,7 @@ def new(ui, repo, patch, *args, **opts):
            _('add/update date field in patch with given date'), _('DATE'))
           ] + cmdutil.walkopts + cmdutil.commitopts,
          _('hg qrefresh [-I] [-X] [-e] [-m TEXT] [-l FILE] [-s] [FILE]...'),
+         helpcategory=command.CATEGORY_COMMITTING,
          inferrepo=True)
 def refresh(ui, repo, *pats, **opts):
     """update the current patch
@@ -2708,6 +2721,7 @@ def refresh(ui, repo, *pats, **opts):
 @command("^qdiff",
          cmdutil.diffopts + cmdutil.diffopts2 + cmdutil.walkopts,
          _('hg qdiff [OPTION]... [FILE]...'),
+         helpcategory=command.CATEGORY_FILE_CONTENTS,
          inferrepo=True)
 def diff(ui, repo, *pats, **opts):
     """diff of the current patch and subsequent modifications
@@ -2732,7 +2746,8 @@ def diff(ui, repo, *pats, **opts):
          [('e', 'edit', None, _('invoke editor on commit messages')),
           ('k', 'keep', None, _('keep folded patch files')),
          ] + cmdutil.commitopts,
-         _('hg qfold [-e] [-k] [-m TEXT] [-l FILE] PATCH...'))
+         _('hg qfold [-e] [-k] [-m TEXT] [-l FILE] PATCH...'),
+         helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
 def fold(ui, repo, *files, **opts):
     """fold the named patches into the current patch
 
@@ -2801,7 +2816,8 @@ def fold(ui, repo, *files, **opts):
            _('tolerate non-conflicting local changes')),
           ('f', 'force', None, _('overwrite any local changes')),
           ('', 'no-backup', None, _('do not save backup copies of files'))],
-         _('hg qgoto [OPTION]... PATCH'))
+         _('hg qgoto [OPTION]... PATCH'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def goto(ui, repo, patch, **opts):
     '''push or pop patches until named patch is at top of stack
 
@@ -2824,7 +2840,8 @@ def goto(ui, repo, patch, **opts):
 @command("qguard",
          [('l', 'list', None, _('list all patches and guards')),
           ('n', 'none', None, _('drop all guards'))],
-         _('hg qguard [-l] [-n] [PATCH] [-- [+GUARD]... [-GUARD]...]'))
+         _('hg qguard [-l] [-n] [PATCH] [-- [+GUARD]... [-GUARD]...]'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def guard(ui, repo, *args, **opts):
     '''set or print guards for a patch
 
@@ -2896,7 +2913,8 @@ def guard(ui, repo, *args, **opts):
     else:
         status(q.series.index(q.lookup(patch)))
 
-@command("qheader", [], _('hg qheader [PATCH]'))
+@command("qheader", [], _('hg qheader [PATCH]'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def header(ui, repo, patch=None):
     """print the header of the topmost or specified patch
 
@@ -2952,7 +2970,8 @@ def savename(path):
           ('', 'move', None,
            _('reorder patch series and apply only the patch')),
           ('', 'no-backup', None, _('do not save backup copies of files'))],
-         _('hg qpush [-f] [-l] [-a] [--move] [PATCH | INDEX]'))
+         _('hg qpush [-f] [-l] [-a] [--move] [PATCH | INDEX]'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def push(ui, repo, patch=None, **opts):
     """push the next patch onto the stack
 
@@ -2992,7 +3011,8 @@ def push(ui, repo, patch=None, **opts):
            _('tolerate non-conflicting local changes')),
           ('f', 'force', None, _('forget any local changes to patched files')),
           ('', 'no-backup', None, _('do not save backup copies of files'))],
-         _('hg qpop [-a] [-f] [PATCH | INDEX]'))
+         _('hg qpop [-a] [-f] [PATCH | INDEX]'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def pop(ui, repo, patch=None, **opts):
     """pop the current patch off the stack
 
@@ -3022,7 +3042,8 @@ def pop(ui, repo, patch=None, **opts):
     q.savedirty()
     return ret
 
-@command("qrename|qmv", [], _('hg qrename PATCH1 [PATCH2]'))
+@command("qrename|qmv", [], _('hg qrename PATCH1 [PATCH2]'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def rename(ui, repo, patch, name=None, **opts):
     """rename a patch
 
@@ -3080,7 +3101,8 @@ def rename(ui, repo, patch, name=None, **opts):
 @command("qrestore",
          [('d', 'delete', None, _('delete save entry')),
           ('u', 'update', None, _('update queue working directory'))],
-         _('hg qrestore [-d] [-u] REV'))
+         _('hg qrestore [-d] [-u] REV'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def restore(ui, repo, rev, **opts):
     """restore the queue state saved by a revision (DEPRECATED)
 
@@ -3098,7 +3120,8 @@ def restore(ui, repo, rev, **opts):
            _('copy directory name'), _('NAME')),
           ('e', 'empty', None, _('clear queue status file')),
           ('f', 'force', None, _('force copy'))] + cmdutil.commitopts,
-         _('hg qsave [-m TEXT] [-l FILE] [-c] [-n NAME] [-e] [-f]'))
+         _('hg qsave [-m TEXT] [-l FILE] [-c] [-n NAME] [-e] [-f]'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def save(ui, repo, **opts):
     """save current queue state (DEPRECATED)
 
@@ -3137,7 +3160,8 @@ def save(ui, repo, **opts):
           ('s', 'series', None, _('list all guards in series file')),
           ('', 'pop', None, _('pop to before first guarded applied patch')),
           ('', 'reapply', None, _('pop, then reapply patches'))],
-         _('hg qselect [OPTION]... [GUARD]...'))
+         _('hg qselect [OPTION]... [GUARD]...'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def select(ui, repo, *args, **opts):
     '''set or print guarded patches to push
 
@@ -3246,7 +3270,8 @@ def select(ui, repo, *args, **opts):
 
 @command("qfinish",
          [('a', 'applied', None, _('finish all applied changesets'))],
-         _('hg qfinish [-a] [REV]...'))
+         _('hg qfinish [-a] [REV]...'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def finish(ui, repo, *revrange, **opts):
     """move applied patches into repository history
 
@@ -3294,7 +3319,8 @@ def finish(ui, repo, *revrange, **opts):
           ('', 'delete', False, _('delete reference to queue')),
           ('', 'purge', False, _('delete queue, and remove patch dir')),
          ],
-         _('[OPTION] [QUEUE]'))
+         _('[OPTION] [QUEUE]'),
+         helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def qqueue(ui, repo, name=None, **opts):
     '''manage multiple patch queues
 

@@ -345,7 +345,8 @@ def revlist(ui, repo, *revs, **opts):
 @command('view',
     [('l', 'limit', '',
      _('limit number of changes displayed'), _('NUM'))],
-    _('[-l LIMIT] [REVRANGE]'))
+    _('[-l LIMIT] [REVRANGE]'),
+    helpcategory=command.CATEGORY_CHANGE_NAVIGATION)
 def view(ui, repo, *etc, **opts):
     "start interactive history viewer"
     opts = pycompat.byteskwargs(opts)

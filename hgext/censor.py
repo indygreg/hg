@@ -47,7 +47,8 @@ testedwith = 'ships-with-hg-core'
 @command('censor',
     [('r', 'rev', '', _('censor file from specified revision'), _('REV')),
      ('t', 'tombstone', '', _('replacement tombstone data'), _('TEXT'))],
-    _('-r REV [-t TEXT] [FILE]'))
+    _('-r REV [-t TEXT] [FILE]'),
+    helpcategory=command.CATEGORY_MAINTENANCE)
 def censor(ui, repo, path, rev='', tombstone='', **opts):
     with repo.wlock(), repo.lock():
         return _docensor(ui, repo, path, rev, tombstone, **opts)

@@ -34,7 +34,8 @@ testedwith = 'ships-with-hg-core'
          # same options as commit + white space diff options
         [c for c in commands.table['^commit|ci'][1][:]
             if c[1] != "interactive"] + cmdutil.diffwsopts,
-          _('hg record [OPTION]... [FILE]...'))
+          _('hg record [OPTION]... [FILE]...'),
+        helpcategory=command.CATEGORY_COMMITTING)
 def record(ui, repo, *pats, **opts):
     '''interactively select changes to commit
 
@@ -94,6 +95,7 @@ def qrefresh(origfn, ui, repo, *pats, **opts):
 @command('qrecord',
     [],
     _('hg qrecord [OPTION]... PATCH [FILE]...'),
+    helpcategory=command.CATEGORY_COMMITTING,
     inferrepo=True)
 def qrecord(ui, repo, patch, *pats, **opts):
     '''interactively record a new patch

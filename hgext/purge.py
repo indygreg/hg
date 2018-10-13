@@ -51,7 +51,8 @@ testedwith = 'ships-with-hg-core'
     ('0', 'print0', None, _('end filenames with NUL, for use with xargs'
                             ' (implies -p/--print)')),
     ] + cmdutil.walkopts,
-    _('hg purge [OPTION]... [DIR]...'))
+    _('hg purge [OPTION]... [DIR]...'),
+    helpcategory=command.CATEGORY_MAINTENANCE)
 def purge(ui, repo, *dirs, **opts):
     '''removes files not tracked by Mercurial
 

@@ -73,28 +73,45 @@ help
   
   list of commands:
   
-   qapplied      print the patches already applied
+  Repository creation:
+  
    qclone        clone main and patch repository at same time
-   qdelete       remove patches from queue
-   qdiff         diff of the current patch and subsequent modifications
-   qfinish       move applied patches into repository history
+  
+  Change creation:
+  
+   qnew          create a new patch
+   qrefresh      update the current patch
+  
+  Change manipulation:
+  
    qfold         fold the named patches into the current patch
+  
+  Change organization:
+  
+   qapplied      print the patches already applied
+   qdelete       remove patches from queue
+   qfinish       move applied patches into repository history
    qgoto         push or pop patches until named patch is at top of stack
    qguard        set or print guards for a patch
    qheader       print the header of the topmost or specified patch
-   qimport       import a patch or existing changeset
-   qnew          create a new patch
    qnext         print the name of the next pushable patch
    qpop          pop the current patch off the stack
    qprev         print the name of the preceding applied patch
    qpush         push the next patch onto the stack
    qqueue        manage multiple patch queues
-   qrefresh      update the current patch
    qrename       rename a patch
    qselect       set or print guarded patches to push
    qseries       print the entire series file
    qtop          print the name of the current patch
    qunapplied    print the patches not yet applied
+  
+  File content management:
+  
+   qdiff         diff of the current patch and subsequent modifications
+  
+  Change import/export:
+  
+   qimport       import a patch or existing changeset
   
   (use 'hg help -v mq' to show built-in aliases and global options)
 

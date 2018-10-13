@@ -111,7 +111,8 @@ def strip(ui, repo, revs, update=True, backup=True, force=None, bookmarks=None):
                                 "strip")),
           ('B', 'bookmark', [], _("remove revs only reachable from given"
                                   " bookmark"))],
-          _('hg strip [-k] [-f] [-B bookmark] [-r] REV...'))
+          _('hg strip [-k] [-f] [-B bookmark] [-r] REV...'),
+          helpcategory=command.CATEGORY_MAINTENANCE)
 def stripcmd(ui, repo, *revs, **opts):
     """strip changesets and all their descendants from the repository
 

@@ -109,7 +109,8 @@ wdiropt = ('w', 'working-dir', False, _('fix the working directory'))
 wholeopt = ('', 'whole', False, _('always fix every line of a file'))
 usage = _('[OPTION]... [FILE]...')
 
-@command('fix', [allopt, baseopt, revopt, wdiropt, wholeopt], usage)
+@command('fix', [allopt, baseopt, revopt, wdiropt, wholeopt], usage,
+        helpcategory=command.CATEGORY_FILE_CONTENTS)
 def fix(ui, repo, *pats, **opts):
     """rewrite file content in changesets or working directory
 

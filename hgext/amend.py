@@ -38,6 +38,7 @@ command = registrar.command(cmdtable)
      ('n', 'note', '', _('store a note on the amend')),
     ] + cmdutil.walkopts + cmdutil.commitopts + cmdutil.commitopts2,
     _('[OPTION]... [FILE]...'),
+    helpcategory=command.CATEGORY_COMMITTING,
     inferrepo=True)
 def amend(ui, repo, *pats, **opts):
     """amend the working copy parent with all or specified outstanding changes

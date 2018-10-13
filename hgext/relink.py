@@ -30,7 +30,7 @@ command = registrar.command(cmdtable)
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
-@command('relink', [], _('[ORIGIN]'))
+@command('relink', [], _('[ORIGIN]'), helpcategory=command.CATEGORY_MAINTENANCE)
 def relink(ui, repo, origin=None, **opts):
     """recreate hardlinks between two repositories
 

@@ -562,7 +562,8 @@ def browserevs(ui, repo, nodes, opts):
     ('', 'filter', '',
      _('filter changesets through command'), _('CMD'))],
     _('hg transplant [-s REPO] [-b BRANCH [-a]] [-p REV] '
-      '[-m REV] [REV]...'))
+      '[-m REV] [REV]...'),
+    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
 def transplant(ui, repo, *revs, **opts):
     '''transplant changesets from another branch
 

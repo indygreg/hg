@@ -32,7 +32,9 @@ commitopts3 = [('r', 'rev', [],
                _('revision to check'), _('REV'))]
 
 @command('close-head|close-heads', commitopts + commitopts2 + commitopts3,
-    _('[OPTION]... [REV]...'), inferrepo=True)
+    _('[OPTION]... [REV]...'),
+    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT,
+    inferrepo=True)
 def close_branch(ui, repo, *revs, **opts):
     """close the given head revisions
 

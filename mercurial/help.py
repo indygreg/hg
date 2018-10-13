@@ -53,12 +53,38 @@ _exclkeywords = {
 # after/before the appropriate item, rather than replacing the list or
 # assuming absolute positions.
 CATEGORY_ORDER = [
+    registrar.command.CATEGORY_REPO_CREATION,
+    registrar.command.CATEGORY_REMOTE_REPO_MANAGEMENT,
+    registrar.command.CATEGORY_COMMITTING,
+    registrar.command.CATEGORY_CHANGE_MANAGEMENT,
+    registrar.command.CATEGORY_CHANGE_ORGANIZATION,
+    registrar.command.CATEGORY_FILE_CONTENTS,
+    registrar.command.CATEGORY_CHANGE_NAVIGATION ,
+    registrar.command.CATEGORY_WORKING_DIRECTORY,
+    registrar.command.CATEGORY_IMPORT_EXPORT,
+    registrar.command.CATEGORY_MAINTENANCE,
+    registrar.command.CATEGORY_HELP,
+    registrar.command.CATEGORY_MISC,
     registrar.command.CATEGORY_NONE,
 ]
 
 # Human-readable category names. These are translated.
 # Extensions with custom categories should add their names here.
 CATEGORY_NAMES = {
+    registrar.command.CATEGORY_REPO_CREATION: 'Repository creation',
+    registrar.command.CATEGORY_REMOTE_REPO_MANAGEMENT:
+        'Remote repository management',
+    registrar.command.CATEGORY_COMMITTING: 'Change creation',
+    registrar.command.CATEGORY_CHANGE_NAVIGATION: 'Change navigation',
+    registrar.command.CATEGORY_CHANGE_MANAGEMENT: 'Change manipulation',
+    registrar.command.CATEGORY_CHANGE_ORGANIZATION: 'Change organization',
+    registrar.command.CATEGORY_WORKING_DIRECTORY:
+        'Working directory management',
+    registrar.command.CATEGORY_FILE_CONTENTS: 'File content management',
+    registrar.command.CATEGORY_IMPORT_EXPORT: 'Change import/export',
+    registrar.command.CATEGORY_MAINTENANCE: 'Repository maintenance',
+    registrar.command.CATEGORY_HELP: 'Help',
+    registrar.command.CATEGORY_MISC: 'Miscellaneous commands',
     registrar.command.CATEGORY_NONE: 'Uncategorized commands',
 }
 

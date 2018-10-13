@@ -51,7 +51,8 @@ def convert(s):
     return s
 
 @command('^githelp|git', [
-    ], _('hg githelp'))
+    ], _('hg githelp'),
+    helpcategory=command.CATEGORY_HELP)
 def githelp(ui, repo, *args, **kwargs):
     '''suggests the Mercurial equivalent of the given git command
 

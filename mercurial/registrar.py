@@ -169,6 +169,18 @@ class command(_funcregistrarbase):
     """
 
     # Command categories for grouping them in help output.
+    CATEGORY_REPO_CREATION = 'repo'
+    CATEGORY_REMOTE_REPO_MANAGEMENT = 'remote'
+    CATEGORY_COMMITTING = 'commit'
+    CATEGORY_CHANGE_MANAGEMENT = 'management'
+    CATEGORY_CHANGE_ORGANIZATION = 'organization'
+    CATEGORY_FILE_CONTENTS = 'files'
+    CATEGORY_CHANGE_NAVIGATION  = 'navigation'
+    CATEGORY_WORKING_DIRECTORY = 'wdir'
+    CATEGORY_IMPORT_EXPORT = 'import'
+    CATEGORY_MAINTENANCE = 'maintenance'
+    CATEGORY_HELP = 'help'
+    CATEGORY_MISC = 'misc'
     CATEGORY_NONE = 'none'
 
     def _doregister(self, func, name, options=(), synopsis=None,

@@ -3867,11 +3867,10 @@ def bundlecompressiontopics():
         if not bt or not bt[0]:
             continue
 
-        doc = pycompat.sysstr('``%s``\n    %s') % (
-            bt[0], engine.bundletype.__doc__)
+        doc = b'``%s``\n    %s' % (bt[0], pycompat.getdoc(engine.bundletype))
 
         value = docobject()
-        value.__doc__ = doc
+        value.__doc__ = pycompat.sysstr(doc)
         value._origdoc = engine.bundletype.__doc__
         value._origfunc = engine.bundletype
 

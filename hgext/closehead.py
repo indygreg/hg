@@ -66,7 +66,7 @@ def close_branch(ui, repo, *revs, **opts):
     heads = set(repo[h].rev() for h in heads)
     for rev in revs:
         if rev not in heads:
-            raise error.Abort(_('revision is not an open head: %s') % rev)
+            raise error.Abort(_('revision is not an open head: %d') % rev)
 
     message = cmdutil.logmessage(ui, opts)
     if not message:

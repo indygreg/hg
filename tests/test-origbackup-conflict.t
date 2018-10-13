@@ -129,7 +129,7 @@ Incorrectly configure origbackuppath to be under a file
   b/c: replacing untracked file
   getting b/c
   creating directory: $TESTTMP/repo/.hg/badorigbackups/b
-  abort: $ENOTDIR$: '$TESTTMP/repo/.hg/badorigbackups/b'
+  abort: $ENOTDIR$: *$TESTTMP/repo/.hg/badorigbackups/b* (glob)
   [255]
   $ cat .hg/badorigbackups
   data

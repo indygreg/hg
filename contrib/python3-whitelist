@@ -393,6 +393,7 @@ test-obsolete-distributed.t
 test-obsolete-divergent.t
 test-obsolete-tag-cache.t
 test-obsolete.t
+test-origbackup-conflict.t
 test-pager-legacy.t
 test-pager.t
 test-parents.t
@@ -402,6 +403,7 @@ test-patch.t
 test-patchbomb-bookmark.t
 test-patchbomb-tls.t
 test-patchbomb.t
+test-pathconflicts-basic.t
 test-pathconflicts-merge.t
 test-pathconflicts-update.t
 test-pathencode.py

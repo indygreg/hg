@@ -214,10 +214,10 @@ hg cat files and symlink, no expansion
 
 hg status of kw-ignored binary file starting with '\1\n'
 
-  >>> open("i", "wb").write("\1\nfoo") and None
+  >>> open("i", "wb").write(b"\1\nfoo") and None
   $ hg -q commit -Am metasep i
   $ hg status
-  >>> open("i", "wb").write("\1\nbar") and None
+  >>> open("i", "wb").write(b"\1\nbar") and None
   $ hg status
   M i
   $ hg -q commit -m "modify metasep" i
@@ -378,8 +378,8 @@ record
 record chunk
 
   >>> lines = open('a', 'rb').readlines()
-  >>> lines.insert(1, 'foo\n')
-  >>> lines.append('bar\n')
+  >>> lines.insert(1, b'foo\n')
+  >>> lines.append(b'bar\n')
   >>> open('a', 'wb').writelines(lines)
   $ hg record -d '10 1' -m rectest a<<EOF
   > y
@@ -942,7 +942,7 @@ Clone to test incoming
 Imported patch should not be rejected
 
   >>> import re
-  >>> text = re.sub(r'(Id.*)', r'\1 rejecttest', open('a').read())
+  >>> text = re.sub(br'(Id.*)', br'\1 rejecttest', open('a', 'rb').read())
   >>> open('a', 'wb').write(text) and None
   $ hg --debug commit -m'rejects?' -d '3 0' -u 'User Name <user@example.com>'
   committing files:

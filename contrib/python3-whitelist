@@ -563,6 +563,7 @@ test-status-color.t
 test-status-inprocess.py
 test-status-rev.t
 test-status-terse.t
+test-status.t
 test-storage.py
 test-stream-bundle-v2.t
 test-strict.t

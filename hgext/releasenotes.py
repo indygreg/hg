@@ -59,6 +59,20 @@ RE_ISSUE = r'\bissue ?[0-9]{4,6}(?![0-9])\b'
 
 BULLET_SECTION = _('Other Changes')
 
+if pycompat.ispy3:
+    class byteswrapper(object):
+        def __init__(self, **kwargs):
+            for k in kwargs:
+                v = kwargs[k]
+                if not isinstance(v, str) and isinstance(v, bytes):
+                    kwargs[k] = v.decode('utf8')
+            self._tw = textwrap.TextWrapper(**kwargs)
+        def wrap(self, data):
+            return [
+                l.encode('utf8') for l in self._tw.wrap(data.decode('utf8'))]
+else:
+    byteswrapper = textwrap.TextWrapper
+
 class parsedreleasenotes(object):
     def __init__(self):
         self.sections = {}
@@ -444,7 +458,7 @@ def serializenotes(sections, notes):
             lines.append('-' * len(title))
             lines.append('')
 
-            wrapper = textwrap.TextWrapper(width=78)
+            wrapper = byteswrapper(width=78)
             for i, para in enumerate(paragraphs):
                 if i:
                     lines.append('')
@@ -466,14 +480,14 @@ def serializenotes(sections, notes):
             lines.append('')
 
         for paragraphs in nontitled:
-            wrapper = textwrap.TextWrapper(initial_indent='* ',
-                                           subsequent_indent='  ',
-                                           width=78)
+            wrapper = byteswrapper(initial_indent='* ',
+                                   subsequent_indent='  ',
+                                   width=78)
             lines.extend(wrapper.wrap(' '.join(paragraphs[0])))
 
-            wrapper = textwrap.TextWrapper(initial_indent='  ',
-                                           subsequent_indent='  ',
-                                           width=78)
+            wrapper = byteswrapper(initial_indent='  ',
+                                   subsequent_indent='  ',
+                                   width=78)
             for para in paragraphs[1:]:
                 lines.append('')
                 lines.extend(wrapper.wrap(' '.join(para)))

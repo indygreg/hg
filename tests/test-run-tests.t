@@ -7,6 +7,7 @@ Avoid interference from actual test env:
 Smoke test with install
 ============
   $ "$PYTHON" $TESTDIR/run-tests.py $HGTEST_RUN_TESTS_PURE -l
+  running 0 tests using 0 parallel processes 
   
   # Ran 0 tests, 0 skipped, 0 failed.
 
@@ -23,6 +24,7 @@ error paths
   $ ln -s `which true` hg
   $ "$PYTHON" $TESTDIR/run-tests.py --with-hg=./hg
   warning: --with-hg should specify an hg script
+  running 0 tests using 0 parallel processes 
   
   # Ran 0 tests, 0 skipped, 0 failed.
   $ rm hg
@@ -55,6 +57,7 @@ an empty test
 
   $ touch test-empty.t
   $ rt
+  running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.
   $ rm test-empty.t
@@ -88,6 +91,7 @@ a succesful test
   > EOF
 
   $ rt
+  running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.
 
@@ -102,6 +106,7 @@ test churn with globs
   >   | fo (re)
   > EOF
   $ rt test-failure.t
+  running 1 tests using 1 parallel processes 
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/test-failure.t.err
@@ -139,6 +144,7 @@ test how multiple globs gets matched with lines in output
   >   value: * (glob)
   > EOF
   $ rt test-failure-globs.t
+  running 1 tests using 1 parallel processes 
   
   --- $TESTTMP/test-failure-globs.t
   +++ $TESTTMP/test-failure-globs.t.err
@@ -234,6 +240,7 @@ test diff colorisation
   >   missing (?)
   > EOF
   $ rt test-failure.t
+  running 1 tests using 1 parallel processes 
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/test-failure.t.err
@@ -292,6 +299,7 @@ basic failing test
   >>> fh.write(u'  l\u03b5\u03b5t\n'.encode('utf-8')) and None
 
   $ rt
+  running 3 tests using 1 parallel processes 
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/test-failure.t.err
@@ -323,6 +331,7 @@ basic failing test
 test --outputdir
   $ mkdir output
   $ rt --outputdir output
+  running 3 tests using 1 parallel processes 
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/output/test-failure.t.err
@@ -359,6 +368,7 @@ test --outputdir
 
 test --xunit support
   $ rt --xunit=xunit.xml
+  running 3 tests using 1 parallel processes 
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/test-failure.t.err
@@ -481,6 +491,7 @@ test for --retest
 ====================
 
   $ rt --retest
+  running 2 tests using 1 parallel processes 
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/test-failure.t.err
@@ -504,6 +515,7 @@ test for --retest
   $ mkdir output
   $ mv test-failure.t.err output
   $ rt --retest --outputdir output
+  running 2 tests using 1 parallel processes 
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/output/test-failure.t.err
@@ -528,17 +540,20 @@ Selecting Tests To Run
 successful
 
   $ rt test-success.t
+  running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.
 
 success w/ keyword
   $ rt -k xyzzy
+  running 2 tests using 1 parallel processes 
   .
   # Ran 2 tests, 1 skipped, 0 failed.
 
 failed
 
   $ rt test-failure.t
+  running 1 tests using 1 parallel processes 
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/test-failure.t.err
@@ -559,6 +574,7 @@ failed
 
 failure w/ keyword
   $ rt -k rataxes
+  running 2 tests using 1 parallel processes 
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/test-failure.t.err
@@ -584,6 +600,7 @@ Verify that when a process fails to start we show a useful message
   >   $ echo 'abort: child process failed to start blah'
   > EOF
   $ rt test-serve-fail.t
+  running 1 tests using 1 parallel processes 
   
   --- $TESTTMP/test-serve-fail.t
   +++ $TESTTMP/test-serve-fail.t.err
@@ -614,6 +631,7 @@ HGRCPATH to get a clean environment.
   >   $ cat hg.pid >> \$DAEMON_PIDS
   > EOF
   $ rt test-serve-inuse.t
+  running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.
   $ rm test-serve-inuse.t
@@ -623,6 +641,7 @@ Running In Debug Mode
 ======================
 
   $ rt --debug 2>&1 | grep -v pwd
+  running 2 tests using 1 parallel processes 
   + echo *SALT* 0 0 (glob)
   *SALT* 0 0 (glob)
   + echo babar
@@ -661,6 +680,7 @@ Parallel runs
   $ cp test-failure.t test-failure-copy.t
 
   $ rt --jobs 2 test-failure*.t -n
+  running 2 tests using 2 parallel processes 
   !!
   Failed test-failure*.t: output changed (glob)
   Failed test-failure*.t: output changed (glob)
@@ -670,6 +690,7 @@ Parallel runs
 
 failures in parallel with --first should only print one failure
   $ rt --jobs 2 --first test-failure*.t
+  running 2 tests using 2 parallel processes 
   
   --- $TESTTMP/test-failure*.t (glob)
   +++ $TESTTMP/test-failure*.t.err (glob)
@@ -701,6 +722,7 @@ Interactive run
 Refuse the fix
 
   $ echo 'n' | rt -i
+  running 2 tests using 1 parallel processes 
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/test-failure.t.err
@@ -734,6 +756,7 @@ Refuse the fix
 Interactive with custom view
 
   $ echo 'n' | rt -i --view echo
+  running 2 tests using 1 parallel processes 
   $TESTTMP/test-failure.t $TESTTMP/test-failure.t.err
   Accept this change? [n]* (glob)
   ERROR: test-failure.t output changed
@@ -746,6 +769,7 @@ Interactive with custom view
 View the fix
 
   $ echo 'y' | rt --view echo
+  running 2 tests using 1 parallel processes 
   $TESTTMP/test-failure.t $TESTTMP/test-failure.t.err
   
   ERROR: test-failure.t output changed
@@ -766,6 +790,7 @@ Accept the fix
   >   saved backup bundle to \$TESTTMP/*.hg (glob)
   > EOF
   $ echo 'y' | rt -i 2>&1
+  running 2 tests using 1 parallel processes 
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/test-failure.t.err
@@ -815,6 +840,7 @@ Race condition - test file was modified when test is running
   > EOF
 
   $ rt -i test-race.t
+  running 1 tests using 1 parallel processes 
   
   --- $TESTTMP/test-race.t
   +++ $TESTTMP/test-race.t.err
@@ -848,6 +874,7 @@ When "#testcases" is used in .t files
   > y
   > y
   > EOF
+  running 2 tests using 1 parallel processes 
   
   --- $TESTTMP/test-cases.t
   +++ $TESTTMP/test-cases.t#a.err
@@ -893,6 +920,7 @@ When "#testcases" is used in .t files
   >   B (b !)
   > EOF
   $ rt test-cases.t
+  running 2 tests using 1 parallel processes 
   ..
   # Ran 2 tests, 0 skipped, 0 failed.
 
@@ -911,6 +939,7 @@ When using multiple dimensions of "#testcases" in .t files
   > #endif
   > EOF
   $ rt test-cases.t
+  running 4 tests using 1 parallel processes 
   ..
   --- $TESTTMP/test-cases.t
   +++ $TESTTMP/test-cases.t#b#c.err
@@ -939,6 +968,7 @@ No Diff
 ===============
 
   $ rt --nodiff
+  running 2 tests using 1 parallel processes 
   !.
   Failed test-failure.t: output changed
   # Ran 2 tests, 0 skipped, 1 failed.
@@ -947,6 +977,7 @@ No Diff
 
 test --tmpdir support
   $ rt --tmpdir=$TESTTMP/keep test-success.t
+  running 1 tests using 1 parallel processes 
   
   Keeping testtmp dir: $TESTTMP/keep/child1/test-success.t
   Keeping threadtmp dir: $TESTTMP/keep/child1 
@@ -963,6 +994,7 @@ timeouts
   > echo '#require slow' > test-slow-timeout.t
   > cat test-timeout.t >> test-slow-timeout.t
   $ rt --timeout=1 --slowtimeout=3 test-timeout.t test-slow-timeout.t
+  running 2 tests using 1 parallel processes 
   st
   Skipped test-slow-timeout.t: missing feature: allow slow tests (use --allow-slow-tests)
   Failed test-timeout.t: timed out
@@ -971,6 +1003,7 @@ timeouts
   [1]
   $ rt --timeout=1 --slowtimeout=3 \
   > test-timeout.t test-slow-timeout.t --allow-slow-tests
+  running 2 tests using 1 parallel processes 
   .t
   Failed test-timeout.t: timed out
   # Ran 2 tests, 0 skipped, 1 failed.
@@ -982,6 +1015,7 @@ test for --time
 ==================
 
   $ rt test-success.t --time
+  running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.
   # Producing time report
@@ -992,6 +1026,7 @@ test for --time with --job enabled
 ====================================
 
   $ rt test-success.t --time --jobs 2
+  running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.
   # Producing time report
@@ -1012,6 +1047,7 @@ Skips
   > #endif
   > EOF
   $ rt --nodiff
+  running 4 tests using 1 parallel processes 
   !.s.
   Skipped test-skip.t: missing feature: nail clipper
   Failed test-failure.t: output changed
@@ -1021,6 +1057,7 @@ Skips
 
   $ rm test-noskip.t
   $ rt --keyword xyzzy
+  running 3 tests using 1 parallel processes 
   .s
   Skipped test-skip.t: missing feature: nail clipper
   # Ran 2 tests, 2 skipped, 0 failed.
@@ -1028,6 +1065,7 @@ Skips
 Skips with xml
   $ rt --keyword xyzzy \
   >  --xunit=xunit.xml
+  running 3 tests using 1 parallel processes 
   .s
   Skipped test-skip.t: missing feature: nail clipper
   # Ran 2 tests, 2 skipped, 0 failed.
@@ -1045,6 +1083,7 @@ Missing skips or blacklisted skips don't count as executed:
   $ echo test-failure.t > blacklist
   $ rt --blacklist=blacklist --json\
   >   test-failure.t test-bogus.t
+  running 2 tests using 1 parallel processes 
   ss
   Skipped test-bogus.t: Doesn't exist
   Skipped test-failure.t: blacklisted
@@ -1063,6 +1102,7 @@ Whitelist trumps blacklist
   $ echo test-failure.t > whitelist
   $ rt --blacklist=blacklist --whitelist=whitelist --json\
   >   test-failure.t test-bogus.t
+  running 2 tests using 1 parallel processes 
   s
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/test-failure.t.err
@@ -1086,10 +1126,12 @@ Ensure that --test-list causes only the tests listed in that file to
 be executed.
   $ echo test-success.t >> onlytest
   $ rt --test-list=onlytest
+  running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.
   $ echo test-bogus.t >> anothertest
   $ rt --test-list=onlytest --test-list=anothertest
+  running 2 tests using 1 parallel processes 
   s.
   Skipped test-bogus.t: Doesn't exist
   # Ran 1 tests, 1 skipped, 0 failed.
@@ -1099,6 +1141,7 @@ test for --json
 ==================
 
   $ rt --json
+  running 3 tests using 1 parallel processes 
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/test-failure.t.err
@@ -1154,6 +1197,7 @@ test for --json
   $ rm -r output
   $ mkdir output
   $ rt --json --outputdir output
+  running 3 tests using 1 parallel processes 
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/output/test-failure.t.err
@@ -1215,6 +1259,7 @@ Test that failed test accepted through interactive are properly reported:
 
   $ cp test-failure.t backup
   $ echo y | rt --json -i
+  running 3 tests using 1 parallel processes 
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/test-failure.t.err
@@ -1269,6 +1314,7 @@ backslash on end of line with glob matching is handled properly
   > EOF
 
   $ rt test-glob-backslash.t
+  running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.
 
@@ -1284,6 +1330,7 @@ Add support for external test formatter
 =======================================
 
   $ CUSTOM_TEST_RESULT=basic_test_result "$PYTHON" $TESTDIR/run-tests.py --with-hg=`which hg` "$@" test-success.t test-failure.t
+  running 2 tests using 1 parallel processes 
   
   # Ran 2 tests, 0 skipped, 0 failed.
   ON_START! <__main__.TestSuite tests=[<__main__.TTest testMethod=test-failure.t>, <__main__.TTest testMethod=test-success.t>]>
@@ -1306,6 +1353,7 @@ Mercurial source tree.
   >   foo
   > EOF
   $ rt test-hghave.t
+  running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.
 
@@ -1334,6 +1382,7 @@ running is placed.
   >   # check-code - a style and portability checker for Mercurial
   > EOF
   $ rt test-runtestdir.t
+  running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.
 
@@ -1351,6 +1400,7 @@ test that TESTDIR is referred in PATH
   >   hello world
   > EOF
   $ rt test-testdir-path.t
+  running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.
 
@@ -1363,10 +1413,12 @@ test support for --allow-slow-tests
   >   pass
   > EOF
   $ rt test-very-slow-test.t
+  running 1 tests using 1 parallel processes 
   s
   Skipped test-very-slow-test.t: missing feature: allow slow tests (use --allow-slow-tests)
   # Ran 0 tests, 1 skipped, 0 failed.
   $ rt $HGTEST_RUN_TESTS_PURE --allow-slow-tests test-very-slow-test.t
+  running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.
 
@@ -1377,6 +1429,7 @@ support for running a test outside the current directory
   >   pass
   > EOF
   $ rt nonlocal/test-is-not-here.t
+  running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.
 
@@ -1394,6 +1447,7 @@ support for automatically discovering test if arg is a folder
   $ cp tmp/test-uno.t test-solo.t
 
   $ rt tmp/ test-solo.t tmpp
+  running 5 tests using 1 parallel processes 
   .....
   # Ran 5 tests, 0 skipped, 0 failed.
   $ rm -rf tmp tmpp
@@ -1417,6 +1471,7 @@ support for running run-tests.py from another directory
 
   $ cd ..
   $ rt tmp/test-*.t
+  running 2 tests using 1 parallel processes 
   
   --- $TESTTMP/anothertests/tmp/test-folder-fail.t
   +++ $TESTTMP/anothertests/tmp/test-folder-fail.t.err
@@ -1447,6 +1502,7 @@ support for bisecting failed tests automatically
   > EOF
   $ hg ci -m 'bad'
   $ rt --known-good-rev=0 test-bisect.t
+  running 1 tests using 1 parallel processes 
   
   --- $TESTTMP/anothertests/bisect/test-bisect.t
   +++ $TESTTMP/anothertests/bisect/test-bisect.t.err
@@ -1478,6 +1534,7 @@ support bisecting a separate repo
   $ hg commit -Am dependent test-bisect-dependent.t
 
   $ rt --known-good-rev=0 test-bisect-dependent.t
+  running 1 tests using 1 parallel processes 
   
   --- $TESTTMP/anothertests/bisect-dependent/test-bisect-dependent.t
   +++ $TESTTMP/anothertests/bisect-dependent/test-bisect-dependent.t.err
@@ -1500,6 +1557,7 @@ support bisecting a separate repo
   [2]
 
   $ rt --known-good-rev=0 --bisect-repo=../bisect test-bisect-dependent.t
+  running 1 tests using 1 parallel processes 
   
   --- $TESTTMP/anothertests/bisect-dependent/test-bisect-dependent.t
   +++ $TESTTMP/anothertests/bisect-dependent/test-bisect-dependent.t.err
@@ -1535,6 +1593,7 @@ Test a broken #if statement doesn't break run-tests threading.
   > EOF
   > done
   $ rt -j 2
+  running 5 tests using 2 parallel processes 
   ....
   # Ran 5 tests, 0 skipped, 0 failed.
   skipped: unknown feature: notarealhghavefeature
@@ -1572,6 +1631,7 @@ Test cases in .t files
   >   [1]
   > EOF
   $ rt
+  running 3 tests using 1 parallel processes 
   .
   --- $TESTTMP/anothertests/cases/test-cases-abc.t
   +++ $TESTTMP/anothertests/cases/test-cases-abc.t#B.err
@@ -1595,6 +1655,7 @@ Test cases in .t files
 --restart works
 
   $ rt --restart
+  running 2 tests using 1 parallel processes 
   
   --- $TESTTMP/anothertests/cases/test-cases-abc.t
   +++ $TESTTMP/anothertests/cases/test-cases-abc.t#B.err
@@ -1620,6 +1681,7 @@ Test cases in .t files
   $ mkdir output
   $ mv test-cases-abc.t#B.err output
   $ rt --restart --outputdir output
+  running 2 tests using 1 parallel processes 
   
   --- $TESTTMP/anothertests/cases/test-cases-abc.t
   +++ $TESTTMP/anothertests/cases/output/test-cases-abc.t#B.err
@@ -1657,12 +1719,14 @@ Test TESTCASE variable
   > #endif
   > EOF
   $ rt test-cases-ab.t
+  running 2 tests using 1 parallel processes 
   ..
   # Ran 2 tests, 0 skipped, 0 failed.
 
 Support running a specific test case
 
   $ rt "test-cases-abc.t#B"
+  running 1 tests using 1 parallel processes 
   
   --- $TESTTMP/anothertests/cases/test-cases-abc.t
   +++ $TESTTMP/anothertests/cases/test-cases-abc.t#B.err
@@ -1686,6 +1750,7 @@ Support running a specific test case
 Support running multiple test cases in the same file
 
   $ rt test-cases-abc.t#B test-cases-abc.t#C
+  running 2 tests using 1 parallel processes 
   
   --- $TESTTMP/anothertests/cases/test-cases-abc.t
   +++ $TESTTMP/anothertests/cases/test-cases-abc.t#B.err
@@ -1709,6 +1774,7 @@ Support running multiple test cases in the same file
 Support ignoring invalid test cases
 
   $ rt test-cases-abc.t#B test-cases-abc.t#D
+  running 1 tests using 1 parallel processes 
   
   --- $TESTTMP/anothertests/cases/test-cases-abc.t
   +++ $TESTTMP/anothertests/cases/test-cases-abc.t#B.err
@@ -1743,6 +1809,7 @@ Support running complex test cases names
     simple
 
   $ rt test-cases-advanced-cases.t
+  running 3 tests using 1 parallel processes 
   
   --- $TESTTMP/anothertests/cases/test-cases-advanced-cases.t
   +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t#case-with-dashes.err
@@ -1771,6 +1838,7 @@ Support running complex test cases names
   [1]
 
   $ rt "test-cases-advanced-cases.t#case-with-dashes"
+  running 1 tests using 1 parallel processes 
   
   --- $TESTTMP/anothertests/cases/test-cases-advanced-cases.t
   +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t#case-with-dashes.err
@@ -1788,6 +1856,7 @@ Support running complex test cases names
   [1]
 
   $ rt "test-cases-advanced-cases.t#casewith_-.chars"
+  running 1 tests using 1 parallel processes 
   
   --- $TESTTMP/anothertests/cases/test-cases-advanced-cases.t
   +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t#casewith_-.chars.err
@@ -1829,6 +1898,7 @@ Test automatic pattern replacement
   > EOF
 
   $ rt test-substitution.t
+  running 1 tests using 1 parallel processes 
   
   --- $TESTTMP/anothertests/cases/test-substitution.t
   +++ $TESTTMP/anothertests/cases/test-substitution.t.err
@@ -1853,5 +1923,6 @@ Test automatic pattern replacement
   > EOF
 
   $ rt --extra-config-opt extensions.purge= test-config-opt.t
+  running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.

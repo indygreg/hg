@@ -2795,13 +2795,15 @@ class TestRunner(object):
 
             tests = [self._gettest(d, i) for i, d in enumerate(testdescs)]
 
+            jobs = min(len(tests), self.options.jobs)
+
             failed = False
             kws = self.options.keywords
             if kws is not None and PYTHON3:
                 kws = kws.encode('utf-8')
 
             suite = TestSuite(self._testdir,
-                              jobs=self.options.jobs,
+                              jobs=jobs,
                               whitelist=self.options.whitelisted,
                               blacklist=self.options.blacklist,
                               retest=self.options.retest,
@@ -2828,6 +2830,9 @@ class TestRunner(object):
                 if self.options.chg:
                     assert self._installdir
                     self._installchg()
+
+                log('running %d tests using %d parallel processes' % (
+                    len(tests), jobs))
 
                 result = runner.run(suite)
 

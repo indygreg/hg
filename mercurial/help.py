@@ -194,6 +194,8 @@ def filtercmd(ui, cmd, kw, doc):
         return True
     if not ui.verbose and doc and any(w in doc for w in _exclkeywords):
         return True
+    if ui.configbool('help', 'hidden-command.%s' % cmd):
+        return True
     return False
 
 def topicmatch(ui, commands, kw):

@@ -699,6 +699,10 @@ coreconfigitem('fsmonitor', 'warn_when_unused',
 coreconfigitem('fsmonitor', 'warn_update_file_count',
     default=50000,
 )
+coreconfigitem('help', 'hidden-command\..*',
+    default=False,
+    generic=True,
+)
 coreconfigitem('hooks', '.*',
     default=dynamicdefault,
     generic=True,

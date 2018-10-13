@@ -255,6 +255,9 @@ test-import-unknown.t
 test-import.t
 test-imports-checker.t
 test-incoming-outgoing.t
+test-infinitepush-bundlestore.t
+test-infinitepush-ci.t
+test-infinitepush.t
 test-inherit-mode.t
 test-init.t
 test-issue1089.t

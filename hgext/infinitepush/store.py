@@ -12,6 +12,7 @@ import subprocess
 import tempfile
 
 from mercurial import (
+    node,
     pycompat,
 )
 from mercurial.utils import (
@@ -80,7 +81,7 @@ class filebundlestore(object):
         return os.path.join(self._dirpath(filename), filename)
 
     def write(self, data):
-        filename = hashlib.sha1(data).hexdigest()
+        filename = node.hex(hashlib.sha1(data).digest())
         dirpath = self._dirpath(filename)
 
         if not os.path.exists(dirpath):

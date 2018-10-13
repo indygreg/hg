@@ -1193,6 +1193,9 @@ coreconfigitem('ui', 'paginate',
 coreconfigitem('ui', 'patch',
     default=None,
 )
+coreconfigitem('ui', 'pre-merge-tool-output-template',
+    default=None,
+)
 coreconfigitem('ui', 'portablefilenames',
     default='warn',
 )

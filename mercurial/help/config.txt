@@ -2296,6 +2296,16 @@ User interface controls.
 
       On Windows, this configuration option is ignored and the command aborted.
 
+``pre-merge-tool-output-template``
+    A template that is printed before executing an external merge tool. This can
+    be used to print out additional context that might be useful to have during
+    the conflict resolution, such as the description of the various commits
+    involved or bookmarks/tags.
+
+    Additional information is available in the ``local`, ``base``, and ``other``
+    dicts. For example: ``{local.label}``, ``{base.name}``, or
+    ``{other.islink}``.
+
 ``quiet``
     Reduce the amount of output printed.
     (default: False)

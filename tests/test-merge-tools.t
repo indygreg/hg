@@ -1946,6 +1946,25 @@ internal merge tools is checked strictly.
   0000: 00 01 02 03                                     |....|
   $ hg merge --abort -q
 
+Check that the extra information is printed correctly
+
+  $ hg merge 9 \
+  >   --config merge-tools.testecho.executable='echo' \
+  >   --config merge-tools.testecho.args='merge runs here ...' \
+  >   --config merge-tools.testecho.binary=True \
+  >   --config ui.merge=testecho \
+  >   --config ui.pre-merge-tool-output-template='\n{label("extmerge.running_merge_tool", "Running merge tool for {path} ({toolpath}):")}\n{separate("\n", extmerge_section(local), extmerge_section(base), extmerge_section(other))}\n' \
+  >   --config 'templatealias.extmerge_section(sect)="- {pad("{sect.name} ({sect.label})", 20, left=True)}: {revset(sect.node)%"{rev}:{shortest(node,8)} {desc|firstline} {separate(" ", tags, bookmarks, branch)}"}"'
+  merging b
+  
+  Running merge tool for b (*/bin/echo): (glob)
+  - local (working copy): 10:2d1f533d add binary file (#2) tip default
+  -          base (base): -1:00000000  default
+  -    other (merge rev): 9:1e7ad7d7 add binary file (#1) default
+  merge runs here ...
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+
 Check that debugpicktool examines which merge tool is chosen for
 specified file as expected
 

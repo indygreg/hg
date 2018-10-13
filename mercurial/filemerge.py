@@ -13,7 +13,11 @@ import re
 import shutil
 
 from .i18n import _
-from .node import nullid, short
+from .node import (
+    hex,
+    nullid,
+    short,
+)
 
 from . import (
     encoding,
@@ -27,6 +31,7 @@ from . import (
     tagmerge,
     templatekw,
     templater,
+    templateutil,
     util,
 )
 
@@ -536,6 +541,44 @@ def _xmergeimm(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
     raise error.InMemoryMergeConflictsError('in-memory merge does not support '
                                             'external merge tools')
 
+def _describemerge(ui, repo, mynode, fcl, fcb, fco, env, toolpath, args):
+    tmpl = ui.config('ui', 'pre-merge-tool-output-template')
+    if not tmpl:
+        return
+
+    mappingdict = templateutil.mappingdict
+    props = {'ctx': fcl.changectx(),
+             'node': hex(mynode),
+             'path': fcl.path(),
+             'local': mappingdict({'ctx': fcl.changectx(),
+                                   'fctx': fcl,
+                                   'node': hex(mynode),
+                                   'name': _('local'),
+                                   'islink': 'l' in fcl.flags(),
+                                   'label': env['HG_MY_LABEL']}),
+             'base': mappingdict({'ctx': fcb.changectx(),
+                                  'fctx': fcb,
+                                  'name': _('base'),
+                                  'islink': 'l' in fcb.flags(),
+                                  'label': env['HG_BASE_LABEL']}),
+             'other': mappingdict({'ctx': fco.changectx(),
+                                   'fctx': fco,
+                                   'name': _('other'),
+                                   'islink': 'l' in fco.flags(),
+                                   'label': env['HG_OTHER_LABEL']}),
+             'toolpath': toolpath,
+             'toolargs': args}
+
+    # TODO: make all of this something that can be specified on a per-tool basis
+    tmpl = templater.unquotestring(tmpl)
+
+    # Not using cmdutil.rendertemplate here since it causes errors importing
+    # things for us to import cmdutil.
+    tres = formatter.templateresources(ui, repo)
+    t = formatter.maketemplater(ui, tmpl, defaults=templatekw.keywords,
+                                resources=tres)
+    ui.status(t.renderdefault(props))
+
 def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
     tool, toolpath, binary, symlink, scriptfn = toolconf
     if fcd.isabsent() or fco.isabsent():
@@ -584,6 +627,7 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
         if scriptfn is None:
             cmd = toolpath + ' ' + args
             repo.ui.debug('launching merge tool: %s\n' % cmd)
+            _describemerge(ui, repo, mynode, fcd, fca, fco, env, toolpath, args)
             r = ui.system(cmd, cwd=repo.root, environ=env,
                           blockedtag='mergetool')
         else:

@@ -1164,8 +1164,20 @@ def _buildmatch(kindpats, globsuffix, listsubrepos, root):
 
     regex = ''
     if kindpats:
-        regex, mf = _buildregexmatch(kindpats, globsuffix)
-        matchfuncs.append(mf)
+        if all(k == 'rootfilesin' for k, p, s in kindpats):
+            dirs = {p for k, p, s in kindpats}
+            def mf(f):
+                i = f.rfind('/')
+                if i >= 0:
+                    dir = f[:i]
+                else:
+                    dir = '.'
+                return dir in dirs
+            regex = b'rootfilesin: %s' % sorted(dirs)
+            matchfuncs.append(mf)
+        else:
+            regex, mf = _buildregexmatch(kindpats, globsuffix)
+            matchfuncs.append(mf)
 
     if len(matchfuncs) == 1:
         return regex, matchfuncs[0]

@@ -1076,7 +1076,8 @@ class ui(object):
             if name not in encoding.environ:
                 pagerenv[name] = value
 
-        self.debug('starting pager for command %r\n' % command)
+        self.debug('starting pager for command %s\n' %
+                   stringutil.pprint(command))
         self.flush()
 
         wasformatted = self.formatted()

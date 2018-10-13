@@ -59,6 +59,7 @@ test-censor.t
 test-changelog-exec.t
 test-check-code.t
 test-check-commit.t
+test-check-config.py
 test-check-execute.t
 test-check-interfaces.py
 test-check-module-imports.t

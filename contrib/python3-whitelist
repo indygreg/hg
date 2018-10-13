@@ -202,6 +202,7 @@ test-hghave.t
 test-hgignore.t
 test-hgk.t
 test-hgrc.t
+test-hgweb-annotate-whitespace.t
 test-hgweb-bundle.t
 test-hgweb-csp.t
 test-hgweb-descend-empties.t
@@ -235,6 +236,7 @@ test-http-clone-r.t
 test-http-permissions.t
 test-http.t
 test-hybridencode.py
+test-i18n.t
 test-identify.t
 test-impexp-branch.t
 test-import-bypass.t
@@ -584,6 +586,7 @@ test-wireproto-clientreactor.py
 test-wireproto-command-branchmap.t
 test-wireproto-command-changesetdata.t
 test-wireproto-command-filedata.t
+test-wireproto-command-filesdata.t
 test-wireproto-command-heads.t
 test-wireproto-command-listkeys.t
 test-wireproto-command-lookup.t

@@ -102,7 +102,7 @@ class monotone_source(common.converter_source, common.commandline):
 
         command.append('l')
         for arg in args:
-            command += "%s:%s" % (len(arg), arg)
+            command += "%d:%s" % (len(arg), arg)
         command.append('e')
         command = ''.join(command)
 

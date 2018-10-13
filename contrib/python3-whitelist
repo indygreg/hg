@@ -193,6 +193,7 @@ test-flags.t
 test-generaldelta.t
 test-getbundle.t
 test-git-export.t
+test-globalopts.t
 test-glog-beautifygraph.t
 test-glog-topological.t
 test-glog.t

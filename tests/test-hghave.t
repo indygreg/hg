@@ -22,8 +22,10 @@ Testing hghave extensibility for third party tools
   > EOF
   $ ( \
   > testrepohgenv; \
-  > "$PYTHON" $TESTDIR/run-tests.py $HGTEST_RUN_TESTS_PURE test-hghaveaddon.t \
+  > "$PYTHON" $TESTDIR/run-tests.py -j 1 \
+  >    $HGTEST_RUN_TESTS_PURE test-hghaveaddon.t \
   > )
+  running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.
 

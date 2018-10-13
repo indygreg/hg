@@ -405,6 +405,7 @@ test-origbackup-conflict.t
 test-pager-legacy.t
 test-pager.t
 test-parents.t
+test-parse-date.t
 test-parseindex2.py
 test-patch-offset.t
 test-patch.t

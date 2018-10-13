@@ -303,17 +303,17 @@ def matchdate(date):
 
     if not date:
         raise error.Abort(_("dates cannot consist entirely of whitespace"))
-    elif date[0] == "<":
+    elif date[0:1] == b"<":
         if not date[1:]:
             raise error.Abort(_("invalid day spec, use '<DATE'"))
         when = upper(date[1:])
         return lambda x: x <= when
-    elif date[0] == ">":
+    elif date[0:1] == b">":
         if not date[1:]:
             raise error.Abort(_("invalid day spec, use '>DATE'"))
         when = lower(date[1:])
         return lambda x: x >= when
-    elif date[0] == "-":
+    elif date[0:1] == b"-":
         try:
             days = int(date[1:])
         except ValueError:
@@ -323,8 +323,8 @@ def matchdate(date):
                 % date[1:])
         when = makedate()[0] - days * 3600 * 24
         return lambda x: x >= when
-    elif " to " in date:
-        a, b = date.split(" to ")
+    elif b" to " in date:
+        a, b = date.split(b" to ")
         start, stop = lower(a), upper(b)
         return lambda x: x >= start and x <= stop
     else:

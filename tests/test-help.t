@@ -1503,19 +1503,19 @@ Test help hooks
   > from mercurial import help
   > 
   > def rewrite(ui, topic, doc):
-  >     return doc + '\nhelphook1\n'
+  >     return doc + b'\nhelphook1\n'
   > 
   > def extsetup(ui):
-  >     help.addtopichook('revisions', rewrite)
+  >     help.addtopichook(b'revisions', rewrite)
   > EOF
   $ cat > helphook2.py <<EOF
   > from mercurial import help
   > 
   > def rewrite(ui, topic, doc):
-  >     return doc + '\nhelphook2\n'
+  >     return doc + b'\nhelphook2\n'
   > 
   > def extsetup(ui):
-  >     help.addtopichook('revisions', rewrite)
+  >     help.addtopichook(b'revisions', rewrite)
   > EOF
   $ echo '[extensions]' >> $HGRCPATH
   $ echo "helphook1 = `pwd`/helphook1.py" >> $HGRCPATH
@@ -1642,7 +1642,7 @@ Test omit indicating for help
   > '''
   > from __future__ import absolute_import
   > from mercurial import commands, help
-  > testtopic = """This paragraph is never omitted (for topic).
+  > testtopic = b"""This paragraph is never omitted (for topic).
   > 
   > .. container:: verbose
   > 
@@ -1652,8 +1652,8 @@ Test omit indicating for help
   > This paragraph is never omitted, too (for topic)
   > """
   > def extsetup(ui):
-  >     help.helptable.append((["topic-containing-verbose"],
-  >                            "This is the topic to test omit indicating.",
+  >     help.helptable.append(([b"topic-containing-verbose"],
+  >                            b"This is the topic to test omit indicating.",
   >                            lambda ui: testtopic))
   > EOF
   $ echo '[extensions]' >> $HGRCPATH

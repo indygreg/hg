@@ -338,7 +338,7 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             aliases, entry = cmdutil.findcmd(name, commands.table,
                                              strict=unknowncmd)
         except error.AmbiguousCommand as inst:
-            # py3k fix: except vars can't be used outside the scope of the
+            # py3 fix: except vars can't be used outside the scope of the
             # except block, nor can be used inside a lambda. python issue4617
             prefix = inst.args[0]
             select = lambda c: cmdutil.parsealiases(c)[0].startswith(prefix)

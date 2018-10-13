@@ -641,8 +641,8 @@ def has_demandimport():
     # chg disables demandimport intentionally for performance wins.
     return ((not has_chg()) and os.environ.get('HGDEMANDIMPORT') != 'disable')
 
-@check("py3k", "running with Python 3.x")
-def has_py3k():
+@check("py3", "running with Python 3.x")
+def has_py3():
     return 3 == sys.version_info[0]
 
 @check("py3exe", "a Python 3.x interpreter is available")

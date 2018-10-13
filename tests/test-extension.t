@@ -222,7 +222,7 @@ limit mark, regardless of importing module or not.)
   ambigabs.s=libroot/ambig.py
   $TESTTMP/a
 
-#if no-py3k
+#if no-py3
   $ cat > $TESTTMP/libroot/mod/ambigrel.py <<NO_CHECK_EOF
   > from __future__ import print_function
   > import ambig # should load "libroot/mod/ambig.py"
@@ -290,7 +290,7 @@ Check absolute/relative import of extension specific modules
   (extroot) import extroot.bar in func(): this is extroot.bar
   $TESTTMP/a
 
-#if no-py3k
+#if no-py3
   $ rm "$TESTTMP"/extroot/foo.*
   $ rm -Rf "$TESTTMP/extroot/__pycache__"
   $ cat > $TESTTMP/extroot/foo.py <<NO_CHECK_EOF

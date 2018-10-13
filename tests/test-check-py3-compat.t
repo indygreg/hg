@@ -3,7 +3,7 @@
   $ . "$TESTDIR/helpers-testrepo.sh"
   $ cd "$TESTDIR"/..
 
-#if no-py3k
+#if no-py3
   $ testrepohg files 'set:(**.py)' \
   > -X hgdemandimport/demandimportpy2.py \
   > -X mercurial/thirdparty/cbor \
@@ -24,7 +24,7 @@
   setup.py not using absolute_import
 #endif
 
-#if py3k
+#if py3
   $ testrepohg files 'set:(**.py) - grep(pygments)' \
   > -X hgdemandimport/demandimportpy2.py \
   > -X hgext/fsmonitor/pywatchman \
@@ -41,7 +41,7 @@
   mercurial/scmposix.py: error importing: <ModuleNotFoundError> No module named 'fcntl' (error at scmposix.py:*) (windows !)
 #endif
 
-#if py3k pygments
+#if py3 pygments
   $ testrepohg files 'set:(**.py) and grep(pygments)' | sed 's|\\|/|g' \
   > | xargs "$PYTHON" contrib/check-py3-compat.py \
   > | sed 's/[0-9][0-9]*)$/*)/'

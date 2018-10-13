@@ -57,12 +57,12 @@ show traceback
   Exception: bit bucket overflow
   *** failed to import extension badext2: No module named *badext2* (glob)
   Traceback (most recent call last):
-  ImportError: No module named badext2 (no-py3k !)
-  ModuleNotFoundError: No module named 'hgext.badext2' (py3k !)
-  Traceback (most recent call last): (py3k !)
-  ModuleNotFoundError: No module named 'hgext3rd.badext2' (py3k !)
-  Traceback (most recent call last): (py3k !)
-  ModuleNotFoundError: No module named 'badext2' (py3k !)
+  ImportError: No module named badext2 (no-py3 !)
+  ModuleNotFoundError: No module named 'hgext.badext2' (py3 !)
+  Traceback (most recent call last): (py3 !)
+  ModuleNotFoundError: No module named 'hgext3rd.badext2' (py3 !)
+  Traceback (most recent call last): (py3 !)
+  ModuleNotFoundError: No module named 'badext2' (py3 !)
 
 names of extensions failed to load can be accessed via extensions.notloaded()
 
@@ -102,22 +102,22 @@ show traceback for ImportError of hgext.name if devel.debug.extensions is set
   debug.extensions:   - loading extension: 'badext2'
   debug.extensions:     - could not import hgext.badext2 (No module named *badext2*): trying hgext3rd.badext2 (glob)
   Traceback (most recent call last):
-  ImportError: No module named badext2 (no-py3k !)
-  ModuleNotFoundError: No module named 'hgext.badext2' (py3k !)
+  ImportError: No module named badext2 (no-py3 !)
+  ModuleNotFoundError: No module named 'hgext.badext2' (py3 !)
   debug.extensions:     - could not import hgext3rd.badext2 (No module named *badext2*): trying badext2 (glob)
   Traceback (most recent call last):
-  ImportError: No module named badext2 (no-py3k !)
-  ModuleNotFoundError: No module named 'hgext.badext2' (py3k !)
-  Traceback (most recent call last): (py3k !)
-  ModuleNotFoundError: No module named 'hgext3rd.badext2' (py3k !)
+  ImportError: No module named badext2 (no-py3 !)
+  ModuleNotFoundError: No module named 'hgext.badext2' (py3 !)
+  Traceback (most recent call last): (py3 !)
+  ModuleNotFoundError: No module named 'hgext3rd.badext2' (py3 !)
   *** failed to import extension badext2: No module named *badext2* (glob)
   Traceback (most recent call last):
-  ModuleNotFoundError: No module named 'hgext.badext2' (py3k !)
-  Traceback (most recent call last): (py3k !)
-  ModuleNotFoundError: No module named 'hgext3rd.badext2' (py3k !)
-  Traceback (most recent call last): (py3k !)
-  ModuleNotFoundError: No module named 'badext2' (py3k !)
-  ImportError: No module named badext2 (no-py3k !)
+  ModuleNotFoundError: No module named 'hgext.badext2' (py3 !)
+  Traceback (most recent call last): (py3 !)
+  ModuleNotFoundError: No module named 'hgext3rd.badext2' (py3 !)
+  Traceback (most recent call last): (py3 !)
+  ModuleNotFoundError: No module named 'badext2' (py3 !)
+  ImportError: No module named badext2 (no-py3 !)
   debug.extensions: > loaded 2 extensions, total time * (glob)
   debug.extensions: - loading configtable attributes
   debug.extensions: - executing uisetup hooks

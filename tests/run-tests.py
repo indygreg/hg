@@ -425,7 +425,7 @@ def getparser():
         help="prefer IPv6 to IPv4 for network related tests")
     hgconf.add_argument("--pure", action="store_true",
         help="use pure Python code instead of C extensions")
-    hgconf.add_argument("-3", "--py3k-warnings", action="store_true",
+    hgconf.add_argument("-3", "--py3-warnings", action="store_true",
         help="enable Py3k warnings on Python 2.7+")
     hgconf.add_argument("--with-chg", metavar="CHG",
         help="use specified chg wrapper in place of hg")
@@ -562,10 +562,10 @@ def parseargs(args, parser):
                 'warning: --slowtimeout option ignored with --debug\n')
         options.timeout = 0
         options.slowtimeout = 0
-    if options.py3k_warnings:
+    if options.py3_warnings:
         if PYTHON3:
             parser.error(
-                '--py3k-warnings can only be used on Python 2.7')
+                '--py3-warnings can only be used on Python 2.7')
 
     if options.blacklist:
         options.blacklist = parselistfiles(options.blacklist, 'blacklist')
@@ -689,7 +689,7 @@ class Test(unittest.TestCase):
                  first=False,
                  timeout=None,
                  startport=None, extraconfigopts=None,
-                 py3kwarnings=False, shell=None, hgcommand=None,
+                 py3warnings=False, shell=None, hgcommand=None,
                  slowtimeout=None, usechg=False,
                  useipv6=False):
         """Create a test from parameters.
@@ -718,7 +718,7 @@ class Test(unittest.TestCase):
         must have the form "key=value" (something understood by hgrc). Values
         of the form "foo.key=value" will result in "[foo] key=value".
 
-        py3kwarnings enables Py3k warnings.
+        py3warnings enables Py3k warnings.
 
         shell is the shell to execute tests in.
         """
@@ -744,7 +744,7 @@ class Test(unittest.TestCase):
         self._slowtimeout = slowtimeout
         self._startport = startport
         self._extraconfigopts = extraconfigopts or []
-        self._py3kwarnings = py3kwarnings
+        self._py3warnings = py3warnings
         self._shell = _bytespath(shell)
         self._hgcommand = hgcommand or b'hg'
         self._usechg = usechg
@@ -1218,8 +1218,8 @@ class PythonTest(Test):
         return os.path.join(self._testdir, b'%s.out' % self.bname)
 
     def _run(self, env):
-        py3kswitch = self._py3kwarnings and b' -3' or b''
-        cmd = b'"%s"%s "%s"' % (PYTHON, py3kswitch, self.path)
+        py3switch = self._py3warnings and b' -3' or b''
+        cmd = b'%s%s "%s"' % (PYTHON, py3switch, self.path)
         vlog("# Running", cmd)
         normalizenewlines = os.name == 'nt'
         result = self._runcommand(cmd, env,
@@ -2897,7 +2897,7 @@ class TestRunner(object):
                     timeout=self.options.timeout,
                     startport=self._getport(count),
                     extraconfigopts=self.options.extra_config_opt,
-                    py3kwarnings=self.options.py3k_warnings,
+                    py3warnings=self.options.py3_warnings,
                     shell=self.options.shell,
                     hgcommand=self._hgcommand,
                     usechg=bool(self.options.with_chg or self.options.chg),
@@ -3029,7 +3029,7 @@ class TestRunner(object):
 
         self._usecorrectpython()
 
-        if self.options.py3k_warnings and not self.options.anycoverage:
+        if self.options.py3_warnings and not self.options.anycoverage:
             vlog("# Updating hg command to enable Py3k Warnings switch")
             with open(os.path.join(self._bindir, 'hg'), 'rb') as f:
                 lines = [line.rstrip() for line in f]

@@ -48,7 +48,7 @@ configure for serving
   > [hooks]
   > changegroup = sh -c "printenv.py changegroup-in-remote 0 ../dummylog"
   > EOF
-  $ cd ..
+  $ cd $TESTTMP
 
 repo not found error
 
@@ -87,7 +87,7 @@ clone remote via stream
   checked 3 changesets with 2 changes to 2 files
   $ hg branches
   default                        0:1160648e36ce
-  $ cd ..
+  $ cd $TESTTMP
 
 clone bookmarks via stream
 
@@ -103,7 +103,7 @@ clone bookmarks via stream
   $ cd stream2
   $ hg book
      mybook                    0:1160648e36ce
-  $ cd ..
+  $ cd $TESTTMP
   $ rm -rf local-stream stream2
 
 #endif
@@ -210,7 +210,7 @@ push
   remote: adding manifests
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
-  $ cd ../remote
+  $ cd $TESTTMP/remote
 
 check remote tip
 
@@ -236,7 +236,7 @@ check remote tip
 
 test pushkeys and bookmarks
 
-  $ cd ../local
+  $ cd $TESTTMP/local
   $ hg debugpushkey --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/remote namespaces
   bookmarks	
   namespaces	
@@ -343,7 +343,7 @@ results here)
   abort: password in URL not supported!
   [255]
 
-  $ cd ..
+  $ cd $TESTTMP
 
 hide outer repo
   $ hg init
@@ -433,7 +433,7 @@ Test hg-ssh in read-only mode:
   updating 6c0482d977a3 to public failed!
   [1]
 
-  $ cd ..
+  $ cd $TESTTMP
 
 stderr from remote commands should be printed before stdout from local code (issue4336)
 
@@ -500,7 +500,7 @@ debug output
   received listkey for "phases": 15 bytes
   checking for updated bookmarks
 
-  $ cd ..
+  $ cd $TESTTMP
 
   $ cat dummylog
   Got arguments 1:user@dummy 2:hg -R nonexistent serve --stdio

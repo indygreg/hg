@@ -2433,5 +2433,5 @@ class arbitraryfilectx(object):
 
     def write(self, data, flags, **kwargs):
         assert not flags
-        with open(self._path, "w") as f:
+        with open(self._path, "wb") as f:
             f.write(data)

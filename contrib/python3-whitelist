@@ -116,6 +116,7 @@ test-convert-tagsbranch-topology.t
 test-copy-move-merge.t
 test-copy.t
 test-copytrace-heuristics.t
+test-custom-filters.t
 test-debugbuilddag.t
 test-debugbundle.t
 test-debugcommands.t

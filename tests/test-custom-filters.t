@@ -27,6 +27,7 @@
   > .hgignore
   > prefix.py
   > prefix.pyc
+  > __pycache__/
   > EOF
 
   $ cat > stuff.txt <<EOF

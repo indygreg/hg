@@ -90,6 +90,7 @@ test-contrib-check-code.t
 test-contrib-check-commit.t
 test-contrib-dumprevlog.t
 test-contrib-perf.t
+test-contrib-relnotes.t
 test-contrib-testparseutil.t
 test-convert-authormap.t
 test-convert-clonebranches.t
@@ -413,6 +414,7 @@ test-pending.t
 test-permissions.t
 test-phases-exchange.t
 test-phases.t
+test-profile.t
 test-progress.t
 test-pull-branch.t
 test-pull-http.t
@@ -485,6 +487,9 @@ test-rebase-templates.t
 test-rebase-transaction.t
 test-rebuildstate.t
 test-record.t
+test-releasenotes-formatting.t
+test-releasenotes-merging.t
+test-releasenotes-parsing.t
 test-relink.t
 test-remove.t
 test-removeemptydirs.t

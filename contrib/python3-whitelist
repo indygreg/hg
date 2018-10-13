@@ -60,6 +60,7 @@ test-changelog-exec.t
 test-check-code.t
 test-check-commit.t
 test-check-config.py
+test-check-config.t
 test-check-execute.t
 test-check-interfaces.py
 test-check-module-imports.t
@@ -95,6 +96,7 @@ test-contrib-dumprevlog.t
 test-contrib-perf.t
 test-contrib-relnotes.t
 test-contrib-testparseutil.t
+test-contrib.t
 test-convert-authormap.t
 test-convert-clonebranches.t
 test-convert-cvs-branch.t
@@ -196,6 +198,7 @@ test-filelog.py
 test-fileset-generated.t
 test-fileset.t
 test-fix-topology.t
+test-fix.t
 test-flags.t
 test-generaldelta.t
 test-getbundle.t

@@ -573,6 +573,7 @@ test-template-basic.t
 test-template-functions.t
 test-template-keywords.t
 test-template-map.t
+test-tools.t
 test-transplant.t
 test-treemanifest.t
 test-ui-color.py

@@ -200,6 +200,7 @@ test-fileset.t
 test-fix-topology.t
 test-fix.t
 test-flags.t
+test-fncache.t
 test-generaldelta.t
 test-getbundle.t
 test-git-export.t

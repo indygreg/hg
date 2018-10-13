@@ -305,13 +305,13 @@ Aborted transactions can be recovered later
   > def trwrapper(orig, self, *args, **kwargs):
   >     tr = orig(self, *args, **kwargs)
   >     def fail(tr):
-  >         raise error.Abort("forced transaction failure")
+  >         raise error.Abort(b"forced transaction failure")
   >     # zzz prefix to ensure it sorted after store.write
-  >     tr.addfinalize('zzz-forcefails', fail)
+  >     tr.addfinalize(b'zzz-forcefails', fail)
   >     return tr
   > 
   > def abortwrapper(orig, self, *args, **kwargs):
-  >     raise error.Abort("forced transaction failure")
+  >     raise error.Abort(b"forced transaction failure")
   > 
   > def uisetup(ui):
   >     extensions.wrapfunction(localrepo.localrepository, 'transaction',
@@ -453,7 +453,7 @@ changesets that only contain changes to existing files:
   > def extsetup(ui):
   >     def wrapstore(orig, requirements, *args):
   >         store = orig(requirements, *args)
-  >         if 'store' in requirements and 'fncache' in requirements:
+  >         if b'store' in requirements and b'fncache' in requirements:
   >             instrumentfncachestore(store, ui)
   >         return store
   >     extensions.wrapfunction(localrepo, 'makestore', wrapstore)
@@ -461,7 +461,7 @@ changesets that only contain changes to existing files:
   > def instrumentfncachestore(fncachestore, ui):
   >     class instrumentedfncache(type(fncachestore.fncache)):
   >         def _load(self):
-  >             ui.warn('fncache load triggered!\n')
+  >             ui.warn(b'fncache load triggered!\n')
   >             super(instrumentedfncache, self)._load()
   >     fncachestore.fncache.__class__ = instrumentedfncache
   > EOF

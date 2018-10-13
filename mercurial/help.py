@@ -25,6 +25,7 @@ from . import (
     fileset,
     minirst,
     pycompat,
+    registrar,
     revset,
     templatefilters,
     templatefuncs,
@@ -45,6 +46,20 @@ _exclkeywords = {
     _("(DEPRECATED)"),
     # i18n: "(EXPERIMENTAL)" is a keyword, must be translated consistently
     _("(EXPERIMENTAL)"),
+}
+
+# The order in which command categories will be displayed.
+# Extensions with custom categories should insert them into this list
+# after/before the appropriate item, rather than replacing the list or
+# assuming absolute positions.
+CATEGORY_ORDER = [
+    registrar.command.CATEGORY_NONE,
+]
+
+# Human-readable category names. These are translated.
+# Extensions with custom categories should add their names here.
+CATEGORY_NAMES = {
+    registrar.command.CATEGORY_NONE: 'Uncategorized commands',
 }
 
 def listexts(header, exts, indent=1, showdeprecated=False):
@@ -419,39 +434,39 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
 
         return rst
 
-
     def helplist(select=None, **opts):
-        # list of commands
-        if name == "shortlist":
-            header = _('basic commands:\n\n')
-        elif name == "debug":
-            header = _('debug commands (internal and unsupported):\n\n')
-        else:
-            header = _('list of commands:\n\n')
-
+        # Category -> list of commands
+        cats = {}
+        # Command -> short description
         h = {}
-        cmds = {}
+        # Command -> string showing synonyms
+        syns = {}
         for c, e in commands.table.iteritems():
             fs = cmdutil.parsealiases(c)
             f = fs[0]
+            syns[f] = ', '.join(fs)
+            func = e[0]
             p = ''
             if c.startswith("^"):
                 p = '^'
             if select and not select(p + f):
                 continue
             if (not select and name != 'shortlist' and
-                e[0].__module__ != commands.__name__):
+                func.__module__ != commands.__name__):
                 continue
             if name == "shortlist" and not p:
                 continue
-            doc = pycompat.getdoc(e[0])
+            doc = pycompat.getdoc(func)
             if filtercmd(ui, f, name, doc):
                 continue
             doc = gettext(doc)
             if not doc:
                 doc = _("(no help text available)")
             h[f] = doc.splitlines()[0].rstrip()
-            cmds[f] = '|'.join(fs)
+
+            cat = getattr(func, 'helpcategory', None) or (
+                registrar.command.CATEGORY_NONE)
+            cats.setdefault(cat, []).append(f)
 
         rst = []
         if not h:
@@ -459,15 +474,42 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
                 rst.append(_('no commands defined\n'))
             return rst
 
+        # Output top header.
         if not ui.quiet:
-            rst.append(header)
-        fns = sorted(h)
-        for f in fns:
-            if ui.verbose:
-                commacmds = cmds[f].replace("|",", ")
-                rst.append(" :%s: %s\n" % (commacmds, h[f]))
+            if name == "shortlist":
+                rst.append(_('basic commands:\n\n'))
+            elif name == "debug":
+                rst.append(_('debug commands (internal and unsupported):\n\n'))
             else:
-                rst.append(' :%s: %s\n' % (f, h[f]))
+                rst.append(_('list of commands:\n'))
+
+        def appendcmds(cmds):
+            cmds = sorted(cmds)
+            for c in cmds:
+                if ui.verbose:
+                    rst.append(" :%s: %s\n" % (syns[c], h[c]))
+                else:
+                    rst.append(' :%s: %s\n' % (c, h[c]))
+
+        if name in ('shortlist', 'debug'):
+            # List without categories.
+            appendcmds(h)
+        else:
+            # Check that all categories have an order.
+            missing_order = set(cats.keys()) - set(CATEGORY_ORDER)
+            if missing_order:
+                ui.develwarn('help categories missing from CATEGORY_ORDER: %s' %
+                             missing_order)
+
+            # List per category.
+            for cat in CATEGORY_ORDER:
+                catfns = cats.get(cat, [])
+                if catfns:
+                    if len(cats) > 1:
+                        catname = gettext(CATEGORY_NAMES[cat])
+                        rst.append("\n%s:\n" % catname)
+                    rst.append("\n")
+                    appendcmds(catfns)
 
         ex = opts.get
         anyopts = (ex(r'keyword') or not (ex(r'command') or ex(r'extension')))
@@ -499,7 +541,7 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             elif name and not full:
                 rst.append(_("\n(use 'hg help %s' to show the full help "
                              "text)\n") % name)
-            elif name and cmds and name in cmds.keys():
+            elif name and syns and name in syns.keys():
                 rst.append(_("\n(use 'hg help -v -e %s' to show built-in "
                              "aliases and global options)\n") % name)
             else:

@@ -149,7 +149,8 @@ def showtopic(ui, topic):
     helpprinter(ui, helptable + extrahelptable, None, include=[topic])
 
 def helpprinter(ui, helptable, sectionfunc, include=[], exclude=[]):
-    for names, sec, doc in helptable:
+    for h in helptable:
+        names, sec, doc = h[0:3]
         if exclude and names[0] in exclude:
             continue
         if include and names[0] not in include:

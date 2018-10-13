@@ -146,6 +146,10 @@ class command(_funcregistrarbase):
     to prevent the command from running if the requested intent could not be
     fulfilled.
 
+    If `helpcategory` is set (usually to one of the constants in the help
+    module), the command will be displayed under that category in the help's
+    list of commands.
+
     The following intents are defined:
 
     readonly
@@ -164,14 +168,17 @@ class command(_funcregistrarbase):
     descriptions and examples.
     """
 
+    # Command categories for grouping them in help output.
+    CATEGORY_NONE = 'none'
+
     def _doregister(self, func, name, options=(), synopsis=None,
                     norepo=False, optionalrepo=False, inferrepo=False,
-                    intents=None):
-
+                    intents=None, helpcategory=None):
         func.norepo = norepo
         func.optionalrepo = optionalrepo
         func.inferrepo = inferrepo
         func.intents = intents or set()
+        func.helpcategory = helpcategory
         if synopsis:
             self._table[name] = func, list(options), synopsis
         else:

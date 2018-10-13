@@ -41,8 +41,8 @@ class ParseError(Exception):
     """Exception raised on errors in parsing the command line."""
 
 def showhelp():
-    sys.stdout.write(usage)
-    sys.stdout.write(b'\noptions:\n')
+    pycompat.stdout.write(usage.encode('utf8'))
+    pycompat.stdout.write(b'\noptions:\n')
 
     out_opts = []
     for shortopt, longopt, default, desc in options:
@@ -51,22 +51,23 @@ def showhelp():
                          b'%s' % desc))
     opts_len = max([len(opt[0]) for opt in out_opts])
     for first, second in out_opts:
-        sys.stdout.write(b' %-*s  %s\n' % (opts_len, first, second))
+        pycompat.stdout.write(b' %-*s  %s\n' % (opts_len, first, second))
 
 try:
-    for fp in (sys.stdin, sys.stdout, sys.stderr):
+    for fp in (sys.stdin, pycompat.stdout, sys.stderr):
         procutil.setbinary(fp)
 
     opts = {}
     try:
-        args = fancyopts.fancyopts(sys.argv[1:], options, opts)
+        bargv = [a.encode('utf8') for a in sys.argv[1:]]
+        args = fancyopts.fancyopts(bargv, options, opts)
     except getopt.GetoptError as e:
         raise ParseError(e)
     if opts[b'help']:
         showhelp()
         sys.exit(0)
     if len(args) != 3:
-            raise ParseError(_(b'wrong number of arguments'))
+            raise ParseError(_(b'wrong number of arguments').decode('utf8'))
     local, base, other = args
     sys.exit(simplemerge.simplemerge(uimod.ui.load(),
                                      context.arbitraryfilectx(local),
@@ -74,11 +75,13 @@ try:
                                      context.arbitraryfilectx(other),
                                      **pycompat.strkwargs(opts)))
 except ParseError as e:
-    sys.stdout.write(b"%s: %s\n" % (sys.argv[0], e))
+    if pycompat.ispy3:
+        e = str(e).encode('utf8')
+    pycompat.stdout.write(b"%s: %s\n" % (sys.argv[0].encode('utf8'), e))
     showhelp()
     sys.exit(1)
 except error.Abort as e:
-    sys.stderr.write(b"abort: %s\n" % e)
+    pycompat.stderr.write(b"abort: %s\n" % e)
     sys.exit(255)
 except KeyboardInterrupt:
     sys.exit(255)

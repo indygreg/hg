@@ -8,7 +8,7 @@
 
 '''command to display statistics about repository history'''
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import datetime
 import os
@@ -205,7 +205,7 @@ def churn(ui, repo, *pats, **opts):
                                     '*' * charnum(sum(count)))
 
     def charnum(count):
-        return int(round(count * width / maxcount))
+        return int(round(count * width // maxcount))
 
     for name, count in rate:
         ui.write(format(name, count))

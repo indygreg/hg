@@ -1172,7 +1172,7 @@ def archive(web):
     key = web.req.qsparams['node']
 
     if type_ not in webutil.archivespecs:
-        msg = 'Unsupported archive type: %s' % type_
+        msg = 'Unsupported archive type: %s' % stringutil.pprint(type_)
         raise ErrorResponse(HTTP_NOT_FOUND, msg)
 
     if not ((type_ in allowed or

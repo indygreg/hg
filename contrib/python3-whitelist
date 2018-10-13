@@ -491,6 +491,7 @@ test-rename-merge2.t
 test-rename.t
 test-repair-strip.t
 test-repo-compengines.t
+test-requires.t
 test-resolve.t
 test-revert-flags.t
 test-revert-interactive.t

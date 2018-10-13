@@ -75,6 +75,7 @@ try:
     _byteskwargs = pycompat.byteskwargs  # since 4.1 (or fbc3f73dc802)
     _sysstr = pycompat.sysstr         # since 4.0 (or 2219f4f82ede)
     _xrange = pycompat.xrange         # since 4.8 (or 7eba8f83129b)
+    fsencode = pycompat.fsencode      # since 3.9 (or f4a5e0e86a7e)
     if pycompat.ispy3:
         _maxint = sys.maxsize  # per py3 docs for replacing maxint
     else:
@@ -83,6 +84,7 @@ except (ImportError, AttributeError):
     import inspect
     getargspec = inspect.getargspec
     _byteskwargs = identity
+    fsencode = identity               # no py3 support
     _maxint = sys.maxint              # no py3 support
     _sysstr = lambda x: x             # no py3 support
     _xrange = xrange
@@ -968,7 +970,7 @@ def perfindex(ui, repo, **opts):
 def perfstartup(ui, repo, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
-    cmd = sys.argv[0]
+    cmd = fsencode(sys.argv[0])
     def d():
         if os.name != r'nt':
             os.system(b"HGRCPATH= %s version -q > /dev/null" % cmd)
@@ -1387,17 +1389,18 @@ def perfdiffwd(ui, repo, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     options = {
-        b'w': b'ignore_all_space',
-        b'b': b'ignore_space_change',
-        b'B': b'ignore_blank_lines',
+        'w': 'ignore_all_space',
+        'b': 'ignore_space_change',
+        'B': 'ignore_blank_lines',
         }
 
-    for diffopt in (b'', b'w', b'b', b'B', b'wB'):
+    for diffopt in ('', 'w', 'b', 'B', 'wB'):
         opts = dict((options[c], b'1') for c in diffopt)
         def d():
             ui.pushbuffer()
             commands.diff(ui, repo, **opts)
             ui.popbuffer()
+        diffopt = diffopt.encode('ascii')
         title = b'diffopts: %s' % (diffopt and (b'-' + diffopt) or b'none')
         timer(d, title)
     fm.end()
@@ -1773,7 +1776,7 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
     data = segmentforrevs(chain[0], chain[-1])[1]
     rawchunks = getrawchunks(data, chain)
     bins = r._chunks(chain)
-    text = str(bins[0])
+    text = bytes(bins[0])
     bins = bins[1:]
     text = mdiff.patches(text, bins)
 

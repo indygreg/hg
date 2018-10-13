@@ -31,8 +31,6 @@ testedwith = 'ships-with-hg-core'
 def prettyedge(before, edge, after):
     if edge == '~':
         return '\xE2\x95\xA7' # U+2567 ╧
-    if edge == 'X':
-        return '\xE2\x95\xB3' # U+2573 ╳
     if edge == '/':
         return '\xE2\x95\xB1' # U+2571 ╱
     if edge == '-':

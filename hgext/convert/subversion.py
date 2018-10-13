@@ -1138,7 +1138,7 @@ class svn_sink(converter_sink, commandline):
                 path = os.path.realpath(path)
                 if os.path.isdir(os.path.dirname(path)):
                     if not os.path.exists(os.path.join(path, 'db', 'fs-type')):
-                        ui.status(_('initializing svn repository %r\n') %
+                        ui.status(_("initializing svn repository '%s'\n") %
                                   os.path.basename(path))
                         commandline(ui, 'svnadmin').run0('create', path)
                         created = path
@@ -1149,7 +1149,7 @@ class svn_sink(converter_sink, commandline):
 
             wcpath = os.path.join(encoding.getcwd(), os.path.basename(path) +
                                 '-wc')
-            ui.status(_('initializing svn working copy %r\n')
+            ui.status(_("initializing svn working copy '%s'\n")
                       % os.path.basename(wcpath))
             self.run0('checkout', path, wcpath)
 

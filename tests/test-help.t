@@ -1799,13 +1799,13 @@ such str.lower().
 
   $ "$PYTHON" <<EOF
   > def escape(s):
-  >     return ''.join('\u%x' % ord(uc) for uc in s.decode('cp932'))
+  >     return b''.join(b'\\u%x' % ord(uc) for uc in s.decode('cp932'))
   > # translation of "record" in ja_JP.cp932
-  > upper = "\x8bL\x98^"
+  > upper = b"\x8bL\x98^"
   > # str.lower()-ed section name should be treated as different one
-  > lower = "\x8bl\x98^"
-  > with open('ambiguous.py', 'w') as fp:
-  >     fp.write("""# ambiguous section names in ja_JP.cp932
+  > lower = b"\x8bl\x98^"
+  > with open('ambiguous.py', 'wb') as fp:
+  >     fp.write(b"""# ambiguous section names in ja_JP.cp932
   > u'''summary of extension
   > 
   > %s
@@ -1832,8 +1832,9 @@ such str.lower().
   > EOF
 
   $ "$PYTHON" <<EOF | sh
-  > upper = "\x8bL\x98^"
-  > print("hg --encoding cp932 help -e ambiguous.%s" % upper)
+  > from mercurial import pycompat
+  > upper = b"\x8bL\x98^"
+  > pycompat.stdout.write(b"hg --encoding cp932 help -e ambiguous.%s\n" % upper)
   > EOF
   \x8bL\x98^ (esc)
   ----
@@ -1842,8 +1843,9 @@ such str.lower().
   
 
   $ "$PYTHON" <<EOF | sh
-  > lower = "\x8bl\x98^"
-  > print("hg --encoding cp932 help -e ambiguous.%s" % lower)
+  > from mercurial import pycompat
+  > lower = b"\x8bl\x98^"
+  > pycompat.stdout.write(b"hg --encoding cp932 help -e ambiguous.%s\n" % lower)
   > EOF
   \x8bl\x98^ (esc)
   ----

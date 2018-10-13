@@ -69,6 +69,7 @@ test-clone-pull-corruption.t
 test-clone-r.t
 test-clone-uncompressed.t
 test-clone-update-order.t
+test-clone.t
 test-clonebundles.t
 test-commit-amend.t
 test-commit-interactive.t

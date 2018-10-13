@@ -642,7 +642,7 @@ Inaccessible source
   $ mkdir a
   $ chmod 000 a
   $ hg clone a b
-  abort: Permission denied: '$TESTTMP/fail/a/.hg'
+  abort: Permission denied: *$TESTTMP/fail/a/.hg* (glob)
   [255]
 
 Inaccessible destination
@@ -650,7 +650,7 @@ Inaccessible destination
   $ hg init b
   $ cd b
   $ hg clone . ../a
-  abort: Permission denied: '../a'
+  abort: Permission denied: *../a* (glob)
   [255]
   $ cd ..
   $ chmod 700 a
@@ -665,7 +665,7 @@ Source of wrong type
 
   $ mkfifo a
   $ hg clone a b
-  abort: $ENOTDIR$: '$TESTTMP/fail/a/.hg'
+  abort: $ENOTDIR$: *$TESTTMP/fail/a/.hg* (glob)
   [255]
   $ rm a
 

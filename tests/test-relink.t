@@ -11,9 +11,12 @@
   > from __future__ import absolute_import, print_function
   > import os
   > import sys
-  > from mercurial import util
+  > from mercurial import (
+  >     pycompat,
+  >     util,
+  > )
   > path1, path2 = sys.argv[1:3]
-  > if util.samefile(path1, path2):
+  > if util.samefile(pycompat.fsencode(path1), pycompat.fsencode(path2)):
   >     print('%s == %s' % (path1, path2))
   > else:
   >     print('%s != %s' % (path1, path2))

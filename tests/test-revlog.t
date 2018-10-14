@@ -34,10 +34,11 @@ Test for CVE-2016-3630
 
   $ hg init
 
-  >>> open("a.i", "wb").write(
+  >>> import codecs
+  >>> open("a.i", "wb").write(codecs.decode(codecs.decode(
   ... b"""eJxjYGZgZIAAYQYGxhgom+k/FMx8YKx9ZUaKSOyqo4cnuKb8mbqHV5cBCVTMWb1Cwqkhe4Gsg9AD
-  ... Joa3dYtcYYYBAQ8Qr4OqZAYRICPTSr5WKd/42rV36d+8/VmrNpv7NP1jQAXrQE4BqQUARngwVA=="""
-  ... .decode("base64").decode("zlib")) and None
+  ... Joa3dYtcYYYBAQ8Qr4OqZAYRICPTSr5WKd/42rV36d+8/VmrNpv7NP1jQAXrQE4BqQUARngwVA==""",
+  ... "base64"), "zlib")) and None
 
   $ hg debugrevlogindex a.i
      rev linkrev nodeid       p1           p2
@@ -49,4 +50,4 @@ Test for CVE-2016-3630
   >>> tvfs.options = {b'revlogv1': True}
   >>> rl = revlog.revlog(tvfs, b'a.i')
   >>> rl.revision(1)
-  mpatchError('patch cannot be decoded',)
+  mpatchError(*'patch cannot be decoded'*) (glob)

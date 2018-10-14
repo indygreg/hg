@@ -524,6 +524,7 @@ test-revlog-mmapindex.t
 test-revlog-packentry.t
 test-revlog-raw.py
 test-revlog-v2.t
+test-revlog.t
 test-revset-dirstate-parents.t
 test-revset-legacy-lookup.t
 test-revset-outgoing.t

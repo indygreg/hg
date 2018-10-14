@@ -528,7 +528,10 @@ warning message about such pattern.
 
   $ hg status --config ui.formatdebug=True --rev 1 1
   status = [
-      {*'path': '1/2/3/4/5/b.txt'*}, (glob)
+      {
+          'path': '1/2/3/4/5/b.txt',
+          'status': 'R'
+      },
   ]
 
 #if windows

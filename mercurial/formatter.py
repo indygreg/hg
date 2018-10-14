@@ -324,7 +324,8 @@ class debugformatter(baseformatter):
         self._out = out
         self._out.write("%s = [\n" % self._topic)
     def _showitem(self):
-        self._out.write('    %s,\n' % stringutil.pprint(self._item))
+        self._out.write('    %s,\n'
+                        % stringutil.pprint(self._item, indent=4, level=1))
     def end(self):
         baseformatter.end(self)
         self._out.write("]\n")

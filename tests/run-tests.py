@@ -1219,7 +1219,8 @@ class PythonTest(Test):
 
     def _run(self, env):
         py3switch = self._py3warnings and b' -3' or b''
-        cmd = b'%s%s "%s"' % (PYTHON, py3switch, self.path)
+        # Quote the python(3) executable for Windows
+        cmd = b'"%s"%s "%s"' % (PYTHON, py3switch, self.path)
         vlog("# Running", cmd)
         normalizenewlines = os.name == 'nt'
         result = self._runcommand(cmd, env,

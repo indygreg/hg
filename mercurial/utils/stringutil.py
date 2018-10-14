@@ -43,11 +43,11 @@ def reescape(pat):
         return pat
     return pat.encode('latin1')
 
-def pprint(o, bprefix=False, indent=0):
+def pprint(o, bprefix=False, indent=0, level=0):
     """Pretty print an object."""
-    return b''.join(pprintgen(o, bprefix=bprefix, indent=indent))
+    return b''.join(pprintgen(o, bprefix=bprefix, indent=indent, level=level))
 
-def pprintgen(o, bprefix=False, indent=0, _level=0):
+def pprintgen(o, bprefix=False, indent=0, level=0):
     """Pretty print an object to a generator of atoms.
 
     ``bprefix`` is a flag influencing whether bytestrings are preferred with
@@ -56,6 +56,8 @@ def pprintgen(o, bprefix=False, indent=0, _level=0):
     ``indent`` controls whether collections and nested data structures
     span multiple lines via the indentation amount in spaces. By default,
     no newlines are emitted.
+
+    ``level`` specifies the initial indent level. Used if ``indent > 0``.
     """
 
     if isinstance(o, bytes):
@@ -75,26 +77,26 @@ def pprintgen(o, bprefix=False, indent=0, _level=0):
         yield '['
 
         if indent:
-            _level += 1
+            level += 1
             yield '\n'
-            yield ' ' * (_level * indent)
+            yield ' ' * (level * indent)
 
         for i, a in enumerate(o):
             for chunk in pprintgen(a, bprefix=bprefix, indent=indent,
-                                   _level=_level):
+                                   level=level):
                 yield chunk
 
             if i + 1 < len(o):
                 if indent:
                     yield ',\n'
-                    yield ' ' * (_level * indent)
+                    yield ' ' * (level * indent)
                 else:
                     yield ', '
 
         if indent:
-            _level -= 1
+            level -= 1
             yield '\n'
-            yield ' ' * (_level * indent)
+            yield ' ' * (level * indent)
 
         yield ']'
     elif isinstance(o, dict):
@@ -105,32 +107,32 @@ def pprintgen(o, bprefix=False, indent=0, _level=0):
         yield '{'
 
         if indent:
-            _level += 1
+            level += 1
             yield '\n'
-            yield ' ' * (_level * indent)
+            yield ' ' * (level * indent)
 
         for i, (k, v) in enumerate(sorted(o.items())):
             for chunk in pprintgen(k, bprefix=bprefix, indent=indent,
-                                   _level=_level):
+                                   level=level):
                 yield chunk
 
             yield ': '
 
             for chunk in pprintgen(v, bprefix=bprefix, indent=indent,
-                                   _level=_level):
+                                   level=level):
                 yield chunk
 
             if i + 1 < len(o):
                 if indent:
                     yield ',\n'
-                    yield ' ' * (_level * indent)
+                    yield ' ' * (level * indent)
                 else:
                     yield ', '
 
         if indent:
-            _level -= 1
+            level -= 1
             yield '\n'
-            yield ' ' * (_level * indent)
+            yield ' ' * (level * indent)
 
         yield '}'
     elif isinstance(o, set):
@@ -141,26 +143,26 @@ def pprintgen(o, bprefix=False, indent=0, _level=0):
         yield 'set(['
 
         if indent:
-            _level += 1
+            level += 1
             yield '\n'
-            yield ' ' * (_level * indent)
+            yield ' ' * (level * indent)
 
         for i, k in enumerate(sorted(o)):
             for chunk in pprintgen(k, bprefix=bprefix, indent=indent,
-                                   _level=_level):
+                                   level=level):
                 yield chunk
 
             if i + 1 < len(o):
                 if indent:
                     yield ',\n'
-                    yield ' ' * (_level * indent)
+                    yield ' ' * (level * indent)
                 else:
                     yield ', '
 
         if indent:
-            _level -= 1
+            level -= 1
             yield '\n'
-            yield ' ' * (_level * indent)
+            yield ' ' * (level * indent)
 
         yield '])'
     elif isinstance(o, tuple):
@@ -171,26 +173,26 @@ def pprintgen(o, bprefix=False, indent=0, _level=0):
         yield '('
 
         if indent:
-            _level += 1
+            level += 1
             yield '\n'
-            yield ' ' * (_level * indent)
+            yield ' ' * (level * indent)
 
         for i, a in enumerate(o):
             for chunk in pprintgen(a, bprefix=bprefix, indent=indent,
-                                   _level=_level):
+                                   level=level):
                 yield chunk
 
             if i + 1 < len(o):
                 if indent:
                     yield ',\n'
-                    yield ' ' * (_level * indent)
+                    yield ' ' * (level * indent)
                 else:
                     yield ', '
 
         if indent:
-            _level -= 1
+            level -= 1
             yield '\n'
-            yield ' ' * (_level * indent)
+            yield ' ' * (level * indent)
 
         yield ')'
     elif isinstance(o, types.GeneratorType):
@@ -204,9 +206,9 @@ def pprintgen(o, bprefix=False, indent=0, _level=0):
         yield 'gen['
 
         if indent:
-            _level += 1
+            level += 1
             yield '\n'
-            yield ' ' * (_level * indent)
+            yield ' ' * (level * indent)
 
         last = False
 
@@ -219,20 +221,20 @@ def pprintgen(o, bprefix=False, indent=0, _level=0):
                 last = True
 
             for chunk in pprintgen(current, bprefix=bprefix, indent=indent,
-                                   _level=_level):
+                                   level=level):
                 yield chunk
 
             if not last:
                 if indent:
                     yield ',\n'
-                    yield ' ' * (_level * indent)
+                    yield ' ' * (level * indent)
                 else:
                     yield ', '
 
         if indent:
-            _level -= 1
+            level -= 1
             yield '\n'
-            yield ' ' * (_level * indent)
+            yield ' ' * (level * indent)
 
         yield ']'
     else:

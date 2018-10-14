@@ -25,7 +25,7 @@ Create a repo with some stuff in it:
   $ echo b > e
   $ hg branch -q stable
   $ hg ci -m5
-  $ hg merge -q default --tool internal:local
+  $ hg merge -q default --tool internal:local # for conflicts in e, choose 5 and ignore 4
   $ hg branch -q default
   $ hg ci -m6
   $ hg phase --public 3
@@ -46,8 +46,40 @@ Create a repo with some stuff in it:
   |
   o  test@0.public: 0
   
+Test --base for grafting the merge of 4 from the perspective of 5, thus only getting the change to d
+
+  $ hg up -cqr 3
+  $ hg graft -r 6 --base 5
+  grafting 6:25a2b029d3ae "6" (tip)
+  merging e
+  $ hg st --change .
+  M d
+
+  $ hg -q strip . --config extensions.strip=
+
+Test --base for collapsing changesets 2 and 3, thus getting both b and c
+
+  $ hg up -cqr 0
+  $ hg graft -r 3 --base 1
+  grafting 3:4c60f11aa304 "3"
+  merging a and b to b
+  merging a and c to c
+  $ hg st --change .
+  A b
+  A c
+  R a
+
+  $ hg -q strip . --config extensions.strip=
+
+Specifying child as --base revision fails safely (perhaps slightly confusing, but consistent)
+
+  $ hg graft -r 2 --base 3
+  grafting 2:5c095ad7e90f "2"
+  note: graft of 2:5c095ad7e90f created no changes to commit
+
 Can't continue without starting:
 
+  $ hg -q up -cr tip
   $ hg rm -q e
   $ hg graft --continue
   abort: no graft in progress

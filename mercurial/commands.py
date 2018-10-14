@@ -2249,6 +2249,8 @@ def forget(ui, repo, *pats, **opts):
 @command(
     'graft',
     [('r', 'rev', [], _('revisions to graft'), _('REV')),
+     ('', 'base', '',
+      _('base revision when doing the graft merge (ADVANCED)'), _('REV')),
      ('c', 'continue', False, _('resume interrupted graft')),
      ('', 'stop', False, _('stop interrupted graft')),
      ('', 'abort', False, _('abort interrupted graft')),
@@ -2294,6 +2296,35 @@ def graft(ui, repo, *revs, **opts):
 
     .. container:: verbose
 
+      The --base option exposes more of how graft internally uses merge with a
+      custom base revision. --base can be used to specify another ancestor than
+      the first and only parent.
+
+      The command::
+
+        hg graft -r 345 --base 234
+
+      is thus pretty much the same as::
+
+        hg diff -r 234 -r 345 | hg import
+
+      but using merge to resolve conflicts and track moved files.
+
+      The result of a merge can thus be backported as a single commit by
+      specifying one of the merge parents as base, and thus effectively
+      grafting the changes from the other side.
+
+      It is also possible to collapse multiple changesets and clean up history
+      by specifying another ancestor as base, much like rebase --collapse
+      --keep.
+
+      The commit message can be tweaked after the fact using commit --amend .
+
+      For using non-ancestors as the base to backout changes, see the backout
+      command and the hidden --parent option.
+
+    .. container:: verbose
+
       Examples:
 
       - copy a single change to the stable branch and edit its description::
@@ -2317,6 +2348,15 @@ def graft(ui, repo, *revs, **opts):
 
           hg log -r "sort(all(), date)"
 
+      - backport the result of a merge as a single commit::
+
+          hg graft -r 123 --base 123^
+
+      - land a feature branch as one changeset::
+
+          hg up -cr default
+          hg graft -r featureX --base "ancestor('featureX', 'default')"
+
     See :hg:`help revisions` for more about specifying revisions.
 
     Returns 0 on successful completion.
@@ -2332,6 +2372,9 @@ def _dograft(ui, repo, *revs, **opts):
 
     revs = list(revs)
     revs.extend(opts.get('rev'))
+    basectx = None
+    if opts.get('base'):
+        basectx = scmutil.revsingle(repo, opts['base'], None)
     # a dict of data to be stored in state file
     statedata = {}
     # list of new nodes created by ongoing graft
@@ -2411,13 +2454,16 @@ def _dograft(ui, repo, *revs, **opts):
         revs = scmutil.revrange(repo, revs)
 
     skipped = set()
-    # check for merges
-    for rev in repo.revs('%ld and merge()', revs):
-        ui.warn(_('skipping ungraftable merge revision %d\n') % rev)
-        skipped.add(rev)
+    if basectx is None:
+        # check for merges
+        for rev in repo.revs('%ld and merge()', revs):
+            ui.warn(_('skipping ungraftable merge revision %d\n') % rev)
+            skipped.add(rev)
     revs = [r for r in revs if r not in skipped]
     if not revs:
         return -1
+    if basectx is not None and len(revs) != 1:
+        raise error.Abort(_('only one revision allowed with --base '))
 
     # Don't check in the --continue case, in effect retaining --force across
     # --continues. That's because without --force, any revisions we decided to
@@ -2425,7 +2471,7 @@ def _dograft(ui, repo, *revs, **opts):
     # way to the graftstate. With --force, any revisions we would have otherwise
     # skipped would not have been filtered out, and if they hadn't been applied
     # already, they'd have been in the graftstate.
-    if not (cont or opts.get('force')):
+    if not (cont or opts.get('force')) and basectx is None:
         # check for ancestors of dest branch
         crev = repo['.'].rev()
         ancestors = repo.changelog.ancestors([crev], inclusive=True)
@@ -2521,8 +2567,9 @@ def _dograft(ui, repo, *revs, **opts):
         if not cont:
             # perform the graft merge with p1(rev) as 'ancestor'
             overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
+            base = ctx.p1() if basectx is None else basectx
             with ui.configoverride(overrides, 'graft'):
-                stats = mergemod.graft(repo, ctx, ctx.p1(), ['local', 'graft'])
+                stats = mergemod.graft(repo, ctx, base, ['local', 'graft'])
             # report any conflicts
             if stats.unresolvedcount > 0:
                 # write out state for --continue

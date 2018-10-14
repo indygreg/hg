@@ -308,7 +308,7 @@ Show all commands + options
   export: bookmark, output, switch-parent, rev, text, git, binary, nodates, template
   files: rev, print0, include, exclude, template, subrepos
   forget: interactive, include, exclude, dry-run
-  graft: rev, continue, stop, abort, edit, log, no-commit, force, currentdate, currentuser, date, user, tool, dry-run
+  graft: rev, base, continue, stop, abort, edit, log, no-commit, force, currentdate, currentuser, date, user, tool, dry-run
   grep: print0, all, diff, text, follow, ignore-case, files-with-matches, line-number, rev, all-files, user, date, template, include, exclude
   heads: rev, topo, active, closed, style, template
   help: extension, command, keyword, system

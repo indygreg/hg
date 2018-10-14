@@ -1713,7 +1713,7 @@ class iwireprotocolcommandcacher(interfaceutil.Interface):
     8. The command function is invoked.
     9. ``onobject()`` is called for each object emitted by the command
        function.
-    10. After the final object is seen, ``onoutputfinished()`` is called.
+    10. After the final object is seen, ``onfinished()`` is called.
     11. ``__exit__`` is called to signal the end of use of the instance.
 
     Cache *key* derivation can be influenced by the instance.
@@ -1748,7 +1748,7 @@ class iwireprotocolcommandcacher(interfaceutil.Interface):
 
     Implementations could also choose to not emit objects - instead locally
     buffering objects or their encoded representation. They could then emit
-    a single "coalesced" object when ``onoutputfinished()`` is called. In
+    a single "coalesced" object when ``onfinished()`` is called. In
     this way, the implementation would function as a filtering layer of
     sorts.
 

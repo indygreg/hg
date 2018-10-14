@@ -2367,7 +2367,7 @@ User interface controls.
     to release, but over time the recommended config settings
     shift. Enable this config to opt in to get automatic tweaks to
     Mercurial's behavior over time. This config setting will have no
-    effect if ``HGPLAIN` is set or ``HGPLAINEXCEPT`` is set and does
+    effect if ``HGPLAIN`` is set or ``HGPLAINEXCEPT`` is set and does
     not include ``tweakdefaults``. (default: False)
 
 ``username``

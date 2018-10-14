@@ -129,7 +129,10 @@ from . import (
     templateutil,
     util,
 )
-from .utils import dateutil
+from .utils import (
+    dateutil,
+    stringutil,
+)
 
 pickle = util.pickle
 
@@ -321,7 +324,7 @@ class debugformatter(baseformatter):
         self._out = out
         self._out.write("%s = [\n" % self._topic)
     def _showitem(self):
-        self._out.write('    %s,\n' % pycompat.byterepr(self._item))
+        self._out.write('    %s,\n' % stringutil.pprint(self._item))
     def end(self):
         baseformatter.end(self)
         self._out.write("]\n")

@@ -89,6 +89,7 @@ test-config-env.py
 test-config.t
 test-conflict.t
 test-confused-revert.t
+test-context-metadata.t
 test-context.py
 test-contrib-check-code.t
 test-contrib-check-commit.t

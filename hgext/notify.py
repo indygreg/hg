@@ -149,6 +149,7 @@ import time
 
 from mercurial.i18n import _
 from mercurial import (
+    encoding,
     error,
     logcmdutil,
     mail,
@@ -361,13 +362,14 @@ class notifier(object):
 
         p = emailparser.Parser()
         try:
-            msg = p.parsestr(data)
+            msg = p.parsestr(encoding.strfromlocal(data))
         except emailerrors.MessageParseError as inst:
             raise error.Abort(inst)
 
         # store sender and subject
-        sender, subject = msg['From'], msg['Subject']
-        del msg['From'], msg['Subject']
+        sender = encoding.strtolocal(msg[r'From'])
+        subject = encoding.strtolocal(msg[r'Subject'])
+        del msg[r'From'], msg[r'Subject']
 
         if not msg.is_multipart():
             # create fresh mime message from scratch
@@ -380,7 +382,8 @@ class notifier(object):
             for k, v in headers:
                 msg[k] = v
 
-        msg['Date'] = dateutil.datestr(format="%a, %d %b %Y %H:%M:%S %1%2")
+        msg[r'Date'] = encoding.strfromlocal(
+            dateutil.datestr(format="%a, %d %b %Y %H:%M:%S %1%2"))
 
         # try to make subject line exist and be useful
         if not subject:
@@ -392,25 +395,26 @@ class notifier(object):
         maxsubject = int(self.ui.config('notify', 'maxsubject'))
         if maxsubject:
             subject = stringutil.ellipsis(subject, maxsubject)
-        msg['Subject'] = mail.headencode(self.ui, subject,
-                                         self.charsets, self.test)
+        msg[r'Subject'] = encoding.strfromlocal(
+            mail.headencode(self.ui, subject, self.charsets, self.test))
 
         # try to make message have proper sender
         if not sender:
             sender = self.ui.config('email', 'from') or self.ui.username()
         if '@' not in sender or '@localhost' in sender:
             sender = self.fixmail(sender)
-        msg['From'] = mail.addressencode(self.ui, sender,
-                                         self.charsets, self.test)
+        msg[r'From'] = encoding.strfromlocal(
+            mail.addressencode(self.ui, sender, self.charsets, self.test))
 
-        msg['X-Hg-Notification'] = 'changeset %s' % ctx
-        if not msg['Message-Id']:
-            msg['Message-Id'] = ('<hg.%s.%s.%s@%s>' %
-                                 (ctx, int(time.time()),
-                                  hash(self.repo.root), socket.getfqdn()))
-        msg['To'] = ', '.join(sorted(subs))
+        msg[r'X-Hg-Notification'] = r'changeset %s' % ctx
+        if not msg[r'Message-Id']:
+            msg[r'Message-Id'] = encoding.strfromlocal(
+                '<hg.%s.%d.%d@%s>' % (ctx, int(time.time()),
+                                      hash(self.repo.root),
+                                      encoding.strtolocal(socket.getfqdn())))
+        msg[r'To'] = encoding.strfromlocal(', '.join(sorted(subs)))
 
-        msgtext = msg.as_string()
+        msgtext = encoding.strtolocal(msg.as_string())
         if self.test:
             self.ui.write(msgtext)
             if not msgtext.endswith('\n'):
@@ -418,7 +422,7 @@ class notifier(object):
         else:
             self.ui.status(_('notify: sending %d subscribers %d changes\n') %
                            (len(subs), count))
-            mail.sendmail(self.ui, stringutil.email(msg['From']),
+            mail.sendmail(self.ui, stringutil.email(msg[r'From']),
                           subs, msgtext, mbox=self.mbox)
 
     def diff(self, ctx, ref=None):

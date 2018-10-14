@@ -1282,7 +1282,8 @@ class localrepository(object):
             raise error.FilteredRepoLookupError(_("filtered revision '%s'")
                                                 % pycompat.bytestr(changeid))
         except (IndexError, LookupError):
-            raise error.RepoLookupError(_("unknown revision '%s'") % changeid)
+            raise error.RepoLookupError(
+                _("unknown revision '%s'") % pycompat.bytestr(changeid))
         except error.WdirUnsupported:
             return context.workingctx(self)
 

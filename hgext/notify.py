@@ -153,6 +153,7 @@ from mercurial import (
     logcmdutil,
     mail,
     patch,
+    pycompat,
     registrar,
     util,
 )
@@ -160,6 +161,11 @@ from mercurial.utils import (
     dateutil,
     stringutil,
 )
+
+if pycompat.ispy3:
+    import email.errors as emailerrors
+else:
+    emailerrors = email.Errors
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -362,7 +368,7 @@ class notifier(object):
         p = emailparser.Parser()
         try:
             msg = p.parsestr(data)
-        except email.Errors.MessageParseError as inst:
+        except emailerrors.MessageParseError as inst:
             raise error.Abort(inst)
 
         # store sender and subject

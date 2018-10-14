@@ -226,7 +226,7 @@ configitem('notify', 'test',
 )
 
 # template for single changeset can include email headers.
-single_template = '''
+single_template = b'''
 Subject: changeset in {webroot}: {desc|firstline|strip}
 From: {author}
 
@@ -239,7 +239,7 @@ description:
 # template for multiple changesets should not contain email headers,
 # because only first set of headers will be used and result will look
 # strange.
-multiple_template = '''
+multiple_template = b'''
 changeset {node|short} in {root}
 details: {baseurl}{webroot}?cmd=changeset;node={node|short}
 summary: {desc|firstline}

@@ -124,6 +124,7 @@ test-default-push.t
 test-diff-antipatience.t
 test-diff-binary-file.t
 test-diff-change.t
+test-diff-color.t
 test-diff-copy-depth.t
 test-diff-hashes.t
 test-diff-ignore-whitespace.t

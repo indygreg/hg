@@ -2480,7 +2480,7 @@ def diffsinglehunkinline(hunklines):
                 endspaces = chomp[len(token):]
             # scan tabs
             for maybetab in tabsplitter.findall(token):
-                if '\t' == maybetab[0]:
+                if b'\t' == maybetab[0:1]:
                     currentlabel = 'diff.tab'
                 else:
                     if changed:

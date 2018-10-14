@@ -2337,11 +2337,11 @@ class metadataonlyctx(committablectx):
         # manifests of our commit parents
         mp1, mp2 = self.manifestctx().parents
         if p1 != nullid and p1.manifestnode() != mp1:
-            raise RuntimeError('can\'t reuse the manifest: '
-                               'its p1 doesn\'t match the new ctx p1')
+            raise RuntimeError(r"can't reuse the manifest: its p1 "
+                               r"doesn't match the new ctx p1")
         if p2 != nullid and p2.manifestnode() != mp2:
-            raise RuntimeError('can\'t reuse the manifest: '
-                               'its p2 doesn\'t match the new ctx p2')
+            raise RuntimeError(r"can't reuse the manifest: "
+                               r"its p2 doesn't match the new ctx p2")
 
         self._files = originalctx.files()
         self.substate = {}

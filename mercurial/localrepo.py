@@ -2067,13 +2067,13 @@ class localrepository(object):
         rereads the dirstate. Use dirstate.invalidate() if you want to
         explicitly read the dirstate again (i.e. restoring it to a previous
         known good state).'''
-        if hasunfilteredcache(self, 'dirstate'):
+        if hasunfilteredcache(self, r'dirstate'):
             for k in self.dirstate._filecache:
                 try:
                     delattr(self.dirstate, k)
                 except AttributeError:
                     pass
-            delattr(self.unfiltered(), 'dirstate')
+            delattr(self.unfiltered(), r'dirstate')
 
     def invalidate(self, clearfilecache=False):
         '''Invalidates both store and non-store parts other than dirstate

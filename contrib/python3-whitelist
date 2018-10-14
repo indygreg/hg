@@ -140,6 +140,7 @@ test-diffstat.t
 test-directaccess.t
 test-dirstate-backup.t
 test-dirstate-nonnormalset.t
+test-dirstate-race.t
 test-dirstate.t
 test-dispatch.py
 test-doctest.py

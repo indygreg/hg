@@ -460,6 +460,8 @@ class changesettemplater(changesetprinter):
                 self.footer = self.t.render(self._parts['footer'], props)
 
 def templatespec(tmpl, mapfile):
+    if pycompat.ispy3:
+        assert not isinstance(tmpl, str), 'tmpl must not be a str'
     if mapfile:
         return formatter.templatespec('changeset', tmpl, mapfile)
     else:

@@ -31,6 +31,8 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 	strncpy(cpypath, pypath.c_str(), pypath.size());
 	setenv("PYTHONPATH", cpypath, 1);
 	setenv("PYTHONNOUSERSITE", "1", 1);
+	/* prevent Python from looking up users in the fuzz environment */
+	setenv("PYTHONUSERBASE", cpypath, 1);
 	Py_SetPythonHome(cpypath);
 	Py_InitializeEx(0);
 	return 0;

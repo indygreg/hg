@@ -1173,7 +1173,7 @@ def _buildmatch(kindpats, globsuffix, listsubrepos, root):
                 else:
                     dir = '.'
                 return dir in dirs
-            regex = b'rootfilesin: %s' % sorted(dirs)
+            regex = b'rootfilesin: %s' % stringutil.pprint(list(sorted(dirs)))
             matchfuncs.append(mf)
         else:
             regex, mf = _buildregexmatch(kindpats, globsuffix)

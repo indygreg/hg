@@ -214,6 +214,7 @@ test-glog.t
 test-gpg.t
 test-graft.t
 test-grep.t
+test-hardlinks.t
 test-hg-parseurl.py
 test-hghave.t
 test-hgignore.t

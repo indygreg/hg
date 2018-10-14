@@ -141,7 +141,7 @@ web.baseurl
 '''
 from __future__ import absolute_import
 
-import email
+import email.errors as emailerrors
 import email.parser as emailparser
 import fnmatch
 import socket
@@ -153,7 +153,6 @@ from mercurial import (
     logcmdutil,
     mail,
     patch,
-    pycompat,
     registrar,
     util,
 )
@@ -161,11 +160,6 @@ from mercurial.utils import (
     dateutil,
     stringutil,
 )
-
-if pycompat.ispy3:
-    import email.errors as emailerrors
-else:
-    emailerrors = email.Errors
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should

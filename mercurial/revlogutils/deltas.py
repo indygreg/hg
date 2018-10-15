@@ -489,45 +489,23 @@ def isgooddeltainfo(revlog, deltainfo, revinfo):
     #   deltas we need to apply -- bounding it limits the amount of CPU
     #   we consume.
 
-    if revlog._sparserevlog:
-        # As sparse-read will be used, we can consider that the distance,
-        # instead of being the span of the whole chunk,
-        # is the span of the largest read chunk
-        base = deltainfo.base
-
-        if base != nullrev:
-            deltachain = revlog._deltachain(base)[0]
-        else:
-            deltachain = []
-
-        # search for the first non-snapshot revision
-        for idx, r in enumerate(deltachain):
-            if not revlog.issnapshot(r):
-                break
-        deltachain = deltachain[idx:]
-        chunks = slicechunk(revlog, deltachain, deltainfo)
-        all_span = [segmentspan(revlog, revs, deltainfo)
-                    for revs in chunks]
-        distance = max(all_span)
-    else:
-        distance = deltainfo.distance
-
     textlen = revinfo.textlen
     defaultmax = textlen * 4
     maxdist = revlog._maxdeltachainspan
     if not maxdist:
-        maxdist = distance # ensure the conditional pass
+        maxdist = deltainfo.distance # ensure the conditional pass
     maxdist = max(maxdist, defaultmax)
-    if revlog._sparserevlog and maxdist < revlog._srmingapsize:
-        # In multiple place, we are ignoring irrelevant data range below a
-        # certain size. Be also apply this tradeoff here and relax span
-        # constraint for small enought content.
-        maxdist = revlog._srmingapsize
 
     # Bad delta from read span:
     #
     #   If the span of data read is larger than the maximum allowed.
-    if maxdist < distance:
+    #
+    #   In the sparse-revlog case, we rely on the associated "sparse reading"
+    #   to avoid issue related to the span of data. In theory, it would be
+    #   possible to build pathological revlog where delta pattern would lead
+    #   to too many reads. However, they do not happen in practice at all. So
+    #   we skip the span check entirely.
+    if not revlog._sparserevlog and maxdist < deltainfo.distance:
         return False
 
     # Bad delta from new delta size:

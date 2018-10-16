@@ -1,6 +1,8 @@
 # A minimal client for Mercurial's command server
 
 from __future__ import absolute_import, print_function
+
+import io
 import os
 import re
 import signal
@@ -10,23 +12,19 @@ import subprocess
 import sys
 import time
 
-try:
-    import cStringIO as io
-    stringio = io.StringIO
-except ImportError:
-    import io
-    stringio = io.StringIO
-
 if sys.version_info[0] >= 3:
     stdout = sys.stdout.buffer
     stderr = sys.stderr.buffer
+    stringio = io.BytesIO
     def bprint(*args):
         # remove b'' as well for ease of test migration
         pargs = [re.sub(br'''\bb(['"])''', br'\1', b'%s' % a) for a in args]
         stdout.write(b' '.join(pargs) + b'\n')
 else:
+    import cStringIO
     stdout = sys.stdout
     stderr = sys.stderr
+    stringio = cStringIO.StringIO
     bprint = print
 
 def connectpipe(path=None):

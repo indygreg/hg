@@ -149,6 +149,8 @@ class channeledinput(object):
             raise StopIteration
         return l
 
+    __next__ = next
+
     def __getattr__(self, attr):
         if attr in (r'isatty', r'fileno', r'tell', r'seek'):
             raise AttributeError(attr)

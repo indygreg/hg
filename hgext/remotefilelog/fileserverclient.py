@@ -83,7 +83,8 @@ def peersetup(ui, peer):
                 return
             if not util.safehasattr(self, '_localrepo'):
                 return
-            if constants.REQUIREMENT not in self._localrepo.requirements:
+            if (constants.SHALLOWREPO_REQUIREMENT
+                not in self._localrepo.requirements):
                 return
 
             bundlecaps = opts.get('bundlecaps')

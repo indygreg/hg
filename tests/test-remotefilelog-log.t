@@ -28,9 +28,9 @@ Shallow clone from full
   $ cd shallow
   $ cat .hg/requires
   dotencode
+  exp-remotefilelog-repo-req-1
   fncache
   generaldelta
-  remotefilelog
   revlogv1
   store
 

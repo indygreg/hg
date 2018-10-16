@@ -209,7 +209,7 @@ configitem('remotefilelog', 'history.repacksizelimit', default='100MB')
 testedwith = 'ships-with-hg-core'
 
 repoclass = localrepo.localrepository
-repoclass._basesupported.add(shallowrepo.requirement)
+repoclass._basesupported.add(constants.SHALLOWREPO_REQUIREMENT)
 
 def uisetup(ui):
     """Wraps user facing Mercurial commands to swap them out with shallow
@@ -231,7 +231,8 @@ def uisetup(ui):
 
     # Prevent 'hg manifest --all'
     def _manifest(orig, ui, repo, *args, **opts):
-        if shallowrepo.requirement in repo.requirements and opts.get('all'):
+        if (constants.SHALLOWREPO_REQUIREMENT in repo.requirements
+            and opts.get('all')):
             raise error.Abort(_("--all is not supported in a shallow repo"))
 
         return orig(ui, repo, *args, **opts)
@@ -256,7 +257,7 @@ def cloneshallow(orig, ui, repo, *args, **opts):
     if opts.get('shallow'):
         repos = []
         def pull_shallow(orig, self, *args, **kwargs):
-            if shallowrepo.requirement not in self.requirements:
+            if constants.SHALLOWREPO_REQUIREMENT not in self.requirements:
                 repos.append(self.unfiltered())
                 # set up the client hooks so the post-clone update works
                 setupclient(self.ui, self.unfiltered())
@@ -266,7 +267,7 @@ def cloneshallow(orig, ui, repo, *args, **opts):
                 if isinstance(self, repoview.repoview):
                     self.__class__.__bases__ = (self.__class__.__bases__[0],
                                                 self.unfiltered().__class__)
-                self.requirements.add(shallowrepo.requirement)
+                self.requirements.add(constants.SHALLOWREPO_REQUIREMENT)
                 self._writerequirements()
 
                 # Since setupclient hadn't been called, exchange.pull was not
@@ -312,14 +313,14 @@ def cloneshallow(orig, ui, repo, *args, **opts):
                     return False, None
                 supported, requirements = orig(pullop, bundle2=bundle2)
                 if requirements is not None:
-                    requirements.add(shallowrepo.requirement)
+                    requirements.add(constants.SHALLOWREPO_REQUIREMENT)
                 return supported, requirements
             extensions.wrapfunction(
                 streamclone, 'canperformstreamclone', canperformstreamclone)
         else:
             def stream_in_shallow(orig, repo, remote, requirements):
                 setup_streamout(repo, remote)
-                requirements.add(shallowrepo.requirement)
+                requirements.add(constants.SHALLOWREPO_REQUIREMENT)
                 return orig(repo, remote, requirements)
             extensions.wrapfunction(
                 localrepo.localrepository, 'stream_in', stream_in_shallow)
@@ -349,7 +350,7 @@ def reposetup(ui, repo):
     ui.setconfig('hooks', 'commit.prefetch', wcpprefetch)
 
     isserverenabled = ui.configbool('remotefilelog', 'server')
-    isshallowclient = shallowrepo.requirement in repo.requirements
+    isshallowclient = constants.SHALLOWREPO_REQUIREMENT in repo.requirements
 
     if isserverenabled and isshallowclient:
         raise RuntimeError("Cannot be both a server and shallow client.")
@@ -388,7 +389,7 @@ def onetimeclientsetup(ui):
 
     def storewrapper(orig, requirements, path, vfstype):
         s = orig(requirements, path, vfstype)
-        if shallowrepo.requirement in requirements:
+        if constants.SHALLOWREPO_REQUIREMENT in requirements:
             s = shallowstore.wrapstore(s)
 
         return s
@@ -398,7 +399,7 @@ def onetimeclientsetup(ui):
 
     # prefetch files before update
     def applyupdates(orig, repo, actions, wctx, mctx, overwrite, labels=None):
-        if shallowrepo.requirement in repo.requirements:
+        if constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
             manifest = mctx.manifest()
             files = []
             for f, args, msg in actions['g']:
@@ -411,7 +412,7 @@ def onetimeclientsetup(ui):
     # Prefetch merge checkunknownfiles
     def checkunknownfiles(orig, repo, wctx, mctx, force, actions,
                           *args, **kwargs):
-        if shallowrepo.requirement in repo.requirements:
+        if constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
             files = []
             sparsematch = repo.maybesparsematch(mctx.rev())
             for f, (m, actionargs, msg) in actions.iteritems():
@@ -430,7 +431,7 @@ def onetimeclientsetup(ui):
     # Prefetch files before status attempts to look at their size and contents
     def checklookup(orig, self, files):
         repo = self._repo
-        if shallowrepo.requirement in repo.requirements:
+        if constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
             prefetchfiles = []
             for parent in self._parents:
                 for f in files:
@@ -443,7 +444,7 @@ def onetimeclientsetup(ui):
 
     # Prefetch the logic that compares added and removed files for renames
     def findrenames(orig, repo, matcher, added, removed, *args, **kwargs):
-        if shallowrepo.requirement in repo.requirements:
+        if constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
             files = []
             parentctx = repo['.']
             for f in removed:
@@ -456,7 +457,7 @@ def onetimeclientsetup(ui):
     # prefetch files before mergecopies check
     def computenonoverlap(orig, repo, c1, c2, *args, **kwargs):
         u1, u2 = orig(repo, c1, c2, *args, **kwargs)
-        if shallowrepo.requirement in repo.requirements:
+        if constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
             m1 = c1.manifest()
             m2 = c2.manifest()
             files = []
@@ -488,7 +489,7 @@ def onetimeclientsetup(ui):
     def computeforwardmissing(orig, a, b, match=None):
         missing = list(orig(a, b, match=match))
         repo = a._repo
-        if shallowrepo.requirement in repo.requirements:
+        if constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
             mb = b.manifest()
 
             files = []
@@ -515,7 +516,7 @@ def onetimeclientsetup(ui):
             # repo can be None when running in chg:
             # - at startup, reposetup was called because serve is not norepo
             # - a norepo command like "help" is called
-            if repo and shallowrepo.requirement in repo.requirements:
+            if repo and constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
                 repo.fileservice.close()
     extensions.wrapfunction(dispatch, 'runcommand', runcommand)
 
@@ -527,7 +528,7 @@ def onetimeclientsetup(ui):
 
     # prevent strip from stripping remotefilelogs
     def _collectbrokencsets(orig, repo, files, striprev):
-        if shallowrepo.requirement in repo.requirements:
+        if constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
             files = list([f for f in files if not repo.shallowmatch(f)])
         return orig(repo, files, striprev)
     extensions.wrapfunction(repair, '_collectbrokencsets', _collectbrokencsets)
@@ -578,7 +579,7 @@ def onetimeclientsetup(ui):
     def filectx(orig, self, path, fileid=None, filelog=None):
         if fileid is None:
             fileid = self.filenode(path)
-        if (shallowrepo.requirement in self._repo.requirements and
+        if (constants.SHALLOWREPO_REQUIREMENT in self._repo.requirements and
             self._repo.shallowmatch(path)):
             return remotefilectx.remotefilectx(self._repo, path,
                 fileid=fileid, changectx=self, filelog=filelog)
@@ -586,7 +587,7 @@ def onetimeclientsetup(ui):
     extensions.wrapfunction(context.changectx, 'filectx', filectx)
 
     def workingfilectx(orig, self, path, filelog=None):
-        if (shallowrepo.requirement in self._repo.requirements and
+        if (constants.SHALLOWREPO_REQUIREMENT in self._repo.requirements and
             self._repo.shallowmatch(path)):
             return remotefilectx.remoteworkingfilectx(self._repo,
                 path, workingctx=self, filelog=filelog)
@@ -596,7 +597,7 @@ def onetimeclientsetup(ui):
     # prefetch required revisions before a diff
     def trydiff(orig, repo, revs, ctx1, ctx2, modified, added, removed,
                 copy, getfilectx, *args, **kwargs):
-        if shallowrepo.requirement in repo.requirements:
+        if constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
             prefetch = []
             mf1 = ctx1.manifest()
             for fname in modified + added + removed:
@@ -654,7 +655,7 @@ def getrenamedfn(repo, endrev=None):
     return getrenamed
 
 def walkfilerevs(orig, repo, match, follow, revs, fncache):
-    if not shallowrepo.requirement in repo.requirements:
+    if not constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
         return orig(repo, match, follow, revs, fncache)
 
     # remotefilelog's can't be walked in rev order, so throw.
@@ -694,7 +695,7 @@ def filelogrevset(orig, repo, subset, x):
     a slower, more accurate result, use ``file()``.
     """
 
-    if not shallowrepo.requirement in repo.requirements:
+    if not constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
         return orig(repo, subset, x)
 
     # i18n: "filelog" is a keyword
@@ -802,7 +803,7 @@ def gcclient(ui, cachepath):
         # Protect against any repo or config changes that have happened since
         # this repo was added to the repos file. We'd rather this loop succeed
         # and too much be deleted, than the loop fail and nothing gets deleted.
-        if shallowrepo.requirement not in repo.requirements:
+        if constants.SHALLOWREPO_REQUIREMENT not in repo.requirements:
             continue
 
         if not util.safehasattr(repo, 'name'):
@@ -851,7 +852,7 @@ def gcclient(ui, cachepath):
         ui.warn(_("warning: no valid repos in repofile\n"))
 
 def log(orig, ui, repo, *pats, **opts):
-    if shallowrepo.requirement not in repo.requirements:
+    if constants.SHALLOWREPO_REQUIREMENT not in repo.requirements:
         return orig(ui, repo, *pats, **opts)
 
     follow = opts.get('follow')
@@ -912,7 +913,7 @@ def wcpprefetch(ui, repo, **kwargs):
     """Prefetches in background revisions specified by bgprefetchrevs revset.
     Does background repack if backgroundrepack flag is set in config.
     """
-    shallow = shallowrepo.requirement in repo.requirements
+    shallow = constants.SHALLOWREPO_REQUIREMENT in repo.requirements
     bgprefetchrevs = ui.config('remotefilelog', 'bgprefetchrevs')
     isready = readytofetch(repo)
 
@@ -934,7 +935,7 @@ def wcpprefetch(ui, repo, **kwargs):
 def pull(orig, ui, repo, *pats, **opts):
     result = orig(ui, repo, *pats, **opts)
 
-    if shallowrepo.requirement in repo.requirements:
+    if constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
         # prefetch if it's configured
         prefetchrevset = ui.config('remotefilelog', 'pullprefetch')
         bgrepack = repo.ui.configbool('remotefilelog', 'backgroundrepack')
@@ -974,7 +975,7 @@ def exchangepull(orig, repo, remote, *args, **kwargs):
     return orig(repo, remote, *args, **kwargs)
 
 def _fileprefetchhook(repo, revs, match):
-    if shallowrepo.requirement in repo.requirements:
+    if constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
         allfiles = []
         for rev in revs:
             if rev == nodemod.wdirrev or rev is None:
@@ -1070,7 +1071,7 @@ def prefetch(ui, repo, *pats, **opts):
 
     Return 0 on success.
     """
-    if not shallowrepo.requirement in repo.requirements:
+    if not constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
         raise error.Abort(_("repo is not shallow"))
 
     opts = resolveprefetchopts(ui, opts)

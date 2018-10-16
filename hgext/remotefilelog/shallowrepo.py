@@ -40,7 +40,6 @@ else:
     from mercurial.utils import procutil
     _hgexecutable = procutil.hgexecutable
 
-requirement = "remotefilelog"
 _prefetching = _('prefetching')
 
 # These make*stores functions are global so that other extensions can replace

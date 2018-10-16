@@ -24,7 +24,6 @@ from . import (
     fileserverclient,
     historypack,
     repack,
-    shallowrepo,
     shallowutil,
 )
 
@@ -93,7 +92,7 @@ def debugindex(orig, ui, repo, file_=None, **opts):
     if (opts.get('changelog') or
         opts.get('manifest') or
         opts.get('dir') or
-        not shallowrepo.requirement in repo.requirements or
+        not constants.SHALLOWREPO_REQUIREMENT in repo.requirements or
         not repo.shallowmatch(file_)):
         return orig(ui, repo, file_, **opts)
 
@@ -140,7 +139,7 @@ def debugindex(orig, ui, repo, file_=None, **opts):
 
 def debugindexdot(orig, ui, repo, file_):
     """dump an index DAG as a graphviz dot file"""
-    if not shallowrepo.requirement in repo.requirements:
+    if not constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
         return orig(ui, repo, file_)
 
     r = buildtemprevlog(repo, os.path.basename(file_)[:-2])

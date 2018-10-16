@@ -4,9 +4,9 @@ import struct
 
 from mercurial.i18n import _
 
-REQUIREMENT = "remotefilelog"
-
 NETWORK_CAP_LEGACY_SSH_GETFILES = 'exp-remotefilelog-ssh-getfiles-1'
+
+SHALLOWREPO_REQUIREMENT = "exp-remotefilelog-repo-req-1"
 
 BUNDLE2_CAPABLITY = "exp-remotefilelog-b2cap-1"
 

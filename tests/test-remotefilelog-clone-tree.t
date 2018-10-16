@@ -28,9 +28,9 @@
   $ cd shallow
   $ cat .hg/requires
   dotencode
+  exp-remotefilelog-repo-req-1
   fncache
   generaldelta
-  remotefilelog
   revlogv1
   store
   treemanifest
@@ -68,9 +68,9 @@
   $ cd shallow2
   $ cat .hg/requires
   dotencode
+  exp-remotefilelog-repo-req-1
   fncache
   generaldelta
-  remotefilelog
   revlogv1
   store
   treemanifest
@@ -109,9 +109,9 @@
   $ ls shallow3/.hg/store/data
   $ cat shallow3/.hg/requires
   dotencode
+  exp-remotefilelog-repo-req-1
   fncache
   generaldelta
-  remotefilelog
   revlogv1
   store
   treemanifest

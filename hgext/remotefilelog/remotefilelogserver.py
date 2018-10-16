@@ -30,7 +30,6 @@ from mercurial import (
 )
 from .  import (
     constants,
-    shallowrepo,
     shallowutil,
 )
 
@@ -133,7 +132,7 @@ def onetimesetup(ui):
     def _walkstreamfiles(orig, repo):
         if state.shallowremote:
             # if we are shallow ourselves, stream our local commits
-            if shallowrepo.requirement in repo.requirements:
+            if constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
                 striplen = len(repo.store.path) + 1
                 readdir = repo.store.rawvfs.readdir
                 visit = [os.path.join(repo.store.path, 'data')]
@@ -167,7 +166,7 @@ def onetimesetup(ui):
                     continue
                 yield x
 
-        elif shallowrepo.requirement in repo.requirements:
+        elif constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
             # don't allow cloning from a shallow repo to a full repo
             # since it would require fetching every version of every
             # file in order to create the revlogs.
@@ -194,7 +193,7 @@ def onetimesetup(ui):
     # expose remotefilelog capabilities
     def _capabilities(orig, repo, proto):
         caps = orig(repo, proto)
-        if ((shallowrepo.requirement in repo.requirements or
+        if ((constants.SHALLOWREPO_REQUIREMENT in repo.requirements or
             ui.configbool('remotefilelog', 'server'))):
             if isinstance(proto, _sshv1server):
                 # legacy getfiles method which only works over ssh
@@ -279,7 +278,7 @@ def getfile(repo, proto, file, node):
     data is a compressed blob with revlog flag and ancestors information. See
     createfileblob for its content.
     """
-    if shallowrepo.requirement in repo.requirements:
+    if constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
         return '1\0' + _('cannot fetch remote files from shallow repo')
     cachepath = repo.ui.config("remotefilelog", "servercachepath")
     if not cachepath:
@@ -292,7 +291,7 @@ def getfile(repo, proto, file, node):
 def getfiles(repo, proto):
     """A server api for requesting particular versions of particular files.
     """
-    if shallowrepo.requirement in repo.requirements:
+    if constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
         raise error.Abort(_('cannot fetch remote files from shallow repo'))
     if not isinstance(proto, _sshv1server):
         raise error.Abort(_('cannot fetch remote files over non-ssh protocol'))

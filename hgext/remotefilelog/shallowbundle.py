@@ -26,8 +26,6 @@ NoFiles = 0
 LocalFiles = 1
 AllFiles = 2
 
-requirement = "remotefilelog"
-
 def shallowgroup(cls, self, nodelist, rlog, lookup, units=None, reorder=None):
     if not isinstance(rlog, remotefilelog.remotefilelog):
         for c in super(cls, self).group(nodelist, rlog, lookup,
@@ -56,7 +54,7 @@ def shallowgroup(cls, self, nodelist, rlog, lookup, units=None, reorder=None):
 
 class shallowcg1packer(changegroup.cgpacker):
     def generate(self, commonrevs, clnodes, fastpathlinkrev, source):
-        if "remotefilelog" in self._repo.requirements:
+        if constants.SHALLOWREPO_REQUIREMENT in self._repo.requirements:
             fastpathlinkrev = False
 
         return super(shallowcg1packer, self).generate(commonrevs, clnodes,
@@ -71,7 +69,7 @@ class shallowcg1packer(changegroup.cgpacker):
             linknodes, commonrevs, source = args
         except ValueError:
             commonrevs, source, mfdicts, fastpathlinkrev, fnodes, clrevs = args
-        if requirement in self._repo.requirements:
+        if constants.SHALLOWREPO_REQUIREMENT in self._repo.requirements:
             repo = self._repo
             if isinstance(repo, bundlerepo.bundlerepository):
                 # If the bundle contains filelogs, we can't pull from it, since
@@ -93,7 +91,7 @@ class shallowcg1packer(changegroup.cgpacker):
 
     def shouldaddfilegroups(self, source):
         repo = self._repo
-        if not requirement in repo.requirements:
+        if not constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
             return AllFiles
 
         if source == "push" or source == "bundle":
@@ -141,7 +139,7 @@ class shallowcg1packer(changegroup.cgpacker):
         yield delta
 
 def makechangegroup(orig, repo, outgoing, version, source, *args, **kwargs):
-    if not requirement in repo.requirements:
+    if not constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
         return orig(repo, outgoing, version, source, *args, **kwargs)
 
     original = repo.shallowmatch
@@ -170,7 +168,7 @@ def makechangegroup(orig, repo, outgoing, version, source, *args, **kwargs):
         repo.shallowmatch = original
 
 def addchangegroupfiles(orig, repo, source, revmap, trp, expectedfiles, *args):
-    if not requirement in repo.requirements:
+    if not constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
         return orig(repo, source, revmap, trp, expectedfiles, *args)
 
     files = 0

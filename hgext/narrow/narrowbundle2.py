@@ -260,8 +260,6 @@ def setup():
     getbundleargs['depth'] = 'plain'
     getbundleargs['oldincludepats'] = 'csv'
     getbundleargs['oldexcludepats'] = 'csv'
-    getbundleargs['includepats'] = 'csv'
-    getbundleargs['excludepats'] = 'csv'
     getbundleargs['known'] = 'csv'
 
     # Extend changegroup serving to handle requests from narrow clients.

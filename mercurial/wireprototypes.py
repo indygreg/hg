@@ -162,6 +162,8 @@ GETBUNDLE_ARGUMENTS = {
     'cg': 'boolean',
     'cbattempted': 'boolean',
     'stream': 'boolean',
+    'includepats': 'csv',
+    'excludepats': 'csv',
 }
 
 class baseprotocolhandler(interfaceutil.Interface):

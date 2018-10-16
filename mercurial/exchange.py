@@ -40,6 +40,7 @@ from . import (
     streamclone,
     url as urlmod,
     util,
+    wireprototypes,
 )
 from .utils import (
     stringutil,
@@ -1632,6 +1633,13 @@ def _pullbundle2(pullop):
     # declare pull perimeters
     kwargs['common'] = pullop.common
     kwargs['heads'] = pullop.heads or pullop.rheads
+
+    # check server supports narrow and then adding includepats and excludepats
+    servernarrow = pullop.remote.capable(wireprototypes.NARROWCAP)
+    if servernarrow and pullop.includepats:
+        kwargs['includepats'] = pullop.includepats
+    if servernarrow and pullop.excludepats:
+        kwargs['excludepats'] = pullop.excludepats
 
     if streaming:
         kwargs['cg'] = False

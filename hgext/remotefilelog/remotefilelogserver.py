@@ -12,16 +12,14 @@ import stat
 import time
 
 from mercurial.i18n import _
-from mercurial.node import bin, hex, nullid, nullrev
+from mercurial.node import bin, hex, nullid
 from mercurial import (
-    ancestor,
     changegroup,
     changelog,
     context,
     error,
     extensions,
     match,
-    pycompat,
     store,
     streamclone,
     util,
@@ -30,11 +28,9 @@ from mercurial import (
     wireprotov1server,
 )
 from .  import (
-    constants,
     lz4wrapper,
     shallowrepo,
     shallowutil,
-    wirepack,
 )
 
 _sshv1server = wireprotoserver.sshv1protocolhandler
@@ -86,8 +82,6 @@ def onetimesetup(ui):
         'getfiles', '', permission='pull')(getfiles)
     wireprotov1server.wireprotocommand(
         'getfile', 'file node', permission='pull')(getfile)
-    wireprotov1server.wireprotocommand(
-        'getpackv1', '*', permission='pull')(getpack)
 
     class streamstate(object):
         match = None
@@ -421,134 +415,3 @@ def gcserver(ui, repo):
                 os.remove(filepath)
 
     ui.progress(_removing, None)
-
-def getpack(repo, proto, args):
-    """A server api for requesting a pack of file information.
-    """
-    if shallowrepo.requirement in repo.requirements:
-        raise error.Abort(_('cannot fetch remote files from shallow repo'))
-    if not isinstance(proto, _sshv1server):
-        raise error.Abort(_('cannot fetch remote files over non-ssh protocol'))
-
-    def streamer():
-        """Request format:
-
-        [<filerequest>,...]\0\0
-        filerequest = <filename len: 2 byte><filename><count: 4 byte>
-                      [<node: 20 byte>,...]
-
-        Response format:
-        [<fileresponse>,...]<10 null bytes>
-        fileresponse = <filename len: 2 byte><filename><history><deltas>
-        history = <count: 4 byte>[<history entry>,...]
-        historyentry = <node: 20 byte><p1: 20 byte><p2: 20 byte>
-                       <linknode: 20 byte><copyfrom len: 2 byte><copyfrom>
-        deltas = <count: 4 byte>[<delta entry>,...]
-        deltaentry = <node: 20 byte><deltabase: 20 byte>
-                     <delta len: 8 byte><delta>
-        """
-        fin = proto._fin
-        files = _receivepackrequest(fin)
-
-        # Sort the files by name, so we provide deterministic results
-        for filename, nodes in sorted(files.iteritems()):
-            fl = repo.file(filename)
-
-            # Compute history
-            history = []
-            for rev in ancestor.lazyancestors(fl.parentrevs,
-                                              [fl.rev(n) for n in nodes],
-                                              inclusive=True):
-                linkrev = fl.linkrev(rev)
-                node = fl.node(rev)
-                p1node, p2node = fl.parents(node)
-                copyfrom = ''
-                linknode = repo.changelog.node(linkrev)
-                if p1node == nullid:
-                    copydata = fl.renamed(node)
-                    if copydata:
-                        copyfrom, copynode = copydata
-                        p1node = copynode
-
-                history.append((node, p1node, p2node, linknode, copyfrom))
-
-            # Scan and send deltas
-            chain = _getdeltachain(fl, nodes, -1)
-
-            for chunk in wirepack.sendpackpart(filename, history, chain):
-                yield chunk
-
-        yield wirepack.closepart()
-        proto._fout.flush()
-
-    return wireprototypes.streamres(streamer())
-
-def _receivepackrequest(stream):
-    files = {}
-    while True:
-        filenamelen = shallowutil.readunpack(stream,
-                                             constants.FILENAMESTRUCT)[0]
-        if filenamelen == 0:
-            break
-
-        filename = shallowutil.readexactly(stream, filenamelen)
-
-        nodecount = shallowutil.readunpack(stream,
-                                           constants.PACKREQUESTCOUNTSTRUCT)[0]
-
-        # Read N nodes
-        nodes = shallowutil.readexactly(stream, constants.NODESIZE * nodecount)
-        nodes = set(nodes[i:i + constants.NODESIZE] for i in
-                    pycompat.xrange(0, len(nodes), constants.NODESIZE))
-
-        files[filename] = nodes
-
-    return files
-
-def _getdeltachain(fl, nodes, stophint):
-    """Produces a chain of deltas that includes each of the given nodes.
-
-    `stophint` - The changeset rev number to stop at. If it's set to >= 0, we
-    will return not only the deltas for the requested nodes, but also all
-    necessary deltas in their delta chains, as long as the deltas have link revs
-    >= the stophint. This allows us to return an approximately minimal delta
-    chain when the user performs a pull. If `stophint` is set to -1, all nodes
-    will return full texts.  """
-    chain = []
-
-    seen = set()
-    for node in nodes:
-        startrev = fl.rev(node)
-        cur = startrev
-        while True:
-            if cur in seen:
-                break
-            base = fl._revlog.deltaparent(cur)
-            linkrev = fl.linkrev(cur)
-            node = fl.node(cur)
-            p1, p2 = fl.parentrevs(cur)
-            if linkrev < stophint and cur != startrev:
-                break
-
-            # Return a full text if:
-            # - the caller requested it (via stophint == -1)
-            # - the revlog chain has ended (via base==null or base==node)
-            # - p1 is null. In some situations this can mean it's a copy, so
-            # we need to use fl.read() to remove the copymetadata.
-            if (stophint == -1 or base == nullrev or base == cur
-                or p1 == nullrev):
-                delta = fl.read(cur)
-                base = nullrev
-            else:
-                delta = fl._chunk(cur)
-
-            basenode = fl.node(base)
-            chain.append((node, basenode, delta))
-            seen.add(cur)
-
-            if base == nullrev:
-                break
-            cur = base
-
-    chain.reverse()
-    return chain

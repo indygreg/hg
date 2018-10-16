@@ -78,7 +78,8 @@ def peersetup(ui, peer):
         def _updatecallstreamopts(self, command, opts):
             if command != 'getbundle':
                 return
-            if 'remotefilelog' not in self.capabilities():
+            if (constants.NETWORK_CAP_LEGACY_SSH_GETFILES
+                not in self.capabilities()):
                 return
             if not util.safehasattr(self, '_localrepo'):
                 return
@@ -377,9 +378,8 @@ class fileserverclient(object):
                 try:
                     with self._connect() as conn:
                         remote = conn.peer
-                        # TODO: deduplicate this with the constant in
-                        #       shallowrepo
-                        if remote.capable("remotefilelog"):
+                        if remote.capable(
+                                constants.NETWORK_CAP_LEGACY_SSH_GETFILES):
                             if not isinstance(remote, _sshv1peer):
                                 raise error.Abort('remotefilelog requires ssh '
                                                   'servers')

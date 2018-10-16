@@ -29,6 +29,7 @@ from mercurial import (
     wireprotov1server,
 )
 from .  import (
+    constants,
     shallowrepo,
     shallowutil,
 )
@@ -197,7 +198,7 @@ def onetimesetup(ui):
             ui.configbool('remotefilelog', 'server'))):
             if isinstance(proto, _sshv1server):
                 # legacy getfiles method which only works over ssh
-                caps.append(shallowrepo.requirement)
+                caps.append(constants.NETWORK_CAP_LEGACY_SSH_GETFILES)
             caps.append('getflogheads')
             caps.append('getfile')
         return caps

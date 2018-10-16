@@ -114,6 +114,7 @@ from mercurial import (
     util,
 )
 from . import (
+    constants,
     debugcommands,
     fileserverclient,
     remotefilectx,
@@ -282,7 +283,7 @@ def cloneshallow(orig, ui, repo, *args, **opts):
             # patterns.
             def stream_out_shallow(orig):
                 caps = remote.capabilities()
-                if shallowrepo.requirement in caps:
+                if constants.NETWORK_CAP_LEGACY_SSH_GETFILES in caps:
                     opts = {}
                     if repo.includepattern:
                         opts['includepattern'] = '\0'.join(repo.includepattern)

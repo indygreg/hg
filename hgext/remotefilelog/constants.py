@@ -6,6 +6,8 @@ from mercurial.i18n import _
 
 REQUIREMENT = "remotefilelog"
 
+NETWORK_CAP_LEGACY_SSH_GETFILES = 'exp-remotefilelog-ssh-getfiles-1'
+
 FILENAMESTRUCT = '!H'
 FILENAMESIZE = struct.calcsize(FILENAMESTRUCT)
 

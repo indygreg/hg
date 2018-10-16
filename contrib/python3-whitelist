@@ -291,6 +291,7 @@ test-issue842.t
 test-journal-exists.t
 test-journal-share.t
 test-journal.t
+test-keyword.t
 test-known.t
 test-largefiles-cache.t
 test-largefiles-misc.t

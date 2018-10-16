@@ -1423,9 +1423,9 @@ suppress expanding keywords at subsequent commands
   ...     # hello block
   ...     readchannel(server)
   ... 
-  ...     runcommand(server, ['cat', 'm'])
-  ...     runcommand(server, ['diff', '-c', '.', 'm'])
-  ...     runcommand(server, ['cat', 'm'])
+  ...     runcommand(server, [b'cat', b'm'])
+  ...     runcommand(server, [b'diff', b'-c', b'.', b'm'])
+  ...     runcommand(server, [b'cat', b'm'])
   *** runcommand cat m
   $Id: m 800511b3a22d Thu, 01 Jan 1970 00:00:00 +0000 test $
   bar

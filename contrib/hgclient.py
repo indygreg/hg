@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import, print_function
 import os
+import re
 import signal
 import socket
 import struct
@@ -19,9 +20,14 @@ except ImportError:
 if sys.version_info[0] >= 3:
     stdout = sys.stdout.buffer
     stderr = sys.stderr.buffer
+    def bprint(*args):
+        # remove b'' as well for ease of test migration
+        pargs = [re.sub(br'''\bb(['"])''', br'\1', b'%s' % a) for a in args]
+        stdout.write(b' '.join(pargs) + b'\n')
 else:
     stdout = sys.stdout
     stderr = sys.stderr
+    bprint = print
 
 def connectpipe(path=None):
     cmdline = [b'hg', b'serve', b'--cmdserver', b'pipe']
@@ -90,7 +96,7 @@ def sep(text):
 
 def runcommand(server, args, output=stdout, error=stderr, input=None,
                outfilter=lambda x: x):
-    print(b'*** runcommand', b' '.join(args))
+    bprint(b'*** runcommand', b' '.join(args))
     stdout.flush()
     server.stdin.write(b'runcommand\n')
     writeblock(server, b'\0'.join(args))
@@ -113,10 +119,10 @@ def runcommand(server, args, output=stdout, error=stderr, input=None,
         elif ch == b'r':
             ret, = struct.unpack('>i', data)
             if ret != 0:
-                print(b' [%d]' % ret)
+                bprint(b' [%d]' % ret)
             return ret
         else:
-            print(b"unexpected channel %c: %r" % (ch, data))
+            bprint(b"unexpected channel %c: %r" % (ch, data))
             if ch.isupper():
                 return
 

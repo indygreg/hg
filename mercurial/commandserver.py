@@ -66,7 +66,7 @@ class channeledoutput(object):
         self.out.flush()
 
     def __getattr__(self, attr):
-        if attr in ('isatty', 'fileno', 'tell', 'seek'):
+        if attr in (r'isatty', r'fileno', r'tell', r'seek'):
             raise AttributeError(attr)
         return getattr(self.out, attr)
 
@@ -150,7 +150,7 @@ class channeledinput(object):
         return l
 
     def __getattr__(self, attr):
-        if attr in ('isatty', 'fileno', 'tell', 'seek'):
+        if attr in (r'isatty', r'fileno', r'tell', r'seek'):
             raise AttributeError(attr)
         return getattr(self.in_, attr)
 

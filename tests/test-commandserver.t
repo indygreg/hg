@@ -13,14 +13,14 @@ typical client does not want echo-back messages, so test without it:
   $ hg init repo
   $ cd repo
 
-  >>> from __future__ import absolute_import, print_function
+  >>> from __future__ import absolute_import
   >>> import os
   >>> import sys
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand
   >>> @check
   ... def hellomessage(server):
   ...     ch, data = readchannel(server)
-  ...     print(b'%c, %r' % (ch, data))
+  ...     bprint(b'%c, %r' % (ch, data))
   ...     # run an arbitrary command to make sure the next thing the server
   ...     # sends isn't part of the hello message
   ...     runcommand(server, [b'id'])
@@ -93,7 +93,7 @@ typical client does not want echo-back messages, so test without it:
   abort: unknown revision 'unknown'!
    [255]
 
-  >>> from hgclient import check, readchannel
+  >>> from hgclient import bprint, check, readchannel
   >>> @check
   ... def inputeof(server):
   ...     readchannel(server)
@@ -102,7 +102,7 @@ typical client does not want echo-back messages, so test without it:
   ...     server.stdin.close()
   ... 
   ...     # server exits with 1 if the pipe closed while reading the command
-  ...     print(b'server exit code =', server.wait())
+  ...     bprint(b'server exit code =', b'%d' % server.wait())
   server exit code = 1
 
   >>> from hgclient import check, readchannel, runcommand, stringio
@@ -235,11 +235,11 @@ check that local configs for the cached repo aren't inherited when -R is used:
 #endif
 
   $ cat <<EOF > hook.py
-  > from __future__ import print_function
   > import sys
+  > from hgclient import bprint
   > def hook(**args):
-  >     print(b'hook talking')
-  >     print(b'now try to read something: %r' % sys.stdin.read())
+  >     bprint(b'hook talking')
+  >     bprint(b'now try to read something: %r' % sys.stdin.read())
   > EOF
 
   >>> from hgclient import check, readchannel, runcommand, stringio
@@ -281,7 +281,7 @@ Clean hook cached version
   *** runcommand status
 
   >>> import os
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand
   >>> @check
   ... def bookmarks(server):
   ...     readchannel(server)
@@ -302,7 +302,7 @@ Clean hook cached version
   ...     f.close()
   ...     runcommand(server, [b'commit', b'-Amm'])
   ...     runcommand(server, [b'bookmarks'])
-  ...     print(b'')
+  ...     bprint(b'')
   *** runcommand bookmarks
   no bookmarks set
   *** runcommand bookmarks
@@ -346,7 +346,7 @@ Clean hook cached version
   3: public
 
   $ echo a >> a
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand
   >>> @check
   ... def rollback(server):
   ...     readchannel(server)
@@ -354,7 +354,7 @@ Clean hook cached version
   ...     runcommand(server, [b'commit', b'-Am.'])
   ...     runcommand(server, [b'rollback'])
   ...     runcommand(server, [b'phase', b'-r', b'.'])
-  ...     print(b'')
+  ...     bprint(b'')
   *** runcommand phase -r . -p
   no phases changed
   *** runcommand commit -Am.
@@ -385,7 +385,7 @@ Clean hook cached version
 
   $ touch .hgignore
   >>> import os
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand
   >>> @check
   ... def hgignore(server):
   ...     readchannel(server)
@@ -397,7 +397,7 @@ Clean hook cached version
   ...     f.write(b'ignored-file')
   ...     f.close()
   ...     runcommand(server, [b'status', b'-i', b'-u'])
-  ...     print(b'')
+  ...     bprint(b'')
   *** runcommand commit -Am.
   adding .hgignore
   *** runcommand status -i -u
@@ -408,7 +408,7 @@ cache of non-public revisions should be invalidated on repository change
 (issue4855):
 
   >>> import os
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand
   >>> @check
   ... def phasesetscacheaftercommit(server):
   ...     readchannel(server)
@@ -423,7 +423,7 @@ cache of non-public revisions should be invalidated on repository change
   ...         os.system('hg commit -Aqm%d' % i)
   ...     # new commits should be listed as draft revisions
   ...     runcommand(server, [b'log', b'-qr', b'draft()'])
-  ...     print(b'')
+  ...     bprint(b'')
   *** runcommand log -qr draft()
   4:7966c8e3734d
   *** runcommand log -qr draft()
@@ -433,7 +433,7 @@ cache of non-public revisions should be invalidated on repository change
   
 
   >>> import os
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand
   >>> @check
   ... def phasesetscacheafterstrip(server):
   ...     readchannel(server)
@@ -443,7 +443,7 @@ cache of non-public revisions should be invalidated on repository change
   ...     os.system('hg --config extensions.strip= strip -q 5')
   ...     # shouldn't abort by "unknown revision '6'"
   ...     runcommand(server, [b'log', b'-qr', b'draft()'])
-  ...     print(b'')
+  ...     bprint(b'')
   *** runcommand log -qr draft()
   4:7966c8e3734d
   5:41f6602d1c4f
@@ -668,19 +668,18 @@ changelog and manifest would have invalid node:
 
 run commandserver in commandserver, which is silly but should work:
 
-  >>> from __future__ import print_function
-  >>> from hgclient import check, readchannel, runcommand, stringio
+  >>> from hgclient import bprint, check, readchannel, runcommand, stringio
   >>> @check
   ... def nested(server):
-  ...     print(b'%c, %r' % readchannel(server))
+  ...     bprint(b'%c, %r' % readchannel(server))
   ...     class nestedserver(object):
   ...         stdin = stringio(b'getencoding\n')
   ...         stdout = stringio()
   ...     runcommand(server, [b'serve', b'--cmdserver', b'pipe'],
   ...                output=nestedserver.stdout, input=nestedserver.stdin)
   ...     nestedserver.stdout.seek(0)
-  ...     print(b'%c, %r' % readchannel(nestedserver))  # hello
-  ...     print(b'%c, %r' % readchannel(nestedserver))  # getencoding
+  ...     bprint(b'%c, %r' % readchannel(nestedserver))  # hello
+  ...     bprint(b'%c, %r' % readchannel(nestedserver))  # getencoding
   o, 'capabilities: getencoding runcommand\nencoding: *\npid: *' (glob)
   *** runcommand serve --cmdserver pipe
   o, 'capabilities: getencoding runcommand\nencoding: *\npid: *' (glob)
@@ -691,12 +690,11 @@ start without repository:
 
   $ cd ..
 
-  >>> from __future__ import print_function
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand
   >>> @check
   ... def hellomessage(server):
   ...     ch, data = readchannel(server)
-  ...     print(b'%c, %r' % (ch, data))
+  ...     bprint(b'%c, %r' % (ch, data))
   ...     # run an arbitrary command to make sure the next thing the server
   ...     # sends isn't part of the hello message
   ...     runcommand(server, [b'id'])
@@ -732,12 +730,11 @@ unix domain socket:
 
 #if unix-socket unix-permissions
 
-  >>> from __future__ import print_function
-  >>> from hgclient import check, readchannel, runcommand, stringio, unixserver
+  >>> from hgclient import bprint, check, readchannel, runcommand, stringio, unixserver
   >>> server = unixserver(b'.hg/server.sock', b'.hg/server.log')
   >>> def hellomessage(conn):
   ...     ch, data = readchannel(conn)
-  ...     print(b'%c, %r' % (ch, data))
+  ...     bprint(b'%c, %r' % (ch, data))
   ...     runcommand(conn, [b'id'])
   >>> check(hellomessage, server.connect)
   o, 'capabilities: getencoding runcommand\nencoding: *\npid: *' (glob)
@@ -784,15 +781,14 @@ unix domain socket:
   > [cmdserver]
   > log = inexistent/path.log
   > EOF
-  >>> from __future__ import print_function
-  >>> from hgclient import check, readchannel, unixserver
+  >>> from hgclient import bprint, check, readchannel, unixserver
   >>> server = unixserver(b'.hg/server.sock', b'.hg/server.log')
   >>> def earlycrash(conn):
   ...     while True:
   ...         try:
   ...             ch, data = readchannel(conn)
   ...             if not data.startswith(b'  '):
-  ...                 print(b'%c, %r' % (ch, data))
+  ...                 bprint(b'%c, %r' % (ch, data))
   ...         except EOFError:
   ...             break
   >>> check(earlycrash, server.connect)

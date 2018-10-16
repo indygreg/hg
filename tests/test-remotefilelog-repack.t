@@ -293,38 +293,32 @@ Incremental repack
   > [remotefilelog]
   > data.generations=60
   >   150
-  > fetchpacks=True
   > EOF
 
 Single pack - repack does nothing
   $ hg prefetch -r 0
-  1 files fetched over 1 fetches - (0 misses, 100.00% hit ratio) over * (glob)
+  1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over * (glob)
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep datapack
-  -r--r--r--      59 5b7dec902026f0cddb0ef8acb62f27b5698494d4.datapack
+  [1]
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep histpack
-  -r--r--r--      90 c3399b56e035f73c3295276ed098235a08a0ed8c.histpack
+  [1]
   $ hg repack --incremental
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep datapack
-  -r--r--r--      59 5b7dec902026f0cddb0ef8acb62f27b5698494d4.datapack
+  -r--r--r--      67 b5a62f3496ccbd2479497cdbc7345f3304735f33.datapack
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep histpack
   -r--r--r--      90 c3399b56e035f73c3295276ed098235a08a0ed8c.histpack
 
 3 gen1 packs, 1 gen0 pack - packs 3 gen1 into 1
   $ hg prefetch -r 1
-  1 files fetched over 1 fetches - (0 misses, 100.00% hit ratio) over * (glob)
+  1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over * (glob)
   $ hg prefetch -r 2
-  1 files fetched over 1 fetches - (0 misses, 100.00% hit ratio) over * (glob)
-  $ hg prefetch -r 3
-  1 files fetched over 1 fetches - (0 misses, 100.00% hit ratio) over * (glob)
+  1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over * (glob)
+  $ hg prefetch -r 38
+  abort: unknown revision '38'!
+  [255]
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep datapack
-  -r--r--r--      59 5b7dec902026f0cddb0ef8acb62f27b5698494d4.datapack
-  -r--r--r--      65 6c499d21350d79f92fd556b4b7a902569d88e3c9.datapack
-  -r--r--r--      61 817d294043bd21a3de01f807721971abe45219ce.datapack
-  -r--r--r--      63 ff45add45ab3f59c4f75efc6a087d86c821219d6.datapack
+  -r--r--r--      67 b5a62f3496ccbd2479497cdbc7345f3304735f33.datapack
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep histpack
-  -r--r--r--     254 077e7ce5dfe862dc40cc8f3c9742d96a056865f2.histpack
-  -r--r--r--     336 094b530486dad4427a0faf6bcbc031571b99ca24.histpack
-  -r--r--r--     172 276d308429d0303762befa376788300f0310f90e.histpack
   -r--r--r--      90 c3399b56e035f73c3295276ed098235a08a0ed8c.histpack
 
 For the data packs, setting the limit for the repackmaxpacksize to be 64 such
@@ -335,14 +329,10 @@ incremental repacking. As for the history packs, setting repackmaxpacksize to be
   $ hg repack --incremental --config remotefilelog.data.repackmaxpacksize=64 \
   > --config remotefilelog.history.repackmaxpacksize=0
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep datapack
-  -r--r--r--      59 5b7dec902026f0cddb0ef8acb62f27b5698494d4.datapack
-  -r--r--r--      65 6c499d21350d79f92fd556b4b7a902569d88e3c9.datapack
-  -r--r--r--      61 817d294043bd21a3de01f807721971abe45219ce.datapack
-  -r--r--r--      63 ff45add45ab3f59c4f75efc6a087d86c821219d6.datapack
+  -r--r--r--     147 935861cae0be6ce41a0d47a529e4d097e9e68a69.datapack
+  -r--r--r--      67 b5a62f3496ccbd2479497cdbc7345f3304735f33.datapack
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep histpack
   -r--r--r--     254 077e7ce5dfe862dc40cc8f3c9742d96a056865f2.histpack
-  -r--r--r--     336 094b530486dad4427a0faf6bcbc031571b99ca24.histpack
-  -r--r--r--     172 276d308429d0303762befa376788300f0310f90e.histpack
   -r--r--r--      90 c3399b56e035f73c3295276ed098235a08a0ed8c.histpack
 
 Setting limit for the repackmaxpacksize to be the size of the biggest pack file
@@ -350,18 +340,20 @@ which ensures that it is effectively ignored in the incremental repacking.
   $ hg repack --incremental --config remotefilelog.data.repackmaxpacksize=65 \
   > --config remotefilelog.history.repackmaxpacksize=336
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep datapack
-  -r--r--r--      59 5b7dec902026f0cddb0ef8acb62f27b5698494d4.datapack
-  -r--r--r--     225 8fe685c56f6f7edf550bfcec74eeecc5f3c2ba15.datapack
+  -r--r--r--     147 935861cae0be6ce41a0d47a529e4d097e9e68a69.datapack
+  -r--r--r--      67 b5a62f3496ccbd2479497cdbc7345f3304735f33.datapack
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep histpack
-  -r--r--r--     336 094b530486dad4427a0faf6bcbc031571b99ca24.histpack
+  -r--r--r--     254 077e7ce5dfe862dc40cc8f3c9742d96a056865f2.histpack
+  -r--r--r--      90 c3399b56e035f73c3295276ed098235a08a0ed8c.histpack
 
 1 gen3 pack, 1 gen0 pack - does nothing
   $ hg repack --incremental
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep datapack
-  -r--r--r--      59 5b7dec902026f0cddb0ef8acb62f27b5698494d4.datapack
-  -r--r--r--     225 8fe685c56f6f7edf550bfcec74eeecc5f3c2ba15.datapack
+  -r--r--r--     147 935861cae0be6ce41a0d47a529e4d097e9e68a69.datapack
+  -r--r--r--      67 b5a62f3496ccbd2479497cdbc7345f3304735f33.datapack
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep histpack
-  -r--r--r--     336 094b530486dad4427a0faf6bcbc031571b99ca24.histpack
+  -r--r--r--     254 077e7ce5dfe862dc40cc8f3c9742d96a056865f2.histpack
+  -r--r--r--      90 c3399b56e035f73c3295276ed098235a08a0ed8c.histpack
 
 Pull should run background repack
   $ cat >> .hg/hgrc <<EOF
@@ -370,23 +362,13 @@ Pull should run background repack
   > EOF
   $ clearcache
   $ hg prefetch -r 0
-  1 files fetched over 1 fetches - (0 misses, 100.00% hit ratio) over * (glob)
+  1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over * (glob)
   $ hg prefetch -r 1
-  1 files fetched over 1 fetches - (0 misses, 100.00% hit ratio) over * (glob)
+  1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over * (glob)
   $ hg prefetch -r 2
-  1 files fetched over 1 fetches - (0 misses, 100.00% hit ratio) over * (glob)
+  1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over * (glob)
   $ hg prefetch -r 3
-  1 files fetched over 1 fetches - (0 misses, 100.00% hit ratio) over * (glob)
-  $ ls_l $TESTTMP/hgcache/master/packs/ | grep datapack
-  -r--r--r--      59 5b7dec902026f0cddb0ef8acb62f27b5698494d4.datapack
-  -r--r--r--      65 6c499d21350d79f92fd556b4b7a902569d88e3c9.datapack
-  -r--r--r--      61 817d294043bd21a3de01f807721971abe45219ce.datapack
-  -r--r--r--      63 ff45add45ab3f59c4f75efc6a087d86c821219d6.datapack
-  $ ls_l $TESTTMP/hgcache/master/packs/ | grep histpack
-  -r--r--r--     254 077e7ce5dfe862dc40cc8f3c9742d96a056865f2.histpack
-  -r--r--r--     336 094b530486dad4427a0faf6bcbc031571b99ca24.histpack
-  -r--r--r--     172 276d308429d0303762befa376788300f0310f90e.histpack
-  -r--r--r--      90 c3399b56e035f73c3295276ed098235a08a0ed8c.histpack
+  1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over * (glob)
 
   $ hg pull
   pulling from ssh://user@dummy/master
@@ -396,26 +378,24 @@ Pull should run background repack
   $ sleep 0.5
   $ hg debugwaitonrepack >/dev/null 2>&1
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep datapack
-  -r--r--r--      59 5b7dec902026f0cddb0ef8acb62f27b5698494d4.datapack
-  -r--r--r--     225 8fe685c56f6f7edf550bfcec74eeecc5f3c2ba15.datapack
+  -r--r--r--     301 09b8bf49256b3fc2175977ba97d6402e91a9a604.datapack
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep histpack
   -r--r--r--     336 094b530486dad4427a0faf6bcbc031571b99ca24.histpack
 
 Test environment variable resolution
   $ CACHEPATH=$TESTTMP/envcache hg prefetch --config 'remotefilelog.cachepath=$CACHEPATH'
-  1 files fetched over 1 fetches - (0 misses, 100.00% hit ratio) over * (glob)
+  1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over * (glob)
   $ find $TESTTMP/envcache | sort
   $TESTTMP/envcache
   $TESTTMP/envcache/master
-  $TESTTMP/envcache/master/packs
-  $TESTTMP/envcache/master/packs/54afbfda203716c1aa2636029ccc0df18165129e.dataidx
-  $TESTTMP/envcache/master/packs/54afbfda203716c1aa2636029ccc0df18165129e.datapack
-  $TESTTMP/envcache/master/packs/dcebd8e8d4d97ee88e40dd8f92d8678c10e1a3ad.histidx
-  $TESTTMP/envcache/master/packs/dcebd8e8d4d97ee88e40dd8f92d8678c10e1a3ad.histpack
+  $TESTTMP/envcache/master/95
+  $TESTTMP/envcache/master/95/cb0bfd2977c761298d9624e4b4d4c72a39974a
+  $TESTTMP/envcache/master/95/cb0bfd2977c761298d9624e4b4d4c72a39974a/577959738234a1eb241ed3ed4b22a575833f56e0
+  $TESTTMP/envcache/repos
 
 Test local remotefilelog blob is correct when based on a pack
   $ hg prefetch -r .
-  1 files fetched over 1 fetches - (0 misses, 100.00% hit ratio) over * (glob)
+  1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over * (glob)
   $ echo >> y
   $ hg commit -m y2
   $ hg debugremotefilelog .hg/store/data/95cb0bfd2977c761298d9624e4b4d4c72a39974a/b70860edba4f8242a1d52f2a94679dd23cb76808
@@ -434,7 +414,7 @@ Test local remotefilelog blob is correct when based on a pack
 Test limiting the max delta chain length
   $ hg repack --config packs.maxchainlen=1
   $ hg debugdatapack $TESTTMP/hgcache/master/packs/*.dataidx
-  $TESTTMP/hgcache/master/packs/a2731c9a16403457b67337a620931797fce8c821:
+  $TESTTMP/hgcache/master/packs/a8378d888fe4325250720e51311a65d2509be742:
   x:
   Node          Delta Base    Delta Length  Blob Size
   1bb2e6237e03  000000000000  8             8
@@ -445,20 +425,20 @@ Test limiting the max delta chain length
   Total:                      36            20        (80.0% bigger)
   y:
   Node          Delta Base    Delta Length  Blob Size
-  577959738234  000000000000  8             8
+  577959738234  000000000000  70            8
   
-  Total:                      8             8         (0.0% bigger)
+  Total:                      70            8         (775.0% bigger)
 
 Test huge pack cleanup using different values of packs.maxpacksize:
   $ hg repack --incremental --debug
   $ hg repack --incremental --debug --config packs.maxpacksize=512
-  removing oversize packfile $TESTTMP/hgcache/master/packs/a2731c9a16403457b67337a620931797fce8c821.datapack (365 bytes)
-  removing oversize packfile $TESTTMP/hgcache/master/packs/a2731c9a16403457b67337a620931797fce8c821.dataidx (1.21 KB)
+  removing oversize packfile $TESTTMP/hgcache/master/packs/a8378d888fe4325250720e51311a65d2509be742.datapack (426 bytes)
+  removing oversize packfile $TESTTMP/hgcache/master/packs/a8378d888fe4325250720e51311a65d2509be742.dataidx (1.21 KB)
 
 Do a repack where the new pack reuses a delta from the old pack
   $ clearcache
   $ hg prefetch -r '2::3'
-  2 files fetched over 1 fetches - (0 misses, 100.00% hit ratio) over * (glob)
+  2 files fetched over 1 fetches - (2 misses, 0.00% hit ratio) over * (glob)
   $ hg repack
   $ hg debugdatapack $CACHEDIR/master/packs/*.datapack
   $TESTTMP/hgcache/master/packs/abf210f6c3aa4dd0ecc7033633ad73591be16c95:
@@ -469,7 +449,7 @@ Do a repack where the new pack reuses a delta from the old pack
   
   Total:                      20            14        (42.9% bigger)
   $ hg prefetch -r '0::1'
-  2 files fetched over 1 fetches - (0 misses, 100.00% hit ratio) over * (glob)
+  2 files fetched over 1 fetches - (2 misses, 0.00% hit ratio) over * (glob)
   $ hg repack
   $ hg debugdatapack $CACHEDIR/master/packs/*.datapack
   $TESTTMP/hgcache/master/packs/09b8bf49256b3fc2175977ba97d6402e91a9a604:

@@ -118,9 +118,6 @@ def makeunionstores(repo):
 
     fileservicedatawrite = cachecontent
     fileservicehistorywrite = cachemetadata
-    if repo.ui.configbool('remotefilelog', 'fetchpacks'):
-        fileservicedatawrite = packcontentstore
-        fileservicehistorywrite = packmetadatastore
     repo.fileservice.setstore(repo.contentstore, repo.metadatastore,
                               fileservicedatawrite, fileservicehistorywrite)
     shallowutil.reportpackmetrics(repo.ui, 'filestore',

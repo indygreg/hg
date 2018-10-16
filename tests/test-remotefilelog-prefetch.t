@@ -201,66 +201,36 @@
   $ clearcache
   $ hg addremove -s 50 > /dev/null
   3 files fetched over 1 fetches - (3 misses, 0.00% hit ratio) over * (glob)
+  $ hg revert --all
+  forgetting x2
+  forgetting y2
+  forgetting z2
+  undeleting x
+  undeleting y
+  undeleting z
 
-  $ cd ..
-
-# Prefetch packs
-  $ hgcloneshallow ssh://user@dummy/master packprefetch
-  streaming all changes
-  2 files to transfer, 528 bytes of data
-  transferred 528 bytes in * seconds (*/sec) (glob)
-  searching for changes
-  no changes found
-  updating to branch default
-  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cd packprefetch
-  $ cat >> .hg/hgrc <<EOF
-  > [remotefilelog]
-  > fetchpacks=True
-  > backgroundrepack=True
-  > EOF
-  $ clearcache
-  $ hg prefetch -r .
-  3 files fetched over 1 fetches - (0 misses, 100.00% hit ratio) over * (glob)
-  $ find $TESTTMP/hgcache -type f | sort
-  $TESTTMP/hgcache/master/packs/47d8f1b90a73af4ff8af19fcd10bdc027b6a881a.histidx
-  $TESTTMP/hgcache/master/packs/47d8f1b90a73af4ff8af19fcd10bdc027b6a881a.histpack
-  $TESTTMP/hgcache/master/packs/8c654541e4f20141a894bbfe428e36fc92202e39.dataidx
-  $TESTTMP/hgcache/master/packs/8c654541e4f20141a894bbfe428e36fc92202e39.datapack
-  $ hg cat -r . x
-  x2
-  $ hg cat -r . y
-  y
-  $ hg cat -r . z
-  z
-
-# Prefetch packs that include renames
-  $ cd ../master
-  $ hg mv z z2
-  $ hg commit -m 'move z -> z2'
-  $ cd ../packprefetch
-  $ hg pull -q
-  (running background incremental repack)
-  $ hg prefetch -r tip
-  1 files fetched over 1 fetches - (0 misses, 100.00% hit ratio) over * (glob)
-  $ hg up tip -q
-  $ hg log -f z2 -T '{desc}\n'
-  move z -> z2
-  x
 
 # Revert across double renames. Note: the scary "abort", error is because
 # https://bz.mercurial-scm.org/5419 .
 
+  $ cd ../master
+  $ hg mv z z2
+  $ hg commit -m 'move z -> z2'
+  $ cd ../shallow2
+  $ hg pull -q
   $ clearcache
   $ hg mv y y2
+  y2: not overwriting - file exists
+  ('hg rename --after' to record the rename)
+  [1]
   $ hg mv x x2
+  x2: not overwriting - file exists
+  ('hg rename --after' to record the rename)
+  [1]
   $ hg mv z2 z3
+  z2: not copying - file is not managed
+  abort: no files to copy
+  [255]
   $ hg revert -a -r 1 || true
-  forgetting x2
-  forgetting y2
-  forgetting z3
-  adding z
-  undeleting x
-  undeleting y
-  3 files fetched over 1 fetches - (0 misses, 100.00% hit ratio) over * (glob)
+  3 files fetched over 1 fetches - (3 misses, 0.00% hit ratio) over * (glob)
   abort: z2@109c3a557a73: not found in manifest! (?)

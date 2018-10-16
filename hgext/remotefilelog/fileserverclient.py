@@ -10,7 +10,6 @@ from __future__ import absolute_import
 import hashlib
 import io
 import os
-import struct
 import threading
 import time
 
@@ -30,8 +29,6 @@ from . import (
     contentstore,
     lz4wrapper,
     metadatastore,
-    shallowutil,
-    wirepack,
 )
 
 _sshv1peer = sshpeer.sshv1peer
@@ -316,10 +313,6 @@ class fileserverclient(object):
         cache = self.remotecache
         writedata = self.writedata
 
-        if self.ui.configbool('remotefilelog', 'fetchpacks'):
-            self.requestpack(fileids)
-            return
-
         repo = self.repo
         count = len(fileids)
         request = "get\n%d\n" % count
@@ -452,61 +445,6 @@ class fileserverclient(object):
 
         self.writedata.addremotefilelognode(filename, bin(node),
                                              lz4wrapper.lz4decompress(data))
-
-    def requestpack(self, fileids):
-        """Requests the given file revisions from the server in a pack format.
-
-        See `remotefilelogserver.getpack` for the file format.
-        """
-        try:
-            with self._connect() as conn:
-                total = len(fileids)
-                rcvd = 0
-
-                remote = conn.peer
-                remote._callstream("getpackv1")
-
-                self._sendpackrequest(remote, fileids)
-
-                packpath = shallowutil.getcachepackpath(
-                    self.repo, constants.FILEPACK_CATEGORY)
-                pipei = remote._pipei
-                receiveddata, receivedhistory = wirepack.receivepack(
-                    self.repo.ui, pipei, packpath)
-                rcvd = len(receiveddata)
-
-            self.ui.log("remotefilefetchlog",
-                        "Success(pack)\n" if (rcvd==total) else "Fail(pack)\n",
-                        fetched_files = rcvd,
-                        total_to_fetch = total)
-        except Exception:
-            self.ui.log("remotefilefetchlog",
-                        "Fail(pack)\n",
-                        fetched_files = rcvd,
-                        total_to_fetch = total)
-            raise
-
-    def _sendpackrequest(self, remote, fileids):
-        """Formats and writes the given fileids to the remote as part of a
-        getpackv1 call.
-        """
-        # Sort the requests by name, so we receive requests in batches by name
-        grouped = {}
-        for filename, node in fileids:
-            grouped.setdefault(filename, set()).add(node)
-
-        # Issue request
-        pipeo = remote._pipeo
-        for filename, nodes in grouped.iteritems():
-            filenamelen = struct.pack(constants.FILENAMESTRUCT, len(filename))
-            countlen = struct.pack(constants.PACKREQUESTCOUNTSTRUCT, len(nodes))
-            rawnodes = ''.join(bin(n) for n in nodes)
-
-            pipeo.write('%s%s%s%s' % (filenamelen, filename, countlen,
-                                      rawnodes))
-            pipeo.flush()
-        pipeo.write(struct.pack(constants.FILENAMESTRUCT, 0))
-        pipeo.flush()
 
     def connect(self):
         if self.cacheprocess:

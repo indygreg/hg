@@ -58,7 +58,6 @@ Configs:
     ``remotefilelog.debug`` turn on remotefilelog-specific debug output
     ``remotefilelog.excludepattern`` pattern of files to exclude from pulls
     ``remotefilelog.includepattern``pattern of files to include in pulls
-    ``remotefilelog.fetchpacks`` if set, fetch pre-packed files from the server
     ``remotefilelog.fetchwarning``: message to print when too many
       single-file fetches occur
     ``remotefilelog.getfilesstep`` number of files to request in a single RPC
@@ -153,7 +152,6 @@ configitem('remotefilelog', 'cacheprocess', default=None)
 configitem('remotefilelog', 'cacheprocess.includepath', default=None)
 configitem("remotefilelog", "cachelimit", default="1000 GB")
 
-configitem('remotefilelog', 'fetchpacks', default=False)
 configitem('remotefilelog', 'fallbackpath', default=configitems.dynamicdefault,
            alias=[('remotefilelog', 'fallbackrepo')])
 

@@ -1146,6 +1146,14 @@ class serverreactor(object):
                         for frame in emitter.send(o.data):
                             yield frame
 
+                    elif isinstance(
+                        o, wireprototypes.indefinitebytestringresponse):
+                        for chunk in cborutil.streamencodebytestringfromiter(
+                            o.chunks):
+
+                            for frame in emitter.send(chunk):
+                                yield frame
+
                     # A regular object is CBOR encoded.
                     else:
                         for chunk in cborutil.streamencode(o):

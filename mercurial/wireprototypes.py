@@ -389,3 +389,12 @@ class alternatelocationresponse(object):
     fullhashseed = attr.ib(default=None)
     serverdercerts = attr.ib(default=None)
     servercadercerts = attr.ib(default=None)
+
+@attr.s
+class indefinitebytestringresponse(object):
+    """Represents an object to be encoded to an indefinite length bytestring.
+
+    Instances are initialized from an iterable of chunks, with each chunk being
+    a bytes instance.
+    """
+    chunks = attr.ib()

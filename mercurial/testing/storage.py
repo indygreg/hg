@@ -1073,14 +1073,7 @@ class ifilemutationtests(basetestcase):
         fulltext0 = b'foo'
         delta0 = mdiff.trivialdiffheader(len(fulltext0)) + fulltext0
 
-        deltas = [
-            (b'\x01' * 20, nullid, nullid, nullid, nullid, delta0, 0),
-        ]
-
         with self._maketransactionfn() as tr:
-            with self.assertRaises(error.StorageError):
-                f.addgroup(deltas, linkmapper, tr, addrevisioncb=cb)
-
             node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
 
         f = self._makefilefn()

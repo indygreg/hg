@@ -952,13 +952,12 @@ class ifiledatatests(basetestcase):
         with self.assertRaises(error.StorageError):
             f.read(node1)
 
-        diff = mdiff.textdiff(fulltext1, fulltext2)
         node2 = storageutil.hashrevisionsha1(fulltext2, node1, nullid)
-        deltas = [(node2, node1, nullid, b'\x01' * 20, node1, diff, 0)]
 
-        # This /might/ fail on some backends.
         with self._maketransactionfn() as tr:
-            f.addgroup(deltas, lambda x: 0, tr)
+            delta = mdiff.textdiff(fulltext1, fulltext2)
+            self._addrawrevisionfn(f, tr, node2, node1, nullid,
+                                   2, delta=(1, delta))
 
         self.assertEqual(len(f), 3)
 

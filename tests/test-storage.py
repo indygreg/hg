@@ -49,7 +49,8 @@ def addrawrevision(self, fl, tr, node, p1, p2, linkrev, rawtext=None,
     if rawtext is not None:
         fl._revlog.addrawrevision(rawtext, tr, linkrev, p1, p2, node, flags)
     elif delta is not None:
-        raise error.Abort('support for storing raw deltas not yet supported')
+        fl._revlog.addrawrevision(rawtext, tr, linkrev, p1, p2, node, flags,
+                                  cachedelta=delta)
     else:
         raise error.Abort('must supply rawtext or delta arguments')
 

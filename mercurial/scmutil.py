@@ -477,8 +477,9 @@ def mayberevnum(repo, prefix):
         i = int(prefix)
         # if we are a pure int, then starting with zero will not be
         # confused as a rev; or, obviously, if the int is larger
-        # than the value of the tip rev
-        if prefix[0:1] == b'0' or i >= len(repo):
+        # than the value of the tip rev. We still need to disambiguate if
+        # prefix == '0', since that *is* a valid revnum.
+        if (prefix != b'0' and prefix[0:1] == b'0') or i >= len(repo):
             return False
         return True
     except ValueError:

@@ -25,7 +25,7 @@
   > revisions.disambiguatewithin=not 4
   > EOF
   $ hg l
-  5:0
+  5:00
   4:7ba5d
   3:7b
   2:72

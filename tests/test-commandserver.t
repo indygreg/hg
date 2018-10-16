@@ -793,13 +793,13 @@ unix domain socket:
   ...             break
   >>> check(earlycrash, server.connect)
   e, 'Traceback (most recent call last):\n'
-  e, "IOError: *" (glob)
+  e, "(IOError|FileNotFoundError): .*" (re)
   >>> server.shutdown()
 
   $ cat .hg/server.log | grep -v '^  '
   listening at .hg/server.sock
   Traceback (most recent call last):
-  IOError: * (glob)
+  (IOError|FileNotFoundError): .* (re)
   killed!
 #endif
 #if no-unix-socket

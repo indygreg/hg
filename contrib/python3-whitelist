@@ -78,6 +78,7 @@ test-clone-update-order.t
 test-clone.t
 test-clonebundles.t
 test-close-head.t
+test-commandserver.t
 test-commit-amend.t
 test-commit-interactive.t
 test-commit-multiple.t

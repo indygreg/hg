@@ -16,6 +16,13 @@ except ImportError:
     import io
     stringio = io.StringIO
 
+if sys.version_info[0] >= 3:
+    stdout = sys.stdout.buffer
+    stderr = sys.stderr.buffer
+else:
+    stdout = sys.stdout
+    stderr = sys.stderr
+
 def connectpipe(path=None):
     cmdline = [b'hg', b'serve', b'--cmdserver', b'pipe']
     if path:
@@ -81,10 +88,10 @@ def readchannel(server):
 def sep(text):
     return text.replace(b'\\', b'/')
 
-def runcommand(server, args, output=sys.stdout, error=sys.stderr, input=None,
+def runcommand(server, args, output=stdout, error=stderr, input=None,
                outfilter=lambda x: x):
     print(b'*** runcommand', b' '.join(args))
-    sys.stdout.flush()
+    stdout.flush()
     server.stdin.write(b'runcommand\n')
     writeblock(server, b'\0'.join(args))
 
@@ -114,7 +121,7 @@ def runcommand(server, args, output=sys.stdout, error=sys.stderr, input=None,
                 return
 
 def check(func, connect=connectpipe):
-    sys.stdout.flush()
+    stdout.flush()
     server = connect()
     try:
         return func(server)

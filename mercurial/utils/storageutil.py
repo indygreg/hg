@@ -182,7 +182,8 @@ def fileidlookup(store, fileid, identifier):
         try:
             return store.node(fileid)
         except IndexError:
-            raise error.LookupError(fileid, identifier, _('no match found'))
+            raise error.LookupError('%d' % fileid, identifier,
+                                    _('no match found'))
 
     if len(fileid) == 20:
         try:

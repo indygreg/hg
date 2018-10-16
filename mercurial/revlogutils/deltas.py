@@ -59,7 +59,7 @@ class _testrevlog(object):
     def __len__(self):
         return len(self._data)
 
-def slicechunk(revlog, revs, deltainfo=None, targetsize=None):
+def slicechunk(revlog, revs, targetsize=None):
     """slice revs to reduce the amount of unrelated data to be read from disk.
 
     ``revs`` is sliced into groups that should be read in one time.
@@ -116,12 +116,7 @@ def slicechunk(revlog, revs, deltainfo=None, targetsize=None):
         targetsize = max(targetsize, revlog._srmingapsize)
     # targetsize should not be specified when evaluating delta candidates:
     # * targetsize is used to ensure we stay within specification when reading,
-    # * deltainfo is used to pick are good delta chain when writing.
-    if not (deltainfo is None or targetsize is None):
-        msg = 'cannot use `targetsize` with a `deltainfo`'
-        raise error.ProgrammingError(msg)
     for chunk in _slicechunktodensity(revlog, revs,
-                                      deltainfo,
                                       revlog._srdensitythreshold,
                                       revlog._srmingapsize):
         for subchunk in _slicechunktosize(revlog, chunk, targetsize):
@@ -204,15 +199,12 @@ def _slicechunktosize(revlog, revs, targetsize=None):
             endrevidx = idx
     yield _trimchunk(revlog, revs, startrevidx)
 
-def _slicechunktodensity(revlog, revs, deltainfo=None, targetdensity=0.5,
+def _slicechunktodensity(revlog, revs, targetdensity=0.5,
                          mingapsize=0):
     """slice revs to reduce the amount of unrelated data to be read from disk.
 
     ``revs`` is sliced into groups that should be read in one time.
     Assume that revs are sorted.
-
-    ``deltainfo`` is a _deltainfo instance of a revision that we would append
-    to the top of the revlog.
 
     The initial chunk is sliced until the overall density (payload/chunks-span
     ratio) is above `targetdensity`. No gap smaller than `mingapsize` is
@@ -264,15 +256,8 @@ def _slicechunktodensity(revlog, revs, deltainfo=None, targetdensity=0.5,
         yield revs
         return
 
-    nextrev = len(revlog)
-    nextoffset = revlog.end(nextrev - 1)
-
-    if deltainfo is None:
-        deltachainspan = segmentspan(revlog, revs)
-        chainpayload = sum(length(r) for r in revs)
-    else:
-        deltachainspan = deltainfo.distance
-        chainpayload = deltainfo.compresseddeltalen
+    deltachainspan = segmentspan(revlog, revs)
+    chainpayload = sum(length(r) for r in revs)
 
     if deltachainspan < mingapsize:
         yield revs
@@ -289,21 +274,13 @@ def _slicechunktodensity(revlog, revs, deltainfo=None, targetdensity=0.5,
         yield revs
         return
 
-    if deltainfo is not None and deltainfo.deltalen:
-        revs = list(revs)
-        revs.append(nextrev)
-
     # Store the gaps in a heap to have them sorted by decreasing size
     gapsheap = []
     heapq.heapify(gapsheap)
     prevend = None
     for i, rev in enumerate(revs):
-        if rev < nextrev:
-            revstart = start(rev)
-            revlen = length(rev)
-        else:
-            revstart = nextoffset
-            revlen = deltainfo.deltalen
+        revstart = start(rev)
+        revlen = length(rev)
 
         # Skip empty revisions to form larger holes
         if revlen == 0:

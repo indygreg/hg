@@ -17,6 +17,7 @@ from mercurial import (
     pycompat,
 )
 from . import (
+    constants,
     remotefilelog,
     shallowutil,
 )
@@ -100,7 +101,7 @@ class shallowcg1packer(changegroup.cgpacker):
 
         caps = self._bundlecaps or []
         if source == "serve" or source == "pull":
-            if 'remotefilelog' in caps:
+            if constants.BUNDLE2_CAPABLITY in caps:
                 return LocalFiles
             else:
                 # Serving to a full repo requires us to serve everything

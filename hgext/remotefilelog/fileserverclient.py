@@ -99,7 +99,7 @@ def peersetup(ui, peer):
             # getbundle args before it goes across the wire. Once we get rid
             # of bundle1, we can use bundle2's _pullbundle2extraprepare to
             # do this more cleanly.
-            bundlecaps.append('remotefilelog')
+            bundlecaps.append(constants.BUNDLE2_CAPABLITY)
             if self._localrepo.includepattern:
                 patterns = '\0'.join(self._localrepo.includepattern)
                 includecap = "includepattern=" + patterns

@@ -45,7 +45,7 @@ def setupserver(ui, repo):
     def generatefiles(orig, self, changedfiles, linknodes, commonrevs, source,
                       *args, **kwargs):
         caps = self._bundlecaps or []
-        if shallowrepo.requirement in caps:
+        if constants.BUNDLE2_CAPABLITY in caps:
             # only send files that don't match the specified patterns
             includepattern = None
             excludepattern = None
@@ -184,7 +184,7 @@ def onetimesetup(ui):
     def getbundleshallow(repo, proto, others):
         bundlecaps = others.get('bundlecaps', '')
         bundlecaps = set(bundlecaps.split(','))
-        bundlecaps.add('remotefilelog')
+        bundlecaps.add(constants.BUNDLE2_CAPABLITY)
         others['bundlecaps'] = ','.join(bundlecaps)
 
         return wireprotov1server.commands["getbundle"][0](repo, proto, others)

@@ -8,6 +8,8 @@ REQUIREMENT = "remotefilelog"
 
 NETWORK_CAP_LEGACY_SSH_GETFILES = 'exp-remotefilelog-ssh-getfiles-1'
 
+BUNDLE2_CAPABLITY = "exp-remotefilelog-b2cap-1"
+
 FILENAMESTRUCT = '!H'
 FILENAMESIZE = struct.calcsize(FILENAMESTRUCT)
 

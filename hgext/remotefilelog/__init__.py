@@ -962,7 +962,7 @@ def exchangepull(orig, repo, remote, *args, **kwargs):
                        **kwargs):
         if not bundlecaps:
             bundlecaps = set()
-        bundlecaps.add('remotefilelog')
+        bundlecaps.add(constants.BUNDLE2_CAPABLITY)
         return orig(source, heads=heads, common=common, bundlecaps=bundlecaps,
                     **kwargs)
 

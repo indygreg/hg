@@ -344,8 +344,8 @@ def _initworkerprocess():
     random.seed()
 
 def _serverequest(ui, repo, conn, createcmdserver):
-    fin = conn.makefile('rb')
-    fout = conn.makefile('wb')
+    fin = conn.makefile(r'rb')
+    fout = conn.makefile(r'wb')
     sv = None
     try:
         sv = createcmdserver(repo, conn, fin, fout)

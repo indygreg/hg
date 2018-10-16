@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 import hashlib
 import re
+import struct
 
 from ..i18n import _
 from ..node import (
@@ -449,3 +450,31 @@ def emitrevisions(store, nodes, nodesorder, resultcls, deltaparentfn=None,
             delta=delta)
 
         prevrev = rev
+
+def deltaiscensored(delta, baserev, baselenfn):
+    """Determine if a delta represents censored revision data.
+
+    ``baserev`` is the base revision this delta is encoded against.
+    ``baselenfn`` is a callable receiving a revision number that resolves the
+    length of the revision fulltext.
+
+    Returns a bool indicating if the result of the delta represents a censored
+    revision.
+    """
+    # Fragile heuristic: unless new file meta keys are added alphabetically
+    # preceding "censored", all censored revisions are prefixed by
+    # "\1\ncensored:". A delta producing such a censored revision must be a
+    # full-replacement delta, so we inspect the first and only patch in the
+    # delta for this prefix.
+    hlen = struct.calcsize(">lll")
+    if len(delta) <= hlen:
+        return False
+
+    oldlen = baselenfn(baserev)
+    newlen = len(delta) - hlen
+    if delta[:hlen] != mdiff.replacediffheader(oldlen, newlen):
+        return False
+
+    add = "\1\ncensored:"
+    addlen = len(add)
+    return newlen >= addlen and delta[hlen:hlen + addlen] == add

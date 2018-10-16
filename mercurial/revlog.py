@@ -2109,23 +2109,7 @@ class revlog(object):
         if not self._censorable:
             return False
 
-        # Fragile heuristic: unless new file meta keys are added alphabetically
-        # preceding "censored", all censored revisions are prefixed by
-        # "\1\ncensored:". A delta producing such a censored revision must be a
-        # full-replacement delta, so we inspect the first and only patch in the
-        # delta for this prefix.
-        hlen = struct.calcsize(">lll")
-        if len(delta) <= hlen:
-            return False
-
-        oldlen = self.rawsize(baserev)
-        newlen = len(delta) - hlen
-        if delta[:hlen] != mdiff.replacediffheader(oldlen, newlen):
-            return False
-
-        add = "\1\ncensored:"
-        addlen = len(add)
-        return newlen >= addlen and delta[hlen:hlen + addlen] == add
+        return storageutil.deltaiscensored(delta, baserev, self.rawsize)
 
     def getstrippoint(self, minlink):
         """find the minimum rev that must be stripped to strip the linkrev

@@ -481,8 +481,10 @@ if pycompat.iswindows:
         # we can't use close_fds *and* redirect stdin. I'm not sure that we
         # need to because the detached process has no console connection.
         subprocess.Popen(
-            script, shell=shell, env=env, close_fds=True,
-            creationflags=_creationflags, stdout=stdout, stderr=stderr)
+            tonativestr(script),
+            shell=shell, env=tonativeenv(env), close_fds=True,
+            creationflags=_creationflags, stdout=stdout,
+            stderr=stderr)
 else:
     def runbgcommand(cmd, env, shell=False, stdout=None, stderr=None):
         '''Spawn a command without waiting for it to finish.'''

@@ -378,7 +378,7 @@ def _trimchunk(revlog, revs, startidx, endidx=None):
 
     return revs[startidx:endidx]
 
-def segmentspan(revlog, revs, deltainfo=None):
+def segmentspan(revlog, revs):
     """Get the byte span of a segment of revisions
 
     revs is a sorted array of revision numbers
@@ -404,13 +404,7 @@ def segmentspan(revlog, revs, deltainfo=None):
     """
     if not revs:
         return 0
-    if deltainfo is not None and len(revlog) <= revs[-1]:
-        if len(revs) == 1:
-            return deltainfo.deltalen
-        offset = revlog.end(len(revlog) - 1)
-        end = deltainfo.deltalen + offset
-    else:
-        end = revlog.end(revs[-1])
+    end = revlog.end(revs[-1])
     return end - revlog.start(revs[0])
 
 def _textfromdelta(fh, revlog, baserev, delta, p1, p2, flags, expectednode):

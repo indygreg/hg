@@ -970,13 +970,13 @@ def perfindex(ui, repo, **opts):
 def perfstartup(ui, repo, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
-    cmd = fsencode(sys.argv[0])
     def d():
         if os.name != r'nt':
-            os.system(b"HGRCPATH= %s version -q > /dev/null" % cmd)
+            os.system(b"HGRCPATH= %s version -q > /dev/null" %
+                      fsencode(sys.argv[0]))
         else:
             os.environ[r'HGRCPATH'] = r' '
-            os.system(r"%s version -q > NUL" % cmd)
+            os.system(r"%s version -q > NUL" % sys.argv[0])
     timer(d)
     fm.end()
 

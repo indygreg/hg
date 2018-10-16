@@ -153,15 +153,14 @@ check strict parsing of early options:
 
 check that "histedit --commands=-" can read rules from the input channel:
 
-  >>> import cStringIO
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import check, readchannel, runcommand, stringio
   >>> @check
   ... def serverinput(server):
   ...     readchannel(server)
   ...     rules = b'pick eff892de26ec\n'
   ...     runcommand(server, [b'histedit', b'0', b'--commands=-',
   ...                         b'--config', b'extensions.histedit='],
-  ...                input=cStringIO.StringIO(rules))
+  ...                input=stringio(rules))
   *** runcommand histedit 0 --commands=- --config extensions.histedit=
 
 check that --cwd doesn't persist between requests:

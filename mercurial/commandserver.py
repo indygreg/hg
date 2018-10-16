@@ -369,7 +369,7 @@ def _serverequest(ui, repo, conn, createcmdserver):
             cerr = sv.cerr
         else:
             cerr = channeledoutput(fout, 'e')
-        traceback.print_exc(file=cerr)
+        cerr.write(encoding.strtolocal(traceback.format_exc()))
         raise
     finally:
         fin.close()

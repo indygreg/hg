@@ -786,8 +786,9 @@ unix domain socket:
   ...     while True:
   ...         try:
   ...             ch, data = readchannel(conn)
-  ...             if not data.startswith(b'  '):
-  ...                 bprint(b'%c, %r' % (ch, data))
+  ...             for l in data.splitlines(True):
+  ...                 if not l.startswith(b'  '):
+  ...                     bprint(b'%c, %r' % (ch, l))
   ...         except EOFError:
   ...             break
   >>> check(earlycrash, server.connect)

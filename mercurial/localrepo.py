@@ -2047,9 +2047,9 @@ class localrepository(object):
 
     def invalidatecaches(self):
 
-        if '_tagscache' in vars(self):
+        if r'_tagscache' in vars(self):
             # can't use delattr on proxy
-            del self.__dict__['_tagscache']
+            del self.__dict__[r'_tagscache']
 
         self.unfiltered()._branchcaches.clear()
         self.invalidatevolatilesets()

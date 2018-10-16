@@ -606,6 +606,51 @@ new
 TODO consider using binary to represent nodes is certain pushkey namespaces.
 TODO better define response type and meaning.
 
+rawstorefiledata
+----------------
+
+Allows retrieving raw files used to store repository data.
+
+The command accepts the following arguments:
+
+files
+   (array of bytestring) Describes the files that should be retrieved.
+
+   The meaning of values in this array is dependent on the storage backend used
+   by the server.
+
+The response bytestream starts with a CBOR map describing the data that follows.
+This map has the following bytestring keys:
+
+filecount
+   (unsigned integer) Total number of files whose data is being transferred.
+
+totalsize
+   (unsigned integer) Total size in bytes of files data that will be
+   transferred. This is file on-disk size and not wire size.
+
+Following the map header are N file segments. Each file segment consists of a
+CBOR map followed by an indefinite length bytestring. Each map has the following
+bytestring keys:
+
+location
+   (bytestring) Denotes the location in the repository where the file should be
+   written. Values map to vfs instances to use for the writing.
+
+path
+   (bytestring) Path of file being transferred. Path is the raw store
+   path and can be any sequence of bytes that can be tracked in a Mercurial
+   manifest.
+
+size
+   (unsigned integer) Size of file data. This will be the final written
+   file size. The total size of the data that follows the CBOR map
+   will be greater due to encoding overhead of CBOR.
+
+TODO this command is woefully incomplete. If we are to move forward with a
+stream clone analog, it needs a lot more metadata around how to describe what
+files are available to retrieve, other semantics.
+
 Revision Specifiers
 ===================
 

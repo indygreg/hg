@@ -403,6 +403,22 @@ A non-cacheable command does not instantiate cacher
           b'permissions': [
             b'push'
           ]
+        },
+        b'rawstorefiledata': {
+          b'args': {
+            b'files': {
+              b'required': True,
+              b'type': b'list'
+            },
+            b'pathfilter': {
+              b'default': None,
+              b'required': False,
+              b'type': b'list'
+            }
+          },
+          b'permissions': [
+            b'pull'
+          ]
         }
       },
       b'framingmediatypes': [

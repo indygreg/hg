@@ -22,6 +22,8 @@ from . import (
     match as matchmod,
     narrowspec,
     pycompat,
+    streamclone,
+    util,
     wireprotoframing,
     wireprototypes,
 )
@@ -514,6 +516,11 @@ def _capabilitiesv2(repo, proto):
 
             if meta['validvalues']:
                 args[arg][b'validvalues'] = meta['validvalues']
+
+        # TODO this type of check should be defined in a per-command callback.
+        if (command == b'rawstorefiledata'
+            and not streamclone.allowservergeneration(repo)):
+            continue
 
         caps['commands'][command] = {
             'args': args,
@@ -1369,3 +1376,73 @@ def pushkeyv2(repo, proto, namespace, key, old, new):
                        encoding.tolocal(key),
                        encoding.tolocal(old),
                        encoding.tolocal(new))
+
+
+@wireprotocommand(
+    'rawstorefiledata',
+    args={
+        'files': {
+            'type': 'list',
+            'example': [b'changelog', b'manifestlog'],
+        },
+        'pathfilter': {
+            'type': 'list',
+            'default': lambda: None,
+            'example': {b'include': [b'path:tests']},
+        },
+    },
+    permission='pull')
+def rawstorefiledata(repo, proto, files, pathfilter):
+    if not streamclone.allowservergeneration(repo):
+        raise error.WireprotoCommandError(b'stream clone is disabled')
+
+    # TODO support dynamically advertising what store files "sets" are
+    # available. For now, we support changelog, manifestlog, and files.
+    files = set(files)
+    allowedfiles = {b'changelog', b'manifestlog'}
+
+    unsupported = files - allowedfiles
+    if unsupported:
+        raise error.WireprotoCommandError(b'unknown file type: %s',
+                                          (b', '.join(sorted(unsupported)),))
+
+    with repo.lock():
+        topfiles = list(repo.store.topfiles())
+
+    sendfiles = []
+    totalsize = 0
+
+    # TODO this is a bunch of storage layer interface abstractions because
+    # it assumes revlogs.
+    for name, encodedname, size in topfiles:
+        if b'changelog' in files and name.startswith(b'00changelog'):
+            pass
+        elif b'manifestlog' in files and name.startswith(b'00manifest'):
+            pass
+        else:
+            continue
+
+        sendfiles.append((b'store', name, size))
+        totalsize += size
+
+    yield {
+        b'filecount': len(sendfiles),
+        b'totalsize': totalsize,
+    }
+
+    for location, name, size in sendfiles:
+        yield {
+            b'location': location,
+            b'path': name,
+            b'size': size,
+        }
+
+        # We have to use a closure for this to ensure the context manager is
+        # closed only after sending the final chunk.
+        def getfiledata():
+            with repo.svfs(name, 'rb', auditpath=False) as fh:
+                for chunk in util.filechunkiter(fh, limit=size):
+                    yield chunk
+
+        yield wireprototypes.indefinitebytestringresponse(
+            getfiledata())

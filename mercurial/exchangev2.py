@@ -29,6 +29,18 @@ def pull(pullop):
     """Pull using wire protocol version 2."""
     repo = pullop.repo
     remote = pullop.remote
+
+    usingrawchangelogandmanifest = _checkuserawstorefiledata(pullop)
+
+    # If this is a clone and it was requested to perform a "stream clone",
+    # we obtain the raw files data from the remote then fall back to an
+    # incremental pull. This is somewhat hacky and is not nearly robust enough
+    # for long-term usage.
+    if usingrawchangelogandmanifest:
+        with repo.transaction('clone'):
+            _fetchrawstorefiles(repo, remote)
+            repo.invalidate(clearfilecache=True)
+
     tr = pullop.trmanager.transaction()
 
     # We don't use the repo's narrow matcher here because the patterns passed
@@ -79,11 +91,122 @@ def pull(pullop):
 
     manres = _fetchmanifests(repo, tr, remote, csetres['manifestnodes'])
 
+    # If obtaining the raw store files, we need to scan the full repo to
+    # derive all the changesets, manifests, and linkrevs.
+    if usingrawchangelogandmanifest:
+        csetsforfiles = []
+        mnodesforfiles = []
+        manifestlinkrevs = {}
+
+        for rev in repo:
+            ctx = repo[rev]
+            mnode = ctx.manifestnode()
+
+            csetsforfiles.append(ctx.node())
+            mnodesforfiles.append(mnode)
+            manifestlinkrevs[mnode] = rev
+
+    else:
+        csetsforfiles = csetres['added']
+        mnodesforfiles = manres['added']
+        manifestlinkrevs = manres['linkrevs']
+
     # Find all file nodes referenced by added manifests and fetch those
     # revisions.
-    fnodes = _derivefilesfrommanifests(repo, narrowmatcher, manres['added'])
-    _fetchfilesfromcsets(repo, tr, remote, pathfilter, fnodes, csetres['added'],
-                         manres['linkrevs'])
+    fnodes = _derivefilesfrommanifests(repo, narrowmatcher, mnodesforfiles)
+    _fetchfilesfromcsets(repo, tr, remote, pathfilter, fnodes, csetsforfiles,
+                         manifestlinkrevs)
+
+def _checkuserawstorefiledata(pullop):
+    """Check whether we should use rawstorefiledata command to retrieve data."""
+
+    repo = pullop.repo
+    remote = pullop.remote
+
+    # Command to obtain raw store data isn't available.
+    if b'rawstorefiledata' not in remote.apidescriptor[b'commands']:
+        return False
+
+    # Only honor if user requested stream clone operation.
+    if not pullop.streamclonerequested:
+        return False
+
+    # Only works on empty repos.
+    if len(repo):
+        return False
+
+    # TODO This is super hacky. There needs to be a storage API for this. We
+    # also need to check for compatibility with the remote.
+    if b'revlogv1' not in repo.requirements:
+        return False
+
+    return True
+
+def _fetchrawstorefiles(repo, remote):
+    with remote.commandexecutor() as e:
+        objs = e.callcommand(b'rawstorefiledata', {
+            b'files': [b'changelog', b'manifestlog'],
+        }).result()
+
+        # First object is a summary of files data that follows.
+        overall = next(objs)
+
+        progress = repo.ui.makeprogress(_('clone'), total=overall[b'totalsize'],
+                                        unit=_('bytes'))
+        with progress:
+            progress.update(0)
+
+            # Next are pairs of file metadata, data.
+            while True:
+                try:
+                    filemeta = next(objs)
+                except StopIteration:
+                    break
+
+                for k in (b'location', b'path', b'size'):
+                    if k not in filemeta:
+                        raise error.Abort(_(b'remote file data missing key: %s')
+                                          % k)
+
+                if filemeta[b'location'] == b'store':
+                    vfs = repo.svfs
+                else:
+                    raise error.Abort(_(b'invalid location for raw file data: '
+                                        b'%s') % filemeta[b'location'])
+
+                bytesremaining = filemeta[b'size']
+
+                with vfs.open(filemeta[b'path'], b'wb') as fh:
+                    while True:
+                        try:
+                            chunk = next(objs)
+                        except StopIteration:
+                            break
+
+                        bytesremaining -= len(chunk)
+
+                        if bytesremaining < 0:
+                            raise error.Abort(_(
+                                b'received invalid number of bytes for file '
+                                b'data; expected %d, got extra') %
+                                              filemeta[b'size'])
+
+                        progress.increment(step=len(chunk))
+                        fh.write(chunk)
+
+                        try:
+                            if chunk.islast:
+                                break
+                        except AttributeError:
+                            raise error.Abort(_(
+                                b'did not receive indefinite length bytestring '
+                                b'for file data'))
+
+                if bytesremaining:
+                    raise error.Abort(_(b'received invalid number of bytes for'
+                                        b'file data; expected %d got %d') %
+                                      (filemeta[b'size'],
+                                       filemeta[b'size'] - bytesremaining))
 
 def _pullchangesetdiscovery(repo, remote, heads, abortwhenunrelated=True):
     """Determine which changesets need to be pulled."""

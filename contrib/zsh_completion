@@ -553,11 +553,11 @@ _hg_cmd_branches() {
 _hg_cmd_bundle() {
   _arguments -s -S : $_hg_global_opts $_hg_remote_opts \
   '(--force -f)'{-f,--force}'[run even when the destination is unrelated]' \
-  '(2)*--base[a base changeset assumed to be available at the destination]:revision:_hg_labels' \
+  '(2)*--base=[a base changeset assumed to be available at the destination]:revision:_hg_labels' \
   '*'{-b+,--branch=}'[a specific branch you would like to bundle]:branch:_hg_branches' \
   '*'{-r+,--rev=}'[a changeset intended to be added to the destination]:revision:_hg_labels' \
   '(--all -a)'{-a,--all}'[bundle all changesets in the repository]' \
-  '--type[bundle compression type to use (default: bzip2)]:bundle type' \
+  '(--type -t)'{-t+,--type=}'[bundle compression type to use (default: bzip2)]:bundle type' \
   ':output file:_files' \
   ':destination repository:_files -/'
 }

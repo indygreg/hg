@@ -850,6 +850,10 @@ Check we deny its usage on older repository
   ** ProgrammingError: this repository does not support the internal phase
       raise error.ProgrammingError(msg)
   mercurial.error.ProgrammingError: this repository does not support the internal phase
+  $ hg --config "phases.new-commit=archived" commit -m "my test archived commit" 2>&1 | grep ProgrammingError
+  ** ProgrammingError: this repository does not support the archived phase
+      raise error.ProgrammingError(msg)
+  mercurial.error.ProgrammingError: this repository does not support the archived phase
 
   $ cd ..
 
@@ -878,7 +882,8 @@ Commit an internal changesets
   test-debug-phase: new rev 1:  x -> 96
   test-hook-close-phase: c01c42dffc7f81223397e99652a0703f83e1c5ea:   -> internal
 
-Usual visibility rules apply when working directory parents
+The changeset is a working parent descendant.
+Per the usual visibility rules, it is made visible.
 
   $ hg log -G -l 3
   @  changeset:   1:c01c42dffc7f
@@ -886,6 +891,48 @@ Usual visibility rules apply when working directory parents
   |  user:        test
   |  date:        Thu Jan 01 00:00:00 1970 +0000
   |  summary:     my test internal commit
+  |
+  o  changeset:   0:4a2df7238c3b
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     A
+  
+
+Commit is hidden as expected
+
+  $ hg up 0
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg log -G
+  @  changeset:   0:4a2df7238c3b
+     tag:         tip
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     A
+  
+
+Test for archived phase
+-----------------------
+
+Commit an archived changesets
+
+  $ echo B > B
+  $ hg add B
+  $ hg status
+  A B
+  $ hg --config "phases.new-commit=archived" commit -m "my test archived commit"
+  test-debug-phase: new rev 2:  x -> 32
+  test-hook-close-phase: 8df5997c3361518f733d1ae67cd3adb9b0eaf125:   -> archived
+
+The changeset is a working parent descendant.
+Per the usual visibility rules, it is made visible.
+
+  $ hg log -G -l 3
+  @  changeset:   2:8df5997c3361
+  |  tag:         tip
+  |  parent:      0:4a2df7238c3b
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     my test archived commit
   |
   o  changeset:   0:4a2df7238c3b
      user:        test

@@ -30,16 +30,29 @@
 
 narrow clone the inside file
 
-  $ hg clone --narrow ssh://user@dummy/master narrow --include inside
+  $ hg clone --narrow ssh://user@dummy/master narrow
   requesting all changes
   adding changesets
   adding manifests
   adding file changes
-  added 3 changesets with 1 changes to 1 files
+  added 3 changesets with 0 changes to 0 files
   new changesets *:* (glob)
   updating to branch default
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd narrow
+  $ hg tracked
+  $ hg files
+  [1]
+
+widen from an empty clone
+
+  $ hg tracked --addinclude inside
+  comparing with ssh://user@dummy/master
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 0 changesets with 1 changes to 1 files
   $ hg tracked
   I path:inside
   $ ls

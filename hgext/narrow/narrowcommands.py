@@ -141,8 +141,10 @@ def pullbundle2extraprepare(orig, pullop, kwargs):
     include, exclude = repo.narrowpats
     kwargs['oldincludepats'] = include
     kwargs['oldexcludepats'] = exclude
-    kwargs['includepats'] = include
-    kwargs['excludepats'] = exclude
+    if include:
+        kwargs['includepats'] = include
+    if exclude:
+        kwargs['excludepats'] = exclude
     # calculate known nodes only in ellipses cases because in non-ellipses cases
     # we have all the nodes
     if wireprototypes.ELLIPSESCAP in pullop.remote.capabilities():

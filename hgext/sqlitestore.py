@@ -110,6 +110,8 @@ COMPRESSION_ZSTD = 2
 COMPRESSION_ZLIB = 3
 
 FLAG_CENSORED = 1
+FLAG_MISSING_P1 = 2
+FLAG_MISSING_P2 = 4
 
 CREATE_SCHEMA = [
     # Deltas are stored as content-indexed blobs.
@@ -535,6 +537,11 @@ class sqlitefilestore(object):
                                      self._revisioncache, stoprids,
                                      zstddctx=self._dctx)
 
+        # Don't verify hashes if parent nodes were rewritten, as the hash
+        # wouldn't verify.
+        if self._revisions[node].flags & (FLAG_MISSING_P1 | FLAG_MISSING_P2):
+            _verifyhash = False
+
         if _verifyhash:
             self._checkhash(fulltext, node)
             self._revisioncache[node] = fulltext
@@ -618,10 +625,6 @@ class sqlitefilestore(object):
 
     def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None,
                  maybemissingparents=False):
-        if maybemissingparents:
-            raise error.Abort(_('SQLite storage does not support missing '
-                                'parents write mode'))
-
         nodes = []
 
         for node, p1, p2, linknode, deltabase, delta, wireflags in deltas:
@@ -632,6 +635,15 @@ class sqlitefilestore(object):
 
             if wireflags & ~repository.REVISION_FLAG_CENSORED:
                 raise SQLiteStoreError('unhandled revision flag')
+
+            if maybemissingparents:
+                if p1 != nullid and not self.hasnode(p1):
+                    p1 = nullid
+                    storeflags |= FLAG_MISSING_P1
+
+                if p2 != nullid and not self.hasnode(p2):
+                    p2 = nullid
+                    storeflags |= FLAG_MISSING_P2
 
             baserev = self.rev(deltabase)
 
@@ -657,6 +669,29 @@ class sqlitefilestore(object):
             nodes.append(node)
 
             if node in self._revisions:
+                # Possibly reset parents to make them proper.
+                entry = self._revisions[node]
+
+                if entry.flags & FLAG_MISSING_P1 and p1 != nullid:
+                    entry.p1node = p1
+                    entry.p1rev = self._nodetorev[p1]
+                    entry.flags &= ~FLAG_MISSING_P1
+
+                    self._db.execute(
+                        r'UPDATE fileindex SET p1rev=?, flags=? '
+                        r'WHERE id=?',
+                        (self._nodetorev[p1], entry.flags, entry.rid))
+
+                if entry.flags & FLAG_MISSING_P2 and p2 != nullid:
+                    entry.p2node = p2
+                    entry.p2rev = self._nodetorev[p2]
+                    entry.flags &= ~FLAG_MISSING_P2
+
+                    self._db.execute(
+                        r'UPDATE fileindex SET p2rev=?, flags=? '
+                        r'WHERE id=?',
+                        (self._nodetorev[p1], entry.flags, entry.rid))
+
                 continue
 
             if deltabase == nullid:

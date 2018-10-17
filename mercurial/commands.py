@@ -1996,7 +1996,7 @@ def diff(ui, repo, *pats, **opts):
 
 @command('export',
     [('B', 'bookmark', '',
-     _('export changes only reachable by given bookmark')),
+     _('export changes only reachable by given bookmark'), _('BOOKMARK')),
     ('o', 'output', '',
      _('print output to file with formatted name'), _('FORMAT')),
     ('', 'switch-parent', None, _('diff against the second parent')),
@@ -2257,7 +2257,7 @@ def forget(ui, repo, *pats, **opts):
      ('D', 'currentdate', False,
       _('record the current date as commit date')),
      ('U', 'currentuser', False,
-      _('record the current user as committer'), _('DATE'))]
+      _('record the current user as committer'))]
     + commitopts2 + mergetoolopts  + dryrunopts,
     _('[OPTION]... [-r REV]... REV...'),
     helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
@@ -3016,9 +3016,10 @@ def heads(ui, repo, *branchrevs, **opts):
     [('e', 'extension', None, _('show only help for extensions')),
      ('c', 'command', None, _('show only help for commands')),
      ('k', 'keyword', None, _('show topics matching keyword')),
-     ('s', 'system', [], _('show help for specific platform(s)')),
+     ('s', 'system', [],
+      _('show help for specific platform(s)'), _('PLATFORM')),
      ],
-    _('[-ecks] [TOPIC]'),
+    _('[-eck] [-s PLATFORM] [TOPIC]'),
     helpcategory=command.CATEGORY_HELP,
     norepo=True,
     intents={INTENT_READONLY})

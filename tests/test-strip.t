@@ -715,14 +715,14 @@ Make sure no one adds back a -b option:
   
   options ([+] can be repeated):
   
-   -r --rev REV [+]        strip specified revision (optional, can specify
-                           revisions without this option)
-   -f --force              force removal of changesets, discard uncommitted
-                           changes (no backup)
-      --no-backup          do not save backup bundle
-   -k --keep               do not modify working directory during strip
-   -B --bookmark VALUE [+] remove revs only reachable from given bookmark
-      --mq                 operate on patch repository
+   -r --rev REV [+]           strip specified revision (optional, can specify
+                              revisions without this option)
+   -f --force                 force removal of changesets, discard uncommitted
+                              changes (no backup)
+      --no-backup             do not save backup bundle
+   -k --keep                  do not modify working directory during strip
+   -B --bookmark BOOKMARK [+] remove revs only reachable from given bookmark
+      --mq                    operate on patch repository
   
   (use 'hg strip -h' to show more help)
   [255]

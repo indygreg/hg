@@ -110,7 +110,7 @@ def strip(ui, repo, revs, update=True, backup=True, force=None, bookmarks=None):
           ('k', 'keep', None, _("do not modify working directory during "
                                 "strip")),
           ('B', 'bookmark', [], _("remove revs only reachable from given"
-                                  " bookmark"))],
+                                  " bookmark"), _('BOOKMARK'))],
           _('hg strip [-k] [-f] [-B bookmark] [-r] REV...'),
           helpcategory=command.CATEGORY_MAINTENANCE)
 def stripcmd(ui, repo, *revs, **opts):

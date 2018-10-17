@@ -10,7 +10,7 @@ ensure that failing ui.atexit handlers report sensibly
   > EOF
   $ hg -q --config extensions.bailatexit=$TESTTMP/bailatexit.py \
   >  help help
-  hg help [-ecks] [TOPIC]
+  hg help [-eck] [-s PLATFORM] [TOPIC]
   
   show help for a given topic or a help overview
   error in exit handlers:

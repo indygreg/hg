@@ -149,7 +149,7 @@ diffopts2 = [
 ]
 
 mergetoolopts = [
-    ('t', 'tool', '', _('specify merge tool')),
+    ('t', 'tool', '', _('specify merge tool'), _('TOOL')),
 ]
 
 similarityopts = [

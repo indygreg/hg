@@ -33,6 +33,11 @@ Examples::
   # rotate up to N log files when the current one gets too big
   maxfiles = 3
 
+  [blackbox]
+  # Include nanoseconds in log entries with %f (see Python function
+  # datetime.datetime.strftime)
+  date-format = '%Y-%m-%d @ %H:%M:%S.%f'
+
 """
 
 from __future__ import absolute_import
@@ -81,6 +86,9 @@ configitem('blackbox', 'maxfiles',
 )
 configitem('blackbox', 'track',
     default=lambda: ['*'],
+)
+configitem('blackbox', 'date-format',
+    default='%Y/%m/%d %H:%M:%S',
 )
 
 lastui = None
@@ -169,7 +177,8 @@ def wrapui(ui):
                 return
             ui._bbinlog = True
             default = self.configdate('devel', 'default-date')
-            date = dateutil.datestr(default, '%Y/%m/%d %H:%M:%S')
+            date = dateutil.datestr(default,
+                                    ui.config('blackbox', 'date-format'))
             user = procutil.getuser()
             pid = '%d' % procutil.getpid()
             formattedmsg = msg[0] % msg[1:]

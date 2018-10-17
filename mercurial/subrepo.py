@@ -1583,17 +1583,15 @@ class gitsubrepo(abstractsubrepo):
         if self._gitmissing():
             return []
 
-        (modified, added, removed,
-         deleted, unknown, ignored, clean) = self.status(None, unknown=True,
-                                                         clean=True)
+        s = self.status(None, unknown=True, clean=True)
 
         tracked = set()
         # dirstates 'amn' warn, 'r' is added again
-        for l in (modified, added, deleted, clean):
+        for l in (s.modified, s.added, s.deleted, s.clean):
             tracked.update(l)
 
         # Unknown files not of interest will be rejected by the matcher
-        files = unknown
+        files = s.unknown
         files.extend(match.files())
 
         rejected = []

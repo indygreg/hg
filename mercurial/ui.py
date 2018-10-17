@@ -1245,7 +1245,11 @@ class ui(object):
             "chunkselector": [
                 "text",
                 "curses",
-            ]
+            ],
+            "histedit": [
+                "text",
+                "curses",
+            ],
         }
 
         # Feature-specific interface

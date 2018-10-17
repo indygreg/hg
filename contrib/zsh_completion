@@ -532,10 +532,11 @@ _hg_cmd_bisect() {
 _hg_cmd_bookmarks() {
   _arguments -s -S : $_hg_global_opts \
   '(--force -f)'{-f,--force}'[force]' \
-  '(--inactive -i)'{-i,--inactive}'[mark a bookmark inactive]' \
-  '(--rev -r --delete -d --rename -m)'{-r+,--rev=}'[revision]:revision:_hg_labels' \
-  '(--rev -r --delete -d --rename -m)'{-d,--delete}'[delete a given bookmark]' \
-  '(--rev -r --delete -d --rename -m)'{-m+,--rename=}'[rename a given bookmark]:bookmark:_hg_bookmarks' \
+  '(--inactive -i --delete -d --list -l)'{-i,--inactive}'[mark a bookmark inactive]' \
+  '(--rev -r --delete -d --rename -m --list -l)'{-r+,--rev=}'[revision]:revision:_hg_labels' \
+  '(--rev -r --delete -d --rename -m --list -l --inactive -i)'{-d,--delete}'[delete a given bookmark]' \
+  '(--rev -r --delete -d --rename -m --list -l)'{-m+,--rename=}'[rename a given bookmark]:bookmark:_hg_bookmarks' \
+  '(--inactive -i --delete -d --list -l)'{-l,--list}'[list existing bookmarks]' \
   ':bookmark:_hg_bookmarks'
 }
 

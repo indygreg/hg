@@ -545,10 +545,6 @@ def generatev2(repo, includes, excludes, includeobsmarkers):
     Returns a 3-tuple of (file count, file size, data iterator).
     """
 
-    # temporarily raise error until we add storage level logic
-    if includes or excludes:
-        raise error.Abort(_("server does not support narrow stream clones"))
-
     with repo.lock():
 
         entries = []

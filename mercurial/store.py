@@ -24,6 +24,20 @@ from . import (
 
 parsers = policy.importmod(r'parsers')
 
+def _matchtrackedpath(path, matcher):
+    """parses a fncache entry and returns whether the entry is tracking a path
+    matched by matcher or not.
+
+    If matcher is None, returns True"""
+
+    if matcher is None:
+        return True
+    path = decodedir(path)
+    if path.startswith('data/'):
+        return matcher(path[len('data/'):-len('.i')])
+    elif path.startswith('meta/'):
+        return matcher.visitdir(path[len('meta/'):-len('/00manifest.i')] or '.')
+
 # This avoids a collision between a file named foo and a dir named
 # foo.i or foo.d
 def _encodedir(path):
@@ -413,6 +427,8 @@ class encodedstore(basicstore):
 
     def datafiles(self, matcher=None):
         for a, b, size in super(encodedstore, self).datafiles():
+            if not _matchtrackedpath(a, matcher):
+                continue
             try:
                 a = decodefilename(a)
             except KeyError:
@@ -542,6 +558,8 @@ class fncachestore(basicstore):
 
     def datafiles(self, matcher=None):
         for f in sorted(self.fncache):
+            if not _matchtrackedpath(f, matcher):
+                continue
             ef = self.encode(f)
             try:
                 yield f, ef, self.getsize(ef)

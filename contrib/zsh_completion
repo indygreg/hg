@@ -404,12 +404,6 @@ _hg_pat_opts=(
   '*'{-I+,--include=}'[include names matching the given patterns]:pattern:_files -W $(_hg_cmd root) -/'
   '*'{-X+,--exclude=}'[exclude names matching the given patterns]:pattern:_files -W $(_hg_cmd root) -/')
 
-_hg_clone_opts=(
-  $_hg_remote_opts
-  '(--noupdate -U)'{-U,--noupdate}'[do not update the new working directory]'
-  '--pull[use pull protocol to copy metadata]'
-  '--uncompressed[use uncompressed transfer (fast over LAN)]')
-
 _hg_date_user_opts=(
   '(--currentdate -D)'{-D,--currentdate}'[record the current date as commit date]'
   '(--currentuser -U)'{-U,--currentuser}'[record the current user as committer]'
@@ -462,6 +456,13 @@ _hg_remote_opts=(
   '(--ssh -e)'{-e+,--ssh=}'[specify ssh command to use]:command'
   '--remotecmd=[specify hg command to run on the remote side]:remote command'
   '--insecure[do not verify server certificate (ignoring web.cacerts config)]'
+)
+
+_hg_clone_opts=(
+  $_hg_remote_opts
+  '(--noupdate -U)'{-U,--noupdate}'[do not update the new working directory]'
+  '--pull[use pull protocol to copy metadata]'
+  '--stream[clone with minimal data processing]'
 )
 
 _hg_subrepos_opts=(

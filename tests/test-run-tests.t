@@ -173,6 +173,7 @@ test diff colorisation
 
 #if no-windows pygments
   $ rt test-failure.t --color always
+  running 1 tests using 1 parallel processes 
   
   \x1b[38;5;124m--- $TESTTMP/test-failure.t\x1b[39m (esc)
   \x1b[38;5;34m+++ $TESTTMP/test-failure.t.err\x1b[39m (esc)
@@ -192,6 +193,7 @@ test diff colorisation
   [1]
 
   $ rt test-failure.t 2> tmp.log
+  running 1 tests using 1 parallel processes 
   [1]
   $ cat tmp.log
   

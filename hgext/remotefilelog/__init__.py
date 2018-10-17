@@ -6,6 +6,17 @@
 # GNU General Public License version 2 or any later version.
 """remotefilelog causes Mercurial to lazilly fetch file contents (EXPERIMENTAL)
 
+This extension is HIGHLY EXPERIMENTAL. There are NO BACKWARDS COMPATIBILITY
+GUARANTEES. This means that repositories created with this extension may
+only be usable with the exact version of this extension/Mercurial that was
+used. The extension attempts to enforce this in order to prevent repository
+corruption.
+
+remotefilelog works by fetching file contents lazily and storing them
+in a cache on the client rather than in revlogs. This allows enormous
+histories to be transferred only partially, making them easier to
+operate on.
+
 Configs:
 
     ``packs.maxchainlen`` specifies the maximum delta chain length in pack files

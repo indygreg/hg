@@ -698,7 +698,7 @@ def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
                                         total=len(nodes))
 
     configtarget = repo.ui.config('devel', 'bundle.delta')
-    if configtarget not in ('', 'p1'):
+    if configtarget not in ('', 'p1', 'full'):
         msg = _("""config "devel.bundle.delta" as unknown value: %s""")
         repo.ui.warn(msg % configtarget)
 
@@ -707,6 +707,8 @@ def deltagroup(repo, store, nodes, ischangelog, lookup, forcedeltaparentprev,
         deltamode = repository.CG_DELTAMODE_PREV
     elif configtarget == 'p1':
         deltamode = repository.CG_DELTAMODE_P1
+    elif configtarget == 'full':
+        deltamode = repository.CG_DELTAMODE_FULL
 
     revisions = store.emitrevisions(
         nodes,

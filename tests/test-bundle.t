@@ -905,3 +905,7 @@ Test the option that create slim bundle
 
   $ hg bundle -a --config devel.bundle.delta=p1 ./slim.hg
   3 changesets found
+
+Test the option that create and no-delta's bundle
+  $ hg bundle -a --config devel.bundle.delta=full ./full.hg
+  3 changesets found

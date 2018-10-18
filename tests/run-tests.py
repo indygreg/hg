@@ -1110,9 +1110,23 @@ class Test(unittest.TestCase):
         env['COLUMNS'] = '80'
         env['TERM'] = 'xterm'
 
-        for k in ('HG HGPROF CDPATH GREP_OPTIONS http_proxy no_proxy ' +
-                  'HGPLAIN HGPLAINEXCEPT EDITOR VISUAL PAGER ' +
-                  'NO_PROXY CHGDEBUG').split():
+        dropped = [
+            'CDPATH',
+            'CHGDEBUG',
+            'EDITOR',
+            'GREP_OPTIONS',
+            'HG',
+            'HGPLAIN',
+            'HGPLAINEXCEPT',
+            'HGPROF',
+            'http_proxy',
+            'no_proxy',
+            'NO_PROXY',
+            'PAGER',
+            'VISUAL',
+        ]
+
+        for k in dropped:
             if k in env:
                 del env[k]
 

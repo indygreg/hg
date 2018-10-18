@@ -916,11 +916,12 @@ def _computephasedivergentset(repo):
     cl = repo.changelog
     torev = cl.nodemap.get
     tonode = cl.node
+    obsstore = repo.obsstore
     for rev in repo.revs('(not public()) and (not obsolete())'):
         # We only evaluate mutable, non-obsolete revision
         node = tonode(rev)
         # (future) A cache of predecessors may worth if split is very common
-        for pnode in obsutil.allpredecessors(repo.obsstore, [node],
+        for pnode in obsutil.allpredecessors(obsstore, [node],
                                    ignoreflags=bumpedfix):
             prev = torev(pnode) # unfiltered! but so is phasecache
             if (prev is not None) and (phase(repo, prev) <= public):

@@ -19,7 +19,10 @@ Test applying context diffs
   > EOF
   $ cat > cat.py <<EOF
   > import sys
-  > sys.stdout.write(repr(open(sys.argv[1], 'rb').read()) + '\n')
+  > from mercurial import pycompat
+  > from mercurial.utils import stringutil
+  > pycompat.stdout.write(b'%s\n'
+  >                       % stringutil.pprint(open(sys.argv[1], 'rb').read()))
   > EOF
 
 Initialize the test repository

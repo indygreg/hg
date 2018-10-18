@@ -527,7 +527,7 @@ test dry-run for remove
   \r (no-eol) (esc)
   deleting [===========================================>] 1/1\r (no-eol) (esc)
                                                               \r (no-eol) (esc)
-  [addremove.removed ui.status|removing a]
+  [ui.addremove.removed ui.status|removing a]
   $ hg diff
 
   $ cat >> .hg/hgrc <<EOF

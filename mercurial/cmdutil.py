@@ -2058,7 +2058,7 @@ def add(ui, repo, match, prefix, explicitonly, **opts):
             names.append(f)
             if ui.verbose or not exact:
                 ui.status(_('adding %s\n') % match.rel(f),
-                          label='addremove.added')
+                          label='ui.addremove.added')
 
     for subpath in sorted(wctx.substate):
         sub = wctx.sub(subpath)
@@ -2157,7 +2157,7 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
     for f in forget:
         if ui.verbose or not match.exact(f) or interactive:
             ui.status(_('removing %s\n') % match.rel(f),
-                      label='addremove.removed')
+                      label='ui.addremove.removed')
 
     if not dryrun:
         rejected = wctx.forget(forget, prefix)
@@ -2291,7 +2291,7 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
         if ui.verbose or not m.exact(f):
             progress.increment()
             ui.status(_('removing %s\n') % m.rel(f),
-                      label='addremove.removed')
+                      label='ui.addremove.removed')
     progress.complete()
 
     if not dryrun:

@@ -70,10 +70,10 @@
   adding d
   recording removal of a as rename to b (100% similar)
   $ hg addremove -ns 50 --color debug
-  [addremove.removed ui.status|removing a]
-  [addremove.added ui.status|adding b]
-  [addremove.removed ui.status|removing c]
-  [addremove.added ui.status|adding d]
+  [ui.addremove.removed ui.status|removing a]
+  [ui.addremove.added ui.status|adding b]
+  [ui.addremove.removed ui.status|removing c]
+  [ui.addremove.added ui.status|adding d]
   [ ui.status|recording removal of a as rename to b (100% similar)]
   $ hg addremove -s 50
   removing a

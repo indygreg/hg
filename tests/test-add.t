@@ -14,7 +14,7 @@
   adding a
   $ hg forget a
   $ hg add --color debug
-  [addremove.added ui.status|adding a]
+  [ui.addremove.added ui.status|adding a]
   $ hg st
   A a
   $ mkdir dir

@@ -1043,10 +1043,10 @@ def addremove(repo, matcher, prefix, opts=None):
         if repo.ui.verbose or not m.exact(abs):
             if abs in unknownset:
                 status = _('adding %s\n') % m.uipath(abs)
-                label = 'addremove.added'
+                label = 'ui.addremove.added'
             else:
                 status = _('removing %s\n') % m.uipath(abs)
-                label = 'addremove.removed'
+                label = 'ui.addremove.removed'
             repo.ui.status(status, label=label)
 
     renames = _findrenames(repo, m, added + unknown, removed + deleted,

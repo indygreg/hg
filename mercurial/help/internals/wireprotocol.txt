@@ -702,6 +702,25 @@ Whether the server supports the ``known`` command.
 
 This capability/command was introduced in Mercurial 1.9 (released July 2011).
 
+lfs
+---
+
+Indicates that the LFS extension is enabled on the server.  It makes no claims
+about the repository actually having LFS blobs committed to it.
+
+This capability was introduced by the LFS extension in Mercurial 4.5 (released
+Feb 2018).
+
+lfs-serve
+---------
+
+Indicates that the LFS extension is enabled on the server, and LFS blobs are
+committed to the remote repository.  (Specifically, it indicates that the 'lfs'
+requirement is present in the remote repository.)
+
+This capability was introduced by the LFS extension in Mercurial 4.8 (released
+Nov 2018).
+
 lookup
 ------
 

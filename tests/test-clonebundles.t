@@ -54,7 +54,7 @@ Manifest file with invalid URL aborts
   $ hg clone http://localhost:$HGPORT 404-url
   applying clone bundle from http://does.not.exist/bundle.hg
   error fetching bundle: (.* not known|(\[Errno -?\d+])? No address associated with hostname) (re) (no-windows !)
-  error fetching bundle: [Errno 11004] getaddrinfo failed (windows !)
+  error fetching bundle: [Errno 1100*] getaddrinfo failed (glob) (windows !)
   abort: error applying bundle
   (if this error persists, consider contacting the server operator or disable clone bundles via "--config ui.clonebundles=false")
   [255]

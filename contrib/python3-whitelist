@@ -155,6 +155,7 @@ test-empty-group.t
 test-empty.t
 test-encode.t
 test-encoding-func.py
+test-encoding-textwrap.t
 test-encoding.t
 test-eol-add.t
 test-eol-clone.t
@@ -215,6 +216,7 @@ test-gpg.t
 test-graft.t
 test-grep.t
 test-hardlinks.t
+test-help.t
 test-hg-parseurl.py
 test-hghave.t
 test-hgignore.t
@@ -375,6 +377,7 @@ test-narrow-archive.t
 test-narrow-clone-no-ellipsis.t
 test-narrow-clone-non-narrow-server.t
 test-narrow-clone-nonlinear.t
+test-narrow-clone-stream.t
 test-narrow-clone.t
 test-narrow-commit.t
 test-narrow-copies.t
@@ -432,6 +435,7 @@ test-phases-exchange.t
 test-phases.t
 test-profile.t
 test-progress.t
+test-propertycache.py
 test-pull-branch.t
 test-pull-http.t
 test-pull-permission.t
@@ -629,6 +633,7 @@ test-wireproto-command-listkeys.t
 test-wireproto-command-lookup.t
 test-wireproto-command-manifestdata.t
 test-wireproto-command-pushkey.t
+test-wireproto-command-rawstorefiledata.t
 test-wireproto-framing.py
 test-wireproto-serverreactor.py
 test-wireproto.py

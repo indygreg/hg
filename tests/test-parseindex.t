@@ -27,8 +27,7 @@ We approximate that by reducing the read buffer to 1 byte.
   
   $ cat >> test.py << EOF
   > from __future__ import print_function
-  > from mercurial import changelog, vfs
-  > from mercurial.node import *
+  > from mercurial import changelog, node, vfs
   > 
   > class singlebyteread(object):
   >     def __init__(self, real):
@@ -59,7 +58,7 @@ We approximate that by reducing the read buffer to 1 byte.
   > cl = changelog.changelog(opener('.hg/store'))
   > print(len(cl), 'revisions:')
   > for r in cl:
-  >     print(short(cl.node(r)))
+  >     print(node.short(cl.node(r)))
   > EOF
   $ "$PYTHON" test.py
   2 revisions:

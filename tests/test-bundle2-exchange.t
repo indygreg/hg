@@ -934,7 +934,7 @@ Test lazily acquiring the lock during unbundle
 
   $ cat >> $TESTTMP/locktester.py <<EOF
   > import os
-  > from mercurial import extensions, bundle2, error
+  > from mercurial import bundle2, error, extensions
   > def checklock(orig, repo, *args, **kwargs):
   >     if repo.svfs.lexists(b"lock"):
   >         raise error.Abort(b"Lock should not be taken")

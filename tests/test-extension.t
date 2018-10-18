@@ -1266,7 +1266,8 @@ Broken disabled extension and command:
   > "broken extension'
   > NO_CHECK_EOF
   $ cat > path.py <<EOF
-  > import os, sys
+  > import os
+  > import sys
   > sys.path.insert(0, os.environ['HGEXTPATH'])
   > EOF
   $ HGEXTPATH=`pwd`

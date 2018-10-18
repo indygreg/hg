@@ -278,9 +278,10 @@ Test roundtrip encoding/decoding of utf8b for generated data
 
 #if hypothesis
 
-  >>> from hypothesishelpers import *
+  >>> import hypothesishelpers
   >>> from mercurial import encoding
-  >>> roundtrips(st.binary(), encoding.fromutf8b, encoding.toutf8b)
+  >>> hypothesishelpers.roundtrips(hypothesishelpers.st.binary(),
+  ...                              encoding.fromutf8b, encoding.toutf8b)
   Round trip OK
 
 #endif

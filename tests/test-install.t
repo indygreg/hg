@@ -153,7 +153,9 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
   $ . "$TESTDIR/helpers-testrepo.sh"
 
   $ cat >> wixxml.py << EOF
-  > import os, subprocess, sys
+  > import os
+  > import subprocess
+  > import sys
   > import xml.etree.ElementTree as ET
   > 
   > # MSYS mangles the path if it expands $TESTDIR

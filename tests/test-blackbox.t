@@ -351,7 +351,8 @@ when using chg, blackbox.log should get rotated correctly
   $ chg noop
 
   $ cat > showsize.py << 'EOF'
-  > import os, sys
+  > import os
+  > import sys
   > limit = 500
   > for p in sys.argv[1:]:
   >     size = os.stat(p).st_size

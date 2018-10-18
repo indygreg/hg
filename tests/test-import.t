@@ -285,7 +285,8 @@ override commit message
   $ rm -r b
 
   $ cat > mkmsg.py <<EOF
-  > import email.message, sys
+  > import email.message
+  > import sys
   > msg = email.message.Message()
   > patch = open(sys.argv[1], 'rb').read()
   > msg.set_payload(b'email commit message\n' + patch)
@@ -383,7 +384,8 @@ subject: duplicate detection, removal of [PATCH]
 The '---' tests the gitsendmail handling without proper mail headers
 
   $ cat > mkmsg2.py <<EOF
-  > import email.message, sys
+  > import email.message
+  > import sys
   > msg = email.message.Message()
   > patch = open(sys.argv[1], 'rb').read()
   > msg.set_payload(b'email patch\n\nnext line\n---\n' + patch)
@@ -1871,8 +1873,8 @@ Importing some extra header
 ===========================
 
   $ cat > $TESTTMP/parseextra.py <<EOF
-  > import mercurial.patch
   > import mercurial.cmdutil
+  > import mercurial.patch
   > 
   > def processfoo(repo, data, extra, opts):
   >     if b'foo' in data:

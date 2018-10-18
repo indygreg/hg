@@ -148,10 +148,11 @@ def allpredecessors(obsstore, nodes, ignoreflags=0):
 
     remaining = set(nodes)
     seen = set(remaining)
+    prec = obsstore.predecessors.get
     while remaining:
         current = remaining.pop()
         yield current
-        for mark in obsstore.predecessors.get(current, ()):
+        for mark in prec(current, ()):
             # ignore marker flagged with specified flag
             if mark[2] & ignoreflags:
                 continue

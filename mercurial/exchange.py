@@ -2170,7 +2170,7 @@ def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
     if 'treemanifest' in repo.requirements:
         part.addparam('treemanifest', '1')
 
-    if (kwargs.get(r'narrow', False) and kwargs.get('narrow_acl', False)
+    if (kwargs.get(r'narrow', False) and kwargs.get(r'narrow_acl', False)
         and (include or exclude)):
         narrowspecpart = bundler.newpart('narrow:spec')
         if include:

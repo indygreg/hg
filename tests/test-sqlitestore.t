@@ -22,7 +22,7 @@ storage.new-repo-backend=sqlite is recognized
   dotencode
   exp-sqlite-001
   exp-sqlite-comp-001=zstd (zstd !)
-  exp-sqlite-comp-001-zlib (no-zstd !)
+  exp-sqlite-comp-001=$BUNDLE2_COMPRESSIONS$ (no-zstd !)
   fncache
   generaldelta
   revlogv1

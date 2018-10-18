@@ -1168,7 +1168,10 @@ def debugindexdot(ui, repo, file_=None, **opts):
 def debugindexstats(ui, repo):
     """show stats related to the changelog index"""
     repo.changelog.shortest(nullid, 1)
-    for k, v in sorted(repo.changelog.index.stats().items()):
+    index = repo.changelog.index
+    if not util.safehasattr(index, 'stats'):
+        raise error.Abort(_('debugindexstats only works with native code'))
+    for k, v in sorted(index.stats().items()):
         ui.write('%s: %s\n' % (k, v))
 
 @command('debuginstall', [] + cmdutil.formatteropts, '', norepo=True)

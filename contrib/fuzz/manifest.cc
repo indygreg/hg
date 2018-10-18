@@ -12,6 +12,10 @@ PyMODINIT_FUNC initparsers(void);
 
 static char cpypath[8192] = "\0";
 
+static PyCodeObject *code;
+static PyObject *mainmod;
+static PyObject *globals;
+
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
 	const std::string subdir = "/sanpy/lib/python2.7";
@@ -35,20 +39,8 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 	setenv("PYTHONUSERBASE", cpypath, 1);
 	Py_SetPythonHome(cpypath);
 	Py_InitializeEx(0);
-	return 0;
-}
-
-int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
-{
 	initparsers();
-	PyObject *mtext =
-	    PyBytes_FromStringAndSize((const char *)Data, (Py_ssize_t)Size);
-	PyObject *mainmod = PyImport_AddModule("__main__");
-	PyObject *globals = PyModule_GetDict(mainmod);
-	PyObject *locals = PyDict_New();
-	PyDict_SetItemString(locals, "mdata", mtext);
-	PyCodeObject *code =
-	    (PyCodeObject *)Py_CompileString(R"py(
+	code = (PyCodeObject *)Py_CompileString(R"py(
 from parsers import lazymanifest
 try:
   lm = lazymanifest(mdata)
@@ -67,13 +59,23 @@ except Exception as e:
   # to debug failures.
   # print e
 )py",
-	                                     "fuzzer", Py_file_input);
+	                                        "fuzzer", Py_file_input);
+	mainmod = PyImport_AddModule("__main__");
+	globals = PyModule_GetDict(mainmod);
+	return 0;
+}
+
+int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
+{
+	PyObject *mtext =
+	    PyBytes_FromStringAndSize((const char *)Data, (Py_ssize_t)Size);
+	PyObject *locals = PyDict_New();
+	PyDict_SetItemString(locals, "mdata", mtext);
 	PyObject *res = PyEval_EvalCode(code, globals, locals);
 	if (!res) {
 		PyErr_Print();
 	}
 	Py_XDECREF(res);
-	Py_DECREF(code);
 	Py_DECREF(locals);
 	Py_DECREF(mtext);
 	return 0; // Non-zero return values are reserved for future use.

@@ -6139,6 +6139,16 @@ def version_(ui, **opts):
 def loadcmdtable(ui, name, cmdtable):
     """Load command functions from specified cmdtable
     """
+    cmdtable = cmdtable.copy()
+    for cmd in list(cmdtable):
+        if not cmd.startswith('^'):
+            continue
+        ui.deprecwarn("old-style command registration '%s' in extension '%s'"
+                      % (cmd, name), '4.8')
+        entry = cmdtable.pop(cmd)
+        entry[0].helpbasic = True
+        cmdtable[cmd[1:]] = entry
+
     overrides = [cmd for cmd in cmdtable if cmd in table]
     if overrides:
         ui.warn(_("extension '%s' overrides commands: %s\n")

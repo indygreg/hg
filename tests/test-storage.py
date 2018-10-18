@@ -17,9 +17,12 @@ from mercurial.testing import (
     storage as storagetesting,
 )
 
-from hgext import (
-    sqlitestore,
-)
+try:
+    from hgext import (
+        sqlitestore,
+    )
+except ImportError:
+    sqlitestore = None
 
 try:
     from mercurial import zstd
@@ -110,12 +113,13 @@ def addrawrevisionsqlite(self, fl, tr, node, p1, p2, linkrev, rawtext=None,
     else:
         raise error.Abort(b'must supply rawtext or delta arguments')
 
-sqlitefileindextests = storagetesting.makeifileindextests(
-    makesqlitefile, maketransaction, addrawrevisionsqlite)
-sqlitefiledatatests = storagetesting.makeifiledatatests(
-    makesqlitefile, maketransaction, addrawrevisionsqlite)
-sqlitefilemutationtests = storagetesting.makeifilemutationtests(
-    makesqlitefile, maketransaction, addrawrevisionsqlite)
+if sqlitestore is not None:
+    sqlitefileindextests = storagetesting.makeifileindextests(
+        makesqlitefile, maketransaction, addrawrevisionsqlite)
+    sqlitefiledatatests = storagetesting.makeifiledatatests(
+        makesqlitefile, maketransaction, addrawrevisionsqlite)
+    sqlitefilemutationtests = storagetesting.makeifilemutationtests(
+        makesqlitefile, maketransaction, addrawrevisionsqlite)
 
 if __name__ == '__main__':
     silenttestrunner.main(__name__)

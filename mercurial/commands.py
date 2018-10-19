@@ -1553,7 +1553,8 @@ def clone(ui, source, dest=None, **opts):
                  branch=opts.get('branch'),
                  shareopts=opts.get('shareopts'),
                  storeincludepats=includepats,
-                 storeexcludepats=excludepats)
+                 storeexcludepats=excludepats,
+                 depth=opts.get('depth') or None)
 
     return r is None
 

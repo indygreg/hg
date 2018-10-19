@@ -540,15 +540,6 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             func = e[0]
             if select and not select(f):
                 continue
-            # Only list built-in commands (defined in commands.py) and aliases
-            # (defined in dispatch.py), but not any other extensions.
-            # We don't want a circular dependency between this file and
-            # dispatch, so reference that by name.
-            # TODO(rdamazio): Just show commands from all extensions.
-            if (not select and name != 'shortlist' and
-                func.__module__ != commands.__name__ and
-                func.__module__ != 'mercurial.dispatch'):
-                continue
             doc = pycompat.getdoc(func)
             if filtercmd(ui, f, func, name, doc):
                 continue

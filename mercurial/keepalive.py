@@ -315,7 +315,7 @@ class KeepAliveHandler(object):
         return r
 
     def _start_transaction(self, h, req):
-        oldbytescount = h.sentbytescount
+        oldbytescount = getattr(h, 'sentbytescount', 0)
 
         # What follows mostly reimplements HTTPConnection.request()
         # except it adds self.parent.addheaders in the mix and sends headers
@@ -353,11 +353,12 @@ class KeepAliveHandler(object):
 
         # This will fail to record events in case of I/O failure. That's OK.
         self.requestscount += 1
-        self.sentbytescount += h.sentbytescount - oldbytescount
+        self.sentbytescount += getattr(h, 'sentbytescount', 0) - oldbytescount
 
         try:
             self.parent.requestscount += 1
-            self.parent.sentbytescount += h.sentbytescount - oldbytescount
+            self.parent.sentbytescount += (
+                getattr(h, 'sentbytescount', 0) - oldbytescount)
         except AttributeError:
             pass
 

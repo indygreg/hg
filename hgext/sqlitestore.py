@@ -63,6 +63,7 @@ from mercurial.thirdparty import (
 from mercurial import (
     ancestor,
     dagop,
+    encoding,
     error,
     extensions,
     localrepo,
@@ -1020,7 +1021,7 @@ class sqliterepository(localrepo.localrepository):
 def makedb(path):
     """Construct a database handle for a database at path."""
 
-    db = sqlite3.connect(path)
+    db = sqlite3.connect(encoding.strfromlocal(path))
     db.text_factory = bytes
 
     res = db.execute(r'PRAGMA user_version').fetchone()[0]

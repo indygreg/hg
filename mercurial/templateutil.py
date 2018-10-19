@@ -472,6 +472,29 @@ class mappinglist(_mappingsequence):
     def tobool(self, context, mapping):
         return bool(self._mappings)
 
+class mappingdict(mappable, _mappingsequence):
+    """Wrapper for a single template mapping
+
+    This isn't a sequence in a way that the underlying dict won't be iterated
+    as a dict, but shares most of the _mappingsequence functions.
+    """
+
+    def __init__(self, mapping, name=None, tmpl=None):
+        super(mappingdict, self).__init__(name, tmpl)
+        self._mapping = mapping
+
+    def tomap(self, context):
+        return self._mapping
+
+    def tobool(self, context, mapping):
+        # no idea when a template mapping should be considered an empty, but
+        # a mapping dict should have at least one item in practice, so always
+        # mark this as non-empty.
+        return True
+
+    def tovalue(self, context, mapping):
+        return super(mappingdict, self).tovalue(context, mapping)[0]
+
 class mappedgenerator(wrapped):
     """Wrapper for generator of strings which acts as a list
 

@@ -49,6 +49,10 @@ mappinggenerator, mappinglist
     represents mappings (i.e. a list of dicts), which may have default
     output format.
 
+mappingdict
+    represents a single mapping (i.e. a dict), which may have default output
+    format.
+
 mappedgenerator
     a lazily-evaluated list of byte strings, which is e.g. a result of %
     operation.

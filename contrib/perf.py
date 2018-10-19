@@ -1572,10 +1572,14 @@ def perfrevlogrevisions(ui, repo, file_=None, startrev=0, reverse=False,
           (b'', b'stoprev', -1, b'last revision to write'),
           (b'', b'count', 3, b'last revision to write'),
           (b'', b'details', False, b'print timing for every revisions tested'),
+          (b'', b'source', b'full', b'the kind of data feed in the revlog'),
          ],
          b'-c|-m|FILE')
 def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
     """Benchmark writing a series of revisions to a revlog.
+
+    Possible source values are:
+    * `full`: add from a full text (default).
     """
     opts = _byteskwargs(opts)
 
@@ -1586,13 +1590,19 @@ def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
     if stoprev < 0:
         stoprev = rllen + stoprev
 
+    source = opts['source']
+    validsource = (b'full',)
+    if source not in validsource:
+        raise error.Abort('invalid source type: %s' % source)
+
     ### actually gather results
     count = opts['count']
     if count <= 0:
         raise error.Abort('invalide run count: %d' % count)
     allresults = []
     for c in range(count):
-        allresults.append(_timeonewrite(ui, rl, startrev, stoprev, c + 1))
+        timing = _timeonewrite(ui, rl, source, startrev, stoprev, c + 1)
+        allresults.append(timing)
 
     ### consolidate the results in a single list
     results = []
@@ -1654,7 +1664,7 @@ class _faketr(object):
     def add(s, x, y, z=None):
         return None
 
-def _timeonewrite(ui, orig, startrev, stoprev, runidx=None):
+def _timeonewrite(ui, orig, source, startrev, stoprev, runidx=None):
     timings = []
     tr = _faketr()
     with _temprevlog(ui, orig, startrev) as dest:
@@ -1665,7 +1675,7 @@ def _timeonewrite(ui, orig, startrev, stoprev, runidx=None):
             topic += ' (run #%d)' % runidx
         for idx, rev in enumerate(revs):
             ui.progress(topic, idx, unit='revs', total=total)
-            addargs, addkwargs = _getrevisionseed(orig, rev, tr)
+            addargs, addkwargs = _getrevisionseed(orig, rev, tr, source)
             with timeone() as r:
                 dest.addrawrevision(*addargs, **addkwargs)
             timings.append((rev, r[0]))
@@ -1673,13 +1683,16 @@ def _timeonewrite(ui, orig, startrev, stoprev, runidx=None):
         ui.progress(topic, None, unit='revs', total=total)
     return timings
 
-def _getrevisionseed(orig, rev, tr):
+def _getrevisionseed(orig, rev, tr, source):
     linkrev = orig.linkrev(rev)
     node = orig.node(rev)
     p1, p2 = orig.parents(node)
     flags = orig.flags(rev)
     cachedelta = None
-    text = orig.revision(rev)
+    text = None
+
+    if source == b'full':
+        text = orig.revision(rev)
 
     return ((text, tr, linkrev, p1, p2),
             {'node': node, 'flags': flags, 'cachedelta': cachedelta})

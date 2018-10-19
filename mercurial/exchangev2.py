@@ -22,6 +22,7 @@ from . import (
     narrowspec,
     phases,
     pycompat,
+    repository,
     setdiscovery,
 )
 
@@ -91,6 +92,21 @@ def pull(pullop):
 
     manres = _fetchmanifests(repo, tr, remote, csetres['manifestnodes'])
 
+    # We don't properly support shallow changeset and manifest yet. So we apply
+    # depth limiting locally.
+    if pullop.depth:
+        relevantcsetnodes = set()
+        clnode = repo.changelog.node
+
+        for rev in repo.revs(b'ancestors(%ln, %d)',
+                             pullheads, pullop.depth - 1):
+            relevantcsetnodes.add(clnode(rev))
+
+        csetrelevantfilter = lambda n: n in relevantcsetnodes
+
+    else:
+        csetrelevantfilter = lambda n: True
+
     # If obtaining the raw store files, we need to scan the full repo to
     # derive all the changesets, manifests, and linkrevs.
     if usingrawchangelogandmanifest:
@@ -100,14 +116,19 @@ def pull(pullop):
 
         for rev in repo:
             ctx = repo[rev]
+            node = ctx.node()
+
+            if not csetrelevantfilter(node):
+                continue
+
             mnode = ctx.manifestnode()
 
-            csetsforfiles.append(ctx.node())
+            csetsforfiles.append(node)
             mnodesforfiles.append(mnode)
             manifestlinkrevs[mnode] = rev
 
     else:
-        csetsforfiles = csetres['added']
+        csetsforfiles = [n for n in csetres['added'] if csetrelevantfilter(n)]
         mnodesforfiles = manres['added']
         manifestlinkrevs = manres['linkrevs']
 
@@ -115,7 +136,7 @@ def pull(pullop):
     # revisions.
     fnodes = _derivefilesfrommanifests(repo, narrowmatcher, mnodesforfiles)
     _fetchfilesfromcsets(repo, tr, remote, pathfilter, fnodes, csetsforfiles,
-                         manifestlinkrevs)
+                         manifestlinkrevs, shallow=bool(pullop.depth))
 
 def _checkuserawstorefiledata(pullop):
     """Check whether we should use rawstorefiledata command to retrieve data."""
@@ -564,7 +585,7 @@ def _fetchfiles(repo, tr, remote, fnodes, linkrevs):
                     weakref.proxy(tr))
 
 def _fetchfilesfromcsets(repo, tr, remote, pathfilter, fnodes, csets,
-                         manlinkrevs):
+                         manlinkrevs, shallow=False):
     """Fetch file data from explicit changeset revisions."""
 
     def iterrevisions(objs, remaining, progress):
@@ -588,11 +609,16 @@ def _fetchfilesfromcsets(repo, tr, remote, pathfilter, fnodes, csets,
             else:
                 continue
 
+            if b'linknode' in filerevision:
+                linknode = filerevision[b'linknode']
+            else:
+                linknode = node
+
             yield (
                 node,
                 filerevision[b'parents'][0],
                 filerevision[b'parents'][1],
-                node,
+                linknode,
                 basenode,
                 delta,
                 # Flags not yet supported.
@@ -609,6 +635,21 @@ def _fetchfilesfromcsets(repo, tr, remote, pathfilter, fnodes, csets,
     commandmeta = remote.apidescriptor[b'commands'][b'filesdata']
     batchsize = commandmeta.get(b'recommendedbatchsize', 50000)
 
+    shallowfiles = repository.REPO_FEATURE_SHALLOW_FILE_STORAGE in repo.features
+    fields = {b'parents', b'revision'}
+    clrev = repo.changelog.rev
+
+    # There are no guarantees that we'll have ancestor revisions if
+    # a) this repo has shallow file storage b) shallow data fetching is enabled.
+    # Force remote to not delta against possibly unknown revisions when these
+    # conditions hold.
+    haveparents = not (shallowfiles or shallow)
+
+    # Similarly, we may not have calculated linkrevs for all incoming file
+    # revisions. Ask the remote to do work for us in this case.
+    if not haveparents:
+        fields.add(b'linknode')
+
     for i in pycompat.xrange(0, len(csets), batchsize):
         batch = [x for x in csets[i:i + batchsize]]
         if not batch:
@@ -620,8 +661,8 @@ def _fetchfilesfromcsets(repo, tr, remote, pathfilter, fnodes, csets,
                     b'type': b'changesetexplicit',
                     b'nodes': batch,
                 }],
-                b'fields': {b'parents', b'revision'},
-                b'haveparents': True,
+                b'fields': fields,
+                b'haveparents': haveparents,
             }
 
             if pathfilter:
@@ -643,7 +684,14 @@ def _fetchfilesfromcsets(repo, tr, remote, pathfilter, fnodes, csets,
                     fnode: manlinkrevs[mnode]
                     for fnode, mnode in fnodes[path].iteritems()}
 
+                def getlinkrev(node):
+                    if node in linkrevs:
+                        return linkrevs[node]
+                    else:
+                        return clrev(node)
+
                 store.addgroup(iterrevisions(objs, header[b'totalitems'],
                                              progress),
-                               linkrevs.__getitem__,
-                               weakref.proxy(tr))
+                               getlinkrev,
+                               weakref.proxy(tr),
+                               maybemissingparents=shallow)

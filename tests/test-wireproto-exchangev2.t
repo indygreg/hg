@@ -1145,3 +1145,94 @@ fall through to get files data
   client-stream-2/.hg/store/data/dir0/c.i
   client-stream-2/.hg/store/data/dir0/d.i
 #endif
+
+Shallow clone doesn't work with revlogs
+
+  $ hg --debug --config extensions.pullext=$TESTDIR/pullext.py clone --depth 1 -U http://localhost:$HGPORT client-shallow-revlogs
+  using http://localhost:$HGPORT/
+  sending capabilities command
+  query 1; heads
+  sending 2 commands
+  sending command heads: {}
+  sending command known: {
+    'nodes': []
+  }
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=22; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  received frame(size=11; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1; request=3; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=3; stream=2; streamflags=; type=command-response; flags=eos)
+  sending 1 commands
+  sending command changesetdata: {
+    'fields': set([
+      'bookmarks',
+      'parents',
+      'phase',
+      'revision'
+    ]),
+    'revisions': [
+      {
+        'heads': [
+          '\x97v_\xc3\xcdbO\xd1\xfa\x01v\x93,!\xff\xd1j\xdfC.'
+        ],
+        'roots': [],
+        'type': 'changesetdagrange'
+      }
+    ]
+  }
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=783; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  add changeset 3390ef850073
+  add changeset b709380892b1
+  add changeset 47fe012ab237
+  add changeset 97765fc3cd62
+  checking for updated bookmarks
+  sending 1 commands
+  sending command manifestdata: {
+    'fields': set([
+      'parents',
+      'revision'
+    ]),
+    'haveparents': True,
+    'nodes': [
+      '\x99/Gy\x02\x9a=\xf8\xd0fm\x00\xbb\x92OicN&A',
+      '|2 \x1a\xa3\xa1R\xa9\xe6\xa9"+?\xa8\xd0\xe3\x0f\xc2V\xe8',
+      '\x8d\xd0W<\x7f\xaf\xe2\x04F\xcc\xea\xac\x05N\xea\xa4x\x91M\xdb',
+      '113\x85\xf2!\x8b\x08^\xb2Z\x821\x1e*\xdd\x0e\xeb\x8c3'
+    ],
+    'tree': ''
+  }
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=967; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  sending 1 commands
+  sending command filesdata: {
+    'fields': set([
+      'linknode',
+      'parents',
+      'revision'
+    ]),
+    'haveparents': False,
+    'revisions': [
+      {
+        'nodes': [
+          '\x97v_\xc3\xcdbO\xd1\xfa\x01v\x93,!\xff\xd1j\xdfC.'
+        ],
+        'type': 'changesetexplicit'
+      }
+    ]
+  }
+  received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
+  received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1005; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
+  transaction abort!
+  rollback completed
+  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
+  abort: revlog storage does not support missing parents write mode
+  [255]

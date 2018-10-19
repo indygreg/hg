@@ -664,6 +664,7 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
                 name = r'%s:%s' % (stack[i].filename(), stack[i].function)
                 while i < len(stack) and name in skips:
                     i += 1
+                    name = r'%s:%s' % (stack[i].filename(), stack[i].function)
                 if i < len(stack):
                     child.add(stack[i:], time)
 

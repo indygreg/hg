@@ -1030,9 +1030,6 @@ This convert is trickier, because it contains deleted files (via `hg mv`)
   size 39
   x-is-binary 0
 
-  $ hg -R convert_lfs2 config --debug extensions | grep lfs
-  $TESTTMP/convert_lfs2/.hg/hgrc:*: extensions.lfs= (glob)
-
 Committing deleted files works:
 
   $ hg init $TESTTMP/repo-del

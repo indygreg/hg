@@ -286,8 +286,7 @@ parameters are available, but not --authormap, --branchmap, etc.
   0 remove large_by_size.bin
   $ cd nolargefiles
 
-The requirement is added to the destination repo, and the extension is enabled
-locally.
+The requirement is added to the destination repo.
 
   $ cat .hg/requires
   dotencode
@@ -296,8 +295,6 @@ locally.
   lfs
   revlogv1
   store
-  $ hg config --debug extensions | grep lfs
-  $TESTTMP/nolargefiles/.hg/hgrc:*: extensions.lfs= (glob)
 
   $ hg log -r 'all()' -G -T '{rev} {join(lfs_files, ", ")} ({desc})\n'
   o  8 large_by_size.bin (remove large_by_size.bin)

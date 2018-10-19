@@ -213,10 +213,6 @@ def convertsink(orig, sink):
                         self.repo.requirements.add('lfs')
                         self.repo._writerequirements()
 
-                        # Permanently enable lfs locally
-                        self.repo.vfs.append(
-                            'hgrc', util.tonativeeol('\n[extensions]\nlfs=\n'))
-
                 return node
 
         sink.__class__ = lfssink

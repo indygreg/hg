@@ -87,7 +87,7 @@ statistical profiler works
 Various statprof formatters work
 
   $ hg --profile --config profiling.statformat=byline sleep 2>../out
-  $ head -n 1 ../out
+  $ head -n 3 ../out
     %   cumulative      self          
   $ cat ../out | statprofran
 

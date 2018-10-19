@@ -261,6 +261,7 @@ test-i18n.t
 test-identify.t
 test-impexp-branch.t
 test-import-bypass.t
+test-import-context.t
 test-import-eol.t
 test-import-merge.t
 test-import-unknown.t

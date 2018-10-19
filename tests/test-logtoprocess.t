@@ -47,7 +47,7 @@ ui.log('commandfinish') call. The foo command also uses ui.log.
 
 Use sort to avoid ordering issues between the various processes we spawn:
   $ hg foo
-  $ sleep 0.2
+  $ sleep 1
   $ cat $TESTTMP/command.log | sort
   
   command
@@ -84,7 +84,7 @@ Confirm that logging blocked time catches stdio properly:
   > EOF
 
   $ hg log
-  $ sleep 0.2
+  $ sleep 1
   $ cat $TESTTMP/uiblocked.log
   uiblocked stdio [0-9]+.[0-9]* ms command [0-9]+.[0-9]* ms (re)
 

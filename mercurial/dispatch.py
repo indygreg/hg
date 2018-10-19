@@ -37,6 +37,7 @@ from . import (
     hook,
     profiling,
     pycompat,
+    registrar,
     scmutil,
     ui as uimod,
     util,
@@ -503,6 +504,7 @@ class cmdalias(object):
                 return ui.system(cmd, environ=env,
                                  blockedtag='alias_%s' % self.name)
             self.fn = fn
+            self.alias = True
             self._populatehelp(ui, name, shdef, self.fn)
             return
 
@@ -530,6 +532,7 @@ class cmdalias(object):
                 self.fn, self.opts = tableentry
                 cmdhelp = None
 
+            self.alias = True
             self._populatehelp(ui, name, cmd, self.fn, cmdhelp)
 
         except error.UnknownCommand:
@@ -543,7 +546,7 @@ class cmdalias(object):
     def _populatehelp(self, ui, name, cmd, fn, defaulthelp=None):
         # confine strings to be passed to i18n.gettext()
         cfg = {}
-        for k in ('doc', 'help'):
+        for k in ('doc', 'help', 'category'):
             v = ui.config('alias', '%s:%s' % (name, k), None)
             if v is None:
                 continue
@@ -558,10 +561,13 @@ class cmdalias(object):
             # drop prefix in old-style help lines so hg shows the alias
             self.help = self.help[4 + len(cmd):]
 
+        self.owndoc = 'doc' in cfg
         doc = cfg.get('doc', pycompat.getdoc(fn))
         if doc is not None:
             doc = pycompat.sysstr(doc)
         self.__doc__ = doc
+
+        self.helpcategory = cfg.get('category', registrar.command.CATEGORY_NONE)
 
     @property
     def args(self):
@@ -613,6 +619,7 @@ class lazyaliasentry(object):
         self.definition = definition
         self.cmdtable = cmdtable.copy()
         self.source = source
+        self.alias = True
 
     @util.propertycache
     def _aliasdef(self):

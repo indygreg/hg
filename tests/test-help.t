@@ -823,6 +823,9 @@ this is a section and erroring out weirdly.
   > def uisetup(ui):
   >     ui.setconfig(b'alias', b'shellalias', b'!echo hi', b'helpext')
   >     ui.setconfig(b'alias', b'hgalias', b'summary', b'helpext')
+  >     ui.setconfig(b'alias', b'hgalias:doc', b'My doc', b'helpext')
+  >     ui.setconfig(b'alias', b'hgalias:category', b'navigation', b'helpext')
+  >     ui.setconfig(b'alias', b'hgaliasnodoc', b'summary', b'helpext')
   > 
   > EOF
   $ echo '[extensions]' >> $HGRCPATH
@@ -830,8 +833,25 @@ this is a section and erroring out weirdly.
 
 Test for aliases
 
+  $ hg help | grep hgalias
+   hgalias       My doc
+
   $ hg help hgalias
   hg hgalias [--remote]
+  
+  alias for: hg summary
+  
+  My doc
+  
+  defined by: helpext
+  
+  options:
+  
+    --remote check for push and pull
+  
+  (some details hidden, use --verbose to show complete help)
+  $ hg help hgaliasnodoc
+  hg hgaliasnodoc [--remote]
   
   alias for: hg summary
   
@@ -947,6 +967,7 @@ Test that default list of commands omits extension commands
   
    bisect        subdivision search of changesets
    heads         show branch heads
+   hgalias       My doc
    identify      identify the working directory or specified revision
    log           show revision history of entire repository or files
   
@@ -2660,6 +2681,13 @@ Dish up an empty repo; serve it cold.
   <tr><td>
   <a href="/help/hgalias">
   hgalias
+  </a>
+  </td><td>
+  My doc
+  </td></tr>
+  <tr><td>
+  <a href="/help/hgaliasnodoc">
+  hgaliasnodoc
   </a>
   </td><td>
   summarize working directory state

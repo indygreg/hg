@@ -169,6 +169,10 @@ class command(_funcregistrarbase):
     """
 
     # Command categories for grouping them in help output.
+    # These can also be specified for aliases, like:
+    # [alias]
+    # myalias = something
+    # myalias:category = repo
     CATEGORY_REPO_CREATION = 'repo'
     CATEGORY_REMOTE_REPO_MANAGEMENT = 'remote'
     CATEGORY_COMMITTING = 'commit'

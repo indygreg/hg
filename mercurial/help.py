@@ -189,12 +189,25 @@ def indicateomitted(rst, omitted, notomitted=None):
     if notomitted:
         rst.append('\n\n.. container:: notomitted\n\n    %s\n\n' % notomitted)
 
-def filtercmd(ui, cmd, kw, doc):
+def filtercmd(ui, cmd, func, kw, doc):
     if not ui.debugflag and cmd.startswith("debug") and kw != "debug":
+        # Debug command, and user is not looking for those.
         return True
-    if not ui.verbose and doc and any(w in doc for w in _exclkeywords):
+    if not ui.verbose:
+        if not kw and not doc:
+            # Command had no documentation, no point in showing it by default.
+            return True
+        if getattr(func, 'alias', False) and not getattr(func, 'owndoc', False):
+            # Alias didn't have its own documentation.
+            return True
+        if doc and any(w in doc for w in _exclkeywords):
+            # Documentation has excluded keywords.
+            return True
+    if kw == "shortlist" and not getattr(func, 'helpbasic', False):
+        # We're presenting the short list but the command is not basic.
         return True
     if ui.configbool('help', 'hidden-command.%s' % cmd):
+        # Configuration explicitly hides the command.
         return True
     return False
 
@@ -230,13 +243,14 @@ def topicmatch(ui, commands, kw):
         else:
             summary = ''
         # translate docs *before* searching there
-        docs = _(pycompat.getdoc(entry[0])) or ''
+        func = entry[0]
+        docs = _(pycompat.getdoc(func)) or ''
         if kw in cmd or lowercontains(summary) or lowercontains(docs):
             doclines = docs.splitlines()
             if doclines:
                 summary = doclines[0]
             cmdname = cmdutil.parsealiases(cmd)[0]
-            if filtercmd(ui, cmdname, kw, docs):
+            if filtercmd(ui, cmdname, func, kw, docs):
                 continue
             results['commands'].append((cmdname, summary))
     for name, docs in itertools.chain(
@@ -256,12 +270,13 @@ def topicmatch(ui, commands, kw):
         for cmd, entry in getattr(mod, 'cmdtable', {}).iteritems():
             if kw in cmd or (len(entry) > 2 and lowercontains(entry[2])):
                 cmdname = cmdutil.parsealiases(cmd)[0]
-                cmddoc = pycompat.getdoc(entry[0])
+                func = entry[0]
+                cmddoc = pycompat.getdoc(func)
                 if cmddoc:
                     cmddoc = gettext(cmddoc).splitlines()[0]
                 else:
                     cmddoc = _('(no help text available)')
-                if filtercmd(ui, cmdname, kw, cmddoc):
+                if filtercmd(ui, cmdname, func, kw, cmddoc):
                     continue
                 results['extensioncommands'].append((cmdname, cmddoc))
     return results
@@ -525,14 +540,17 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             func = e[0]
             if select and not select(f):
                 continue
+            # Only list built-in commands (defined in commands.py) and aliases
+            # (defined in dispatch.py), but not any other extensions.
+            # We don't want a circular dependency between this file and
+            # dispatch, so reference that by name.
+            # TODO(rdamazio): Just show commands from all extensions.
             if (not select and name != 'shortlist' and
-                func.__module__ != commands.__name__):
+                func.__module__ != commands.__name__ and
+                func.__module__ != 'mercurial.dispatch'):
                 continue
-            if name == "shortlist":
-                if not getattr(func, 'helpbasic', False):
-                    continue
             doc = pycompat.getdoc(func)
-            if filtercmd(ui, f, name, doc):
+            if filtercmd(ui, f, func, name, doc):
                 continue
             doc = gettext(doc)
             if not doc:

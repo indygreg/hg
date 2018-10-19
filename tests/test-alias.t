@@ -68,17 +68,17 @@ basic
 help
 
   $ hg help -c | grep myinit
-   myinit             This is my documented alias for init.
+   myinit       This is my documented alias for init.
   $ hg help -c | grep mycommit
-   mycommit           This is my alias with only doc.
+   mycommit     This is my alias with only doc.
   $ hg help -c | grep cleanstatus
-   cleanstatus        show changed files in the working directory
+  [1]
   $ hg help -c | grep lognull
-   lognull            Logs the null rev
+   lognull      Logs the null rev
   $ hg help -c | grep dln
-   dln                Logs the null rev
+  [1]
   $ hg help -c | grep recursivedoc
-   recursivedoc       Logs the null rev in debug mode
+   recursivedoc Logs the null rev in debug mode
   $ hg help myinit
   hg myinit [OPTIONS] [BLA] [BLE]
   
@@ -602,7 +602,7 @@ command provided extension, should be aborted.
 help for a shell alias
 
   $ hg help -c | grep rebate
-   rebate             This is my alias which just prints something.
+   rebate       This is my alias which just prints something.
   $ hg help rebate
   hg rebate [MYARGS]
   

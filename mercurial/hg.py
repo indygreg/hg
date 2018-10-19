@@ -578,6 +578,9 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
 
         createopts['narrowfiles'] = True
 
+    if depth:
+        createopts['shallowfilestore'] = True
+
     if srcpeer.capable(b'lfs-serve'):
         # Repository creation honors the config if it disabled the extension, so
         # we can't just announce that lfs will be enabled.  This check avoids

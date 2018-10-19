@@ -29,6 +29,8 @@ REPO_FEATURE_SHARED_STORAGE = b'sharedstore'
 REPO_FEATURE_LFS = b'lfs'
 # Repository supports being stream cloned.
 REPO_FEATURE_STREAM_CLONE = b'streamclone'
+# Files storage may lack data for all ancestors.
+REPO_FEATURE_SHALLOW_FILE_STORAGE = b'shallowfilestorage'
 
 REVISION_FLAG_CENSORED = 1 << 15
 REVISION_FLAG_ELLIPSIS = 1 << 14

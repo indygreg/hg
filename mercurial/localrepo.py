@@ -2922,6 +2922,7 @@ def filterknowncreateopts(ui, createopts):
         'sharedrepo',
         'sharedrelative',
         'shareditems',
+        'shallowfilestore',
     }
 
     return {k: v for k, v in createopts.items() if k not in known}
@@ -2949,6 +2950,9 @@ def createrepository(ui, path, createopts=None):
        is stored as an absolute path.
     shareditems
        Set of items to share to the new repository (in addition to storage).
+    shallowfilestore
+       Indicates that storage for files should be shallow (not all ancestor
+       revisions are known).
     """
     createopts = defaultcreateopts(ui, createopts=createopts)
 

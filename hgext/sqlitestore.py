@@ -101,6 +101,7 @@ REQUIREMENT = b'exp-sqlite-001'
 REQUIREMENT_ZSTD = b'exp-sqlite-comp-001=zstd'
 REQUIREMENT_ZLIB = b'exp-sqlite-comp-001=zlib'
 REQUIREMENT_NONE = b'exp-sqlite-comp-001=none'
+REQUIREMENT_SHALLOW_FILES = b'exp-sqlite-shallow-files'
 
 CURRENT_SCHEMA_VERSION = 1
 
@@ -1014,6 +1015,8 @@ def featuresetup(ui, supported):
 
     supported.add(REQUIREMENT_ZLIB)
     supported.add(REQUIREMENT_NONE)
+    supported.add(REQUIREMENT_SHALLOW_FILES)
+    supported.add(repository.NARROW_REQUIREMENT)
 
 def newreporequirements(orig, ui, createopts):
     if createopts['backend'] != 'sqlite':
@@ -1030,6 +1033,7 @@ def newreporequirements(orig, ui, createopts):
     known = {
         'narrowfiles',
         'backend',
+        'shallowfilestore',
     }
 
     unsupported = set(createopts) - known
@@ -1061,6 +1065,9 @@ def newreporequirements(orig, ui, createopts):
         raise error.Abort(_('unknown compression engine defined in '
                             'storage.sqlite.compression: %s') % compression)
 
+    if createopts.get('shallowfilestore'):
+        requirements.add(REQUIREMENT_SHALLOW_FILES)
+
     return requirements
 
 @interfaceutil.implementer(repository.ilocalrepositoryfilestorage)
@@ -1082,12 +1089,15 @@ class sqlitefilestorage(object):
 
         return sqlitefilestore(self._dbconn, path, compression)
 
-def makefilestorage(orig, requirements, **kwargs):
+def makefilestorage(orig, requirements, features, **kwargs):
     """Produce a type conforming to ``ilocalrepositoryfilestorage``."""
     if REQUIREMENT in requirements:
+        if REQUIREMENT_SHALLOW_FILES in requirements:
+            features.add(repository.REPO_FEATURE_SHALLOW_FILE_STORAGE)
+
         return sqlitefilestorage
     else:
-        return orig(requirements=requirements, **kwargs)
+        return orig(requirements=requirements, features=features, **kwargs)
 
 def makemain(orig, ui, requirements, **kwargs):
     if REQUIREMENT in requirements:

@@ -984,7 +984,9 @@ def getfilestore(repo, proto, path):
 
     return fl
 
-def emitfilerevisions(revisions, fields):
+def emitfilerevisions(repo, path, revisions, fields):
+    clnode = repo.changelog.node
+
     for revision in revisions:
         d = {
             b'node': revision.node,
@@ -992,6 +994,15 @@ def emitfilerevisions(revisions, fields):
 
         if b'parents' in fields:
             d[b'parents'] = [revision.p1node, revision.p2node]
+
+        if b'linknode' in fields:
+            # TODO by creating the filectx against a specific file revision
+            # instead of changeset, linkrev() is always used. This is wrong for
+            # cases where linkrev() may refer to a hidden changeset. We need an
+            # API for performing linkrev adjustment that takes this into
+            # account.
+            fctx = repo.filectx(path, fileid=revision.node)
+            d[b'linknode'] = clnode(fctx.introrev())
 
         followingmeta = []
         followingdata = []
@@ -1052,7 +1063,7 @@ def makefilematcher(repo, pathfilter):
             'type': 'set',
             'default': set,
             'example': {b'parents', b'revision'},
-            'validvalues': {b'parents', b'revision'},
+            'validvalues': {b'parents', b'revision', b'linknode'},
         },
         'path': {
             'type': 'bytes',
@@ -1091,7 +1102,7 @@ def filedata(repo, proto, haveparents, nodes, fields, path):
         b'totalitems': len(nodes),
     }
 
-    for o in emitfilerevisions(revisions, fields):
+    for o in emitfilerevisions(repo, path, revisions, fields):
         yield o
 
 def filesdatacapabilities(repo, proto):
@@ -1113,7 +1124,8 @@ def filesdatacapabilities(repo, proto):
             'type': 'set',
             'default': set,
             'example': {b'parents', b'revision'},
-            'validvalues': {b'firstchangeset', b'parents', b'revision'},
+            'validvalues': {b'firstchangeset', b'linknode', b'parents',
+                            b'revision'},
         },
         'pathfilter': {
             'type': 'dict',
@@ -1202,7 +1214,7 @@ def filesdata(repo, proto, haveparents, fields, pathfilter, revisions):
                                         revisiondata=b'revision' in fields,
                                         assumehaveparentrevisions=haveparents)
 
-        for o in emitfilerevisions(revisions, fields):
+        for o in emitfilerevisions(repo, path, revisions, fields):
             yield o
 
 @wireprotocommand(

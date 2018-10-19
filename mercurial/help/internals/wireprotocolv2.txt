@@ -258,6 +258,9 @@ fields
    (set of bytestring) Which data associated with a file to fetch.
    The following values are recognized:
 
+   linknode
+      The changeset node introducing this revision.
+
    parents
       Parent nodes for the revision.
 
@@ -355,6 +358,9 @@ fields
    (set of bytestring) Which data associated with a file to fetch.
    The following values are recognized:
 
+   linknode
+      The changeset node introducing this revision.
+
    parents
       Parent nodes for the revision.
 
@@ -422,6 +428,9 @@ in the queried set of changeset revisions will be sent.
 
 TODO we'll probably want a more complicated mechanism for the client to
 specify which ancestor revisions are known.
+TODO we may want to make linknodes an array so multiple changesets can be
+marked as introducing a file revision, since this can occur with e.g. hidden
+changesets.
 
 heads
 -----

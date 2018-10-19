@@ -251,6 +251,7 @@ A non-cacheable command does not instantiate cacher
               b'required': False,
               b'type': b'set',
               b'validvalues': set([
+                b'linknode',
                 b'parents',
                 b'revision'
               ])
@@ -281,6 +282,7 @@ A non-cacheable command does not instantiate cacher
               b'type': b'set',
               b'validvalues': set([
                 b'firstchangeset',
+                b'linknode',
                 b'parents',
                 b'revision'
               ])

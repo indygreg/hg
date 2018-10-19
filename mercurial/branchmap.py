@@ -130,18 +130,21 @@ def replacecache(repo, bm):
 
     This is likely only called during clone with a branch map from a remote.
     """
+    cl = repo.changelog
+    clrev = cl.rev
+    clbranchinfo = cl.branchinfo
     rbheads = []
     closed = []
     for bheads in bm.itervalues():
         rbheads.extend(bheads)
         for h in bheads:
-            r = repo.changelog.rev(h)
-            b, c = repo.changelog.branchinfo(r)
+            r = clrev(h)
+            b, c = clbranchinfo(r)
             if c:
                 closed.append(h)
 
     if rbheads:
-        rtiprev = max((int(repo.changelog.rev(node))
+        rtiprev = max((int(clrev(node))
                 for node in rbheads))
         cache = branchcache(bm,
                             repo[rtiprev].node(),

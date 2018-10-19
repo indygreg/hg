@@ -25,7 +25,6 @@ int strcpy_s(char *d, size_t n, const char *s)
 
 static char pyscript[MAX_PATH + 10];
 static char pyhome[MAX_PATH + 10];
-static char envpyhome[MAX_PATH + 10];
 static char pydllfile[MAX_PATH + 10];
 
 int main(int argc, char *argv[])

@@ -131,14 +131,15 @@ def vcrcommand(name, flags, spec):
                 with hgdemandimport.deactivated():
                     import vcr as vcrmod
                     import vcr.stubs as stubs
-                vcr = vcrmod.VCR(
-                    serializer=r'json',
-                    custom_patches=[
-                        (urlmod, 'httpconnection', stubs.VCRHTTPConnection),
-                        (urlmod, 'httpsconnection', stubs.VCRHTTPSConnection),
-                    ])
-                with vcr.use_cassette(cassette):
-                    return fn(*args, **kwargs)
+                    vcr = vcrmod.VCR(
+                        serializer=r'json',
+                        custom_patches=[
+                            (urlmod, 'httpconnection', stubs.VCRHTTPConnection),
+                            (urlmod, 'httpsconnection',
+                             stubs.VCRHTTPSConnection),
+                        ])
+                    with vcr.use_cassette(cassette):
+                        return fn(*args, **kwargs)
             return fn(*args, **kwargs)
         inner.__name__ = fn.__name__
         return command(name, fullflags, spec)(inner)

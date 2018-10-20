@@ -91,7 +91,13 @@ class _basefilecache(scmutil.filecache):
     def __get__(self, repo, type=None):
         if repo is None:
             return self
-        return super(_basefilecache, self).__get__(repo.unfiltered(), type)
+        # inlined the fast path as the cost of function call matters
+        unfi = repo.unfiltered()
+        try:
+            return unfi.__dict__[self.sname]
+        except KeyError:
+            pass
+        return super(_basefilecache, self).__get__(unfi, type)
     def __set__(self, repo, value):
         return super(_basefilecache, self).__set__(repo.unfiltered(), value)
     def __delete__(self, repo):

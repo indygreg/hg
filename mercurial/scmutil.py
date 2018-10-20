@@ -1292,9 +1292,10 @@ class filecache(object):
         if obj is None:
             return self
         # do we need to check if the file changed?
-        if self.sname in obj.__dict__:
-            assert self.name in obj._filecache, self.name
+        try:
             return obj.__dict__[self.sname]
+        except KeyError:
+            pass
 
         entry = obj._filecache.get(self.name)
 

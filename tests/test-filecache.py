@@ -177,7 +177,7 @@ def test_filecache_synced():
 def setbeforeget(repo):
     os.remove('x')
     os.remove('y')
-    repo.cached = 'string set externally'
+    repo.__class__.cached.set(repo, 'string set externally')
     repo.invalidate()
     print("* neither file exists")
     print(repo.cached)
@@ -188,7 +188,7 @@ def setbeforeget(repo):
     print("* file x created")
     print(repo.cached)
 
-    repo.cached = 'string 2 set externally'
+    repo.__class__.cached.set(repo, 'string 2 set externally')
     repo.invalidate()
     print("* string set externally again")
     print(repo.cached)

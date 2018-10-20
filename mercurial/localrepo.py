@@ -91,17 +91,16 @@ class _basefilecache(scmutil.filecache):
     def __get__(self, repo, type=None):
         if repo is None:
             return self
-        # inlined the fast path as the cost of function call matters
+        # proxy to unfiltered __dict__ since filtered repo has no entry
         unfi = repo.unfiltered()
         try:
             return unfi.__dict__[self.sname]
         except KeyError:
             pass
         return super(_basefilecache, self).__get__(unfi, type)
-    def __set__(self, repo, value):
-        return super(_basefilecache, self).__set__(repo.unfiltered(), value)
-    def __delete__(self, repo):
-        return super(_basefilecache, self).__delete__(repo.unfiltered())
+
+    def set(self, repo, value):
+        return super(_basefilecache, self).set(repo.unfiltered(), value)
 
 class repofilecache(_basefilecache):
     """filecache for files in .hg but outside of .hg/store"""

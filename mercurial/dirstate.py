@@ -317,7 +317,7 @@ class dirstate(object):
         return copies
 
     def setbranch(self, branch):
-        self._branch = encoding.fromlocal(branch)
+        self.__class__._branch.set(self, encoding.fromlocal(branch))
         f = self._opener('branch', 'w', atomictemp=True, checkambig=True)
         try:
             f.write(self._branch + '\n')

@@ -1249,16 +1249,15 @@ class filecache(object):
     results cached. The decorated function is called. The results are stashed
     away in a ``_filecache`` dict on the object whose method is decorated.
 
-    On subsequent access, the cached result is returned.
+    On subsequent access, the cached result is used as it is set to the
+    instance dictionary.
 
-    On external property set operations, stat() calls are performed and the new
-    value is cached.
+    On external property set/delete operations, the caller must update the
+    corresponding _filecache entry appropriately. Use __class__.<attr>.set()
+    instead of directly setting <attr>.
 
-    On property delete operations, cached data is removed.
-
-    When using the property API, cached data is always returned, if available:
-    no stat() is performed to check if the file has changed and if the function
-    needs to be called to reflect file changes.
+    When using the property API, the cached data is always used if available.
+    No stat() is performed to check if the file has changed.
 
     Others can muck about with the state of the ``_filecache`` dict. e.g. they
     can populate an entry before the property's getter is called. In this case,
@@ -1291,11 +1290,8 @@ class filecache(object):
         # if accessed on the class, return the descriptor itself.
         if obj is None:
             return self
-        # do we need to check if the file changed?
-        try:
-            return obj.__dict__[self.sname]
-        except KeyError:
-            pass
+
+        assert self.sname not in obj.__dict__
 
         entry = obj._filecache.get(self.name)
 
@@ -1315,7 +1311,10 @@ class filecache(object):
         obj.__dict__[self.sname] = entry.obj
         return entry.obj
 
-    def __set__(self, obj, value):
+    # don't implement __set__(), which would make __dict__ lookup as slow as
+    # function call.
+
+    def set(self, obj, value):
         if self.name not in obj._filecache:
             # we add an entry for the missing value because X in __dict__
             # implies X in _filecache
@@ -1327,12 +1326,6 @@ class filecache(object):
 
         ce.obj = value # update cached copy
         obj.__dict__[self.sname] = value # update copy returned by obj.x
-
-    def __delete__(self, obj):
-        try:
-            del obj.__dict__[self.sname]
-        except KeyError:
-            raise AttributeError(self.sname)
 
 def extdatasource(repo, source):
     """Gather a map of rev -> value dict from the specified source

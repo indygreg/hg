@@ -704,7 +704,7 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
             # Make frames that didn't actually perform work dark grey
             elif node.count - childrensamples == 0:
                 finalstring = '\033[90m' + finalstring + '\033[0m'
-                fp.write(finalstring + b'\n')
+            fp.write(finalstring + b'\n')
 
         newdepth = depth
         if len(visiblechildren) > 1 or multiple_siblings:

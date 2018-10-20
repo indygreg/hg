@@ -1063,7 +1063,7 @@ if py2exeloaded:
 if os.name == 'nt':
     # Windows binary file versions for exe/dll files must have the
     # form W.X.Y.Z, where W,X,Y,Z are numbers in the range 0..65535
-    setupversion = version.split(b'+', 1)[0]
+    setupversion = setupversion.split(r'+', 1)[0]
 
 if sys.platform == 'darwin' and os.path.exists('/usr/bin/xcodebuild'):
     version = runcmd(['/usr/bin/xcodebuild', '-version'], {})[1].splitlines()

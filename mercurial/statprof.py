@@ -257,6 +257,9 @@ class CodeSite(object):
     def filename(self):
         return os.path.basename(self.path)
 
+    def skipname(self):
+        return r'%s:%s' % (self.filename(), self.function)
+
 class Sample(object):
     __slots__ = (u'stack', u'time')
 
@@ -661,10 +664,8 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
             if len(stack) > 1:
                 i = 1
                 # Skip boiler plate parts of the stack
-                name = r'%s:%s' % (stack[i].filename(), stack[i].function)
-                while i < len(stack) and name in skips:
+                while i < len(stack) and stack[i].skipname() in skips:
                     i += 1
-                    name = r'%s:%s' % (stack[i].filename(), stack[i].function)
                 if i < len(stack):
                     child.add(stack[i:], time)
 

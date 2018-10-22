@@ -495,6 +495,8 @@ def shortesthexnodeidprefix(repo, node, minlength=1, cache=None):
     # which would be unacceptably slow. so we look for hash collision in
     # unfiltered space, which means some hashes may be slightly longer.
 
+    minlength=max(minlength, 1)
+
     def disambiguate(prefix):
         """Disambiguate against revnums."""
         if repo.ui.configbool('experimental', 'revisions.prefixhexnode'):

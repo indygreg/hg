@@ -374,7 +374,12 @@ def pointersfromctx(ctx, removed=False):
     stored for the path is an empty dict.
     """
     result = {}
+    m = ctx.repo().narrowmatch()
+
+    # TODO: consider manifest.fastread() instead
     for f in ctx.files():
+        if not m(f):
+            continue
         p = pointerfromctx(ctx, f, removed=removed)
         if p is not None:
             result[f] = p

@@ -19,7 +19,7 @@ Test if logtoprocess correctly captures command-related log calls.
   > )
   > @command(b'foo', [])
   > def foo(ui, repo):
-  >     ui.log('foo', 'a message: %(bar)s\n', bar='spam')
+  >     ui.log('foo', 'a message: %s\n', 'spam')
   > EOF
   $ cp $HGRCPATH $HGRCPATH.bak
   $ cat >> $HGRCPATH << EOF
@@ -39,7 +39,7 @@ Test if logtoprocess correctly captures command-related log calls.
   > foo=(echo 'logtoprocess foo output:';
   >     echo "\$EVENT";
   >     echo "\$MSG1";
-  >     echo "\$OPT_BAR") > $TESTTMP/foo.log
+  >     echo "\$MSG2") > $TESTTMP/foo.log
   > EOF
 
 Running a command triggers both a ui.log('command') and a

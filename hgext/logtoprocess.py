@@ -113,10 +113,8 @@ def uisetup(ui):
                     # try to format the log message given the remaining
                     # arguments
                     try:
-                        # Python string formatting with % either uses a
-                        # dictionary *or* tuple, but not both. If we have
-                        # keyword options, assume we need a mapping.
-                        formatted = msg[0] % (opts or msg[1:])
+                        # Format the message as blackbox does
+                        formatted = msg[0] % msg[1:]
                     except (TypeError, KeyError):
                         # Failed to apply the arguments, ignore
                         formatted = msg[0]

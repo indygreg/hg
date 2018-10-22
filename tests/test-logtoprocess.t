@@ -17,7 +17,7 @@ Test if logtoprocess correctly captures command-related log calls.
   > configitem('logtoprocess', 'foo',
   >     default=None,
   > )
-  > @command(b'foo', [])
+  > @command(b'foobar', [])
   > def foo(ui, repo):
   >     ui.log('foo', 'a message: %s\n', 'spam')
   > EOF
@@ -35,7 +35,8 @@ Test if logtoprocess correctly captures command-related log calls.
   >     echo "\$EVENT";
   >     echo "\$MSG1";
   >     echo "\$MSG2";
-  >     echo "\$MSG3") > $TESTTMP/commandfinish.log
+  >     echo "\$MSG3";
+  >     echo "canonical: \$OPT_CANONICAL_COMMAND") > $TESTTMP/commandfinish.log
   > foo=(echo 'logtoprocess foo output:';
   >     echo "\$EVENT";
   >     echo "\$MSG1";
@@ -46,22 +47,23 @@ Running a command triggers both a ui.log('command') and a
 ui.log('commandfinish') call. The foo command also uses ui.log.
 
 Use sort to avoid ordering issues between the various processes we spawn:
-  $ hg foo
+  $ hg fooba
   $ sleep 1
   $ cat $TESTTMP/command.log | sort
   
   command
-  foo
-  foo
+  fooba
+  fooba
   logtoprocess command output:
 
 #if no-chg
   $ cat $TESTTMP/commandfinish.log | sort
   
   0
+  canonical: foobar
   commandfinish
-  foo
-  foo exited 0 after * seconds (glob)
+  fooba
+  fooba exited 0 after * seconds (glob)
   logtoprocess commandfinish output:
   $ cat $TESTTMP/foo.log | sort
   

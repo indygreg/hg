@@ -66,6 +66,9 @@ class request(object):
         # low-level repo state (for example, changelog) before extensions.
         self.prereposetups = prereposetups or []
 
+        # store the parsed and canonical command
+        self.canonical_command = None
+
     def _runexithandlers(self):
         exc = None
         handlers = self.ui._exithandlers
@@ -243,7 +246,8 @@ def dispatch(req):
                 req.ui.log('uiblocked', 'ui blocked ms',
                            **pycompat.strkwargs(req.ui._blockedtimes))
             req.ui.log("commandfinish", "%s exited %d after %0.2f seconds\n",
-                       msg, ret & 255, duration)
+                       msg, ret & 255, duration,
+                       canonical_command=req.canonical_command)
             try:
                 req._runexithandlers()
             except: # exiting, so no re-raises
@@ -852,6 +856,9 @@ def _dispatch(req):
 
         fullargs = args
         cmd, func, args, options, cmdoptions = _parse(lui, args)
+
+        # store the canonical command name in request object for later access
+        req.canonical_command = cmd
 
         if options["config"] != req.earlyoptions["config"]:
             raise error.Abort(_("option --config may not be abbreviated!"))

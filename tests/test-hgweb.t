@@ -329,7 +329,7 @@ stop and restart
 
 Test the access/error files are opened in append mode
 
-  $ $PYTHON -c "print len(open('access.log', 'rb').readlines()), 'log lines written'"
+  $ "$PYTHON" -c "from __future__ import print_function; print(len(open('access.log', 'rb').readlines()), 'log lines written')"
   14 log lines written
 
 static file

@@ -22,7 +22,7 @@ def print(*args, **kwargs):
 u = uimod.ui.load()
 
 print('% creating repo')
-repo = localrepo.localrepository(u, b'.', create=True)
+repo = localrepo.instance(u, b'.', create=True)
 
 f = open('test.py', 'w')
 try:

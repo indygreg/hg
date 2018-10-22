@@ -1450,7 +1450,7 @@ Test setup
   added 1 changesets with 0 changes to 1 files (+1 heads)
   2 new obsolescence markers
   obsoleted 1 changesets
-  new changesets 7a230b46bf61
+  new changesets 7a230b46bf61 (1 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg log --hidden -G
   o  changeset:   2:7a230b46bf61
@@ -2591,7 +2591,7 @@ Test metadata encoding (issue5754)
   > [extensions]
   > amend =
   > EOF
-  $ $PYTHON <<'EOF'
+  $ "$PYTHON" <<'EOF'
   > with open('test1', 'wb') as f:
   >    f.write(b't\xe8st1') and None
   > with open('test2', 'wb') as f:

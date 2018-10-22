@@ -696,6 +696,12 @@ pad() should interact well with color codes (issue5416)
   > '{pad(label(red, "red"), 5, label(cyan, "-"))}\n'
   \x1b[0;31mred\x1b[0m\x1b[0;36m-\x1b[0m\x1b[0;36m-\x1b[0m (esc)
 
+pad() with truncate has to strip color codes, though
+
+  $ hg debugtemplate --color=always \
+  > '{pad(label(red, "scarlet"), 5, truncate=true)}\n'
+  scarl
+
 label should be no-op if color is disabled:
 
   $ hg log --color=never -l 1 --template '{label(red, "text\n")}'
@@ -798,6 +804,8 @@ Test shortest(node) function:
   e777603221
   bcc7ff960b
   f7769ec2ab
+  $ hg log --template '{shortest(node, 1)}\n' -r null
+  00
   $ hg log --template '{node|shortest}\n' -l1
   e777
 
@@ -892,6 +900,11 @@ Test shortest(node) with the repo having short hash collision:
   $ hg log -r 4 -T '{rev}:{shortest(node, 0)}\n' --hidden
   4:107
 
+  $ hg --config experimental.revisions.prefixhexnode=yes log -r 4 -T '{rev}:{shortest(node, 0)}\n'
+  4:x10
+  $ hg --config experimental.revisions.prefixhexnode=yes log -r 4 -T '{rev}:{shortest(node, 0)}\n' --hidden
+  4:x10
+
  node 'c562' should be unique if the other 'c562' nodes are hidden
  (but we don't try the slow path to filter out hidden nodes for now)
 
@@ -901,6 +914,55 @@ Test shortest(node) with the repo having short hash collision:
   8:c5625
   9:c5623
   10:c562d
+
+  $ cd ..
+
+Test prefixhexnode when the first character of the hash is 0.
+  $ hg init hashcollision2
+  $ cd hashcollision2
+  $ cat <<EOF >> .hg/hgrc
+  > [experimental]
+  > evolution.createmarkers=True
+  > EOF
+  $ echo 0 > a
+  $ hg ci -qAm 0
+  $ echo 21 > a
+  $ hg ci -qm 21
+  $ hg up -q null
+  $ hg log -r0: -T '{rev}:{node}\n'
+  0:b4e73ffab476aa0ee32ed81ca51e07169844bc6a
+  1:0cf177ba2b1dc3862a00fb81715fec90950201be
+
+ we need the 'x' prefix to ensure we aren't colliding with rev0. We identify
+ the collision with nullid if we aren't using disambiguatewithin, so we need to set
+ that as well.
+  $ hg --config experimental.revisions.disambiguatewithin='descendants(0)' \
+  >    --config experimental.revisions.prefixhexnode=yes \
+  >    log -r 1 -T '{rev}:{shortest(node, 0)}\n'
+  1:x0
+
+  $ hg debugobsolete 0cf177ba2b1dc3862a00fb81715fec90950201be
+  obsoleted 1 changesets
+  $ hg up -q 0
+  $ echo 61 > a
+  $ hg ci -m 61
+  $ hg log -r0: -T '{rev}:{node}\n'
+  0:b4e73ffab476aa0ee32ed81ca51e07169844bc6a
+  2:01384dde84b3a511ae0835f35ac40bd806c99bb8
+
+ we still have the 'x' prefix because '0' is still the shortest prefix, since
+ rev1's '0c' is hidden.
+  $ hg --config experimental.revisions.disambiguatewithin=0:-1-0 \
+  >    --config experimental.revisions.prefixhexnode=yes \
+  >    log -r 0:-1-0 -T '{rev}:{shortest(node, 0)}\n'
+  2:x0
+
+ we don't have the 'x' prefix on 2 because '01' is not a synonym for rev1.
+  $ hg --config experimental.revisions.disambiguatewithin=0:-1-0 \
+  >    --config experimental.revisions.prefixhexnode=yes \
+  >    log -r 0:-1-0 -T '{rev}:{shortest(node, 0)}\n' --hidden
+  1:0c
+  2:01
 
   $ cd ..
 
@@ -922,6 +984,15 @@ Test pad function
   2------------------- test
   1------------------- {node|short}
   0------------------- test
+
+  $ hg log --template '{pad(author, 5, "-", False, True)}\n'
+  test-
+  {node
+  test-
+  $ hg log --template '{pad(author, 5, "-", True, True)}\n'
+  -test
+  hort}
+  -test
 
 Test template string in pad function
 
@@ -1193,6 +1264,12 @@ Test files function
   
   0
   
+
+  $ hg log -l1 -T "{files('aa') % '{file}\n'}"
+  aa
+  $ hg log -l1 -T "{files('aa') % '{path}\n'}"
+  aa
+
   $ hg rm a
   $ hg log -r "wdir()" -T "{rev}\n{join(files('*'), '\n')}\n"
   2147483647
@@ -1382,7 +1459,7 @@ Set up repository for non-ascii encoding tests:
 
   $ hg init nonascii
   $ cd nonascii
-  $ $PYTHON <<EOF
+  $ "$PYTHON" <<EOF
   > open('latin1', 'wb').write(b'\xe9')
   > open('utf-8', 'wb').write(b'\xc3\xa9')
   > EOF

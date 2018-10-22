@@ -16,7 +16,7 @@ pager was running.
   > formatted = yes
   > color = no
   > [pager]
-  > pager = $PYTHON $TESTTMP/fakepager.py
+  > pager = "$PYTHON" $TESTTMP/fakepager.py
   > EOF
 
   $ hg init repo
@@ -24,7 +24,7 @@ pager was running.
   $ echo a >> a
   $ hg add a
   $ hg ci -m 'add a'
-  $ for x in `$PYTHON $TESTDIR/seq.py 1 10`; do
+  $ for x in `"$PYTHON" $TESTDIR/seq.py 1 10`; do
   >   echo a $x >> a
   >   hg ci -m "modify a $x"
   > done
@@ -404,7 +404,7 @@ Environment variables like LESS and LV are set automatically:
   > [ui]
   > formatted=1
   > [pager]
-  > pager = $PYTHON $TESTTMP/printlesslv.py
+  > pager = "$PYTHON" $TESTTMP/printlesslv.py
   > EOF
   $ unset LESS
   $ unset LV

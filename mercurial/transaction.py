@@ -38,7 +38,7 @@ gengrouppostfinalize='postfinalize'
 
 def active(func):
     def _active(self, *args, **kwds):
-        if self.count == 0:
+        if self._count == 0:
             raise error.Abort(_(
                 'cannot use transaction when it is already committed/aborted'))
         return func(self, *args, **kwds)
@@ -119,37 +119,37 @@ class transaction(util.transactional):
         which determine whether file stat ambiguity should be avoided
         for corresponded files.
         """
-        self.count = 1
-        self.usages = 1
-        self.report = report
+        self._count = 1
+        self._usages = 1
+        self._report = report
         # a vfs to the store content
-        self.opener = opener
+        self._opener = opener
         # a map to access file in various {location -> vfs}
         vfsmap = vfsmap.copy()
         vfsmap[''] = opener  # set default value
         self._vfsmap = vfsmap
-        self.after = after
-        self.entries = []
-        self.map = {}
-        self.journal = journalname
-        self.undoname = undoname
+        self._after = after
+        self._entries = []
+        self._map = {}
+        self._journal = journalname
+        self._undoname = undoname
         self._queue = []
         # A callback to validate transaction content before closing it.
         # should raise exception is anything is wrong.
         # target user is repository hooks.
         if validator is None:
             validator = lambda tr: None
-        self.validator = validator
+        self._validator = validator
         # A callback to do something just after releasing transaction.
         if releasefn is None:
             releasefn = lambda tr, success: None
-        self.releasefn = releasefn
+        self._releasefn = releasefn
 
-        self.checkambigfiles = set()
+        self._checkambigfiles = set()
         if checkambigfiles:
-            self.checkambigfiles.update(checkambigfiles)
+            self._checkambigfiles.update(checkambigfiles)
 
-        self.names = [name]
+        self._names = [name]
 
         # A dict dedicated to precisely tracking the changes introduced in the
         # transaction.
@@ -157,7 +157,7 @@ class transaction(util.transactional):
 
         # a dict of arguments to be passed to hooks
         self.hookargs = {}
-        self.file = opener.open(self.journal, "w")
+        self._file = opener.open(self._journal, "w")
 
         # a list of ('location', 'path', 'backuppath', cache) entries.
         # - if 'backuppath' is empty, no file existed at backup time
@@ -167,12 +167,12 @@ class transaction(util.transactional):
         # (cache is currently unused)
         self._backupentries = []
         self._backupmap = {}
-        self._backupjournal = "%s.backupfiles" % self.journal
+        self._backupjournal = "%s.backupfiles" % self._journal
         self._backupsfile = opener.open(self._backupjournal, 'w')
         self._backupsfile.write('%d\n' % version)
 
         if createmode is not None:
-            opener.chmod(self.journal, createmode & 0o666)
+            opener.chmod(self._journal, createmode & 0o666)
             opener.chmod(self._backupjournal, createmode & 0o666)
 
         # hold file generations to be performed on commit
@@ -189,12 +189,12 @@ class transaction(util.transactional):
         self._abortcallback = {}
 
     def __repr__(self):
-        name = r'/'.join(self.names)
+        name = r'/'.join(self._names)
         return (r'<transaction name=%s, count=%d, usages=%d>' %
-                (name, self.count, self.usages))
+                (name, self._count, self._usages))
 
     def __del__(self):
-        if self.journal:
+        if self._journal:
             self._abort()
 
     @active
@@ -218,7 +218,7 @@ class transaction(util.transactional):
     @active
     def add(self, file, offset, data=None):
         """record the state of an append-only file before update"""
-        if file in self.map or file in self._backupmap:
+        if file in self._map or file in self._backupmap:
             return
         if self._queue:
             self._queue[-1].append((file, offset, data))
@@ -228,13 +228,13 @@ class transaction(util.transactional):
 
     def _addentry(self, file, offset, data):
         """add a append-only entry to memory and on-disk state"""
-        if file in self.map or file in self._backupmap:
+        if file in self._map or file in self._backupmap:
             return
-        self.entries.append((file, offset, data))
-        self.map[file] = len(self.entries) - 1
+        self._entries.append((file, offset, data))
+        self._map[file] = len(self._entries) - 1
         # add enough data to the journal to do the truncate
-        self.file.write("%s\0%d\n" % (file, offset))
-        self.file.flush()
+        self._file.write("%s\0%d\n" % (file, offset))
+        self._file.flush()
 
     @active
     def addbackup(self, file, hardlink=True, location=''):
@@ -251,11 +251,11 @@ class transaction(util.transactional):
             msg = 'cannot use transaction.addbackup inside "group"'
             raise error.ProgrammingError(msg)
 
-        if file in self.map or file in self._backupmap:
+        if file in self._map or file in self._backupmap:
             return
         vfs = self._vfsmap[location]
         dirname, filename = vfs.split(file)
-        backupfilename = "%s.backup.%s" % (self.journal, filename)
+        backupfilename = "%s.backup.%s" % (self._journal, filename)
         backupfile = vfs.reljoin(dirname, backupfilename)
         if vfs.exists(file):
             filepath = vfs.join(file)
@@ -340,7 +340,7 @@ class transaction(util.transactional):
                         checkambig = False
                     else:
                         self.addbackup(name, location=location)
-                        checkambig = (name, location) in self.checkambigfiles
+                        checkambig = (name, location) in self._checkambigfiles
                     files.append(vfs(name, 'w', atomictemp=True,
                                      checkambig=checkambig))
                 genfunc(*files)
@@ -351,8 +351,8 @@ class transaction(util.transactional):
 
     @active
     def find(self, file):
-        if file in self.map:
-            return self.entries[self.map[file]]
+        if file in self._map:
+            return self._entries[self._map[file]]
         if file in self._backupmap:
             return self._backupentries[self._backupmap[file]]
         return None
@@ -364,31 +364,31 @@ class transaction(util.transactional):
         that are not pending in the queue
         '''
 
-        if file not in self.map:
+        if file not in self._map:
             raise KeyError(file)
-        index = self.map[file]
-        self.entries[index] = (file, offset, data)
-        self.file.write("%s\0%d\n" % (file, offset))
-        self.file.flush()
+        index = self._map[file]
+        self._entries[index] = (file, offset, data)
+        self._file.write("%s\0%d\n" % (file, offset))
+        self._file.flush()
 
     @active
     def nest(self, name=r'<unnamed>'):
-        self.count += 1
-        self.usages += 1
-        self.names.append(name)
+        self._count += 1
+        self._usages += 1
+        self._names.append(name)
         return self
 
     def release(self):
-        if self.count > 0:
-            self.usages -= 1
-        if self.names:
-            self.names.pop()
+        if self._count > 0:
+            self._usages -= 1
+        if self._names:
+            self._names.pop()
         # if the transaction scopes are left without being closed, fail
-        if self.count > 0 and self.usages == 0:
+        if self._count > 0 and self._usages == 0:
             self._abort()
 
     def running(self):
-        return self.count > 0
+        return self._count > 0
 
     def addpending(self, category, callback):
         """add a callback to be called when the transaction is pending
@@ -454,9 +454,9 @@ class transaction(util.transactional):
     @active
     def close(self):
         '''commit the transaction'''
-        if self.count == 1:
-            self.validator(self)  # will raise exception if needed
-            self.validator = None # Help prevent cycles.
+        if self._count == 1:
+            self._validator(self)  # will raise exception if needed
+            self._validator = None # Help prevent cycles.
             self._generatefiles(group=gengroupprefinalize)
             categories = sorted(self._finalizecallback)
             for cat in categories:
@@ -465,16 +465,16 @@ class transaction(util.transactional):
             self._finalizecallback = None
             self._generatefiles(group=gengrouppostfinalize)
 
-        self.count -= 1
-        if self.count != 0:
+        self._count -= 1
+        if self._count != 0:
             return
-        self.file.close()
+        self._file.close()
         self._backupsfile.close()
         # cleanup temporary files
         for l, f, b, c in self._backupentries:
             if l not in self._vfsmap and c:
-                self.report("couldn't remove %s: unknown cache location %s\n"
-                            % (b, l))
+                self._report("couldn't remove %s: unknown cache location %s\n"
+                             % (b, l))
                 continue
             vfs = self._vfsmap[l]
             if not f and b and vfs.exists(b):
@@ -484,21 +484,21 @@ class transaction(util.transactional):
                     if not c:
                         raise
                     # Abort may be raise by read only opener
-                    self.report("couldn't remove %s: %s\n"
-                                % (vfs.join(b), inst))
-        self.entries = []
+                    self._report("couldn't remove %s: %s\n"
+                                 % (vfs.join(b), inst))
+        self._entries = []
         self._writeundo()
-        if self.after:
-            self.after()
-            self.after = None # Help prevent cycles.
-        if self.opener.isfile(self._backupjournal):
-            self.opener.unlink(self._backupjournal)
-        if self.opener.isfile(self.journal):
-            self.opener.unlink(self.journal)
+        if self._after:
+            self._after()
+            self._after = None # Help prevent cycles.
+        if self._opener.isfile(self._backupjournal):
+            self._opener.unlink(self._backupjournal)
+        if self._opener.isfile(self._journal):
+            self._opener.unlink(self._journal)
         for l, _f, b, c in self._backupentries:
             if l not in self._vfsmap and c:
-                self.report("couldn't remove %s: unknown cache location"
-                            "%s\n" % (b, l))
+                self._report("couldn't remove %s: unknown cache location"
+                             "%s\n" % (b, l))
                 continue
             vfs = self._vfsmap[l]
             if b and vfs.exists(b):
@@ -508,13 +508,13 @@ class transaction(util.transactional):
                     if not c:
                         raise
                     # Abort may be raise by read only opener
-                    self.report("couldn't remove %s: %s\n"
-                                % (vfs.join(b), inst))
+                    self._report("couldn't remove %s: %s\n"
+                                 % (vfs.join(b), inst))
         self._backupentries = []
-        self.journal = None
+        self._journal = None
 
-        self.releasefn(self, True) # notify success of closing transaction
-        self.releasefn = None # Help prevent cycles.
+        self._releasefn(self, True) # notify success of closing transaction
+        self._releasefn = None # Help prevent cycles.
 
         # run post close action
         categories = sorted(self._postclosecallback)
@@ -532,9 +532,10 @@ class transaction(util.transactional):
 
     def _writeundo(self):
         """write transaction data for possible future undo call"""
-        if self.undoname is None:
+        if self._undoname is None:
             return
-        undobackupfile = self.opener.open("%s.backupfiles" % self.undoname, 'w')
+        undobackupfile = self._opener.open("%s.backupfiles" % self._undoname,
+                                           'w')
         undobackupfile.write('%d\n' % version)
         for l, f, b, c in self._backupentries:
             if not f:  # temporary file
@@ -543,13 +544,13 @@ class transaction(util.transactional):
                 u = ''
             else:
                 if l not in self._vfsmap and c:
-                    self.report("couldn't remove %s: unknown cache location"
-                                "%s\n" % (b, l))
+                    self._report("couldn't remove %s: unknown cache location"
+                                 "%s\n" % (b, l))
                     continue
                 vfs = self._vfsmap[l]
                 base, name = vfs.split(b)
-                assert name.startswith(self.journal), name
-                uname = name.replace(self.journal, self.undoname, 1)
+                assert name.startswith(self._journal), name
+                uname = name.replace(self._journal, self._undoname, 1)
                 u = vfs.reljoin(base, uname)
                 util.copyfile(vfs.join(b), vfs.join(u), hardlink=True)
             undobackupfile.write("%s\0%s\0%s\0%d\n" % (l, f, u, c))
@@ -557,36 +558,36 @@ class transaction(util.transactional):
 
 
     def _abort(self):
-        self.count = 0
-        self.usages = 0
-        self.file.close()
+        self._count = 0
+        self._usages = 0
+        self._file.close()
         self._backupsfile.close()
 
         try:
-            if not self.entries and not self._backupentries:
+            if not self._entries and not self._backupentries:
                 if self._backupjournal:
-                    self.opener.unlink(self._backupjournal)
-                if self.journal:
-                    self.opener.unlink(self.journal)
+                    self._opener.unlink(self._backupjournal)
+                if self._journal:
+                    self._opener.unlink(self._journal)
                 return
 
-            self.report(_("transaction abort!\n"))
+            self._report(_("transaction abort!\n"))
 
             try:
                 for cat in sorted(self._abortcallback):
                     self._abortcallback[cat](self)
                 # Prevent double usage and help clear cycles.
                 self._abortcallback = None
-                _playback(self.journal, self.report, self.opener, self._vfsmap,
-                          self.entries, self._backupentries, False,
-                          checkambigfiles=self.checkambigfiles)
-                self.report(_("rollback completed\n"))
+                _playback(self._journal, self._report, self._opener,
+                          self._vfsmap, self._entries, self._backupentries,
+                          False, checkambigfiles=self._checkambigfiles)
+                self._report(_("rollback completed\n"))
             except BaseException:
-                self.report(_("rollback failed - please run hg recover\n"))
+                self._report(_("rollback failed - please run hg recover\n"))
         finally:
-            self.journal = None
-            self.releasefn(self, False) # notify failure of transaction
-            self.releasefn = None # Help prevent cycles.
+            self._journal = None
+            self._releasefn(self, False) # notify failure of transaction
+            self._releasefn = None # Help prevent cycles.
 
 def rollback(opener, vfsmap, file, report, checkambigfiles=None):
     """Rolls back the transaction contained in the given file

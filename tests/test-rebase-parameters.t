@@ -17,7 +17,7 @@
   adding manifests
   adding file changes
   added 8 changesets with 7 changes to 7 files (+2 heads)
-  new changesets cd010b8cd998:02de42196ebe
+  new changesets cd010b8cd998:02de42196ebe (8 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg up tip
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -61,7 +61,7 @@ These fail:
   [1]
 
   $ hg rebase --continue --abort
-  abort: cannot use both abort and continue
+  abort: cannot use --abort with --continue
   [255]
 
   $ hg rebase --continue --collapse

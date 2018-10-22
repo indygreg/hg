@@ -88,15 +88,13 @@ clone a narrow portion of the master, such that we can widen it later
   4 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ cd narrow
-  $ cat .hg/narrowspec
-  [includes]
-  path:dir1
-  path:dir2
-  [excludes]
-  path:dir1/dirA
-  path:dir1/dirB
-  path:dir2/dirA
-  path:dir2/dirB
+  $ hg tracked
+  I path:dir1
+  I path:dir2
+  X path:dir1/dirA
+  X path:dir1/dirB
+  X path:dir2/dirA
+  X path:dir2/dirB
   $ hg manifest -r tip
   dir1/bar
   dir1/dirA/bar
@@ -144,14 +142,12 @@ widen the narrow checkout
   adding file changes
   added 9 changesets with 6 changes to 6 files
   new changesets *:* (glob)
-  $ cat .hg/narrowspec
-  [includes]
-  path:dir1
-  path:dir2
-  [excludes]
-  path:dir1/dirB
-  path:dir2/dirA
-  path:dir2/dirB
+  $ hg tracked
+  I path:dir1
+  I path:dir2
+  X path:dir1/dirB
+  X path:dir2/dirA
+  X path:dir2/dirB
   $ find * | sort
   dir1
   dir1/bar
@@ -206,14 +202,12 @@ widen narrow spec again, but exclude a file in previously included spec
   adding file changes
   added 11 changesets with 7 changes to 7 files
   new changesets *:* (glob)
-  $ cat .hg/narrowspec
-  [includes]
-  path:dir1
-  path:dir2
-  [excludes]
-  path:dir1/dirA/bar
-  path:dir1/dirB
-  path:dir2/dirA
+  $ hg tracked
+  I path:dir1
+  I path:dir2
+  X path:dir1/dirA/bar
+  X path:dir1/dirB
+  X path:dir2/dirA
   $ find * | sort
   dir1
   dir1/bar
@@ -266,14 +260,12 @@ widen narrow spec yet again, excluding a directory in previous spec
   adding file changes
   added 13 changesets with 8 changes to 8 files
   new changesets *:* (glob)
-  $ cat .hg/narrowspec
-  [includes]
-  path:dir1
-  path:dir2
-  [excludes]
-  path:dir1/dirA
-  path:dir1/dirA/bar
-  path:dir1/dirB
+  $ hg tracked
+  I path:dir1
+  I path:dir2
+  X path:dir1/dirA
+  X path:dir1/dirA/bar
+  X path:dir1/dirB
   $ find * | sort
   dir1
   dir1/bar
@@ -327,13 +319,11 @@ include a directory that was previously explicitly excluded
   adding file changes
   added 13 changesets with 9 changes to 9 files
   new changesets *:* (glob)
-  $ cat .hg/narrowspec
-  [includes]
-  path:dir1
-  path:dir2
-  [excludes]
-  path:dir1/dirA/bar
-  path:dir1/dirB
+  $ hg tracked
+  I path:dir1
+  I path:dir2
+  X path:dir1/dirA/bar
+  X path:dir1/dirB
   $ find * | sort
   dir1
   dir1/bar
@@ -437,3 +427,43 @@ clone a narrow portion of the master, such that we can widen it later
   |
   o  0 2a4f0c3b67da... root
   
+
+Illegal patterns are rejected
+
+  $ hg tracked --addinclude glob:**
+  abort: invalid prefix on narrow pattern: glob:**
+  (narrow patterns must begin with one of the following: path:, rootfilesin:)
+  [255]
+
+  $ hg tracked --addexclude set:ignored
+  abort: invalid prefix on narrow pattern: set:ignored
+  (narrow patterns must begin with one of the following: path:, rootfilesin:)
+  [255]
+
+  $ cat .hg/store/narrowspec
+  [include]
+  path:dir1
+  path:dir1/dirA
+  [exclude]
+
+  $ cat > .hg/store/narrowspec << EOF
+  > [include]
+  > glob:**
+  > EOF
+
+  $ hg tracked
+  abort: invalid prefix on narrow pattern: glob:**
+  (narrow patterns must begin with one of the following: path:, rootfilesin:)
+  [255]
+
+  $ cat > .hg/store/narrowspec << EOF
+  > [include]
+  > path:.
+  > [exclude]
+  > set:ignored
+  > EOF
+
+  $ hg tracked
+  abort: invalid prefix on narrow pattern: set:ignored
+  (narrow patterns must begin with one of the following: path:, rootfilesin:)
+  [255]

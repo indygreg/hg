@@ -15,6 +15,7 @@ from .node import (
     bin,
     hex,
     nullid,
+    nullrev,
 )
 from .thirdparty import (
     attr,
@@ -25,12 +26,15 @@ from . import (
     changegroup,
     discovery,
     error,
+    exchangev2,
     lock as lockmod,
     logexchange,
+    narrowspec,
     obsolete,
     phases,
     pushkey,
     pycompat,
+    repository,
     scmutil,
     sslutil,
     streamclone,
@@ -43,6 +47,8 @@ from .utils import (
 
 urlerr = util.urlerr
 urlreq = util.urlreq
+
+_NARROWACL_SECTION = 'narrowhgacl'
 
 # Maps bundle version human names to changegroup versions.
 _bundlespeccgversions = {'v1': '01',
@@ -516,7 +522,8 @@ def push(repo, remote, force=False, revs=None, newbranch=False, bookmarks=(),
         # source repo cannot be locked.
         # We do not abort the push, but just disable the local phase
         # synchronisation.
-        msg = 'cannot lock source repository: %s\n' % err
+        msg = ('cannot lock source repository: %s\n'
+               % stringutil.forcebytestr(err))
         pushop.ui.debug(msg)
 
     with wlock or util.nullcontextmanager(), \
@@ -1308,7 +1315,8 @@ class pulloperation(object):
     """
 
     def __init__(self, repo, remote, heads=None, force=False, bookmarks=(),
-                 remotebookmarks=None, streamclonerequested=None):
+                 remotebookmarks=None, streamclonerequested=None,
+                 includepats=None, excludepats=None, depth=None):
         # repo we pull into
         self.repo = repo
         # repo we pull from
@@ -1338,6 +1346,12 @@ class pulloperation(object):
         self.stepsdone = set()
         # Whether we attempted a clone from pre-generated bundles.
         self.clonebundleattempted = False
+        # Set of file patterns to include.
+        self.includepats = includepats
+        # Set of file patterns to exclude.
+        self.excludepats = excludepats
+        # Number of ancestor changesets to pull from each pulled head.
+        self.depth = depth
 
     @util.propertycache
     def pulledsubset(self):
@@ -1427,7 +1441,7 @@ def _fullpullbundle2(repo, pullop):
         old_heads = unficl.heads()
         clstart = len(unficl)
         _pullbundle2(pullop)
-        if changegroup.NARROW_REQUIREMENT in repo.requirements:
+        if repository.NARROW_REQUIREMENT in repo.requirements:
             # XXX narrow clones filter the heads on the server side during
             # XXX getbundle and result in partial replies as well.
             # XXX Disable pull bundles in this case as band aid to avoid
@@ -1442,7 +1456,8 @@ def _fullpullbundle2(repo, pullop):
         pullop.rheads = set(pullop.rheads) - pullop.common
 
 def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
-         streamclonerequested=None):
+         streamclonerequested=None, includepats=None, excludepats=None,
+         depth=None):
     """Fetch repository data from a remote.
 
     This is the main function used to retrieve data from a remote repository.
@@ -1460,13 +1475,33 @@ def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
     of revlogs from the server. This only works when the local repository is
     empty. The default value of ``None`` means to respect the server
     configuration for preferring stream clones.
+    ``includepats`` and ``excludepats`` define explicit file patterns to
+    include and exclude in storage, respectively. If not defined, narrow
+    patterns from the repo instance are used, if available.
+    ``depth`` is an integer indicating the DAG depth of history we're
+    interested in. If defined, for each revision specified in ``heads``, we
+    will fetch up to this many of its ancestors and data associated with them.
 
     Returns the ``pulloperation`` created for this pull.
     """
     if opargs is None:
         opargs = {}
+
+    # We allow the narrow patterns to be passed in explicitly to provide more
+    # flexibility for API consumers.
+    if includepats or excludepats:
+        includepats = includepats or set()
+        excludepats = excludepats or set()
+    else:
+        includepats, excludepats = repo.narrowpats
+
+    narrowspec.validatepatterns(includepats)
+    narrowspec.validatepatterns(excludepats)
+
     pullop = pulloperation(repo, remote, heads, force, bookmarks=bookmarks,
                            streamclonerequested=streamclonerequested,
+                           includepats=includepats, excludepats=excludepats,
+                           depth=depth,
                            **pycompat.strkwargs(opargs))
 
     peerlocal = pullop.remote.local()
@@ -1480,17 +1515,21 @@ def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
 
     pullop.trmanager = transactionmanager(repo, 'pull', remote.url())
     with repo.wlock(), repo.lock(), pullop.trmanager:
-        # This should ideally be in _pullbundle2(). However, it needs to run
-        # before discovery to avoid extra work.
-        _maybeapplyclonebundle(pullop)
-        streamclone.maybeperformlegacystreamclone(pullop)
-        _pulldiscovery(pullop)
-        if pullop.canusebundle2:
-            _fullpullbundle2(repo, pullop)
-        _pullchangeset(pullop)
-        _pullphase(pullop)
-        _pullbookmarks(pullop)
-        _pullobsolete(pullop)
+        # Use the modern wire protocol, if available.
+        if remote.capable('command-changesetdata'):
+            exchangev2.pull(pullop)
+        else:
+            # This should ideally be in _pullbundle2(). However, it needs to run
+            # before discovery to avoid extra work.
+            _maybeapplyclonebundle(pullop)
+            streamclone.maybeperformlegacystreamclone(pullop)
+            _pulldiscovery(pullop)
+            if pullop.canusebundle2:
+                _fullpullbundle2(repo, pullop)
+            _pullchangeset(pullop)
+            _pullphase(pullop)
+            _pullbookmarks(pullop)
+            _pullobsolete(pullop)
 
     # storing remotenames
     if repo.ui.configbool('experimental', 'remotenames'):
@@ -1830,6 +1869,177 @@ def _pullobsolete(pullop):
             pullop.repo.invalidatevolatilesets()
     return tr
 
+def applynarrowacl(repo, kwargs):
+    """Apply narrow fetch access control.
+
+    This massages the named arguments for getbundle wire protocol commands
+    so requested data is filtered through access control rules.
+    """
+    ui = repo.ui
+    # TODO this assumes existence of HTTP and is a layering violation.
+    username = ui.shortuser(ui.environ.get('REMOTE_USER') or ui.username())
+    user_includes = ui.configlist(
+        _NARROWACL_SECTION, username + '.includes',
+        ui.configlist(_NARROWACL_SECTION, 'default.includes'))
+    user_excludes = ui.configlist(
+        _NARROWACL_SECTION, username + '.excludes',
+        ui.configlist(_NARROWACL_SECTION, 'default.excludes'))
+    if not user_includes:
+        raise error.Abort(_("{} configuration for user {} is empty")
+                          .format(_NARROWACL_SECTION, username))
+
+    user_includes = [
+        'path:.' if p == '*' else 'path:' + p for p in user_includes]
+    user_excludes = [
+        'path:.' if p == '*' else 'path:' + p for p in user_excludes]
+
+    req_includes = set(kwargs.get(r'includepats', []))
+    req_excludes = set(kwargs.get(r'excludepats', []))
+
+    req_includes, req_excludes, invalid_includes = narrowspec.restrictpatterns(
+        req_includes, req_excludes, user_includes, user_excludes)
+
+    if invalid_includes:
+        raise error.Abort(
+            _("The following includes are not accessible for {}: {}")
+            .format(username, invalid_includes))
+
+    new_args = {}
+    new_args.update(kwargs)
+    new_args[r'narrow'] = True
+    new_args[r'narrow_acl'] = True
+    new_args[r'includepats'] = req_includes
+    if req_excludes:
+        new_args[r'excludepats'] = req_excludes
+
+    return new_args
+
+def _computeellipsis(repo, common, heads, known, match, depth=None):
+    """Compute the shape of a narrowed DAG.
+
+    Args:
+      repo: The repository we're transferring.
+      common: The roots of the DAG range we're transferring.
+              May be just [nullid], which means all ancestors of heads.
+      heads: The heads of the DAG range we're transferring.
+      match: The narrowmatcher that allows us to identify relevant changes.
+      depth: If not None, only consider nodes to be full nodes if they are at
+             most depth changesets away from one of heads.
+
+    Returns:
+      A tuple of (visitnodes, relevant_nodes, ellipsisroots) where:
+
+        visitnodes: The list of nodes (either full or ellipsis) which
+                    need to be sent to the client.
+        relevant_nodes: The set of changelog nodes which change a file inside
+                 the narrowspec. The client needs these as non-ellipsis nodes.
+        ellipsisroots: A dict of {rev: parents} that is used in
+                       narrowchangegroup to produce ellipsis nodes with the
+                       correct parents.
+    """
+    cl = repo.changelog
+    mfl = repo.manifestlog
+
+    clrev = cl.rev
+
+    commonrevs = {clrev(n) for n in common} | {nullrev}
+    headsrevs = {clrev(n) for n in heads}
+
+    if depth:
+        revdepth = {h: 0 for h in headsrevs}
+
+    ellipsisheads = collections.defaultdict(set)
+    ellipsisroots = collections.defaultdict(set)
+
+    def addroot(head, curchange):
+        """Add a root to an ellipsis head, splitting heads with 3 roots."""
+        ellipsisroots[head].add(curchange)
+        # Recursively split ellipsis heads with 3 roots by finding the
+        # roots' youngest common descendant which is an elided merge commit.
+        # That descendant takes 2 of the 3 roots as its own, and becomes a
+        # root of the head.
+        while len(ellipsisroots[head]) > 2:
+            child, roots = splithead(head)
+            splitroots(head, child, roots)
+            head = child  # Recurse in case we just added a 3rd root
+
+    def splitroots(head, child, roots):
+        ellipsisroots[head].difference_update(roots)
+        ellipsisroots[head].add(child)
+        ellipsisroots[child].update(roots)
+        ellipsisroots[child].discard(child)
+
+    def splithead(head):
+        r1, r2, r3 = sorted(ellipsisroots[head])
+        for nr1, nr2 in ((r2, r3), (r1, r3), (r1, r2)):
+            mid = repo.revs('sort(merge() & %d::%d & %d::%d, -rev)',
+                            nr1, head, nr2, head)
+            for j in mid:
+                if j == nr2:
+                    return nr2, (nr1, nr2)
+                if j not in ellipsisroots or len(ellipsisroots[j]) < 2:
+                    return j, (nr1, nr2)
+        raise error.Abort(_('Failed to split up ellipsis node! head: %d, '
+                            'roots: %d %d %d') % (head, r1, r2, r3))
+
+    missing = list(cl.findmissingrevs(common=commonrevs, heads=headsrevs))
+    visit = reversed(missing)
+    relevant_nodes = set()
+    visitnodes = [cl.node(m) for m in missing]
+    required = set(headsrevs) | known
+    for rev in visit:
+        clrev = cl.changelogrevision(rev)
+        ps = [prev for prev in cl.parentrevs(rev) if prev != nullrev]
+        if depth is not None:
+            curdepth = revdepth[rev]
+            for p in ps:
+                revdepth[p] = min(curdepth + 1, revdepth.get(p, depth + 1))
+        needed = False
+        shallow_enough = depth is None or revdepth[rev] <= depth
+        if shallow_enough:
+            curmf = mfl[clrev.manifest].read()
+            if ps:
+                # We choose to not trust the changed files list in
+                # changesets because it's not always correct. TODO: could
+                # we trust it for the non-merge case?
+                p1mf = mfl[cl.changelogrevision(ps[0]).manifest].read()
+                needed = bool(curmf.diff(p1mf, match))
+                if not needed and len(ps) > 1:
+                    # For merge changes, the list of changed files is not
+                    # helpful, since we need to emit the merge if a file
+                    # in the narrow spec has changed on either side of the
+                    # merge. As a result, we do a manifest diff to check.
+                    p2mf = mfl[cl.changelogrevision(ps[1]).manifest].read()
+                    needed = bool(curmf.diff(p2mf, match))
+            else:
+                # For a root node, we need to include the node if any
+                # files in the node match the narrowspec.
+                needed = any(curmf.walk(match))
+
+        if needed:
+            for head in ellipsisheads[rev]:
+                addroot(head, rev)
+            for p in ps:
+                required.add(p)
+            relevant_nodes.add(cl.node(rev))
+        else:
+            if not ps:
+                ps = [nullrev]
+            if rev in required:
+                for head in ellipsisheads[rev]:
+                    addroot(head, rev)
+                for p in ps:
+                    ellipsisheads[p].add(rev)
+            else:
+                for p in ps:
+                    ellipsisheads[p] |= ellipsisheads[rev]
+
+    # add common changesets as roots of their reachable ellipsis heads
+    for c in commonrevs:
+        for head in ellipsisheads[c]:
+            addroot(head, c)
+    return visitnodes, relevant_nodes, ellipsisroots
+
 def caps20to10(repo, role):
     """return a set with appropriate options to use bundle20 during getbundle"""
     caps = {'HG20'}
@@ -1924,30 +2134,51 @@ def _getbundlestream2(bundler, repo, *args, **kwargs):
 def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
                               b2caps=None, heads=None, common=None, **kwargs):
     """add a changegroup part to the requested bundle"""
-    cgstream = None
-    if kwargs.get(r'cg', True):
-        # build changegroup bundle here.
-        version = '01'
-        cgversions = b2caps.get('changegroup')
-        if cgversions:  # 3.1 and 3.2 ship with an empty value
-            cgversions = [v for v in cgversions
-                          if v in changegroup.supportedoutgoingversions(repo)]
-            if not cgversions:
-                raise ValueError(_('no common changegroup version'))
-            version = max(cgversions)
-        outgoing = _computeoutgoing(repo, heads, common)
-        if outgoing.missing:
-            cgstream = changegroup.makestream(repo, outgoing, version, source,
-                                              bundlecaps=bundlecaps)
+    if not kwargs.get(r'cg', True):
+        return
 
-    if cgstream:
-        part = bundler.newpart('changegroup', data=cgstream)
-        if cgversions:
-            part.addparam('version', version)
-        part.addparam('nbchanges', '%d' % len(outgoing.missing),
-                      mandatory=False)
-        if 'treemanifest' in repo.requirements:
-            part.addparam('treemanifest', '1')
+    version = '01'
+    cgversions = b2caps.get('changegroup')
+    if cgversions:  # 3.1 and 3.2 ship with an empty value
+        cgversions = [v for v in cgversions
+                      if v in changegroup.supportedoutgoingversions(repo)]
+        if not cgversions:
+            raise ValueError(_('no common changegroup version'))
+        version = max(cgversions)
+
+    outgoing = _computeoutgoing(repo, heads, common)
+    if not outgoing.missing:
+        return
+
+    if kwargs.get(r'narrow', False):
+        include = sorted(filter(bool, kwargs.get(r'includepats', [])))
+        exclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
+        matcher = narrowspec.match(repo.root, include=include, exclude=exclude)
+    else:
+        matcher = None
+
+    cgstream = changegroup.makestream(repo, outgoing, version, source,
+                                      bundlecaps=bundlecaps, matcher=matcher)
+
+    part = bundler.newpart('changegroup', data=cgstream)
+    if cgversions:
+        part.addparam('version', version)
+
+    part.addparam('nbchanges', '%d' % len(outgoing.missing),
+                  mandatory=False)
+
+    if 'treemanifest' in repo.requirements:
+        part.addparam('treemanifest', '1')
+
+    if (kwargs.get(r'narrow', False) and kwargs.get(r'narrow_acl', False)
+        and (include or exclude)):
+        narrowspecpart = bundler.newpart('narrow:spec')
+        if include:
+            narrowspecpart.addparam(
+                'include', '\n'.join(include), mandatory=True)
+        if exclude:
+            narrowspecpart.addparam(
+                'exclude', '\n'.join(exclude), mandatory=True)
 
 @getbundle2partsgenerator('bookmarks')
 def _getbundlebookmarkpart(bundler, repo, source, bundlecaps=None,
@@ -2069,8 +2300,13 @@ def _getbundlerevbranchcache(bundler, repo, source, bundlecaps=None,
     # Don't send unless:
     # - changeset are being exchanged,
     # - the client supports it.
-    if not (kwargs.get(r'cg', True)) or 'rev-branch-cache' not in b2caps:
+    # - narrow bundle isn't in play (not currently compatible).
+    if (not kwargs.get(r'cg', True)
+        or 'rev-branch-cache' not in b2caps
+        or kwargs.get(r'narrow', False)
+        or repo.ui.has_section(_NARROWACL_SECTION)):
         return
+
     outgoing = _computeoutgoing(repo, heads, common)
     bundle2.addpartrevbranchcache(repo, bundler, outgoing)
 

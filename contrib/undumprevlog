@@ -7,7 +7,9 @@ from __future__ import absolute_import, print_function
 
 import sys
 from mercurial import (
+    encoding,
     node,
+    pycompat,
     revlog,
     transaction,
     vfs as vfsmod,
@@ -19,17 +21,17 @@ from mercurial.utils import (
 for fp in (sys.stdin, sys.stdout, sys.stderr):
     procutil.setbinary(fp)
 
-opener = vfsmod.vfs('.', False)
-tr = transaction.transaction(sys.stderr.write, opener, {'store': opener},
-                             "undump.journal")
+opener = vfsmod.vfs(b'.', False)
+tr = transaction.transaction(sys.stderr.write, opener, {b'store': opener},
+                             b"undump.journal")
 while True:
     l = sys.stdin.readline()
     if not l:
         break
     if l.startswith("file:"):
-        f = l[6:-1]
+        f = encoding.strtolocal(l[6:-1])
         r = revlog.revlog(opener, f)
-        print(f)
+        pycompat.stdout.write(b'%s\n' % f)
     elif l.startswith("node:"):
         n = node.bin(l[6:-1])
     elif l.startswith("linkrev:"):
@@ -41,7 +43,7 @@ while True:
     elif l.startswith("length:"):
         length = int(l[8:-1])
         sys.stdin.readline() # start marker
-        d = sys.stdin.read(length)
+        d = encoding.strtolocal(sys.stdin.read(length))
         sys.stdin.readline() # end marker
         r.addrevision(d, tr, lr, p1, p2)
 

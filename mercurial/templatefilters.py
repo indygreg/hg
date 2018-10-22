@@ -119,7 +119,7 @@ def commondir(filelist):
             b = b[:len(a)]
         if a == b:
             return a
-        for i in xrange(len(a)):
+        for i in pycompat.xrange(len(a)):
             if a[i] != b[i]:
                 return a[:i]
         return a
@@ -200,7 +200,7 @@ def fill(text, width, initindent='', hangindent=''):
             if not m:
                 uctext = encoding.unifromlocal(text[start:])
                 w = len(uctext)
-                while 0 < w and uctext[w - 1].isspace():
+                while w > 0 and uctext[w - 1].isspace():
                     w -= 1
                 yield (encoding.unitolocal(uctext[:w]),
                        encoding.unitolocal(uctext[w:]))
@@ -266,7 +266,7 @@ def indent(text, prefix):
     num_lines = len(lines)
     endswithnewline = text[-1:] == '\n'
     def indenter():
-        for i in xrange(num_lines):
+        for i in pycompat.xrange(num_lines):
             l = lines[i]
             if i and l.strip():
                 yield prefix

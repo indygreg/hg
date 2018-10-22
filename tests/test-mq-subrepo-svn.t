@@ -24,9 +24,9 @@ handle svn subrepos safely
 
   $ SVNREPOPATH=`pwd`/svn-repo-2499/project
 #if windows
-  $ SVNREPOURL=file:///`$PYTHON -c "import urllib, sys; sys.stdout.write(urllib.quote(sys.argv[1]))" "$SVNREPOPATH"`
+  $ SVNREPOURL=file:///`"$PYTHON" -c "import urllib, sys; sys.stdout.write(urllib.quote(sys.argv[1]))" "$SVNREPOPATH"`
 #else
-  $ SVNREPOURL=file://`$PYTHON -c "import urllib, sys; sys.stdout.write(urllib.quote(sys.argv[1]))" "$SVNREPOPATH"`
+  $ SVNREPOURL=file://`"$PYTHON" -c "import urllib, sys; sys.stdout.write(urllib.quote(sys.argv[1]))" "$SVNREPOPATH"`
 #endif
 
   $ mkdir -p svn-project-2499/trunk

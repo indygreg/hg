@@ -222,3 +222,27 @@ test that updating to closed branch head also advances active bookmark
      Z                         0:719295282060
   $ hg parents -q
   4:8fa964221e8e
+
+Checks command to retrieve active bookmark
+------------------------------------------
+
+display how "{activebookmark}" template is unsuitable for the task
+
+  $ hg book -T '- {activebookmark}\n'
+  - 
+  - Y
+  - 
+
+  $ hg book -r . W
+  $ hg book -T '- {activebookmark}\n'
+  - Y
+  - 
+  - Y
+  - 
+
+  $ hg bookmarks -ql .
+  Y
+  $ hg bookmarks --inactive
+  $ hg bookmarks -ql .
+  abort: no active bookmark!
+  [255]

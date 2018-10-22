@@ -36,6 +36,10 @@ import traceback
 import warnings
 import zlib
 
+from .thirdparty import (
+    attr,
+)
+from hgdemandimport import tracing
 from . import (
     encoding,
     error,
@@ -108,6 +112,7 @@ parsepatchoutput = platform.parsepatchoutput
 pconvert = platform.pconvert
 poll = platform.poll
 posixfile = platform.posixfile
+readlink = platform.readlink
 rename = platform.rename
 removedirs = platform.removedirs
 samedevice = platform.samedevice
@@ -328,7 +333,7 @@ class bufferedinputpipe(object):
         return self._frombuffer(min(self._lenbuf, size))
 
     def readline(self, *args, **kwargs):
-        if 1 < len(self._buffer):
+        if len(self._buffer) > 1:
             # this should not happen because both read and readline end with a
             # _frombuffer call that collapse it.
             self._buffer = [''.join(self._buffer)]
@@ -343,7 +348,7 @@ class bufferedinputpipe(object):
         size = lfi + 1
         if lfi < 0: # end of file
             size = self._lenbuf
-        elif 1 < len(self._buffer):
+        elif len(self._buffer) > 1:
             # we need to take previous chunks into account
             size += self._lenbuf - len(self._buffer[-1])
         return self._frombuffer(size)
@@ -355,7 +360,7 @@ class bufferedinputpipe(object):
         if size == 0 or not self._buffer:
             return ''
         buf = self._buffer[0]
-        if 1 < len(self._buffer):
+        if len(self._buffer) > 1:
             buf = ''.join(self._buffer)
 
         data = buf[:size]
@@ -945,12 +950,12 @@ class socketobserver(baseproxyobserver):
 
         self.fh.write('%s> gettimeout() -> %f\n' % (self.name, res))
 
-    def setsockopt(self, level, optname, value):
+    def setsockopt(self, res, level, optname, value):
         if not self.states:
             return
 
         self.fh.write('%s> setsockopt(%r, %r, %r) -> %r\n' % (
-            self.name, level, optname, value))
+            self.name, level, optname, value, res))
 
 def makeloggingsocket(logh, fh, name, reads=True, writes=True, states=True,
                       logdata=False, logdataapis=True):
@@ -1205,7 +1210,7 @@ class _lrucachenode(object):
     Holds a reference to nodes on either side as well as a key-value
     pair for the dictionary entry.
     """
-    __slots__ = (u'next', u'prev', u'key', u'value')
+    __slots__ = (u'next', u'prev', u'key', u'value', u'cost')
 
     def __init__(self):
         self.next = None
@@ -1213,10 +1218,13 @@ class _lrucachenode(object):
 
         self.key = _notset
         self.value = None
+        self.cost = 0
 
     def markempty(self):
         """Mark the node as emptied."""
         self.key = _notset
+        self.value = None
+        self.cost = 0
 
 class lrucachedict(object):
     """Dict that caches most recent accesses and sets.
@@ -1229,15 +1237,27 @@ class lrucachedict(object):
     we recycle head.prev and make it the new head. Cache accesses result in
     the node being moved to before the existing head and being marked as the
     new head node.
+
+    Items in the cache can be inserted with an optional "cost" value. This is
+    simply an integer that is specified by the caller. The cache can be queried
+    for the total cost of all items presently in the cache.
+
+    The cache can also define a maximum cost. If a cache insertion would
+    cause the total cost of the cache to go beyond the maximum cost limit,
+    nodes will be evicted to make room for the new code. This can be used
+    to e.g. set a max memory limit and associate an estimated bytes size
+    cost to each item in the cache. By default, no maximum cost is enforced.
     """
-    def __init__(self, max):
+    def __init__(self, max, maxcost=0):
         self._cache = {}
 
         self._head = head = _lrucachenode()
         head.prev = head
         head.next = head
         self._size = 1
-        self._capacity = max
+        self.capacity = max
+        self.totalcost = 0
+        self.maxcost = maxcost
 
     def __len__(self):
         return len(self._cache)
@@ -1257,15 +1277,23 @@ class lrucachedict(object):
         self._movetohead(node)
         return node.value
 
-    def __setitem__(self, k, v):
+    def insert(self, k, v, cost=0):
+        """Insert a new item in the cache with optional cost value."""
         node = self._cache.get(k)
         # Replace existing value and mark as newest.
         if node is not None:
+            self.totalcost -= node.cost
             node.value = v
+            node.cost = cost
+            self.totalcost += cost
             self._movetohead(node)
+
+            if self.maxcost:
+                self._enforcecostlimit()
+
             return
 
-        if self._size < self._capacity:
+        if self._size < self.capacity:
             node = self._addcapacity()
         else:
             # Grab the last/oldest item.
@@ -1273,17 +1301,27 @@ class lrucachedict(object):
 
         # At capacity. Kill the old entry.
         if node.key is not _notset:
+            self.totalcost -= node.cost
             del self._cache[node.key]
 
         node.key = k
         node.value = v
+        node.cost = cost
+        self.totalcost += cost
         self._cache[k] = node
         # And mark it as newest entry. No need to adjust order since it
         # is already self._head.prev.
         self._head = node
 
+        if self.maxcost:
+            self._enforcecostlimit()
+
+    def __setitem__(self, k, v):
+        self.insert(k, v)
+
     def __delitem__(self, k):
         node = self._cache.pop(k)
+        self.totalcost -= node.cost
         node.markempty()
 
         # Temporarily mark as newest item before re-adjusting head to make
@@ -1295,26 +1333,72 @@ class lrucachedict(object):
 
     def get(self, k, default=None):
         try:
-            return self._cache[k].value
+            return self.__getitem__(k)
         except KeyError:
             return default
 
     def clear(self):
         n = self._head
         while n.key is not _notset:
+            self.totalcost -= n.cost
             n.markempty()
             n = n.next
 
         self._cache.clear()
 
-    def copy(self):
-        result = lrucachedict(self._capacity)
+    def copy(self, capacity=None, maxcost=0):
+        """Create a new cache as a copy of the current one.
+
+        By default, the new cache has the same capacity as the existing one.
+        But, the cache capacity can be changed as part of performing the
+        copy.
+
+        Items in the copy have an insertion/access order matching this
+        instance.
+        """
+
+        capacity = capacity or self.capacity
+        maxcost = maxcost or self.maxcost
+        result = lrucachedict(capacity, maxcost=maxcost)
+
+        # We copy entries by iterating in oldest-to-newest order so the copy
+        # has the correct ordering.
+
+        # Find the first non-empty entry.
         n = self._head.prev
-        # Iterate in oldest-to-newest order, so the copy has the right ordering
-        for i in range(len(self._cache)):
-            result[n.key] = n.value
+        while n.key is _notset and n is not self._head:
             n = n.prev
+
+        # We could potentially skip the first N items when decreasing capacity.
+        # But let's keep it simple unless it is a performance problem.
+        for i in range(len(self._cache)):
+            result.insert(n.key, n.value, cost=n.cost)
+            n = n.prev
+
         return result
+
+    def popoldest(self):
+        """Remove the oldest item from the cache.
+
+        Returns the (key, value) describing the removed cache entry.
+        """
+        if not self._cache:
+            return
+
+        # Walk the linked list backwards starting at tail node until we hit
+        # a non-empty node.
+        n = self._head.prev
+        while n.key is _notset:
+            n = n.prev
+
+        key, value = n.key, n.value
+
+        # And remove it from the cache and mark it as empty.
+        del self._cache[n.key]
+        self.totalcost -= n.cost
+        n.markempty()
+
+        return key, value
 
     def _movetohead(self, node):
         """Mark a node as the newest, making it the new head.
@@ -1376,6 +1460,38 @@ class lrucachedict(object):
         head.prev = node
         self._size += 1
         return node
+
+    def _enforcecostlimit(self):
+        # This should run after an insertion. It should only be called if total
+        # cost limits are being enforced.
+        # The most recently inserted node is never evicted.
+        if len(self) <= 1 or self.totalcost <= self.maxcost:
+            return
+
+        # This is logically equivalent to calling popoldest() until we
+        # free up enough cost. We don't do that since popoldest() needs
+        # to walk the linked list and doing this in a loop would be
+        # quadratic. So we find the first non-empty node and then
+        # walk nodes until we free up enough capacity.
+        #
+        # If we only removed the minimum number of nodes to free enough
+        # cost at insert time, chances are high that the next insert would
+        # also require pruning. This would effectively constitute quadratic
+        # behavior for insert-heavy workloads. To mitigate this, we set a
+        # target cost that is a percentage of the max cost. This will tend
+        # to free more nodes when the high water mark is reached, which
+        # lowers the chances of needing to prune on the subsequent insert.
+        targetcost = int(self.maxcost * 0.75)
+
+        n = self._head.prev
+        while n.key is _notset:
+            n = n.prev
+
+        while len(self) > 1 and self.totalcost > targetcost:
+            del self._cache[n.key]
+            self.totalcost -= n.cost
+            n.markempty()
+            n = n.prev
 
 def lrucachefunc(func):
     '''cache most recent results of function calls'''
@@ -1726,16 +1842,14 @@ def makelock(info, pathname):
 
 def readlock(pathname):
     try:
-        return os.readlink(pathname)
+        return readlink(pathname)
     except OSError as why:
         if why.errno not in (errno.EINVAL, errno.ENOSYS):
             raise
     except AttributeError: # no symlink in os
         pass
-    fp = posixfile(pathname, 'rb')
-    r = fp.read()
-    fp.close()
-    return r
+    with posixfile(pathname, 'rb') as fp:
+        return fp.read()
 
 def fstat(fp):
     '''stat file object that may not have fileno method.'''
@@ -2874,7 +2988,44 @@ timecount = unitcountfn(
     (1, 0.000000001, _('%.3f ns')),
     )
 
-_timenesting = [0]
+@attr.s
+class timedcmstats(object):
+    """Stats information produced by the timedcm context manager on entering."""
+
+    # the starting value of the timer as a float (meaning and resulution is
+    # platform dependent, see util.timer)
+    start = attr.ib(default=attr.Factory(lambda: timer()))
+    # the number of seconds as a floating point value; starts at 0, updated when
+    # the context is exited.
+    elapsed = attr.ib(default=0)
+    # the number of nested timedcm context managers.
+    level = attr.ib(default=1)
+
+    def __bytes__(self):
+        return timecount(self.elapsed) if self.elapsed else '<unknown>'
+
+    __str__ = encoding.strmethod(__bytes__)
+
+@contextlib.contextmanager
+def timedcm(whencefmt, *whenceargs):
+    """A context manager that produces timing information for a given context.
+
+    On entering a timedcmstats instance is produced.
+
+    This context manager is reentrant.
+
+    """
+    # track nested context managers
+    timedcm._nested += 1
+    timing_stats = timedcmstats(level=timedcm._nested)
+    try:
+        with tracing.log(whencefmt, *whenceargs):
+            yield timing_stats
+    finally:
+        timing_stats.elapsed = timer() - timing_stats.start
+        timedcm._nested -= 1
+
+timedcm._nested = 0
 
 def timed(func):
     '''Report the execution time of a function call to stderr.
@@ -2888,18 +3039,13 @@ def timed(func):
     '''
 
     def wrapper(*args, **kwargs):
-        start = timer()
-        indent = 2
-        _timenesting[0] += indent
-        try:
-            return func(*args, **kwargs)
-        finally:
-            elapsed = timer() - start
-            _timenesting[0] -= indent
-            stderr = procutil.stderr
-            stderr.write('%s%s: %s\n' %
-                         (' ' * _timenesting[0], func.__name__,
-                          timecount(elapsed)))
+        with timedcm(pycompat.bytestr(func.__name__)) as time_stats:
+            result = func(*args, **kwargs)
+        stderr = procutil.stderr
+        stderr.write('%s%s: %s\n' % (
+            ' ' * time_stats.level * 2, pycompat.bytestr(func.__name__),
+            time_stats))
+        return result
     return wrapper
 
 _sizeunits = (('m', 2**20), ('k', 2**10), ('g', 2**30),
@@ -3301,7 +3447,7 @@ class compressionengine(object):
         The object has a ``decompress(data)`` method that decompresses
         data. The method will only be called if ``data`` begins with
         ``revlogheader()``. The method should return the raw, uncompressed
-        data or raise a ``RevlogError``.
+        data or raise a ``StorageError``.
 
         The object is reusable but is not thread safe.
         """
@@ -3343,6 +3489,9 @@ class _CompressedStreamReader(object):
                 return ''.join(buf)
             chunk = self._reader(65536)
             self._decompress(chunk)
+            if not chunk and not self._pending and not self._eof:
+                # No progress and no new data, bail out
+                return ''.join(buf)
 
 class _GzipCompressedStreamReader(_CompressedStreamReader):
     def __init__(self, fh):
@@ -3476,8 +3625,8 @@ class _zlibengine(compressionengine):
             try:
                 return zlib.decompress(data)
             except zlib.error as e:
-                raise error.RevlogError(_('revlog decompress error: %s') %
-                                        stringutil.forcebytestr(e))
+                raise error.StorageError(_('revlog decompress error: %s') %
+                                         stringutil.forcebytestr(e))
 
     def revlogcompressor(self, opts=None):
         return self.zlibrevlogcompressor()
@@ -3688,8 +3837,8 @@ class _zstdengine(compressionengine):
 
                 return ''.join(chunks)
             except Exception as e:
-                raise error.RevlogError(_('revlog decompress error: %s') %
-                                        stringutil.forcebytestr(e))
+                raise error.StorageError(_('revlog decompress error: %s') %
+                                         stringutil.forcebytestr(e))
 
     def revlogcompressor(self, opts=None):
         opts = opts or {}
@@ -3718,11 +3867,10 @@ def bundlecompressiontopics():
         if not bt or not bt[0]:
             continue
 
-        doc = pycompat.sysstr('``%s``\n    %s') % (
-            bt[0], engine.bundletype.__doc__)
+        doc = b'``%s``\n    %s' % (bt[0], pycompat.getdoc(engine.bundletype))
 
         value = docobject()
-        value.__doc__ = doc
+        value.__doc__ = pycompat.sysstr(doc)
         value._origdoc = engine.bundletype.__doc__
         value._origfunc = engine.bundletype
 

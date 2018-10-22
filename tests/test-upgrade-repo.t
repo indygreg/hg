@@ -345,12 +345,12 @@ Upgrading a repository to generaldelta works
   creating temporary repository to stage migrated data: $TESTTMP/upgradegd/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 341 bytes in store; 401 bytes tracked data
-  migrating 3 filelogs containing 3 revisions (0 bytes in store; 0 bytes tracked data)
+  migrating 917 bytes in store; 401 bytes tracked data
+  migrating 3 filelogs containing 3 revisions (192 bytes in store; 0 bytes tracked data)
   finished migrating 3 filelog revisions across 3 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 3 revisions (157 bytes in store; 220 bytes tracked data)
+  migrating 1 manifests containing 3 revisions (349 bytes in store; 220 bytes tracked data)
   finished migrating 3 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 3 revisions (184 bytes in store; 181 bytes tracked data)
+  migrating changelog containing 3 revisions (376 bytes in store; 181 bytes tracked data)
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: 0 bytes
   copying phaseroots
@@ -406,7 +406,7 @@ verify should be happy
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 3 files
 
 old store should be backed up
 
@@ -442,12 +442,12 @@ store files with special filenames aren't encoded during copy
   creating temporary repository to stage migrated data: $TESTTMP/store-filenames/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 3 total revisions (1 in filelogs, 1 in manifests, 1 in changelog)
-  migrating 109 bytes in store; 107 bytes tracked data
-  migrating 1 filelogs containing 1 revisions (0 bytes in store; 0 bytes tracked data)
+  migrating 301 bytes in store; 107 bytes tracked data
+  migrating 1 filelogs containing 1 revisions (64 bytes in store; 0 bytes tracked data)
   finished migrating 1 filelog revisions across 1 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 1 revisions (46 bytes in store; 45 bytes tracked data)
+  migrating 1 manifests containing 1 revisions (110 bytes in store; 45 bytes tracked data)
   finished migrating 1 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 1 revisions (63 bytes in store; 62 bytes tracked data)
+  migrating changelog containing 1 revisions (127 bytes in store; 62 bytes tracked data)
   finished migrating 1 changelog revisions; change in size: 0 bytes
   finished migrating 3 total revisions; total change in store size: 0 bytes
   copying .XX_special_filename
@@ -476,12 +476,12 @@ store files with special filenames aren't encoded during copy
   creating temporary repository to stage migrated data: $TESTTMP/store-filenames/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 3 total revisions (1 in filelogs, 1 in manifests, 1 in changelog)
-  migrating 109 bytes in store; 107 bytes tracked data
-  migrating 1 filelogs containing 1 revisions (0 bytes in store; 0 bytes tracked data)
+  migrating 301 bytes in store; 107 bytes tracked data
+  migrating 1 filelogs containing 1 revisions (64 bytes in store; 0 bytes tracked data)
   finished migrating 1 filelog revisions across 1 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 1 revisions (46 bytes in store; 45 bytes tracked data)
+  migrating 1 manifests containing 1 revisions (110 bytes in store; 45 bytes tracked data)
   finished migrating 1 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 1 revisions (63 bytes in store; 62 bytes tracked data)
+  migrating changelog containing 1 revisions (127 bytes in store; 62 bytes tracked data)
   finished migrating 1 changelog revisions; change in size: 0 bytes
   finished migrating 3 total revisions; total change in store size: 0 bytes
   copying .XX_special_filename
@@ -531,12 +531,12 @@ Check upgrading a large file repository
   creating temporary repository to stage migrated data: $TESTTMP/largefilesrepo/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 3 total revisions (1 in filelogs, 1 in manifests, 1 in changelog)
-  migrating 163 bytes in store; 160 bytes tracked data
-  migrating 1 filelogs containing 1 revisions (42 bytes in store; 41 bytes tracked data)
+  migrating 355 bytes in store; 160 bytes tracked data
+  migrating 1 filelogs containing 1 revisions (106 bytes in store; 41 bytes tracked data)
   finished migrating 1 filelog revisions across 1 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 1 revisions (52 bytes in store; 51 bytes tracked data)
+  migrating 1 manifests containing 1 revisions (116 bytes in store; 51 bytes tracked data)
   finished migrating 1 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 1 revisions (69 bytes in store; 68 bytes tracked data)
+  migrating changelog containing 1 revisions (133 bytes in store; 68 bytes tracked data)
   finished migrating 1 changelog revisions; change in size: 0 bytes
   finished migrating 3 total revisions; total change in store size: 0 bytes
   copying phaseroots
@@ -583,12 +583,12 @@ Check upgrading a large file repository
   creating temporary repository to stage migrated data: $TESTTMP/largefilesrepo/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 6 total revisions (2 in filelogs, 2 in manifests, 2 in changelog)
-  migrating 417 bytes in store; 467 bytes tracked data
-  migrating 2 filelogs containing 2 revisions (168 bytes in store; 182 bytes tracked data)
+  migrating 801 bytes in store; 467 bytes tracked data
+  migrating 2 filelogs containing 2 revisions (296 bytes in store; 182 bytes tracked data)
   finished migrating 2 filelog revisions across 2 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 2 revisions (113 bytes in store; 151 bytes tracked data)
+  migrating 1 manifests containing 2 revisions (241 bytes in store; 151 bytes tracked data)
   finished migrating 2 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 2 revisions (136 bytes in store; 134 bytes tracked data)
+  migrating changelog containing 2 revisions (264 bytes in store; 134 bytes tracked data)
   finished migrating 2 changelog revisions; change in size: 0 bytes
   finished migrating 6 total revisions; total change in store size: 0 bytes
   copying phaseroots
@@ -613,7 +613,7 @@ Check upgrading a large file repository
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 2 files
   $ hg debugdata lfs.bin 0
   version https://git-lfs.github.com/spec/v1
   oid sha256:d0beab232adff5ba365880366ad30b1edb85c4c5372442b5d2fe27adc96d653f
@@ -681,12 +681,12 @@ repository config is taken in account
   creating temporary repository to stage migrated data: $TESTTMP/localconfig/.hg/upgrade.* (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 9 total revisions (3 in filelogs, 3 in manifests, 3 in changelog)
-  migrating 497 bytes in store; 882 bytes tracked data
-  migrating 1 filelogs containing 3 revisions (182 bytes in store; 573 bytes tracked data)
+  migrating 1.05 KB in store; 882 bytes tracked data
+  migrating 1 filelogs containing 3 revisions (374 bytes in store; 573 bytes tracked data)
   finished migrating 3 filelog revisions across 1 filelogs; change in size: -63 bytes
-  migrating 1 manifests containing 3 revisions (141 bytes in store; 138 bytes tracked data)
+  migrating 1 manifests containing 3 revisions (333 bytes in store; 138 bytes tracked data)
   finished migrating 3 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 3 revisions (174 bytes in store; 171 bytes tracked data)
+  migrating changelog containing 3 revisions (366 bytes in store; 171 bytes tracked data)
   finished migrating 3 changelog revisions; change in size: 0 bytes
   finished migrating 9 total revisions; total change in store size: -63 bytes
   copying phaseroots

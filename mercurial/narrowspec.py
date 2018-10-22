@@ -13,54 +13,23 @@ from .i18n import _
 from . import (
     error,
     match as matchmod,
+    repository,
+    sparse,
     util,
 )
 
 FILENAME = 'narrowspec'
 
-def _parsestoredpatterns(text):
-    """Parses the narrowspec format that's stored on disk."""
-    patlist = None
-    includepats = []
-    excludepats = []
-    for l in text.splitlines():
-        if l == '[includes]':
-            if patlist is None:
-                patlist = includepats
-            else:
-                raise error.Abort(_('narrowspec includes section must appear '
-                                    'at most once, before excludes'))
-        elif l == '[excludes]':
-            if patlist is not excludepats:
-                patlist = excludepats
-            else:
-                raise error.Abort(_('narrowspec excludes section must appear '
-                                    'at most once'))
-        else:
-            patlist.append(l)
-
-    return set(includepats), set(excludepats)
-
-def parseserverpatterns(text):
-    """Parses the narrowspec format that's returned by the server."""
-    includepats = set()
-    excludepats = set()
-
-    # We get one entry per line, in the format "<key> <value>".
-    # It's OK for value to contain other spaces.
-    for kp in (l.split(' ', 1) for l in text.splitlines()):
-        if len(kp) != 2:
-            raise error.Abort(_('Invalid narrowspec pattern line: "%s"') % kp)
-        key = kp[0]
-        pat = kp[1]
-        if key == 'include':
-            includepats.add(pat)
-        elif key == 'exclude':
-            excludepats.add(pat)
-        else:
-            raise error.Abort(_('Invalid key "%s" in server response') % key)
-
-    return includepats, excludepats
+# Pattern prefixes that are allowed in narrow patterns. This list MUST
+# only contain patterns that are fast and safe to evaluate. Keep in mind
+# that patterns are supplied by clients and executed on remote servers
+# as part of wire protocol commands. That means that changes to this
+# data structure influence the wire protocol and should not be taken
+# lightly - especially removals.
+VALID_PREFIXES = (
+    b'path:',
+    b'rootfilesin:',
+)
 
 def normalizesplitpattern(kind, pat):
     """Returns the normalized version of a pattern and kind.
@@ -103,14 +72,48 @@ def normalizepattern(pattern, defaultkind='path'):
     return '%s:%s' % normalizesplitpattern(kind, pat)
 
 def parsepatterns(pats):
-    """Parses a list of patterns into a typed pattern set."""
-    return set(normalizepattern(p) for p in pats)
+    """Parses an iterable of patterns into a typed pattern set.
+
+    Patterns are assumed to be ``path:`` if no prefix is present.
+    For safety and performance reasons, only some prefixes are allowed.
+    See ``validatepatterns()``.
+
+    This function should be used on patterns that come from the user to
+    normalize and validate them to the internal data structure used for
+    representing patterns.
+    """
+    res = {normalizepattern(orig) for orig in pats}
+    validatepatterns(res)
+    return res
+
+def validatepatterns(pats):
+    """Validate that patterns are in the expected data structure and format.
+
+    And that is a set of normalized patterns beginning with ``path:`` or
+    ``rootfilesin:``.
+
+    This function should be used to validate internal data structures
+    and patterns that are loaded from sources that use the internal,
+    prefixed pattern representation (but can't necessarily be fully trusted).
+    """
+    if not isinstance(pats, set):
+        raise error.ProgrammingError('narrow patterns should be a set; '
+                                     'got %r' % pats)
+
+    for pat in pats:
+        if not pat.startswith(VALID_PREFIXES):
+            # Use a Mercurial exception because this can happen due to user
+            # bugs (e.g. manually updating spec file).
+            raise error.Abort(_('invalid prefix on narrow pattern: %s') % pat,
+                              hint=_('narrow patterns must begin with one of '
+                                     'the following: %s') %
+                                   ', '.join(VALID_PREFIXES))
 
 def format(includes, excludes):
-    output = '[includes]\n'
+    output = '[include]\n'
     for i in sorted(includes - excludes):
         output += i + '\n'
-    output += '[excludes]\n'
+    output += '[exclude]\n'
     for e in sorted(excludes):
         output += e + '\n'
     return output
@@ -124,26 +127,49 @@ def match(root, include=None, exclude=None):
     return matchmod.match(root, '', [], include=include or [],
                           exclude=exclude or [])
 
-def needsexpansion(includes):
-    return [i for i in includes if i.startswith('include:')]
-
 def load(repo):
     try:
-        spec = repo.vfs.read(FILENAME)
+        spec = repo.svfs.read(FILENAME)
     except IOError as e:
         # Treat "narrowspec does not exist" the same as "narrowspec file exists
         # and is empty".
         if e.errno == errno.ENOENT:
-            # Without this the next call to load will use the cached
-            # non-existence of the file, which can cause some odd issues.
-            repo.invalidate(clearfilecache=True)
             return set(), set()
         raise
-    return _parsestoredpatterns(spec)
+    # maybe we should care about the profiles returned too
+    includepats, excludepats, profiles = sparse.parseconfig(repo.ui, spec,
+                                                            'narrow')
+    if profiles:
+        raise error.Abort(_("including other spec files using '%include' is not"
+                            " supported in narrowspec"))
+
+    validatepatterns(includepats)
+    validatepatterns(excludepats)
+
+    return includepats, excludepats
 
 def save(repo, includepats, excludepats):
+    validatepatterns(includepats)
+    validatepatterns(excludepats)
     spec = format(includepats, excludepats)
-    repo.vfs.write(FILENAME, spec)
+    repo.svfs.write(FILENAME, spec)
+
+def savebackup(repo, backupname):
+    if repository.NARROW_REQUIREMENT not in repo.requirements:
+        return
+    vfs = repo.vfs
+    vfs.tryunlink(backupname)
+    util.copyfile(repo.svfs.join(FILENAME), vfs.join(backupname), hardlink=True)
+
+def restorebackup(repo, backupname):
+    if repository.NARROW_REQUIREMENT not in repo.requirements:
+        return
+    util.rename(repo.vfs.join(backupname), repo.svfs.join(FILENAME))
+
+def clearbackup(repo, backupname):
+    if repository.NARROW_REQUIREMENT not in repo.requirements:
+        return
+    repo.vfs.unlink(backupname)
 
 def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes):
     r""" Restricts the patterns according to repo settings,

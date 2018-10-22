@@ -1756,5 +1756,5 @@ Test recursive showlist template (issue1989):
 
   $ hg -R latesttag log -r tip --style=style1989
   M|test
-  11,test
+  11,
   branch: test

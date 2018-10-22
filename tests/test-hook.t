@@ -456,9 +456,9 @@ preoutgoing hook can prevent outgoing changes for local clones
   >     unreachable = 1
   > EOF
 
-  $ cat > syntaxerror.py << EOF
+  $ cat > syntaxerror.py << NO_CHECK_EOF
   > (foo
-  > EOF
+  > NO_CHECK_EOF
 
 test python hooks
 

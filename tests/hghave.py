@@ -16,6 +16,22 @@ checks = {
     "false": (lambda: False, "nail clipper"),
 }
 
+if sys.version_info[0] >= 3:
+    def _bytespath(p):
+        if p is None:
+            return p
+        return p.encode('utf-8')
+
+    def _strpath(p):
+        if p is None:
+            return p
+        return p.decode('utf-8')
+else:
+    def _bytespath(p):
+        return p
+
+    _strpath = _bytespath
+
 def check(name, desc):
     """Registers a check function for a feature."""
     def decorator(func):
@@ -360,7 +376,7 @@ def has_hardlink():
     os.close(fh)
     name = tempfile.mktemp(dir='.', prefix=tempprefix)
     try:
-        util.oslink(fn, name)
+        util.oslink(_bytespath(fn), _bytespath(name))
         os.unlink(name)
         return True
     except OSError:
@@ -625,23 +641,13 @@ def has_demandimport():
     # chg disables demandimport intentionally for performance wins.
     return ((not has_chg()) and os.environ.get('HGDEMANDIMPORT') != 'disable')
 
-@check("py3k", "running with Python 3.x")
-def has_py3k():
+@check("py3", "running with Python 3.x")
+def has_py3():
     return 3 == sys.version_info[0]
 
 @check("py3exe", "a Python 3.x interpreter is available")
 def has_python3exe():
-    return 'PYTHON3' in os.environ
-
-@check("py3pygments", "Pygments available on Python 3.x")
-def has_py3pygments():
-    if has_py3k():
-        return has_pygments()
-    elif has_python3exe():
-        # just check exit status (ignoring output)
-        py3 = os.environ['PYTHON3']
-        return matchoutput('%s -c "import pygments"' % py3, br'')
-    return False
+    return matchoutput('python3 -V', br'^Python 3.(5|6|7|8|9)')
 
 @check("pure", "running with pure Python code")
 def has_pure():
@@ -780,3 +786,23 @@ def has_repobundlerepo():
 @check('repofncache', 'repository has an fncache')
 def has_repofncache():
     return 'fncache' in getrepofeatures()
+
+@check('sqlite', 'sqlite3 module is available')
+def has_sqlite():
+    try:
+        import sqlite3
+        sqlite3.sqlite_version
+    except ImportError:
+        return False
+
+    return matchoutput('sqlite3 -version', b'^3\.\d+')
+
+@check('vcr', 'vcr http mocking library')
+def has_vcr():
+    try:
+        import vcr
+        vcr.VCR
+        return True
+    except (ImportError, AttributeError):
+        pass
+    return False

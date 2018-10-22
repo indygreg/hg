@@ -53,6 +53,7 @@ Can not modify dirstate outside
   * matcher:
   <includematcher includes='(?:(?:|.*/)f1(?:/|$))'>
   f  inside/f1  inside/f1
+  $ hg add .
   $ hg add outside/f1
   abort: cannot track 'outside/f1' - it is outside the narrow clone
   [255]
@@ -90,8 +91,6 @@ Can commit changes inside. Leaves outside unchanged.
   created new head
   $ hg files -r .
   inside/f1
-  outside/f1 (flat !)
-  outside/ (tree !)
   $ hg manifest --debug
   3f4197b4a11b9016e77ebc47fe566944885fd11b 644   inside/f1
   7fb3bb6356d28d4dc352c5ba52d7350a81b6bd46 644   outside/f1 (flat !)
@@ -103,5 +102,5 @@ dirstate file, and therefore we'll be able to get stable output from
 debugdirstate. If we don't do this, the test can be slightly flaky.
   $ sleep 3
   $ hg status
-  $ hg debugdirstate --nodates
+  $ hg debugdirstate --no-dates
   n 644         10 set                 inside/f1

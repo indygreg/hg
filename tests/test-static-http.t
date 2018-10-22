@@ -9,7 +9,7 @@
 This server doesn't do range requests so it's basically only good for
 one pull
 
-  $ $PYTHON "$TESTDIR/dumbhttp.py" -p $HGPORT --pid dumb.pid \
+  $ "$PYTHON" "$TESTDIR/dumbhttp.py" -p $HGPORT --pid dumb.pid \
   > --logfile server.log
   $ cat dumb.pid >> $DAEMON_PIDS
   $ hg init remote
@@ -43,7 +43,7 @@ one pull
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 1 changesets, 2 total revisions
+  checked 1 changesets with 2 changes to 2 files
   $ cat bar
   foo
   $ cd ../remote
@@ -130,7 +130,7 @@ test with "/" URI (issue747) and subrepo
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 1 changesets, 3 total revisions
+  checked 1 changesets with 3 changes to 3 files
   checking subrepo links
   $ cat a
   a
@@ -151,7 +151,7 @@ test with empty repo (issue965)
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  0 files, 0 changesets, 0 total revisions
+  checked 0 changesets with 0 changes to 0 files
   $ hg paths
   default = static-http://localhost:$HGPORT/remotempty
 

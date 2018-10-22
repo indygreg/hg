@@ -32,6 +32,7 @@ share shouldn't have a cache dir, original repo should
   [1]
   $ ls -1 ../repo1/.hg/cache
   branch2-served
+  manifestfulltextcache (reporevlogstore !)
   rbc-names-v1
   rbc-revs-v1
   tags2-visible
@@ -297,15 +298,15 @@ test pushing bookmarks works
 
 test behavior when sharing a shared repo
 
-  $ hg share -B repo3 repo5
+  $ hg share -B repo3 missingdir/repo5
   updating working directory
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cd repo5
+  $ cd missingdir/repo5
   $ hg book
      bm1                       3:b87954705719
      bm3                       4:62f4ded848e4
      bm4                       5:92793bfc8cad
-  $ cd ..
+  $ cd ../..
 
 test what happens when an active bookmark is deleted
 
@@ -398,8 +399,8 @@ test shared clones using relative paths work
   ../../orig/.hg (no-eol)
   $ grep shared thisdir/*/.hg/requires
   thisdir/abs/.hg/requires:shared
-  thisdir/rel/.hg/requires:shared
   thisdir/rel/.hg/requires:relshared
+  thisdir/rel/.hg/requires:shared
 
 test that relative shared paths aren't relative to $PWD
 
@@ -437,6 +438,29 @@ test unshare relshared repo
   $ cd ../..
 
   $ rm -r thatdir
+
+Demonstrate buggy behavior around requirements validation
+See comment in localrepo.py:makelocalrepository() for more.
+
+  $ hg init sharenewrequires
+  $ hg share sharenewrequires shareoldrequires
+  updating working directory
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+  $ cat >> sharenewrequires/.hg/requires << EOF
+  > missing-requirement
+  > EOF
+
+We cannot open the repo with the unknown requirement
+
+  $ hg -R sharenewrequires status
+  abort: repository requires features unknown to this Mercurial: missing-requirement!
+  (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
+  [255]
+
+BUG: we don't get the same error when opening the shared repo pointing to it
+
+  $ hg -R shareoldrequires status
 
 Explicitly kill daemons to let the test exit on Windows
 

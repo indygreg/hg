@@ -446,7 +446,7 @@ conversion to dir without permissions should fail
   $ chmod 000 bogusdir
 
   $ hg convert a bogusdir
-  abort: Permission denied: 'bogusdir'
+  abort: Permission denied: *bogusdir* (glob)
   [255]
 
 user permissions should succeed
@@ -482,7 +482,7 @@ converting empty dir should fail "nicely
 override $PATH to ensure p4 not visible; use $PYTHON in case we're
 running from a devel copy, not a temp installation
 
-  $ PATH="$BINDIR" $PYTHON "$BINDIR"/hg convert emptydir
+  $ PATH="$BINDIR" "$PYTHON" "$BINDIR"/hg convert emptydir
   assuming destination emptydir-hg
   initializing destination emptydir-hg repository
   emptydir does not look like a CVS checkout
@@ -533,9 +533,11 @@ contents of fncache file:
 
 test bogus URL
 
+#if no-msys
   $ hg convert -q bzr+ssh://foobar@selenic.com/baz baz
   abort: bzr+ssh://foobar@selenic.com/baz: missing or unsupported repository
   [255]
+#endif
 
 test revset converted() lookup
 

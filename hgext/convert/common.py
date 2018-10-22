@@ -402,7 +402,8 @@ class commandline(object):
 
     def _run(self, cmd, *args, **kwargs):
         def popen(cmdline):
-            p = subprocess.Popen(cmdline, shell=True, bufsize=-1,
+            p = subprocess.Popen(procutil.tonativestr(cmdline),
+                                 shell=True, bufsize=-1,
                                  close_fds=procutil.closefds,
                                  stdout=subprocess.PIPE)
             return p
@@ -459,7 +460,7 @@ class commandline(object):
         # POSIX requires at least 4096 bytes for ARG_MAX
         argmax = 4096
         try:
-            argmax = os.sysconf("SC_ARG_MAX")
+            argmax = os.sysconf(r"SC_ARG_MAX")
         except (AttributeError, ValueError):
             pass
 

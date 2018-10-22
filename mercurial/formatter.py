@@ -124,13 +124,15 @@ from . import (
     error,
     pycompat,
     templatefilters,
-    templatefuncs,
     templatekw,
     templater,
     templateutil,
     util,
 )
-from .utils import dateutil
+from .utils import (
+    dateutil,
+    stringutil,
+)
 
 pickle = util.pickle
 
@@ -193,14 +195,16 @@ class baseformatter(object):
         # name is mandatory argument for now, but it could be optional if
         # we have default template keyword, e.g. {item}
         return self._converter.formatlist(data, name, fmt, sep)
-    def contexthint(self, datafields):
-        '''set of context object keys to be required given datafields set'''
-        return set()
     def context(self, **ctxs):
         '''insert context objects to be used to render template keywords'''
         ctxs = pycompat.byteskwargs(ctxs)
-        assert all(k in {'ctx', 'fctx'} for k in ctxs)
+        assert all(k in {'repo', 'ctx', 'fctx'} for k in ctxs)
         if self._converter.storecontext:
+            # populate missing resources in fctx -> ctx -> repo order
+            if 'fctx' in ctxs and 'ctx' not in ctxs:
+                ctxs['ctx'] = ctxs['fctx'].changectx()
+            if 'ctx' in ctxs and 'repo' not in ctxs:
+                ctxs['repo'] = ctxs['ctx'].repo()
             self._item.update(ctxs)
     def datahint(self):
         '''set of field names to be referenced'''
@@ -212,7 +216,7 @@ class baseformatter(object):
     def write(self, fields, deftext, *fielddata, **opts):
         '''do default text output while assigning data to item'''
         fieldkeys = fields.split()
-        assert len(fieldkeys) == len(fielddata)
+        assert len(fieldkeys) == len(fielddata), (fieldkeys, fielddata)
         self._item.update(zip(fieldkeys, fielddata))
     def condwrite(self, cond, fields, deftext, *fielddata, **opts):
         '''do conditional write (primarily for plain formatter)'''
@@ -320,7 +324,8 @@ class debugformatter(baseformatter):
         self._out = out
         self._out.write("%s = [\n" % self._topic)
     def _showitem(self):
-        self._out.write('    %s,\n' % pycompat.byterepr(self._item))
+        self._out.write('    %s,\n'
+                        % stringutil.pprint(self._item, indent=4, level=1))
     def end(self):
         baseformatter.end(self)
         self._out.write("]\n")
@@ -422,24 +427,6 @@ class templateformatter(baseformatter):
     def _symbolsused(self):
         return self._t.symbolsused(self._tref)
 
-    def contexthint(self, datafields):
-        '''set of context object keys to be required by the template, given
-        datafields overridden by immediate values'''
-        requires = set()
-        ksyms, fsyms = self._symbolsused
-        ksyms = ksyms - set(datafields.split())  # exclude immediate fields
-        symtables = [(ksyms, templatekw.keywords),
-                     (fsyms, templatefuncs.funcs)]
-        for syms, table in symtables:
-            for k in syms:
-                f = table.get(k)
-                if not f:
-                    continue
-                requires.update(getattr(f, '_requires', ()))
-        if 'repo' in requires:
-            requires.add('ctx')  # there's no API to pass repo to formatter
-        return requires & {'ctx', 'fctx'}
-
     def datahint(self):
         '''set of field names to be referenced from the template'''
         return self._symbolsused[0]
@@ -538,6 +525,10 @@ def maketemplater(ui, tmpl, defaults=None, resources=None, cache=None):
         t.cache[''] = tmpl
     return t
 
+# marker to denote a resource to be loaded on demand based on mapping values
+# (e.g. (ctx, path) -> fctx)
+_placeholder = object()
+
 class templateresources(templater.resourcemapper):
     """Resource mapper designed for the default templatekw and function"""
 
@@ -548,61 +539,81 @@ class templateresources(templater.resourcemapper):
             'ui': ui,
         }
 
-    def availablekeys(self, context, mapping):
-        return {k for k, g in self._gettermap.iteritems()
-                if g(self, context, mapping, k) is not None}
+    def availablekeys(self, mapping):
+        return {k for k in self.knownkeys()
+                if self._getsome(mapping, k) is not None}
 
     def knownkeys(self):
-        return self._knownkeys
+        return {'cache', 'ctx', 'fctx', 'repo', 'revcache', 'ui'}
 
-    def lookup(self, context, mapping, key):
-        get = self._gettermap.get(key)
-        if not get:
+    def lookup(self, mapping, key):
+        if key not in self.knownkeys():
             return None
-        return get(self, context, mapping, key)
+        v = self._getsome(mapping, key)
+        if v is _placeholder:
+            v = mapping[key] = self._loadermap[key](self, mapping)
+        return v
 
     def populatemap(self, context, origmapping, newmapping):
         mapping = {}
-        if self._hasctx(newmapping):
+        if self._hasnodespec(newmapping):
             mapping['revcache'] = {}  # per-ctx cache
-        if (('node' in origmapping or self._hasctx(origmapping))
-            and ('node' in newmapping or self._hasctx(newmapping))):
+        if self._hasnodespec(origmapping) and self._hasnodespec(newmapping):
             orignode = templateutil.runsymbol(context, origmapping, 'node')
             mapping['originalnode'] = orignode
+        # put marker to override 'ctx'/'fctx' in mapping if any, and flag
+        # its existence to be reported by availablekeys()
+        if 'ctx' not in newmapping and self._hasliteral(newmapping, 'node'):
+            mapping['ctx'] = _placeholder
+        if 'fctx' not in newmapping and self._hasliteral(newmapping, 'path'):
+            mapping['fctx'] = _placeholder
         return mapping
 
-    def _getsome(self, context, mapping, key):
+    def _getsome(self, mapping, key):
         v = mapping.get(key)
         if v is not None:
             return v
         return self._resmap.get(key)
 
-    def _hasctx(self, mapping):
-        return 'ctx' in mapping or 'fctx' in mapping
+    def _hasliteral(self, mapping, key):
+        """Test if a literal value is set or unset in the given mapping"""
+        return key in mapping and not callable(mapping[key])
 
-    def _getctx(self, context, mapping, key):
-        ctx = mapping.get('ctx')
-        if ctx is not None:
-            return ctx
-        fctx = mapping.get('fctx')
-        if fctx is not None:
-            return fctx.changectx()
+    def _getliteral(self, mapping, key):
+        """Return value of the given name if it is a literal"""
+        v = mapping.get(key)
+        if callable(v):
+            return None
+        return v
 
-    def _getrepo(self, context, mapping, key):
-        ctx = self._getctx(context, mapping, 'ctx')
-        if ctx is not None:
-            return ctx.repo()
-        return self._getsome(context, mapping, key)
+    def _hasnodespec(self, mapping):
+        """Test if context revision is set or unset in the given mapping"""
+        return 'node' in mapping or 'ctx' in mapping
 
-    _gettermap = {
-        'cache': _getsome,
-        'ctx': _getctx,
-        'fctx': _getsome,
-        'repo': _getrepo,
-        'revcache': _getsome,
-        'ui': _getsome,
+    def _loadctx(self, mapping):
+        repo = self._getsome(mapping, 'repo')
+        node = self._getliteral(mapping, 'node')
+        if repo is None or node is None:
+            return
+        try:
+            return repo[node]
+        except error.RepoLookupError:
+            return None # maybe hidden/non-existent node
+
+    def _loadfctx(self, mapping):
+        ctx = self._getsome(mapping, 'ctx')
+        path = self._getliteral(mapping, 'path')
+        if ctx is None or path is None:
+            return None
+        try:
+            return ctx[path]
+        except error.LookupError:
+            return None # maybe removed file?
+
+    _loadermap = {
+        'ctx': _loadctx,
+        'fctx': _loadfctx,
     }
-    _knownkeys = set(_gettermap.keys())
 
 def formatter(ui, out, topic, opts):
     template = opts.get("template", "")

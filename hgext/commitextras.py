@@ -17,6 +17,7 @@ from mercurial import (
     error,
     extensions,
     registrar,
+    util,
 )
 
 cmdtable = {}
@@ -43,34 +44,29 @@ def extsetup(ui):
         _('set a changeset\'s extra values'), _("KEY=VALUE")))
 
 def _commit(orig, ui, repo, *pats, **opts):
-    origcommit = repo.commit
-    try:
-        def _wrappedcommit(*innerpats, **inneropts):
+    if util.safehasattr(repo, 'unfiltered'):
+        repo = repo.unfiltered()
+    class repoextra(repo.__class__):
+        def commit(self, *innerpats, **inneropts):
             extras = opts.get(r'extra')
-            if extras:
-                for raw in extras:
-                    if '=' not in raw:
-                        msg = _("unable to parse '%s', should follow "
-                                "KEY=VALUE format")
-                        raise error.Abort(msg % raw)
-                    k, v = raw.split('=', 1)
-                    if not k:
-                        msg = _("unable to parse '%s', keys can't be empty")
-                        raise error.Abort(msg % raw)
-                    if re.search('[^\w-]', k):
-                        msg = _("keys can only contain ascii letters, digits,"
-                                " '_' and '-'")
-                        raise error.Abort(msg)
-                    if k in usedinternally:
-                        msg = _("key '%s' is used internally, can't be set "
-                                "manually")
-                        raise error.Abort(msg % k)
-                    inneropts[r'extra'][k] = v
-            return origcommit(*innerpats, **inneropts)
-
-        # This __dict__ logic is needed because the normal
-        # extension.wrapfunction doesn't seem to work.
-        repo.__dict__[r'commit'] = _wrappedcommit
-        return orig(ui, repo, *pats, **opts)
-    finally:
-        del repo.__dict__[r'commit']
+            for raw in extras:
+                if '=' not in raw:
+                    msg = _("unable to parse '%s', should follow "
+                            "KEY=VALUE format")
+                    raise error.Abort(msg % raw)
+                k, v = raw.split('=', 1)
+                if not k:
+                    msg = _("unable to parse '%s', keys can't be empty")
+                    raise error.Abort(msg % raw)
+                if re.search('[^\w-]', k):
+                    msg = _("keys can only contain ascii letters, digits,"
+                            " '_' and '-'")
+                    raise error.Abort(msg)
+                if k in usedinternally:
+                    msg = _("key '%s' is used internally, can't be set "
+                            "manually")
+                    raise error.Abort(msg % k)
+                inneropts[r'extra'][k] = v
+            return super(repoextra, self).commit(*innerpats, **inneropts)
+    repo.__class__ = repoextra
+    return orig(ui, repo, *pats, **opts)

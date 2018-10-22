@@ -240,7 +240,7 @@ class bmstore(object):
             if self.active:
                 return self.active
             else:
-                raise error.Abort(_("no active bookmark"))
+                raise error.RepoLookupError(_("no active bookmark"))
         return bname
 
     def checkconflict(self, mark, force=False, target=None):
@@ -915,22 +915,18 @@ def addbookmarks(repo, tr, names, rev=None, force=False, inactive=False):
     elif cur != tgt and newact == repo._activebookmark:
         deactivate(repo)
 
-def _printbookmarks(ui, repo, bmarks, **opts):
+def _printbookmarks(ui, repo, fm, bmarks):
     """private method to print bookmarks
 
     Provides a way for extensions to control how bookmarks are printed (e.g.
     prepend or postpend names)
     """
-    opts = pycompat.byteskwargs(opts)
-    fm = ui.formatter('bookmarks', opts)
-    contexthint = fm.contexthint('bookmark rev node active')
     hexfn = fm.hexfunc
     if len(bmarks) == 0 and fm.isplain():
         ui.status(_("no bookmarks set\n"))
     for bmark, (n, prefix, label) in sorted(bmarks.iteritems()):
         fm.startitem()
-        if 'ctx' in contexthint:
-            fm.context(ctx=repo[n])
+        fm.context(repo=repo)
         if not ui.quiet:
             fm.plain(' %s ' % prefix, label=label)
         fm.write('bookmark', '%s', bmark, label=label)
@@ -939,24 +935,25 @@ def _printbookmarks(ui, repo, bmarks, **opts):
                      repo.changelog.rev(n), hexfn(n), label=label)
         fm.data(active=(activebookmarklabel in label))
         fm.plain('\n')
-    fm.end()
 
-def printbookmarks(ui, repo, **opts):
-    """print bookmarks to a formatter
+def printbookmarks(ui, repo, fm, names=None):
+    """print bookmarks by the given formatter
 
     Provides a way for extensions to control how bookmarks are printed.
     """
     marks = repo._bookmarks
     bmarks = {}
-    for bmark, n in sorted(marks.iteritems()):
+    for bmark in (names or marks):
+        if bmark not in marks:
+            raise error.Abort(_("bookmark '%s' does not exist") % bmark)
         active = repo._activebookmark
         if bmark == active:
             prefix, label = '*', activebookmarklabel
         else:
             prefix, label = ' ', ''
 
-        bmarks[bmark] = (n, prefix, label)
-    _printbookmarks(ui, repo, bmarks, **opts)
+        bmarks[bmark] = (marks[bmark], prefix, label)
+    _printbookmarks(ui, repo, fm, bmarks)
 
 def preparehookargs(name, old, new):
     if new is None:

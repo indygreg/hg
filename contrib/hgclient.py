@@ -1,7 +1,10 @@
 # A minimal client for Mercurial's command server
 
 from __future__ import absolute_import, print_function
+
+import io
 import os
+import re
 import signal
 import socket
 import struct
@@ -9,17 +12,25 @@ import subprocess
 import sys
 import time
 
-try:
-    import cStringIO as io
-    stringio = io.StringIO
-except ImportError:
-    import io
-    stringio = io.StringIO
+if sys.version_info[0] >= 3:
+    stdout = sys.stdout.buffer
+    stderr = sys.stderr.buffer
+    stringio = io.BytesIO
+    def bprint(*args):
+        # remove b'' as well for ease of test migration
+        pargs = [re.sub(br'''\bb(['"])''', br'\1', b'%s' % a) for a in args]
+        stdout.write(b' '.join(pargs) + b'\n')
+else:
+    import cStringIO
+    stdout = sys.stdout
+    stderr = sys.stderr
+    stringio = cStringIO.StringIO
+    bprint = print
 
 def connectpipe(path=None):
-    cmdline = ['hg', 'serve', '--cmdserver', 'pipe']
+    cmdline = [b'hg', b'serve', b'--cmdserver', b'pipe']
     if path:
-        cmdline += ['-R', path]
+        cmdline += [b'-R', path]
 
     server = subprocess.Popen(cmdline, stdin=subprocess.PIPE,
                               stdout=subprocess.PIPE)
@@ -41,9 +52,9 @@ class unixconnection(object):
 class unixserver(object):
     def __init__(self, sockpath, logpath=None, repopath=None):
         self.sockpath = sockpath
-        cmdline = ['hg', 'serve', '--cmdserver', 'unix', '-a', sockpath]
+        cmdline = [b'hg', b'serve', b'--cmdserver', b'unix', b'-a', sockpath]
         if repopath:
-            cmdline += ['-R', repopath]
+            cmdline += [b'-R', repopath]
         if logpath:
             stdout = open(logpath, 'a')
             stderr = subprocess.STDOUT
@@ -64,7 +75,7 @@ class unixserver(object):
         self.server.wait()
 
 def writeblock(server, data):
-    server.stdin.write(struct.pack('>I', len(data)))
+    server.stdin.write(struct.pack(b'>I', len(data)))
     server.stdin.write(data)
     server.stdin.flush()
 
@@ -73,48 +84,48 @@ def readchannel(server):
     if not data:
         raise EOFError
     channel, length = struct.unpack('>cI', data)
-    if channel in 'IL':
+    if channel in b'IL':
         return channel, length
     else:
         return channel, server.stdout.read(length)
 
 def sep(text):
-    return text.replace('\\', '/')
+    return text.replace(b'\\', b'/')
 
-def runcommand(server, args, output=sys.stdout, error=sys.stderr, input=None,
+def runcommand(server, args, output=stdout, error=stderr, input=None,
                outfilter=lambda x: x):
-    print('*** runcommand', ' '.join(args))
-    sys.stdout.flush()
-    server.stdin.write('runcommand\n')
-    writeblock(server, '\0'.join(args))
+    bprint(b'*** runcommand', b' '.join(args))
+    stdout.flush()
+    server.stdin.write(b'runcommand\n')
+    writeblock(server, b'\0'.join(args))
 
     if not input:
         input = stringio()
 
     while True:
         ch, data = readchannel(server)
-        if ch == 'o':
+        if ch == b'o':
             output.write(outfilter(data))
             output.flush()
-        elif ch == 'e':
+        elif ch == b'e':
             error.write(data)
             error.flush()
-        elif ch == 'I':
+        elif ch == b'I':
             writeblock(server, input.read(data))
-        elif ch == 'L':
+        elif ch == b'L':
             writeblock(server, input.readline(data))
-        elif ch == 'r':
+        elif ch == b'r':
             ret, = struct.unpack('>i', data)
             if ret != 0:
-                print(' [%d]' % ret)
+                bprint(b' [%d]' % ret)
             return ret
         else:
-            print("unexpected channel %c: %r" % (ch, data))
+            bprint(b"unexpected channel %c: %r" % (ch, data))
             if ch.isupper():
                 return
 
 def check(func, connect=connectpipe):
-    sys.stdout.flush()
+    stdout.flush()
     server = connect()
     try:
         return func(server)

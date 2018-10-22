@@ -1,4 +1,12 @@
 #testcases flat tree
+#testcases lfs-on lfs-off
+
+#if lfs-on
+  $ cat >> $HGRCPATH <<EOF
+  > [extensions]
+  > lfs =
+  > EOF
+#endif
 
   $ . "$TESTDIR/narrow-library.sh"
 
@@ -22,31 +30,28 @@
   >   hg add d$x/f
   >   hg commit -m "add d$x/f"
   > done
-  $ hg log -T "{node|short}: {desc}\n"
-  *: add d10/f (glob)
-  *: add d9/f (glob)
-  *: add d8/f (glob)
-  *: add d7/f (glob)
-  *: add d6/f (glob)
-  *: add d5/f (glob)
-  *: add d4/f (glob)
-  *: add d3/f (glob)
-  *: add d2/f (glob)
-  *: add d1/f (glob)
-  *: add d0/f (glob)
+  $ hg log -T "{rev}: {desc}\n"
+  10: add d10/f
+  9: add d9/f
+  8: add d8/f
+  7: add d7/f
+  6: add d6/f
+  5: add d5/f
+  4: add d4/f
+  3: add d3/f
+  2: add d2/f
+  1: add d1/f
+  0: add d0/f
   $ cd ..
 
 Error if '.' or '..' are in the directory to track.
   $ hg clone --narrow ssh://user@dummy/master foo --include ./asdf
-  requesting all changes
   abort: "." and ".." are not allowed in narrowspec paths
   [255]
   $ hg clone --narrow ssh://user@dummy/master foo --include asdf/..
-  requesting all changes
   abort: "." and ".." are not allowed in narrowspec paths
   [255]
   $ hg clone --narrow ssh://user@dummy/master foo --include a/./c
-  requesting all changes
   abort: "." and ".." are not allowed in narrowspec paths
   [255]
 
@@ -111,15 +116,15 @@ Check that nothing was removed by the failed attempts
   d6/f
   $ hg verify -q
 Force deletion of local changes
-  $ hg log -T "{node|short}: {desc} {outsidenarrow}\n"
-  *: local change to d3  (glob)
-  *: local change to d0  (glob)
-  *: add d10/f outsidenarrow (glob)
-  *: add d6/f  (glob)
-  *: add d5/f outsidenarrow (glob)
-  *: add d3/f  (glob)
-  *: add d2/f outsidenarrow (glob)
-  *: add d0/f  (glob)
+  $ hg log -T "{rev}: {desc} {outsidenarrow}\n"
+  8: local change to d3 
+  6: local change to d0 
+  5: add d10/f outsidenarrow
+  4: add d6/f 
+  3: add d5/f outsidenarrow
+  2: add d3/f 
+  1: add d2/f outsidenarrow
+  0: add d0/f 
   $ hg tracked --removeinclude d0 --force-delete-local-changes
   comparing with ssh://user@dummy/master
   searching for changes
@@ -133,14 +138,14 @@ Force deletion of local changes
   deleting data/d0/f/4374b5650fc5ae54ac857c0f0381971fdde376f7 (reposimplestore !)
   deleting data/d0/f/index (reposimplestore !)
 
-  $ hg log -T "{node|short}: {desc} {outsidenarrow}\n"
-  *: local change to d3  (glob)
-  *: add d10/f outsidenarrow (glob)
-  *: add d6/f  (glob)
-  *: add d5/f outsidenarrow (glob)
-  *: add d3/f  (glob)
-  *: add d2/f outsidenarrow (glob)
-  *: add d0/f outsidenarrow (glob)
+  $ hg log -T "{rev}: {desc} {outsidenarrow}\n"
+  7: local change to d3 
+  5: add d10/f outsidenarrow
+  4: add d6/f 
+  3: add d5/f outsidenarrow
+  2: add d3/f 
+  1: add d2/f outsidenarrow
+  0: add d0/f outsidenarrow
 Can restore stripped local changes after widening
   $ hg tracked --addinclude d0 -q
   $ hg unbundle .hg/strip-backup/*-narrow.hg -q

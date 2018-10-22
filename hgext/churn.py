@@ -8,7 +8,7 @@
 
 '''command to display statistics about repository history'''
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 import datetime
 import os
@@ -52,7 +52,8 @@ def countrate(ui, repo, amap, *pats, **opts):
         def getkey(ctx):
             t, tz = ctx.date()
             date = datetime.datetime(*time.gmtime(float(t) - tz)[:6])
-            return date.strftime(encoding.strfromlocal(opts['dateformat']))
+            return encoding.strtolocal(
+                date.strftime(encoding.strfromlocal(opts['dateformat'])))
     else:
         tmpl = opts.get('oldtemplate') or opts.get('template')
         tmpl = logcmdutil.maketemplater(ui, repo, tmpl)
@@ -115,6 +116,7 @@ def countrate(ui, repo, amap, *pats, **opts):
     ('', 'aliases', '', _('file with email aliases'), _('FILE')),
     ] + cmdutil.walkopts,
     _("hg churn [-d DATE] [-r REV] [--aliases FILE] [FILE]"),
+    helpcategory=command.CATEGORY_MAINTENANCE,
     inferrepo=True)
 def churn(ui, repo, *pats, **opts):
     '''histogram of changes to the repository
@@ -204,7 +206,7 @@ def churn(ui, repo, *pats, **opts):
                                     '*' * charnum(sum(count)))
 
     def charnum(count):
-        return int(round(count * width / maxcount))
+        return int(count * width // maxcount)
 
     for name, count in rate:
         ui.write(format(name, count))

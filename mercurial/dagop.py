@@ -9,6 +9,9 @@ from __future__ import absolute_import
 
 import heapq
 
+from .node import (
+    nullrev,
+)
 from .thirdparty import (
     attr,
 )
@@ -195,7 +198,7 @@ def _builddescendantsmap(repo, startrev, followfirst):
     """Build map of 'rev -> child revs', offset from startrev"""
     cl = repo.changelog
     nullrev = node.nullrev
-    descmap = [[] for _rev in xrange(startrev, len(cl))]
+    descmap = [[] for _rev in pycompat.xrange(startrev, len(cl))]
     for currev in cl.revs(startrev + 1):
         p1rev, p2rev = cl.parentrevs(currev)
         if p1rev >= startrev:
@@ -224,6 +227,37 @@ def revdescendants(repo, revs, followfirst, startdepth=None, stopdepth=None):
         gen = _genrevdescendantsofdepth(repo, revs, followfirst,
                                         startdepth, stopdepth)
     return generatorset(gen, iterasc=True)
+
+def descendantrevs(revs, revsfn, parentrevsfn):
+    """Generate revision number descendants in revision order.
+
+    Yields revision numbers starting with a child of some rev in
+    ``revs``. Results are ordered by revision number and are
+    therefore topological. Each revision is not considered a descendant
+    of itself.
+
+    ``revsfn`` is a callable that with no argument iterates over all
+    revision numbers and with a ``start`` argument iterates over revision
+    numbers beginning with that value.
+
+    ``parentrevsfn`` is a callable that receives a revision number and
+    returns an iterable of parent revision numbers, whose values may include
+    nullrev.
+    """
+    first = min(revs)
+
+    if first == nullrev:
+        for rev in revsfn():
+            yield rev
+        return
+
+    seen = set(revs)
+    for rev in revsfn(start=first + 1):
+        for prev in parentrevsfn(rev):
+            if prev != nullrev and prev in seen:
+                seen.add(rev)
+                yield rev
+                break
 
 def _reachablerootspure(repo, minroot, roots, heads, includepath):
     """return (heads(::<roots> and ::<heads>))
@@ -435,7 +469,7 @@ def _annotatepair(parents, childfctx, child, skipchild, diffopts):
         for idx, (parent, blocks) in enumerate(pblocks):
             for (a1, a2, b1, b2), _t in blocks:
                 if a2 - a1 >= b2 - b1:
-                    for bk in xrange(b1, b2):
+                    for bk in pycompat.xrange(b1, b2):
                         if child.fctxs[bk] == childfctx:
                             ak = min(a1 + (bk - b1), a2 - 1)
                             child.fctxs[bk] = parent.fctxs[ak]
@@ -448,7 +482,7 @@ def _annotatepair(parents, childfctx, child, skipchild, diffopts):
         # line.
         for parent, blocks in remaining:
             for a1, a2, b1, b2 in blocks:
-                for bk in xrange(b1, b2):
+                for bk in pycompat.xrange(b1, b2):
                     if child.fctxs[bk] == childfctx:
                         ak = min(a1 + (bk - b1), a2 - 1)
                         child.fctxs[bk] = parent.fctxs[ak]
@@ -715,3 +749,99 @@ def toposort(revs, parentsfunc, firstbranch=()):
     for g in groups:
         for r in g[0]:
             yield r
+
+def headrevs(revs, parentsfn):
+    """Resolve the set of heads from a set of revisions.
+
+    Receives an iterable of revision numbers and a callbable that receives a
+    revision number and returns an iterable of parent revision numbers, possibly
+    including nullrev.
+
+    Returns a set of revision numbers that are DAG heads within the passed
+    subset.
+
+    ``nullrev`` is never included in the returned set, even if it is provided in
+    the input set.
+    """
+    headrevs = set(revs)
+
+    for rev in revs:
+        for prev in parentsfn(rev):
+            headrevs.discard(prev)
+
+    headrevs.discard(node.nullrev)
+
+    return headrevs
+
+def headrevssubset(revsfn, parentrevsfn, startrev=None, stoprevs=None):
+    """Returns the set of all revs that have no children with control.
+
+    ``revsfn`` is a callable that with no arguments returns an iterator over
+    all revision numbers in topological order. With a ``start`` argument, it
+    returns revision numbers starting at that number.
+
+    ``parentrevsfn`` is a callable receiving a revision number and returns an
+    iterable of parent revision numbers, where values can include nullrev.
+
+    ``startrev`` is a revision number at which to start the search.
+
+    ``stoprevs`` is an iterable of revision numbers that, when encountered,
+    will stop DAG traversal beyond them. Parents of revisions in this
+    collection will be heads.
+    """
+    if startrev is None:
+        startrev = nullrev
+
+    stoprevs = set(stoprevs or [])
+
+    reachable = {startrev}
+    heads = {startrev}
+
+    for rev in revsfn(start=startrev + 1):
+        for prev in parentrevsfn(rev):
+            if prev in reachable:
+                if rev not in stoprevs:
+                    reachable.add(rev)
+                heads.add(rev)
+
+            if prev in heads and prev not in stoprevs:
+                heads.remove(prev)
+
+    return heads
+
+def linearize(revs, parentsfn):
+    """Linearize and topologically sort a list of revisions.
+
+    The linearization process tries to create long runs of revs where a child
+    rev comes immediately after its first parent. This is done by visiting the
+    heads of the revs in inverse topological order, and for each visited rev,
+    visiting its second parent, then its first parent, then adding the rev
+    itself to the output list.
+
+    Returns a list of revision numbers.
+    """
+    visit = list(sorted(headrevs(revs, parentsfn), reverse=True))
+    finished = set()
+    result = []
+
+    while visit:
+        rev = visit.pop()
+        if rev < 0:
+            rev = -rev - 1
+
+            if rev not in finished:
+                result.append(rev)
+                finished.add(rev)
+
+        else:
+            visit.append(-rev - 1)
+
+            for prev in parentsfn(rev):
+                if prev == node.nullrev or prev not in revs or prev in finished:
+                    continue
+
+                visit.append(prev)
+
+    assert len(result) == len(revs)
+
+    return result

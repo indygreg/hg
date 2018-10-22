@@ -11,20 +11,23 @@ from .i18n import _
 from . import (
     error,
     fileset,
+    filesetlang,
     pycompat,
 )
 
 def _sizep(x):
     # i18n: "size" is a keyword
-    expr = fileset.getstring(x, _("size requires an expression"))
+    expr = filesetlang.getstring(x, _("size requires an expression"))
     return fileset.sizematcher(expr)
 
 def _compile(tree):
     if not tree:
         raise error.ParseError(_("missing argument"))
     op = tree[0]
-    if op in {'symbol', 'string', 'kindpat'}:
-        name = fileset.getpattern(tree, {'path'}, _('invalid file pattern'))
+    if op == 'withstatus':
+        return _compile(tree[1])
+    elif op in {'symbol', 'string', 'kindpat'}:
+        name = filesetlang.getpattern(tree, {'path'}, _('invalid file pattern'))
         if name.startswith('**'): # file extension test, ex. "**.tar.gz"
             ext = name[2:]
             for c in pycompat.bytestr(ext):
@@ -39,18 +42,15 @@ def _compile(tree):
             return f
         raise error.ParseError(_("unsupported file pattern: %s") % name,
                                hint=_('paths must be prefixed with "path:"'))
-    elif op == 'or':
-        func1 = _compile(tree[1])
-        func2 = _compile(tree[2])
-        return lambda n, s: func1(n, s) or func2(n, s)
+    elif op in {'or', 'patterns'}:
+        funcs = [_compile(x) for x in tree[1:]]
+        return lambda n, s: any(f(n, s) for f in funcs)
     elif op == 'and':
         func1 = _compile(tree[1])
         func2 = _compile(tree[2])
         return lambda n, s: func1(n, s) and func2(n, s)
     elif op == 'not':
         return lambda n, s: not _compile(tree[1])(n, s)
-    elif op == 'group':
-        return _compile(tree[1])
     elif op == 'func':
         symbols = {
             'all': lambda n, s: True,
@@ -58,7 +58,7 @@ def _compile(tree):
             'size': lambda n, s: _sizep(tree[2])(s),
         }
 
-        name = fileset.getsymbol(tree[1])
+        name = filesetlang.getsymbol(tree[1])
         if name in symbols:
             return symbols[name]
 
@@ -67,11 +67,9 @@ def _compile(tree):
         func1 = _compile(tree[1])
         func2 = _compile(tree[2])
         return lambda n, s: func1(n, s) and not func2(n, s)
-    elif op == 'negate':
-        raise error.ParseError(_("can't use negate operator in this context"))
     elif op == 'list':
         raise error.ParseError(_("can't use a list in this context"),
-                               hint=_('see hg help "filesets.x or y"'))
+                               hint=_('see \'hg help "filesets.x or y"\''))
     raise error.ProgrammingError('illegal tree: %r' % (tree,))
 
 def compile(text):
@@ -88,5 +86,7 @@ def compile(text):
     files whose name ends with ".zip", and all files under "bin" in the repo
     root except for "bin/README".
     """
-    tree = fileset.parse(text)
+    tree = filesetlang.parse(text)
+    tree = filesetlang.analyze(tree)
+    tree = filesetlang.optimize(tree)
     return _compile(tree)

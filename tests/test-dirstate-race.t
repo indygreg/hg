@@ -57,7 +57,7 @@ confused with a file with the exec bit set
   >     extensions.wrapfunction(context.workingctx, '_checklookup', overridechecklookup)
   > def overridechecklookup(orig, self, files):
   >     # make an update that changes the dirstate from underneath
-  >     self._repo.ui.system(r"sh '$TESTTMP/dirstaterace.sh'",
+  >     self._repo.ui.system(br"sh '$TESTTMP/dirstaterace.sh'",
   >                          cwd=self._repo.root)
   >     return orig(self, files)
   > EOF

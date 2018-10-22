@@ -29,10 +29,8 @@ clone via stream
 #if no-reposimplestore
   $ hg clone --stream http://localhost:$HGPORT/ copy 2>&1
   streaming all changes
-  6 files to transfer, 606 bytes of data
+  9 files to transfer, 715 bytes of data
   transferred * bytes in * seconds (*/sec) (glob)
-  searching for changes
-  no changes found
   updating to branch default
   4 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg verify -R copy
@@ -40,7 +38,7 @@ clone via stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 1 changesets, 4 total revisions
+  checked 1 changesets with 4 changes to 4 files
 #endif
 
 try to clone via stream, should use pull instead
@@ -92,7 +90,7 @@ clone via pull
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 1 changesets, 4 total revisions
+  checked 1 changesets with 4 changes to 4 files
   $ cd test
   $ echo bar > bar
   $ hg commit -A -d '1 0' -m 2
@@ -219,10 +217,8 @@ test http authentication
 #if no-reposimplestore
   $ hg clone http://user:pass@localhost:$HGPORT2/ dest 2>&1
   streaming all changes
-  7 files to transfer, 916 bytes of data
-  transferred * bytes in * seconds (*/sec) (glob)
-  searching for changes
-  no changes found
+  10 files to transfer, 1.01 KB of data
+  transferred * KB in * seconds (*/sec) (glob)
   updating to branch default
   5 files updated, 0 files merged, 0 files removed, 0 files unresolved
 #endif
@@ -373,10 +369,8 @@ test http authentication
   "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
   "GET /?cmd=capabilities HTTP/1.1" 401 - (no-reposimplestore !)
   "GET /?cmd=capabilities HTTP/1.1" 200 - (no-reposimplestore !)
-  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (no-reposimplestore !)
-  "GET /?cmd=stream_out HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (no-reposimplestore !)
-  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D5fed3813f7f5e1824344fdc9cf8f63bb662c292d x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (no-reposimplestore !)
-  "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=0&common=5fed3813f7f5e1824344fdc9cf8f63bb662c292d&heads=5fed3813f7f5e1824344fdc9cf8f63bb662c292d&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (no-reposimplestore !)
+  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (no-reposimplestore !)
+  "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=0&common=0000000000000000000000000000000000000000&heads=5fed3813f7f5e1824344fdc9cf8f63bb662c292d&listkeys=bookmarks&stream=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (no-reposimplestore !)
   "GET /?cmd=capabilities HTTP/1.1" 401 - (no-reposimplestore !)
   "GET /?cmd=capabilities HTTP/1.1" 200 - (no-reposimplestore !)
   "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
@@ -470,13 +464,11 @@ disable pull-based clones
   streaming all changes
   * files to transfer, * of data (glob)
   transferred * in * seconds (*/sec) (glob)
-  searching for changes
-  no changes found
   $ cat error.log
 #endif
 
 ... and also keep partial clones and pulls working
-  $ hg clone http://localhost:$HGPORT1 --rev 0 test-partial-clone
+  $ hg clone http://localhost:$HGPORT1 --rev 0 test/partial/clone
   adding changesets
   adding manifests
   adding file changes
@@ -484,7 +476,7 @@ disable pull-based clones
   new changesets 8b6053c928fe
   updating to branch default
   4 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ hg pull -R test-partial-clone
+  $ hg pull -R test/partial/clone
   pulling from http://localhost:$HGPORT1/
   searching for changes
   adding changesets
@@ -493,6 +485,13 @@ disable pull-based clones
   added 2 changesets with 3 changes to 3 files
   new changesets 5fed3813f7f5:56f9bc90cce6
   (run 'hg update' to get a working copy)
+
+  $ hg clone -U -r 0 test/partial/clone test/another/clone
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 4 changes to 4 files
+  new changesets 8b6053c928fe
 
 corrupt cookies file should yield a warning
 

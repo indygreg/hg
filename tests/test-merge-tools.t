@@ -68,7 +68,7 @@ hg merge -r 2
 override $PATH to ensure hgmerge not visible; use $PYTHON in case we're
 running from a devel copy, not a temp installation
 
-  $ PATH="$BINDIR:/usr/sbin" $PYTHON "$BINDIR"/hg merge -r 2
+  $ PATH="$BINDIR:/usr/sbin" "$PYTHON" "$BINDIR"/hg merge -r 2
   merging f
   warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
@@ -117,7 +117,7 @@ unexecutable file in $PATH shouldn't be found:
 
   $ echo "echo fail" > false
   $ hg up -qC 1
-  $ PATH="`pwd`:$BINDIR:/usr/sbin" $PYTHON "$BINDIR"/hg merge -r 2
+  $ PATH="`pwd`:$BINDIR:/usr/sbin" "$PYTHON" "$BINDIR"/hg merge -r 2
   merging f
   warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
@@ -131,7 +131,7 @@ executable directory in $PATH shouldn't be found:
 
   $ mkdir false
   $ hg up -qC 1
-  $ PATH="`pwd`:$BINDIR:/usr/sbin" $PYTHON "$BINDIR"/hg merge -r 2
+  $ PATH="`pwd`:$BINDIR:/usr/sbin" "$PYTHON" "$BINDIR"/hg merge -r 2
   merging f
   warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
@@ -1701,6 +1701,35 @@ for Unix-like permission)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg update -C 1 > /dev/null
+
+#else
+
+Match the non-portable filename commits above for test stability
+
+  $ hg import --bypass -q - << EOF
+  > # HG changeset patch
+  > revision 5
+  > 
+  > diff --git a/"; exit 1; echo " b/"; exit 1; echo "
+  > new file mode 100644
+  > --- /dev/null
+  > +++ b/"; exit 1; echo "
+  > @@ -0,0 +1,1 @@
+  > +revision 5
+  > EOF
+
+  $ hg import --bypass -q - << EOF
+  > # HG changeset patch
+  > revision 6
+  > 
+  > diff --git a/"; exit 1; echo " b/"; exit 1; echo "
+  > new file mode 100644
+  > --- /dev/null
+  > +++ b/"; exit 1; echo "
+  > @@ -0,0 +1,1 @@
+  > +revision 6
+  > EOF
+
 #endif
 
 Merge post-processing
@@ -1737,14 +1766,64 @@ cat is a bad merge-tool and doesn't change:
   # hg resolve --list
   U f
 
-#if symlink
+missingbinary is a merge-tool that doesn't exist:
 
-internal merge cannot handle symlinks and shouldn't try:
+  $ echo "missingbinary.executable=doesnotexist" >> .hg/hgrc
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  missingbinary.executable=doesnotexist
+  # hg update -C 1
+  $ hg merge -y -r 2 --config ui.merge=missingbinary
+  couldn't find merge tool missingbinary (for pattern f)
+  merging f
+  couldn't find merge tool missingbinary (for pattern f)
+  revision 1
+  space
+  revision 0
+  space
+  revision 2
+  space
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
 
   $ hg update -q -C 1
   $ rm f
+
+internal merge cannot handle symlinks and shouldn't try:
+
+#if symlink
+
   $ ln -s symlink f
   $ hg commit -qm 'f is symlink'
+
+#else
+
+  $ hg import --bypass -q - << EOF
+  > # HG changeset patch
+  > f is symlink
+  > 
+  > diff --git a/f b/f
+  > old mode 100644
+  > new mode 120000
+  > --- a/f
+  > +++ b/f
+  > @@ -1,2 +1,1 @@
+  > -revision 1
+  > -space
+  > +symlink
+  > \ No newline at end of file
+  > EOF
+
+Resolve 'other [destination] changed f which local [working copy] deleted' prompt
+  $ hg up -q -C --config ui.interactive=True << EOF
+  > c
+  > EOF
+
+#endif
+
   $ hg merge -r 2 --tool internal:merge
   merging f
   warning: internal :merge cannot merge symlinks for f
@@ -1752,8 +1831,6 @@ internal merge cannot handle symlinks and shouldn't try:
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
-
-#endif
 
 Verify naming of temporary files and that extension is preserved:
 
@@ -1782,6 +1859,89 @@ Verify naming of temporary files and that extension is preserved
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
+Binary files capability checking
+
+  $ hg update -q -C 0
+  $ python <<EOF
+  > with open('b', 'wb') as fp:
+  >     fp.write(b'\x00\x01\x02\x03')
+  > EOF
+  $ hg add b
+  $ hg commit -qm "add binary file (#1)"
+
+  $ hg update -q -C 0
+  $ python <<EOF
+  > with open('b', 'wb') as fp:
+  >     fp.write(b'\x03\x02\x01\x00')
+  > EOF
+  $ hg add b
+  $ hg commit -qm "add binary file (#2)"
+
+By default, binary files capability of internal merge tools is not
+checked strictly.
+
+(for merge-patterns, chosen unintentionally)
+
+  $ hg merge 9 \
+  > --config merge-patterns.b=:merge-other \
+  > --config merge-patterns.re:[a-z]=:other
+  warning: check merge-patterns configurations, if ':merge-other' for binary file 'b' is unintentional
+  (see 'hg help merge-tools' for binary files capability)
+  merging b
+  warning: b looks like a binary file.
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ hg merge --abort -q
+
+(for ui.merge, ignored unintentionally)
+
+  $ hg merge 9 \
+  > --config merge-tools.:other.binary=true \
+  > --config ui.merge=:other
+  tool :other (for pattern b) can't handle binary
+  tool true can't handle binary
+  tool :other can't handle binary
+  tool false can't handle binary
+  no tool found to merge b
+  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for b? u
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ hg merge --abort -q
+
+With merge.strict-capability-check=true, binary files capability of
+internal merge tools is checked strictly.
+
+  $ f --hexdump b
+  b:
+  0000: 03 02 01 00                                     |....|
+
+(for merge-patterns)
+
+  $ hg merge 9 --config merge.strict-capability-check=true \
+  > --config merge-tools.:merge-other.binary=true \
+  > --config merge-patterns.b=:merge-other \
+  > --config merge-patterns.re:[a-z]=:other
+  tool :merge-other (for pattern b) can't handle binary
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ f --hexdump b
+  b:
+  0000: 00 01 02 03                                     |....|
+  $ hg merge --abort -q
+
+(for ui.merge)
+
+  $ hg merge 9 --config merge.strict-capability-check=true \
+  > --config ui.merge=:other
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ f --hexdump b
+  b:
+  0000: 00 01 02 03                                     |....|
+  $ hg merge --abort -q
+
 Check that debugpicktool examines which merge tool is chosen for
 specified file as expected
 
@@ -1790,6 +1950,7 @@ specified file as expected
   false.whatever=
   true.priority=1
   true.executable=cat
+  missingbinary.executable=doesnotexist
   # hg update -C 1
 
 (default behavior: checking files in the working parent context)
@@ -1812,9 +1973,9 @@ specified file as expected
 
 (-r REV causes checking files in specified revision)
 
-  $ hg manifest -r tip
+  $ hg manifest -r 8
   f.txt
-  $ hg debugpickmergetool -r tip
+  $ hg debugpickmergetool -r 8
   f.txt = true
 
 #if symlink
@@ -1822,6 +1983,45 @@ specified file as expected
 (symlink causes chosing :prompt)
 
   $ hg debugpickmergetool -r 6d00b3726f6e
+  f = :prompt
+
+(by default, it is assumed that no internal merge tools has symlinks
+capability)
+
+  $ hg debugpickmergetool \
+  > -r 6d00b3726f6e \
+  > --config merge-tools.:merge-other.symlink=true \
+  > --config merge-patterns.f=:merge-other \
+  > --config merge-patterns.re:[f]=:merge-local \
+  > --config merge-patterns.re:[a-z]=:other
+  f = :prompt
+
+  $ hg debugpickmergetool \
+  > -r 6d00b3726f6e \
+  > --config merge-tools.:other.symlink=true \
+  > --config ui.merge=:other
+  f = :prompt
+
+(with strict-capability-check=true, actual symlink capabilities are
+checked striclty)
+
+  $ hg debugpickmergetool --config merge.strict-capability-check=true \
+  > -r 6d00b3726f6e \
+  > --config merge-tools.:merge-other.symlink=true \
+  > --config merge-patterns.f=:merge-other \
+  > --config merge-patterns.re:[f]=:merge-local \
+  > --config merge-patterns.re:[a-z]=:other
+  f = :other
+
+  $ hg debugpickmergetool --config merge.strict-capability-check=true \
+  > -r 6d00b3726f6e \
+  > --config ui.merge=:other
+  f = :other
+
+  $ hg debugpickmergetool --config merge.strict-capability-check=true \
+  > -r 6d00b3726f6e \
+  > --config merge-tools.:merge-other.symlink=true \
+  > --config ui.merge=:merge-other
   f = :prompt
 
 #endif

@@ -438,6 +438,25 @@ effect and style see :hg:`help color`.
 ``commands``
 ------------
 
+``resolve.confirm``
+    Confirm before performing action if no filename is passed.
+    (default: False)
+
+``resolve.explicit-re-merge``
+    Require uses of ``hg resolve`` to specify which action it should perform,
+    instead of re-merging files by default.
+    (default: False)
+
+``resolve.mark-check``
+    Determines what level of checking :hg:`resolve --mark` will perform before
+    marking files as resolved. Valid values are ``none`, ``warn``, and
+    ``abort``. ``warn`` will output a warning listing the file(s) that still
+    have conflict markers in them, but will still mark everything resolved.
+    ``abort`` will output the same warning but will not mark things as resolved.
+    If --all is passed and this is set to ``abort``, only a warning will be
+    shown (an error will not be raised).
+    (default: ``none``)
+
 ``status.relative``
     Make paths in :hg:`status` output relative to the current directory.
     (default: False)
@@ -1303,6 +1322,15 @@ proxy.
     Optional. Always use the proxy, even for localhost and any entries
     in ``http_proxy.no``. (default: False)
 
+``http``
+----------
+
+Used to configure access to Mercurial repositories via HTTP.
+
+``timeout``
+    If set, blocking operations will timeout after that many seconds.
+    (default: None)
+
 ``merge``
 ---------
 
@@ -1332,6 +1360,11 @@ This section specifies behavior during merges and updates.
    can be restarted by using the ``resolve`` command. When a merge is
    halted, the repository is left in a normal ``unresolved`` merge state.
    (default: ``continue``)
+
+``strict-capability-check``
+   Whether capabilities of internal merge tools are checked strictly
+   or not, while examining rules to decide merge tool to be used.
+   (default: False)
 
 ``merge-patterns``
 ------------------
@@ -1903,6 +1936,10 @@ Controls generic server settings.
     repositories to the exchange format required by the bundle1 data
     format can consume a lot of CPU.
 
+``bundle2.stream``
+    Whether to allow clients to pull using the bundle2 streaming protocol.
+    (default: True)
+
 ``zliblevel``
     Integer between ``-1`` and ``9`` that controls the zlib compression level
     for wire protocol commands that send zlib compressed output (notably the
@@ -2330,7 +2367,7 @@ User interface controls.
     to release, but over time the recommended config settings
     shift. Enable this config to opt in to get automatic tweaks to
     Mercurial's behavior over time. This config setting will have no
-    effet if ``HGPLAIN` is set or ``HGPLAINEXCEPT`` is set and does
+    effect if ``HGPLAIN`` is set or ``HGPLAINEXCEPT`` is set and does
     not include ``tweakdefaults``. (default: False)
 
 ``username``
@@ -2597,6 +2634,9 @@ The full set of options is:
 
 ``server-header``
     Value for HTTP ``Server`` response header.
+
+``static``
+    Directory where static files are served from.
 
 ``staticurl``
     Base URL to use for static files. If unset, static files (e.g. the

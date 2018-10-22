@@ -48,6 +48,6 @@ see what happened
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 1 files
 
   $ cd ..

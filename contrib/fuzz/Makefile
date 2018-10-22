@@ -70,12 +70,59 @@ xdiff_fuzzer: xdiff.cc fuzz-xdiffi.o fuzz-xprepare.o fuzz-xutils.o fuzzutil-oss-
 	  fuzz-xdiffi.o fuzz-xprepare.o fuzz-xutils.o fuzzutil-oss-fuzz.o \
 	  -lFuzzingEngine -o $$OUT/xdiff_fuzzer
 
+# TODO use the $OUT env var instead of hardcoding /out
+/out/sanpy/bin/python:
+	cd /Python-2.7.15/ && ./configure --without-pymalloc --prefix=$$OUT/sanpy CFLAGS='-O1 -fno-omit-frame-pointer -g -fwrapv -fstack-protector-strong' LDFLAGS=-lasan  && ASAN_OPTIONS=detect_leaks=0 make && make install
+
+sanpy: /out/sanpy/bin/python
+
+manifest.o: sanpy ../../mercurial/cext/manifest.c
+	$(CC) $(CFLAGS) `$$OUT/sanpy/bin/python-config --cflags` \
+	  -I../../mercurial \
+	  -c -o manifest.o ../../mercurial/cext/manifest.c
+
+charencode.o: sanpy ../../mercurial/cext/charencode.c
+	$(CC) $(CFLAGS) `$$OUT/sanpy/bin/python-config --cflags` \
+	  -I../../mercurial \
+	  -c -o charencode.o ../../mercurial/cext/charencode.c
+
+parsers.o: sanpy ../../mercurial/cext/parsers.c
+	$(CC) $(CFLAGS) `$$OUT/sanpy/bin/python-config --cflags` \
+	  -I../../mercurial \
+	  -c -o parsers.o ../../mercurial/cext/parsers.c
+
+dirs.o: sanpy ../../mercurial/cext/dirs.c
+	$(CC) $(CFLAGS) `$$OUT/sanpy/bin/python-config --cflags` \
+	  -I../../mercurial \
+	  -c -o dirs.o ../../mercurial/cext/dirs.c
+
+pathencode.o: sanpy ../../mercurial/cext/pathencode.c
+	$(CC) $(CFLAGS) `$$OUT/sanpy/bin/python-config --cflags` \
+	  -I../../mercurial \
+	  -c -o pathencode.o ../../mercurial/cext/pathencode.c
+
+revlog.o: sanpy ../../mercurial/cext/revlog.c
+	$(CC) $(CFLAGS) `$$OUT/sanpy/bin/python-config --cflags` \
+	  -I../../mercurial \
+	  -c -o revlog.o ../../mercurial/cext/revlog.c
+
+manifest_fuzzer: sanpy manifest.cc manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o
+	$(CXX) $(CXXFLAGS) `$$OUT/sanpy/bin/python-config --cflags` \
+	  -Wno-register -Wno-macro-redefined \
+	  -I../../mercurial manifest.cc \
+	  manifest.o charencode.o parsers.o dirs.o pathencode.o revlog.o \
+	  -lFuzzingEngine `$$OUT/sanpy/bin/python-config --ldflags` \
+	  -o $$OUT/manifest_fuzzer
+
+manifest_corpus.zip:
+	python manifest_corpus.py $$OUT/manifest_fuzzer_seed_corpus.zip
+
 clean:
 	$(RM) *.o *_fuzzer \
 	  bdiff \
 	  mpatch \
 	  xdiff
 
-oss-fuzz: bdiff_fuzzer mpatch_fuzzer mpatch_corpus.zip xdiff_fuzzer
+oss-fuzz: bdiff_fuzzer mpatch_fuzzer mpatch_corpus.zip xdiff_fuzzer manifest_fuzzer manifest_corpus.zip
 
-.PHONY: all clean oss-fuzz
+.PHONY: all clean oss-fuzz sanpy

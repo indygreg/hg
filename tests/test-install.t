@@ -153,7 +153,9 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
   $ . "$TESTDIR/helpers-testrepo.sh"
 
   $ cat >> wixxml.py << EOF
-  > import os, subprocess, sys
+  > import os
+  > import subprocess
+  > import sys
   > import xml.etree.ElementTree as ET
   > 
   > # MSYS mangles the path if it expands $TESTDIR
@@ -205,7 +207,7 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
   >     print('  %s' % f)
   > EOF
 
-  $ ( testrepohgenv; $PYTHON wixxml.py help )
+  $ ( testrepohgenv; "$PYTHON" wixxml.py help )
   Not installed:
     help/common.txt
     help/hg-ssh.8.txt
@@ -214,7 +216,7 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
     help/hgrc.5.txt
   Not tracked:
 
-  $ ( testrepohgenv; $PYTHON wixxml.py templates )
+  $ ( testrepohgenv; "$PYTHON" wixxml.py templates )
   Not installed:
   Not tracked:
 
@@ -231,7 +233,7 @@ Note: --no-site-packages is deprecated, but some places have an
 ancient virtualenv from their linux distro or similar and it's not yet
 the default for them.
   $ unset PYTHONPATH
-  $ $PYTHON -m virtualenv --no-site-packages --never-download installenv >> pip.log
+  $ "$PYTHON" -m virtualenv --no-site-packages --never-download installenv >> pip.log
 Note: we use this weird path to run pip and hg to avoid platform differences,
 since it's bin on most platforms but Scripts on Windows.
   $ ./installenv/*/pip install --no-index $TESTDIR/.. >> pip.log

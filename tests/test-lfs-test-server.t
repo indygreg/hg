@@ -36,7 +36,7 @@
   >             sys.exit(0)
   > sys.exit(1)
   > EOF
-  $ $PYTHON $TESTTMP/spawn.py >> $DAEMON_PIDS
+  $ "$PYTHON" $TESTTMP/spawn.py >> $DAEMON_PIDS
 #endif
 
   $ cat >> $HGRCPATH <<EOF
@@ -694,10 +694,6 @@ Revert will prefetch blobs in a group
   $ rm *
   $ hg revert --all -r 1 --debug
   http auth: user foo, password ***
-  adding a
-  reverting b
-  reverting c
-  reverting d
   http auth: user foo, password ***
   Status: 200
   Content-Length: 905 (git-server !)
@@ -778,9 +774,13 @@ Revert will prefetch blobs in a group
   lfs: adding d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 to the usercache
   lfs: processed: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
   lfs: downloaded 3 files (51 bytes)
+  reverting b
   lfs: found 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b in the local lfs store
+  reverting c
   lfs: found d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 in the local lfs store
+  reverting d
   lfs: found 37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19 in the local lfs store
+  adding a
   lfs: found 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b in the local lfs store
 
 Check error message when the remote missed a blob:
@@ -850,7 +850,7 @@ Check error message when object does not exist:
 
 (Restart the server in a different location so it no longer has the content)
 
-  $ $PYTHON $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
+  $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
 
 #if hg-server
   $ cat $TESTTMP/access.log $TESTTMP/errors.log
@@ -888,7 +888,7 @@ Check error message when object does not exist:
 #endif
 
 #if windows git-server
-  $ $PYTHON $TESTTMP/spawn.py >> $DAEMON_PIDS
+  $ "$PYTHON" $TESTTMP/spawn.py >> $DAEMON_PIDS
 #endif
 
 #if hg-server
@@ -938,4 +938,4 @@ Check error message when object does not exist:
   abort: LFS server error for "a": The object does not exist!
   [255]
 
-  $ $PYTHON $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
+  $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS

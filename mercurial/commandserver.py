@@ -26,7 +26,6 @@ from .i18n import _
 from . import (
     encoding,
     error,
-    pycompat,
     util,
 )
 from .utils import (
@@ -67,7 +66,7 @@ class channeledoutput(object):
         self.out.flush()
 
     def __getattr__(self, attr):
-        if attr in ('isatty', 'fileno', 'tell', 'seek'):
+        if attr in (r'isatty', r'fileno', r'tell', r'seek'):
             raise AttributeError(attr)
         return getattr(self.out, attr)
 
@@ -150,8 +149,10 @@ class channeledinput(object):
             raise StopIteration
         return l
 
+    __next__ = next
+
     def __getattr__(self, attr):
-        if attr in ('isatty', 'fileno', 'tell', 'seek'):
+        if attr in (r'isatty', r'fileno', r'tell', r'seek'):
             raise AttributeError(attr)
         return getattr(self.in_, attr)
 
@@ -161,7 +162,7 @@ class server(object):
     based stream to fout.
     """
     def __init__(self, ui, repo, fin, fout):
-        self.cwd = pycompat.getcwd()
+        self.cwd = encoding.getcwd()
 
         # developer config: cmdserver.log
         logpath = ui.config("cmdserver", "log")
@@ -343,8 +344,8 @@ def _initworkerprocess():
     random.seed()
 
 def _serverequest(ui, repo, conn, createcmdserver):
-    fin = conn.makefile('rb')
-    fout = conn.makefile('wb')
+    fin = conn.makefile(r'rb')
+    fout = conn.makefile(r'wb')
     sv = None
     try:
         sv = createcmdserver(repo, conn, fin, fout)
@@ -353,7 +354,7 @@ def _serverequest(ui, repo, conn, createcmdserver):
         # handle exceptions that may be raised by command server. most of
         # known exceptions are caught by dispatch.
         except error.Abort as inst:
-            ui.warn(_('abort: %s\n') % inst)
+            ui.error(_('abort: %s\n') % inst)
         except IOError as inst:
             if inst.errno != errno.EPIPE:
                 raise
@@ -368,7 +369,7 @@ def _serverequest(ui, repo, conn, createcmdserver):
             cerr = sv.cerr
         else:
             cerr = channeledoutput(fout, 'e')
-        traceback.print_exc(file=cerr)
+        cerr.write(encoding.strtolocal(traceback.format_exc()))
         raise
     finally:
         fin.close()

@@ -1066,19 +1066,18 @@ Prepare a repo with subrepo
   $ hg cat sub/repo/foo -Tjson | sed 's|\\\\|/|g'
   [
    {
-    "abspath": "foo",
     "data": "test\ntest\n",
-    "path": "sub/repo/foo"
+    "path": "foo"
    }
   ]
 
  non-exact match:
 
-  $ hg cat -T '{path}\n' 'glob:**'
+  $ hg cat -T '{path|relpath}\n' 'glob:**'
   .hgsub
   .hgsubstate
   sub/repo/foo
-  $ hg cat -T '{path}\n' 're:^sub'
+  $ hg cat -T '{path|relpath}\n' 're:^sub'
   sub/repo/foo
 
  missing subrepos in working directory:

@@ -15,6 +15,14 @@ def addentry(po, entry, cache):
     e = cache.get(entry.msgid)
     if e:
         e.occurrences.extend(entry.occurrences)
+
+        # merge comments from entry
+        for comment in entry.comment.split('\n'):
+            if comment and comment not in e.comment:
+                if not e.comment:
+                    e.comment = comment
+                else:
+                    e.comment += '\n' + comment
     else:
         po.append(entry)
         cache[entry.msgid] = entry

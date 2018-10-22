@@ -30,7 +30,8 @@ of the files in a commit we're updating to
 
   $ mkdir b && touch b/nonempty
   $ hg up
-  abort: Directory not empty: '$TESTTMP/t/b'
+  abort: Unlinking directory not permitted: *$TESTTMP/t/b* (glob) (windows !)
+  abort: Directory not empty: '?\$TESTTMP/t/b'? (re) (no-windows !)
   [255]
   $ hg ci
   abort: last update was interrupted

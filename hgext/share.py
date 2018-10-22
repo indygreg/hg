@@ -67,6 +67,7 @@ testedwith = 'ships-with-hg-core'
                               '(EXPERIMENTAL)')),
     ],
     _('[-U] [-B] SOURCE [DEST]'),
+    helpcategory=command.CATEGORY_REPO_CREATION,
     norepo=True)
 def share(ui, source, dest=None, noupdate=False, bookmarks=False,
           relative=False):
@@ -91,7 +92,7 @@ def share(ui, source, dest=None, noupdate=False, bookmarks=False,
              bookmarks=bookmarks, relative=relative)
     return 0
 
-@command('unshare', [], '')
+@command('unshare', [], '', helpcategory=command.CATEGORY_MAINTENANCE)
 def unshare(ui, repo):
     """convert a shared repository to a normal one
 

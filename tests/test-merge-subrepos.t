@@ -110,7 +110,8 @@ missing file in the top level repo.
   $ hg up -r '.^' --config ui.interactive=True << EOF
   > d
   > EOF
-  other [destination] changed b which local [working copy] deleted
+  file 'b' was deleted in local [working copy] but was modified in other [destination].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? d
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 

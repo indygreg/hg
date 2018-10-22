@@ -1127,7 +1127,7 @@ class svn_sink(converter_sink, commandline):
         self.delexec = []
         self.copies = []
         self.wc = None
-        self.cwd = pycompat.getcwd()
+        self.cwd = encoding.getcwd()
 
         created = False
         if os.path.isfile(os.path.join(path, '.svn', 'entries')):
@@ -1138,7 +1138,7 @@ class svn_sink(converter_sink, commandline):
                 path = os.path.realpath(path)
                 if os.path.isdir(os.path.dirname(path)):
                     if not os.path.exists(os.path.join(path, 'db', 'fs-type')):
-                        ui.status(_('initializing svn repository %r\n') %
+                        ui.status(_("initializing svn repository '%s'\n") %
                                   os.path.basename(path))
                         commandline(ui, 'svnadmin').run0('create', path)
                         created = path
@@ -1147,9 +1147,9 @@ class svn_sink(converter_sink, commandline):
                         path = '/' + path
                     path = 'file://' + path
 
-            wcpath = os.path.join(pycompat.getcwd(), os.path.basename(path) +
+            wcpath = os.path.join(encoding.getcwd(), os.path.basename(path) +
                                 '-wc')
-            ui.status(_('initializing svn working copy %r\n')
+            ui.status(_("initializing svn working copy '%s'\n")
                       % os.path.basename(wcpath))
             self.run0('checkout', path, wcpath)
 
@@ -1270,7 +1270,7 @@ class svn_sink(converter_sink, commandline):
         self.childmap[parent] = child
 
     def revid(self, rev):
-        return u"svn:%s@%s" % (self.uuid, rev)
+        return "svn:%s@%s" % (self.uuid, rev)
 
     def putcommit(self, files, copies, parents, commit, source, revmap, full,
                   cleanp2):

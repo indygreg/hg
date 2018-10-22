@@ -144,7 +144,7 @@ client side: pull from the server
   added 1 changesets with 1 changes to 1 files (+1 heads)
   1 new obsolescence markers
   obsoleted 1 changesets
-  new changesets 391a2bf12b1b
+  new changesets 391a2bf12b1b (1 drafts)
   (run 'hg heads' to see heads)
   $ hg log -G
   o  4:391a2bf12b1b c_B1
@@ -271,7 +271,7 @@ Bob pulls from Alice and rewrites them
   adding manifests
   adding file changes
   added 2 changesets with 2 changes to 2 files
-  new changesets d33b0a3a6464:ef908e42ce65
+  new changesets d33b0a3a6464:ef908e42ce65 (2 drafts)
   (run 'hg update' to get a working copy)
   $ hg up 'desc("c_A")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -319,7 +319,7 @@ Celeste pulls from Bob and rewrites them again
   adding file changes
   added 2 changesets with 2 changes to 2 files
   3 new obsolescence markers
-  new changesets 5b5708a437f2:956063ac4557
+  new changesets 5b5708a437f2:956063ac4557 (2 drafts)
   (run 'hg update' to get a working copy)
   $ hg up 'desc("c_A")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -390,7 +390,7 @@ from the server (note: could be from Celeste directly)
   added 2 changesets with 0 changes to 2 files (+1 heads)
   6 new obsolescence markers
   obsoleted 2 changesets
-  new changesets 9866d64649a5:77ae25d99ff0
+  new changesets 9866d64649a5:77ae25d99ff0 (2 drafts)
   (run 'hg heads' to see heads)
   $ hg debugobsolete
   3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 77ae25d99ff07889e181126b1171b94bec8e5227 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'celeste'}
@@ -411,6 +411,7 @@ successors do not exist in Bob repository yet.
   adding manifests
   adding file changes
   added 2 changesets with 0 changes to 2 files (+1 heads)
+  (2 other changesets obsolete on arrival)
   (run 'hg heads' to see heads)
   $ hg log -G
   o  4:77ae25d99ff0 c_B2
@@ -455,6 +456,7 @@ decision is made in that case, so receiving the changesets are not an option).
   adding manifests
   adding file changes
   added 2 changesets with 0 changes to 2 files (+1 heads)
+  (2 other changesets obsolete on arrival)
   (run 'hg heads' to see heads)
   $ hg log -G
   o  4:77ae25d99ff0 c_B2
@@ -487,3 +489,55 @@ decision is made in that case, so receiving the changesets are not an option).
   ef908e42ce65ef57f970d799acaddde26f58a4cc 5ffb9e311b35f6ab6f76f667ca5d6e595645481b 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '4', 'operation': 'rebase', 'user': 'bob'}
 
   $ cd ..
+
+Test pull report consistency
+============================
+
+obsolete but visible should be reported
+---------------------------------------
+
+Setup
+
+  $ hg init repo-a
+  $ cat << EOF >> repo-a/.hg/hgrc
+  > [ui]
+  > username=test
+  > EOF
+  $ cd repo-a
+  $ hg debugbuilddag ..
+  $ hg debugobsolete `getid tip`
+  obsoleted 1 changesets
+  $ cd ../
+  $ hg clone --pull repo-a repo-b
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 0 changes to 0 files
+  new changesets 1ea73414a91b (1 drafts)
+  updating to branch default
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg -R repo-a up tip --hidden
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 66f7d451a68b
+  (hidden revision '66f7d451a68b' is pruned)
+  $ hg -R repo-a branch foo
+  marked working directory as branch foo
+  (branches are permanent and global, did you want a bookmark?)
+  $ hg -R repo-a commit -m foo
+  1 new orphan changesets
+
+Actual test
+(BROKEN)
+
+  $ hg -R repo-b pull
+  pulling from $TESTTMP/distributed-chain-building/distributed-chain-building/repo-a
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 0 changes to 0 files
+  1 new obsolescence markers
+  1 new orphan changesets
+  new changesets 66f7d451a68b:95d586532b49 (2 drafts)
+  (run 'hg update' to get a working copy)

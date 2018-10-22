@@ -25,6 +25,7 @@ from . import (
     changelog,
     cmdutil,
     discovery,
+    encoding,
     error,
     exchange,
     filelog,
@@ -80,7 +81,7 @@ class bundlerevlog(revlog.revlog):
             # start, size, full unc. size, base (unused), link, p1, p2, node
             e = (revlog.offset_type(start, flags), size, -1, baserev, link,
                  self.rev(p1), self.rev(p2), node)
-            self.index.insert(-1, e)
+            self.index.append(e)
             self.nodemap[node] = n
             self.bundlerevs.add(n)
             n += 1
@@ -126,8 +127,8 @@ class bundlerevlog(revlog.revlog):
         iterrev = rev
         # reconstruct the revision if it is from a changegroup
         while iterrev > self.repotiprev:
-            if self._cache and self._cache[1] == iterrev:
-                rawtext = self._cache[2]
+            if self._revisioncache and self._revisioncache[1] == iterrev:
+                rawtext = self._revisioncache[2]
                 break
             chain.append(iterrev)
             iterrev = self.index[iterrev][3]
@@ -142,7 +143,7 @@ class bundlerevlog(revlog.revlog):
                                                 'read', raw=raw)
         if validatehash:
             self.checkhash(text, node, rev=rev)
-        self._cache = (node, rev, rawtext)
+        self._revisioncache = (node, rev, rawtext)
         return text
 
     def baserevision(self, nodeorrev):
@@ -187,7 +188,7 @@ class bundlechangelog(bundlerevlog, changelog.changelog):
 class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
     def __init__(self, opener, cgunpacker, linkmapper, dirlogstarts=None,
                  dir=''):
-        manifest.manifestrevlog.__init__(self, opener, dir=dir)
+        manifest.manifestrevlog.__init__(self, opener, tree=dir)
         bundlerevlog.__init__(self, opener, self.indexfile, cgunpacker,
                               linkmapper)
         if dirlogstarts is None:
@@ -255,7 +256,7 @@ def _getfilestarts(cgunpacker):
             pass
     return filespos
 
-class bundlerepository(localrepo.localrepository):
+class bundlerepository(object):
     """A repository instance that is a union of a local repo and a bundle.
 
     Instances represent a read-only repository composed of a local repository
@@ -263,25 +264,19 @@ class bundlerepository(localrepo.localrepository):
     conceptually similar to the state of a repository after an
     ``hg unbundle`` operation. However, the contents of the bundle are never
     applied to the actual base repository.
-    """
-    def __init__(self, ui, repopath, bundlepath):
-        self._tempparent = None
-        try:
-            localrepo.localrepository.__init__(self, ui, repopath)
-        except error.RepoError:
-            self._tempparent = pycompat.mkdtemp()
-            localrepo.instance(ui, self._tempparent, 1)
-            localrepo.localrepository.__init__(self, ui, self._tempparent)
-        self.ui.setconfig('phases', 'publish', False, 'bundlerepo')
 
-        if repopath:
-            self._url = 'bundle:' + util.expandpath(repopath) + '+' + bundlepath
-        else:
-            self._url = 'bundle:' + bundlepath
+    Instances constructed directly are not usable as repository objects.
+    Use instance() or makebundlerepository() to create instances.
+    """
+    def __init__(self, bundlepath, url, tempparent):
+        self._tempparent = tempparent
+        self._url = url
+
+        self.ui.setconfig('phases', 'publish', False, 'bundlerepo')
 
         self.tempfile = None
         f = util.posixfile(bundlepath, "rb")
-        bundle = exchange.readbundle(ui, f, bundlepath)
+        bundle = exchange.readbundle(self.ui, f, bundlepath)
 
         if isinstance(bundle, bundle2.unbundle20):
             self._bundlefile = bundle
@@ -311,7 +306,7 @@ class bundlerepository(localrepo.localrepository):
             if bundle.compressed():
                 f = self._writetempbundle(bundle.read, '.hg10un',
                                           header='HG10UN')
-                bundle = exchange.readbundle(ui, f, bundlepath, self.vfs)
+                bundle = exchange.readbundle(self.ui, f, bundlepath, self.vfs)
 
             self._bundlefile = bundle
             self._cgunpacker = bundle
@@ -370,14 +365,16 @@ class bundlerepository(localrepo.localrepository):
         self.manstart = self._cgunpacker.tell()
         return c
 
-    def _constructmanifest(self):
+    @localrepo.unfilteredpropertycache
+    def manifestlog(self):
         self._cgunpacker.seek(self.manstart)
         # consume the header if it exists
         self._cgunpacker.manifestheader()
         linkmapper = self.unfiltered().changelog.rev
-        m = bundlemanifest(self.svfs, self._cgunpacker, linkmapper)
+        rootstore = bundlemanifest(self.svfs, self._cgunpacker, linkmapper)
         self.filestart = self._cgunpacker.tell()
-        return m
+
+        return manifest.manifestlog(self.svfs, self, rootstore)
 
     def _consumemanifest(self):
         """Consumes the manifest portion of the bundle, setting filestart so the
@@ -436,7 +433,7 @@ class bundlerepository(localrepo.localrepository):
         return bundlepeer(self)
 
     def getcwd(self):
-        return pycompat.getcwd() # always outside the repo
+        return encoding.getcwd() # always outside the repo
 
     # Check if parents exist in localrepo before setting
     def setparents(self, p1, p2=nullid):
@@ -449,20 +446,20 @@ class bundlerepository(localrepo.localrepository):
             self.ui.warn(msg % nodemod.hex(p2))
         return super(bundlerepository, self).setparents(p1, p2)
 
-def instance(ui, path, create, intents=None):
+def instance(ui, path, create, intents=None, createopts=None):
     if create:
         raise error.Abort(_('cannot create new bundle repository'))
     # internal config: bundle.mainreporoot
     parentpath = ui.config("bundle", "mainreporoot")
     if not parentpath:
         # try to find the correct path to the working directory repo
-        parentpath = cmdutil.findrepo(pycompat.getcwd())
+        parentpath = cmdutil.findrepo(encoding.getcwd())
         if parentpath is None:
             parentpath = ''
     if parentpath:
         # Try to make the full path relative so we get a nice, short URL.
         # In particular, we don't want temp dir names in test outputs.
-        cwd = pycompat.getcwd()
+        cwd = encoding.getcwd()
         if parentpath == cwd:
             parentpath = ''
         else:
@@ -479,7 +476,45 @@ def instance(ui, path, create, intents=None):
             repopath, bundlename = s
     else:
         repopath, bundlename = parentpath, path
-    return bundlerepository(ui, repopath, bundlename)
+
+    return makebundlerepository(ui, repopath, bundlename)
+
+def makebundlerepository(ui, repopath, bundlepath):
+    """Make a bundle repository object based on repo and bundle paths."""
+    if repopath:
+        url = 'bundle:%s+%s' % (util.expandpath(repopath), bundlepath)
+    else:
+        url = 'bundle:%s' % bundlepath
+
+    # Because we can't make any guarantees about the type of the base
+    # repository, we can't have a static class representing the bundle
+    # repository. We also can't make any guarantees about how to even
+    # call the base repository's constructor!
+    #
+    # So, our strategy is to go through ``localrepo.instance()`` to construct
+    # a repo instance. Then, we dynamically create a new type derived from
+    # both it and our ``bundlerepository`` class which overrides some
+    # functionality. We then change the type of the constructed repository
+    # to this new type and initialize the bundle-specific bits of it.
+
+    try:
+        repo = localrepo.instance(ui, repopath, create=False)
+        tempparent = None
+    except error.RepoError:
+        tempparent = pycompat.mkdtemp()
+        try:
+            repo = localrepo.instance(ui, tempparent, create=True)
+        except Exception:
+            shutil.rmtree(tempparent)
+            raise
+
+    class derivedbundlerepository(bundlerepository, repo.__class__):
+        pass
+
+    repo.__class__ = derivedbundlerepository
+    bundlerepository.__init__(repo, bundlepath, url, tempparent)
+
+    return repo
 
 class bundletransactionmanager(object):
     def transaction(self):
@@ -588,8 +623,10 @@ def getremotechanges(ui, repo, peer, onlyheads=None, bundlename=None,
             bundle = None
         if not localrepo:
             # use the created uncompressed bundlerepo
-            localrepo = bundlerepo = bundlerepository(repo.baseui, repo.root,
-                                                      fname)
+            localrepo = bundlerepo = makebundlerepository(repo. baseui,
+                                                          repo.root,
+                                                          fname)
+
             # this repo contains local and peer now, so filter out local again
             common = repo.heads()
     if localrepo:

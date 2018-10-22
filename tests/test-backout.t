@@ -144,17 +144,17 @@ transaction: in-memory dirstate changes should be written into
   $ touch -t 200001010000 c
   $ hg status -A
   C c
-  $ hg debugstate --nodates
+  $ hg debugstate --no-dates
   n 644         12 set                 c
   $ hg backout -d '6 0' -m 'to be rollback-ed soon' -r .
-  adding b
   removing c
+  adding b
   changeset 6:4bfec048029d backs out changeset 5:fac0b729a654
   $ hg rollback -q
   $ hg status -A
   A b
   R c
-  $ hg debugstate --nodates
+  $ hg debugstate --no-dates
   a   0         -1 unset               b
   r   0          0 set                 c
 

@@ -40,8 +40,11 @@ import subprocess
 import sys
 
 from mercurial import (
-    encoding,
     pycompat,
+)
+
+from mercurial.utils import (
+    procutil,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -62,7 +65,8 @@ def uisetup(ui):
             # we can't use close_fds *and* redirect stdin. I'm not sure that we
             # need to because the detached process has no console connection.
             subprocess.Popen(
-                script, shell=True, env=env, close_fds=True,
+                procutil.tonativestr(script),
+                shell=True, env=procutil.tonativeenv(env), close_fds=True,
                 creationflags=_creationflags)
     else:
         def runshellcommand(script, env):
@@ -79,10 +83,17 @@ def uisetup(ui):
             else:
                 newsession = {'start_new_session': True}
             try:
-                # connect stdin to devnull to make sure the subprocess can't
-                # muck up that stream for mercurial.
+                # connect std* to devnull to make sure the subprocess can't
+                # muck up these stream for mercurial.
+                # Connect all the streams to be more close to Windows behavior
+                # and pager will wait for scripts to end if we don't do that
+                nullrfd = open(os.devnull, 'r')
+                nullwfd = open(os.devnull, 'w')
                 subprocess.Popen(
-                    script, shell=True, stdin=open(os.devnull, 'r'), env=env,
+                    procutil.tonativestr(script),
+                    shell=True, stdin=nullrfd,
+                    stdout=nullwfd, stderr=nullwfd,
+                    env=procutil.tonativeenv(env),
                     close_fds=True, **newsession)
             finally:
                 # mission accomplished, this child needs to exit and not
@@ -102,10 +113,8 @@ def uisetup(ui):
                     # try to format the log message given the remaining
                     # arguments
                     try:
-                        # Python string formatting with % either uses a
-                        # dictionary *or* tuple, but not both. If we have
-                        # keyword options, assume we need a mapping.
-                        formatted = msg[0] % (opts or msg[1:])
+                        # Format the message as blackbox does
+                        formatted = msg[0] % msg[1:]
                     except (TypeError, KeyError):
                         # Failed to apply the arguments, ignore
                         formatted = msg[0]
@@ -121,7 +130,7 @@ def uisetup(ui):
                 optpairs = (
                     ('OPT_{0}'.format(key.upper()), str(value))
                     for key, value in opts.iteritems())
-                env = dict(itertools.chain(encoding.environ.items(),
+                env = dict(itertools.chain(procutil.shellenviron().items(),
                                            msgpairs, optpairs),
                            EVENT=event, HGPID=str(os.getpid()))
                 runshellcommand(script, env)

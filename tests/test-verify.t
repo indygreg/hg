@@ -20,7 +20,7 @@ verify
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 1 changesets, 3 total revisions
+  checked 1 changesets with 3 changes to 3 files
 
 verify with journal
 
@@ -31,7 +31,7 @@ verify with journal
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 1 changesets, 3 total revisions
+  checked 1 changesets with 3 changes to 3 files
   $ rm .hg/store/journal
 
 introduce some bugs in repo
@@ -55,7 +55,7 @@ introduce some bugs in repo
    warning: revlog 'data/bar.txt.i' not in fncache!
    0: empty or missing bar.txt
    bar.txt@0: manifest refers to unknown revision 256559129457
-  3 files, 1 changesets, 0 total revisions
+  checked 1 changesets with 0 changes to 3 files
   3 warnings encountered!
   hint: run "hg debugrebuildfncache" to recover from corrupt fncache
   6 integrity errors encountered!
@@ -280,7 +280,7 @@ test changelog without a manifest
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  0 files, 1 changesets, 0 total revisions
+  checked 1 changesets with 0 changes to 0 files
 
 test revlog corruption
 
@@ -299,7 +299,7 @@ test revlog corruption
   checking files
    a@1: broken revlog! (index data/a.i is corrupted)
   warning: orphan data file 'data/a.i'
-  1 files, 2 changesets, 0 total revisions
+  checked 2 changesets with 0 changes to 1 files
   1 warnings encountered!
   1 integrity errors encountered!
   (first damaged changeset appears to be 1)
@@ -317,7 +317,7 @@ test revlog format 0
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
   $ cd ..
 
 test flag processor and skipflags
@@ -335,7 +335,7 @@ test flag processor and skipflags
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
 
   $ cat >> $TESTTMP/break-base64.py <<EOF
   > from __future__ import absolute_import
@@ -352,7 +352,7 @@ test flag processor and skipflags
   crosschecking files in changesets and manifests
   checking files
    base64@0: unpacking 794cee7777cb: integrity check failed on data/base64.i:0
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
   1 integrity errors encountered!
   (first damaged changeset appears to be 0)
   [1]
@@ -361,5 +361,5 @@ test flag processor and skipflags
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
 

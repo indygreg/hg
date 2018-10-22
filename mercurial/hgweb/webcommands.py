@@ -123,12 +123,15 @@ def rawfile(web):
     text = fctx.data()
     mt = 'application/binary'
     if guessmime:
-        mt = mimetypes.guess_type(path)[0]
+        mt = mimetypes.guess_type(pycompat.fsdecode(path))[0]
         if mt is None:
             if stringutil.binary(text):
                 mt = 'application/binary'
             else:
                 mt = 'text/plain'
+        else:
+            mt = pycompat.sysbytes(mt)
+
     if mt.startswith('text/'):
         mt += '; charset="%s"' % encoding.encoding
 
@@ -143,10 +146,12 @@ def _filerevision(web, fctx):
     f = fctx.path()
     text = fctx.data()
     parity = paritygen(web.stripecount)
-    ishead = fctx.filerev() in fctx.filelog().headrevs()
+    ishead = fctx.filenode() in fctx.filelog().heads()
 
     if stringutil.binary(text):
-        mt = mimetypes.guess_type(f)[0] or 'application/octet-stream'
+        mt = pycompat.sysbytes(
+            mimetypes.guess_type(pycompat.fsdecode(f))[0]
+            or r'application/octet-stream')
         text = '(binary:%s)' % mt
 
     def lines(context):
@@ -215,7 +220,7 @@ def _search(web):
 
         def revgen():
             cl = web.repo.changelog
-            for i in xrange(len(web.repo) - 1, 0, -100):
+            for i in pycompat.xrange(len(web.repo) - 1, 0, -100):
                 l = []
                 for j in cl.revs(max(0, i - 99), i):
                     ctx = web.repo[j]
@@ -294,7 +299,7 @@ def _search(web):
 
         for ctx in searchfunc[0](funcarg):
             count += 1
-            n = ctx.node()
+            n = scmutil.binnode(ctx)
             showtags = webutil.showtag(web.repo, 'changelogtag', n)
             files = webutil.listfilediffs(ctx.files(), n, web.maxfiles)
 
@@ -521,7 +526,7 @@ def manifest(web):
         symrev = 'tip'
     path = webutil.cleanpath(web.repo, web.req.qsparams.get('file', ''))
     mf = ctx.manifest()
-    node = ctx.node()
+    node = scmutil.binnode(ctx)
 
     files = {}
     dirs = {}
@@ -857,9 +862,9 @@ def comparison(web):
 
     def filelines(f):
         if f.isbinary():
-            mt = mimetypes.guess_type(f.path())[0]
-            if not mt:
-                mt = 'application/octet-stream'
+            mt = pycompat.sysbytes(
+                mimetypes.guess_type(pycompat.fsdecode(f.path()))[0]
+                or r'application/octet-stream')
             return [_('(binary file %s, hash: %s)') % (mt, hex(f.filenode()))]
         return f.data().splitlines()
 
@@ -868,7 +873,7 @@ def comparison(web):
     leftrev = parent.rev()
     leftnode = parent.node()
     rightrev = ctx.rev()
-    rightnode = ctx.node()
+    rightnode = scmutil.binnode(ctx)
     if path in ctx:
         fctx = ctx[path]
         rightlines = filelines(fctx)
@@ -922,7 +927,7 @@ def annotate(web):
     fctx = webutil.filectx(web.repo, web.req)
     f = fctx.path()
     parity = paritygen(web.stripecount)
-    ishead = fctx.filerev() in fctx.filelog().headrevs()
+    ishead = fctx.filenode() in fctx.filelog().heads()
 
     # parents() is called once per line and several lines likely belong to
     # same revision. So it is worth caching.
@@ -945,8 +950,9 @@ def annotate(web):
 
     def annotate(context):
         if fctx.isbinary():
-            mt = (mimetypes.guess_type(fctx.path())[0]
-                  or 'application/octet-stream')
+            mt = pycompat.sysbytes(
+                mimetypes.guess_type(pycompat.fsdecode(fctx.path()))[0]
+                or r'application/octet-stream')
             lines = [dagop.annotateline(fctx=fctx.filectx(fctx.filerev()),
                                         lineno=1, text='(binary:%s)' % mt)]
         else:
@@ -1166,7 +1172,7 @@ def archive(web):
     key = web.req.qsparams['node']
 
     if type_ not in webutil.archivespecs:
-        msg = 'Unsupported archive type: %s' % type_
+        msg = 'Unsupported archive type: %s' % stringutil.pprint(type_)
         raise ErrorResponse(HTTP_NOT_FOUND, msg)
 
     if not ((type_ in allowed or
@@ -1221,7 +1227,7 @@ def static(web):
     fname = web.req.qsparams['file']
     # a repo owner may set web.static in .hg/hgrc to get any file
     # readable by the user running the CGI script
-    static = web.config("web", "static", None, untrusted=False)
+    static = web.config("web", "static", untrusted=False)
     if not static:
         tp = web.templatepath or templater.templatepaths()
         if isinstance(tp, str):
@@ -1401,7 +1407,8 @@ def help(web):
     topicname = web.req.qsparams.get('node')
     if not topicname:
         def topics(context):
-            for entries, summary, _doc in helpmod.helptable:
+            for h in helpmod.helptable:
+                entries, summary, _doc = h[0:3]
                 yield {'topic': entries[0], 'summary': summary}
 
         early, other = [], []
@@ -1411,8 +1418,8 @@ def help(web):
             if 'DEPRECATED' in doc or c.startswith('debug'):
                 continue
             cmd = primary(c)
-            if cmd.startswith('^'):
-                early.append((cmd[1:], doc))
+            if getattr(e[0], 'helpbasic', False):
+                early.append((cmd, doc))
             else:
                 other.append((cmd, doc))
 

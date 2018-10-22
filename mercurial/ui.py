@@ -67,6 +67,9 @@ status.relative = yes
 update.check = noconflict
 # Show conflicts information in `hg status`
 status.verbose = True
+# Refuse to perform `hg resolve --mark` on files that still have conflict
+# markers
+resolve.mark-check = abort
 
 [diff]
 git = 1
@@ -394,7 +397,7 @@ class ui(object):
     def readconfig(self, filename, root=None, trust=False,
                    sections=None, remap=None):
         try:
-            fp = open(filename, u'rb')
+            fp = open(filename, r'rb')
         except IOError:
             if not sections: # ignore unless we were looking for something
                 return
@@ -446,7 +449,7 @@ class ui(object):
         if section in (None, 'paths'):
             # expand vars and ~
             # translate paths relative to root (or home) into absolute paths
-            root = root or pycompat.getcwd()
+            root = root or encoding.getcwd()
             for c in self._tcfg, self._ucfg, self._ocfg:
                 for n, p in c.items('paths'):
                     # Ignore sub-options.
@@ -1051,6 +1054,7 @@ class ui(object):
             command in self.configlist('pager', 'ignore')
             or not self.configbool('ui', 'paginate')
             or not self.configbool('pager', 'attend-' + command, True)
+            or encoding.environ.get('TERM') == 'dumb'
             # TODO: if we want to allow HGPLAINEXCEPT=pager,
             # formatted() will need some adjustment.
             or not self.formatted()
@@ -1072,7 +1076,8 @@ class ui(object):
             if name not in encoding.environ:
                 pagerenv[name] = value
 
-        self.debug('starting pager for command %r\n' % command)
+        self.debug('starting pager for command %s\n' %
+                   stringutil.pprint(command))
         self.flush()
 
         wasformatted = self.formatted()
@@ -1128,10 +1133,10 @@ class ui(object):
 
         try:
             pager = subprocess.Popen(
-                command, shell=shell, bufsize=-1,
+                procutil.tonativestr(command), shell=shell, bufsize=-1,
                 close_fds=procutil.closefds, stdin=subprocess.PIPE,
                 stdout=procutil.stdout, stderr=procutil.stderr,
-                env=procutil.shellenviron(env))
+                env=procutil.tonativeenv(procutil.shellenviron(env)))
         except OSError as e:
             if e.errno == errno.ENOENT and not shell:
                 self.warn(_("missing pager command '%s', skipping pager\n")
@@ -1422,6 +1427,7 @@ class ui(object):
                     return getpass.getpass('')
         except EOFError:
             raise error.ResponseExpected()
+
     def status(self, *msg, **opts):
         '''write status message to output (if ui.quiet is False)
 
@@ -1430,6 +1436,7 @@ class ui(object):
         if not self.quiet:
             opts[r'label'] = opts.get(r'label', '') + ' ui.status'
             self.write(*msg, **opts)
+
     def warn(self, *msg, **opts):
         '''write warning message to output (stderr)
 
@@ -1437,6 +1444,15 @@ class ui(object):
         '''
         opts[r'label'] = opts.get(r'label', '') + ' ui.warning'
         self.write_err(*msg, **opts)
+
+    def error(self, *msg, **opts):
+        '''write error message to output (stderr)
+
+        This adds an output label of "ui.error".
+        '''
+        opts[r'label'] = opts.get(r'label', '') + ' ui.error'
+        self.write_err(*msg, **opts)
+
     def note(self, *msg, **opts):
         '''write note to output (if ui.verbose is True)
 
@@ -1445,6 +1461,7 @@ class ui(object):
         if self.verbose:
             opts[r'label'] = opts.get(r'label', '') + ' ui.note'
             self.write(*msg, **opts)
+
     def debug(self, *msg, **opts):
         '''write debug message to output (if ui.debugflag is True)
 

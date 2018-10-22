@@ -43,6 +43,7 @@ except AttributeError:
     def oslink(src, dst):
         raise OSError(errno.EINVAL,
                       'hardlinks not supported: %s to %s' % (src, dst))
+readlink = os.readlink
 unlink = os.unlink
 rename = os.rename
 removedirs = os.removedirs

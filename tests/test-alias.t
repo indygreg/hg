@@ -194,6 +194,7 @@ help
    -I --include PATTERN [+] include names matching the given patterns
    -X --exclude PATTERN [+] exclude names matching the given patterns
    -S --subrepos            recurse into subrepositories
+   -T --template TEMPLATE   display with template
   
   (some details hidden, use --verbose to show complete help)
 
@@ -651,81 +652,15 @@ invalid global arguments for normal commands, aliases, and shell aliases
 
   $ hg --invalid root
   hg: option --invalid not recognized
-  Mercurial Distributed SCM
-  
-  basic commands:
-  
-   add           add the specified files on the next commit
-   annotate      show changeset information by line for each file
-   clone         make a copy of an existing repository
-   commit        commit the specified files or all outstanding changes
-   diff          diff repository (or selected files)
-   export        dump the header and diffs for one or more changesets
-   forget        forget the specified files on the next commit
-   init          create a new repository in the given directory
-   log           show revision history of entire repository or files
-   merge         merge another revision into working directory
-   pull          pull changes from the specified source
-   push          push changes to the specified destination
-   remove        remove the specified files on the next commit
-   serve         start stand-alone webserver
-   status        show changed files in the working directory
-   summary       summarize working directory state
-   update        update working directory (or switch revisions)
-  
-  (use 'hg help' for the full list of commands or 'hg -v' for details)
+  (use 'hg help -v' for a list of global options)
   [255]
   $ hg --invalid mylog
   hg: option --invalid not recognized
-  Mercurial Distributed SCM
-  
-  basic commands:
-  
-   add           add the specified files on the next commit
-   annotate      show changeset information by line for each file
-   clone         make a copy of an existing repository
-   commit        commit the specified files or all outstanding changes
-   diff          diff repository (or selected files)
-   export        dump the header and diffs for one or more changesets
-   forget        forget the specified files on the next commit
-   init          create a new repository in the given directory
-   log           show revision history of entire repository or files
-   merge         merge another revision into working directory
-   pull          pull changes from the specified source
-   push          push changes to the specified destination
-   remove        remove the specified files on the next commit
-   serve         start stand-alone webserver
-   status        show changed files in the working directory
-   summary       summarize working directory state
-   update        update working directory (or switch revisions)
-  
-  (use 'hg help' for the full list of commands or 'hg -v' for details)
+  (use 'hg help -v' for a list of global options)
   [255]
   $ hg --invalid blank
   hg: option --invalid not recognized
-  Mercurial Distributed SCM
-  
-  basic commands:
-  
-   add           add the specified files on the next commit
-   annotate      show changeset information by line for each file
-   clone         make a copy of an existing repository
-   commit        commit the specified files or all outstanding changes
-   diff          diff repository (or selected files)
-   export        dump the header and diffs for one or more changesets
-   forget        forget the specified files on the next commit
-   init          create a new repository in the given directory
-   log           show revision history of entire repository or files
-   merge         merge another revision into working directory
-   pull          pull changes from the specified source
-   push          push changes to the specified destination
-   remove        remove the specified files on the next commit
-   serve         start stand-alone webserver
-   status        show changed files in the working directory
-   summary       summarize working directory state
-   update        update working directory (or switch revisions)
-  
-  (use 'hg help' for the full list of commands or 'hg -v' for details)
+  (use 'hg help -v' for a list of global options)
   [255]
 
 environment variable changes in alias commands

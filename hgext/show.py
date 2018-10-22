@@ -93,7 +93,8 @@ showview = showcmdfunc()
     # is an important part of the 'hg show' user experience and the entire
     # 'hg show' experience is experimental.
     ('T', 'template', '', ('display with template'), _('TEMPLATE')),
-    ], _('VIEW'))
+    ], _('VIEW'),
+    helpcategory=command.CATEGORY_CHANGE_NAVIGATION)
 def show(ui, repo, view=None, template=None):
     """show various repository information
 

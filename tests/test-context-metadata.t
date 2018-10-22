@@ -22,7 +22,7 @@ Tests about metadataonlyctx
   >     with repo.wlock(), repo.lock(), repo.transaction(b'metaedit'):
   >         old = repo[b'.']
   >         kwargs = dict(s.split(b'=', 1) for s in arg.split(b';'))
-  >         if 'parents' in kwargs:
+  >         if b'parents' in kwargs:
   >             kwargs[b'parents'] = map(int, kwargs[b'parents'].split(b','))
   >         new = context.metadataonlyctx(repo, old,
   >                                       **pycompat.strkwargs(kwargs))

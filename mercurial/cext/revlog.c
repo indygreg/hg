@@ -28,16 +28,32 @@
 #define PyInt_AsLong PyLong_AsLong
 #endif
 
+typedef struct indexObjectStruct indexObject;
+
+typedef struct {
+	int children[16];
+} nodetreenode;
+
 /*
  * A base-16 trie for fast node->rev mapping.
  *
  * Positive value is index of the next node in the trie
- * Negative value is a leaf: -(rev + 1)
+ * Negative value is a leaf: -(rev + 2)
  * Zero is empty
  */
 typedef struct {
-	int children[16];
+	indexObject *index;
+	nodetreenode *nodes;
+	unsigned length;     /* # nodes in use */
+	unsigned capacity;   /* # nodes allocated */
+	int depth;           /* maximum depth of tree */
+	int splits;          /* # splits performed */
 } nodetree;
+
+typedef struct {
+	PyObject_HEAD
+	nodetree nt;
+} nodetreeObject;
 
 /*
  * This class has two behaviors.
@@ -51,7 +67,7 @@ typedef struct {
  * With string keys, we lazily perform a reverse mapping from node to
  * rev, using a base-16 trie.
  */
-typedef struct {
+struct indexObjectStruct {
 	PyObject_HEAD
 	/* Type-specific fields go here. */
 	PyObject *data;        /* raw bytes of index */
@@ -63,16 +79,13 @@ typedef struct {
 	PyObject *added;       /* populated on demand */
 	PyObject *headrevs;    /* cache, invalidated on changes */
 	PyObject *filteredrevs;/* filtered revs set */
-	nodetree *nt;          /* base-16 trie */
-	unsigned ntlength;          /* # nodes in use */
-	unsigned ntcapacity;        /* # nodes allocated */
-	int ntdepth;           /* maximum depth of tree */
-	int ntsplits;          /* # splits performed */
+	nodetree nt;           /* base-16 trie */
+	int ntinitialized;     /* 0 or 1 */
 	int ntrev;             /* last rev scanned */
 	int ntlookups;         /* # lookups */
 	int ntmisses;          /* # lookups that miss the cache */
 	int inlined;
-} indexObject;
+};
 
 static Py_ssize_t index_length(const indexObject *self)
 {
@@ -81,8 +94,8 @@ static Py_ssize_t index_length(const indexObject *self)
 	return self->length + PyList_GET_SIZE(self->added);
 }
 
-static PyObject *nullentry;
-static const char nullid[20];
+static PyObject *nullentry = NULL;
+static const char nullid[20] = {0};
 
 static Py_ssize_t inline_scan(indexObject *self, const char **offsets);
 
@@ -94,6 +107,36 @@ static const char *const tuple_format = PY23("kiiiiiis#", "kiiiiiiy#");
 
 /* A RevlogNG v1 index entry is 64 bytes long. */
 static const long v1_hdrsize = 64;
+
+static void raise_revlog_error(void)
+{
+	PyObject *mod = NULL, *dict = NULL, *errclass = NULL;
+
+	mod = PyImport_ImportModule("mercurial.error");
+	if (mod == NULL) {
+		goto cleanup;
+	}
+
+	dict = PyModule_GetDict(mod);
+	if (dict == NULL) {
+		goto cleanup;
+	}
+	Py_INCREF(dict);
+
+	errclass = PyDict_GetItemString(dict, "RevlogError");
+	if (errclass == NULL) {
+		PyErr_SetString(PyExc_SystemError,
+				"could not find RevlogError");
+		goto cleanup;
+	}
+
+	/* value of exception is ignored by callers */
+	PyErr_SetString(errclass, "RevlogError");
+
+cleanup:
+	Py_XDECREF(dict);
+	Py_XDECREF(mod);
+}
 
 /*
  * Return a pointer to the beginning of a RevlogNG record.
@@ -117,9 +160,8 @@ static const char *index_deref(indexObject *self, Py_ssize_t pos)
 static inline int index_get_parents(indexObject *self, Py_ssize_t rev,
 				    int *ps, int maxrev)
 {
-	if (rev >= self->length - 1) {
-		PyObject *tuple = PyList_GET_ITEM(self->added,
-						  rev - self->length + 1);
+	if (rev >= self->length) {
+		PyObject *tuple = PyList_GET_ITEM(self->added, rev - self->length);
 		ps[0] = (int)PyInt_AS_LONG(PyTuple_GET_ITEM(tuple, 5));
 		ps[1] = (int)PyInt_AS_LONG(PyTuple_GET_ITEM(tuple, 6));
 	} else {
@@ -158,22 +200,19 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	Py_ssize_t length = index_length(self);
 	PyObject *entry;
 
-	if (pos < 0)
-		pos += length;
+	if (pos == -1) {
+		Py_INCREF(nullentry);
+		return nullentry;
+	}
 
 	if (pos < 0 || pos >= length) {
 		PyErr_SetString(PyExc_IndexError, "revlog index out of range");
 		return NULL;
 	}
 
-	if (pos == length - 1) {
-		Py_INCREF(nullentry);
-		return nullentry;
-	}
-
-	if (pos >= self->length - 1) {
+	if (pos >= self->length) {
 		PyObject *obj;
-		obj = PyList_GET_ITEM(self->added, pos - self->length + 1);
+		obj = PyList_GET_ITEM(self->added, pos - self->length);
 		Py_INCREF(obj);
 		return obj;
 	}
@@ -231,15 +270,15 @@ static const char *index_node(indexObject *self, Py_ssize_t pos)
 	Py_ssize_t length = index_length(self);
 	const char *data;
 
-	if (pos == length - 1 || pos == INT_MAX)
+	if (pos == -1)
 		return nullid;
 
 	if (pos >= length)
 		return NULL;
 
-	if (pos >= self->length - 1) {
+	if (pos >= self->length) {
 		PyObject *tuple, *str;
-		tuple = PyList_GET_ITEM(self->added, pos - self->length + 1);
+		tuple = PyList_GET_ITEM(self->added, pos - self->length);
 		str = PyTuple_GetItem(tuple, 7);
 		return str ? PyBytes_AS_STRING(str) : NULL;
 	}
@@ -262,46 +301,33 @@ static const char *index_node_existing(indexObject *self, Py_ssize_t pos)
 	return node;
 }
 
-static int nt_insert(indexObject *self, const char *node, int rev);
+static int nt_insert(nodetree *self, const char *node, int rev);
 
-static int node_check(PyObject *obj, char **node, Py_ssize_t *nodelen)
+static int node_check(PyObject *obj, char **node)
 {
-	if (PyBytes_AsStringAndSize(obj, node, nodelen) == -1)
+	Py_ssize_t nodelen;
+	if (PyBytes_AsStringAndSize(obj, node, &nodelen) == -1)
 		return -1;
-	if (*nodelen == 20)
+	if (nodelen == 20)
 		return 0;
 	PyErr_SetString(PyExc_ValueError, "20-byte hash required");
 	return -1;
 }
 
-static PyObject *index_insert(indexObject *self, PyObject *args)
+static PyObject *index_append(indexObject *self, PyObject *obj)
 {
-	PyObject *obj;
 	char *node;
-	int index;
-	Py_ssize_t len, nodelen;
-
-	if (!PyArg_ParseTuple(args, "iO", &index, &obj))
-		return NULL;
+	Py_ssize_t len;
 
 	if (!PyTuple_Check(obj) || PyTuple_GET_SIZE(obj) != 8) {
 		PyErr_SetString(PyExc_TypeError, "8-tuple required");
 		return NULL;
 	}
 
-	if (node_check(PyTuple_GET_ITEM(obj, 7), &node, &nodelen) == -1)
+	if (node_check(PyTuple_GET_ITEM(obj, 7), &node) == -1)
 		return NULL;
 
 	len = index_length(self);
-
-	if (index < 0)
-		index += len;
-
-	if (index != len - 1) {
-		PyErr_SetString(PyExc_IndexError,
-				"insert only supported at index -1");
-		return NULL;
-	}
 
 	if (self->added == NULL) {
 		self->added = PyList_New(0);
@@ -312,39 +338,10 @@ static PyObject *index_insert(indexObject *self, PyObject *args)
 	if (PyList_Append(self->added, obj) == -1)
 		return NULL;
 
-	if (self->nt)
-		nt_insert(self, node, index);
+	if (self->ntinitialized)
+		nt_insert(&self->nt, node, (int)len);
 
 	Py_CLEAR(self->headrevs);
-	Py_RETURN_NONE;
-}
-
-static void _index_clearcaches(indexObject *self)
-{
-	if (self->cache) {
-		Py_ssize_t i;
-
-		for (i = 0; i < self->raw_length; i++)
-			Py_CLEAR(self->cache[i]);
-		free(self->cache);
-		self->cache = NULL;
-	}
-	if (self->offsets) {
-		PyMem_Free(self->offsets);
-		self->offsets = NULL;
-	}
-	free(self->nt);
-	self->nt = NULL;
-	Py_CLEAR(self->headrevs);
-}
-
-static PyObject *index_clearcaches(indexObject *self)
-{
-	_index_clearcaches(self);
-	self->ntlength = self->ntcapacity = 0;
-	self->ntdepth = self->ntsplits = 0;
-	self->ntrev = -1;
-	self->ntlookups = self->ntmisses = 0;
 	Py_RETURN_NONE;
 }
 
@@ -376,16 +373,18 @@ static PyObject *index_stats(indexObject *self)
 		Py_DECREF(t);
 	}
 
-	if (self->raw_length != self->length - 1)
+	if (self->raw_length != self->length)
 		istat(raw_length, "revs on disk");
 	istat(length, "revs in memory");
-	istat(ntcapacity, "node trie capacity");
-	istat(ntdepth, "node trie depth");
-	istat(ntlength, "node trie count");
 	istat(ntlookups, "node trie lookups");
 	istat(ntmisses, "node trie misses");
 	istat(ntrev, "node trie last rev scanned");
-	istat(ntsplits, "node trie splits");
+	if (self->ntinitialized) {
+		istat(nt.capacity, "node trie capacity");
+		istat(nt.depth, "node trie depth");
+		istat(nt.length, "node trie count");
+		istat(nt.splits, "node trie splits");
+	}
 
 #undef istat
 
@@ -451,7 +450,7 @@ static Py_ssize_t add_roots_get_min(indexObject *self, PyObject *list,
 {
 	PyObject *iter = NULL;
 	PyObject *iter_item = NULL;
-	Py_ssize_t min_idx = index_length(self) + 1;
+	Py_ssize_t min_idx = index_length(self) + 2;
 	long iter_item_long;
 
 	if (PyList_GET_SIZE(list) != 0) {
@@ -463,7 +462,7 @@ static Py_ssize_t add_roots_get_min(indexObject *self, PyObject *list,
 			Py_DECREF(iter_item);
 			if (iter_item_long < min_idx)
 				min_idx = iter_item_long;
-			phases[iter_item_long] = marker;
+			phases[iter_item_long] = (char)marker;
 		}
 		Py_DECREF(iter);
 	}
@@ -493,7 +492,7 @@ static PyObject *reachableroots2(indexObject *self, PyObject *args)
 	PyObject *reachable = NULL;
 
 	PyObject *val;
-	Py_ssize_t len = index_length(self) - 1;
+	Py_ssize_t len = index_length(self);
 	long revnum;
 	Py_ssize_t k;
 	Py_ssize_t i;
@@ -615,7 +614,7 @@ static PyObject *reachableroots2(indexObject *self, PyObject *args)
 			      revstates[parents[1] + 1]) & RS_REACHABLE)
 			    && !(revstates[i + 1] & RS_REACHABLE)) {
 				revstates[i + 1] |= RS_REACHABLE;
-				val = PyInt_FromLong(i);
+				val = PyInt_FromSsize_t(i);
 				if (val == NULL)
 					goto bail;
 				r = PyList_Append(reachable, val);
@@ -645,7 +644,7 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 	PyObject *phaseset = NULL;
 	PyObject *phasessetlist = NULL;
 	PyObject *rev = NULL;
-	Py_ssize_t len = index_length(self) - 1;
+	Py_ssize_t len = index_length(self);
 	Py_ssize_t numphase = 0;
 	Py_ssize_t minrevallphases = 0;
 	Py_ssize_t minrevphase = 0;
@@ -702,7 +701,7 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 		}
 	}
 	/* Transform phase list to a python list */
-	phasessize = PyInt_FromLong(len);
+	phasessize = PyInt_FromSsize_t(len);
 	if (phasessize == NULL)
 		goto release;
 	for (i = 0; i < len; i++) {
@@ -711,7 +710,7 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 		 * is computed as a difference */
 		if (phase != 0) {
 			phaseset = PyList_GET_ITEM(phasessetlist, phase);
-			rev = PyInt_FromLong(i);
+			rev = PyInt_FromSsize_t(i);
 			if (rev == NULL)
 				goto release;
 			PySet_Add(phaseset, rev);
@@ -756,7 +755,7 @@ static PyObject *index_headrevs(indexObject *self, PyObject *args)
 		}
 	}
 
-	len = index_length(self) - 1;
+	len = index_length(self);
 	heads = PyList_New(0);
 	if (heads == NULL)
 		goto bail;
@@ -838,9 +837,8 @@ static inline int index_baserev(indexObject *self, int rev)
 {
 	const char *data;
 
-	if (rev >= self->length - 1) {
-		PyObject *tuple = PyList_GET_ITEM(self->added,
-			rev - self->length + 1);
+	if (rev >= self->length) {
+		PyObject *tuple = PyList_GET_ITEM(self->added, rev - self->length);
 		return (int)PyInt_AS_LONG(PyTuple_GET_ITEM(tuple, 3));
 	}
 	else {
@@ -881,7 +879,7 @@ static PyObject *index_deltachain(indexObject *self, PyObject *args)
 		return NULL;
 	}
 
-	if (rev < 0 || rev >= length - 1) {
+	if (rev < 0 || rev >= length) {
 		PyErr_SetString(PyExc_ValueError, "revlog index out of range");
 		return NULL;
 	}
@@ -924,7 +922,7 @@ static PyObject *index_deltachain(indexObject *self, PyObject *args)
 			break;
 		}
 
-		if (iterrev >= length - 1) {
+		if (iterrev >= length) {
 			PyErr_SetString(PyExc_IndexError, "revision outside index");
 			return NULL;
 		}
@@ -984,7 +982,7 @@ static inline int nt_level(const char *node, Py_ssize_t level)
  *   -2: not found
  * rest: valid rev
  */
-static int nt_find(indexObject *self, const char *node, Py_ssize_t nodelen,
+static int nt_find(nodetree *self, const char *node, Py_ssize_t nodelen,
 		   int hex)
 {
 	int (*getnybble)(const char *, Py_ssize_t) = hex ? hexdigit : nt_level;
@@ -993,9 +991,6 @@ static int nt_find(indexObject *self, const char *node, Py_ssize_t nodelen,
 	if (nodelen == 20 && node[0] == '\0' && memcmp(node, nullid, 20) == 0)
 		return -1;
 
-	if (self->nt == NULL)
-		return -2;
-
 	if (hex)
 		maxlevel = nodelen > 40 ? 40 : (int)nodelen;
 	else
@@ -1003,15 +998,15 @@ static int nt_find(indexObject *self, const char *node, Py_ssize_t nodelen,
 
 	for (level = off = 0; level < maxlevel; level++) {
 		int k = getnybble(node, level);
-		nodetree *n = &self->nt[off];
+		nodetreenode *n = &self->nodes[off];
 		int v = n->children[k];
 
 		if (v < 0) {
 			const char *n;
 			Py_ssize_t i;
 
-			v = -(v + 1);
-			n = index_node(self, v);
+			v = -(v + 2);
+			n = index_node(self->index, v);
 			if (n == NULL)
 				return -2;
 			for (i = level; i < maxlevel; i++)
@@ -1027,65 +1022,67 @@ static int nt_find(indexObject *self, const char *node, Py_ssize_t nodelen,
 	return -4;
 }
 
-static int nt_new(indexObject *self)
+static int nt_new(nodetree *self)
 {
-	if (self->ntlength == self->ntcapacity) {
-		if (self->ntcapacity >= INT_MAX / (sizeof(nodetree) * 2)) {
-			PyErr_SetString(PyExc_MemoryError,
-					"overflow in nt_new");
+	if (self->length == self->capacity) {
+		unsigned newcapacity;
+		nodetreenode *newnodes;
+		newcapacity = self->capacity * 2;
+		if (newcapacity >= INT_MAX / sizeof(nodetreenode)) {
+			PyErr_SetString(PyExc_MemoryError, "overflow in nt_new");
 			return -1;
 		}
-		self->ntcapacity *= 2;
-		self->nt = realloc(self->nt,
-				   self->ntcapacity * sizeof(nodetree));
-		if (self->nt == NULL) {
+		newnodes = realloc(self->nodes, newcapacity * sizeof(nodetreenode));
+		if (newnodes == NULL) {
 			PyErr_SetString(PyExc_MemoryError, "out of memory");
 			return -1;
 		}
-		memset(&self->nt[self->ntlength], 0,
-		       sizeof(nodetree) * (self->ntcapacity - self->ntlength));
+		self->capacity = newcapacity;
+		self->nodes = newnodes;
+		memset(&self->nodes[self->length], 0,
+		       sizeof(nodetreenode) * (self->capacity - self->length));
 	}
-	return self->ntlength++;
+	return self->length++;
 }
 
-static int nt_insert(indexObject *self, const char *node, int rev)
+static int nt_insert(nodetree *self, const char *node, int rev)
 {
 	int level = 0;
 	int off = 0;
 
 	while (level < 40) {
 		int k = nt_level(node, level);
-		nodetree *n;
+		nodetreenode *n;
 		int v;
 
-		n = &self->nt[off];
+		n = &self->nodes[off];
 		v = n->children[k];
 
 		if (v == 0) {
-			n->children[k] = -rev - 1;
+			n->children[k] = -rev - 2;
 			return 0;
 		}
 		if (v < 0) {
-			const char *oldnode = index_node_existing(self, -(v + 1));
+			const char *oldnode = index_node_existing(self->index, -(v + 2));
 			int noff;
 
 			if (oldnode == NULL)
 				return -1;
 			if (!memcmp(oldnode, node, 20)) {
-				n->children[k] = -rev - 1;
+				n->children[k] = -rev - 2;
 				return 0;
 			}
 			noff = nt_new(self);
 			if (noff == -1)
 				return -1;
-			/* self->nt may have been changed by realloc */
-			self->nt[off].children[k] = noff;
+			/* self->nodes may have been changed by realloc */
+			self->nodes[off].children[k] = noff;
 			off = noff;
-			n = &self->nt[off];
+			n = &self->nodes[off];
 			n->children[nt_level(oldnode, ++level)] = v;
-			if (level > self->ntdepth)
-				self->ntdepth = level;
-			self->ntsplits += 1;
+			if (level > self->depth)
+				self->depth = level;
+			self->splits += 1;
 		} else {
 			level += 1;
 			off = v;
@@ -1095,167 +1092,69 @@ static int nt_insert(indexObject *self, const char *node, int rev)
 	return -1;
 }
 
-static int nt_init(indexObject *self)
+static PyObject *ntobj_insert(nodetreeObject *self, PyObject *args)
 {
-	if (self->nt == NULL) {
-		if ((size_t)self->raw_length > INT_MAX / sizeof(nodetree)) {
-			PyErr_SetString(PyExc_ValueError, "overflow in nt_init");
-			return -1;
-		}
-		self->ntcapacity = self->raw_length < 4
-			? 4 : (int)self->raw_length / 2;
-
-		self->nt = calloc(self->ntcapacity, sizeof(nodetree));
-		if (self->nt == NULL) {
-			PyErr_NoMemory();
-			return -1;
-		}
-		self->ntlength = 1;
-		self->ntrev = (int)index_length(self) - 1;
-		self->ntlookups = 1;
-		self->ntmisses = 0;
-		if (nt_insert(self, nullid, INT_MAX) == -1)
-			return -1;
-	}
-	return 0;
-}
-
-/*
- * Return values:
- *
- *   -3: error (exception set)
- *   -2: not found (no exception set)
- * rest: valid rev
- */
-static int index_find_node(indexObject *self,
-			   const char *node, Py_ssize_t nodelen)
-{
-	int rev;
-
-	self->ntlookups++;
-	rev = nt_find(self, node, nodelen, 0);
-	if (rev >= -1)
-		return rev;
-
-	if (nt_init(self) == -1)
-		return -3;
-
-	/*
-	 * For the first handful of lookups, we scan the entire index,
-	 * and cache only the matching nodes. This optimizes for cases
-	 * like "hg tip", where only a few nodes are accessed.
-	 *
-	 * After that, we cache every node we visit, using a single
-	 * scan amortized over multiple lookups.  This gives the best
-	 * bulk performance, e.g. for "hg log".
-	 */
-	if (self->ntmisses++ < 4) {
-		for (rev = self->ntrev - 1; rev >= 0; rev--) {
-			const char *n = index_node_existing(self, rev);
-			if (n == NULL)
-				return -3;
-			if (memcmp(node, n, nodelen > 20 ? 20 : nodelen) == 0) {
-				if (nt_insert(self, n, rev) == -1)
-					return -3;
-				break;
-			}
-		}
-	} else {
-		for (rev = self->ntrev - 1; rev >= 0; rev--) {
-			const char *n = index_node_existing(self, rev);
-			if (n == NULL)
-				return -3;
-			if (nt_insert(self, n, rev) == -1) {
-				self->ntrev = rev + 1;
-				return -3;
-			}
-			if (memcmp(node, n, nodelen > 20 ? 20 : nodelen) == 0) {
-				break;
-			}
-		}
-		self->ntrev = rev;
-	}
-
-	if (rev >= 0)
-		return rev;
-	return -2;
-}
-
-static void raise_revlog_error(void)
-{
-	PyObject *mod = NULL, *dict = NULL, *errclass = NULL;
-
-	mod = PyImport_ImportModule("mercurial.error");
-	if (mod == NULL) {
-		goto cleanup;
-	}
-
-	dict = PyModule_GetDict(mod);
-	if (dict == NULL) {
-		goto cleanup;
-	}
-	Py_INCREF(dict);
-
-	errclass = PyDict_GetItemString(dict, "RevlogError");
-	if (errclass == NULL) {
-		PyErr_SetString(PyExc_SystemError,
-				"could not find RevlogError");
-		goto cleanup;
-	}
-
-	/* value of exception is ignored by callers */
-	PyErr_SetString(errclass, "RevlogError");
-
-cleanup:
-	Py_XDECREF(dict);
-	Py_XDECREF(mod);
-}
-
-static PyObject *index_getitem(indexObject *self, PyObject *value)
-{
-	char *node;
-	Py_ssize_t nodelen;
-	int rev;
-
-	if (PyInt_Check(value))
-		return index_get(self, PyInt_AS_LONG(value));
-
-	if (node_check(value, &node, &nodelen) == -1)
+	Py_ssize_t rev;
+	const char *node;
+	Py_ssize_t length;
+	if (!PyArg_ParseTuple(args, "n", &rev))
 		return NULL;
-	rev = index_find_node(self, node, nodelen);
-	if (rev >= -1)
-		return PyInt_FromLong(rev);
-	if (rev == -2)
-		raise_revlog_error();
-	return NULL;
+	length = index_length(self->nt.index);
+	if (rev < 0 || rev >= length) {
+		PyErr_SetString(PyExc_ValueError, "revlog index out of range");
+		return NULL;
+	}
+	node = index_node_existing(self->nt.index, rev);
+	if (nt_insert(&self->nt, node, (int)rev) == -1)
+		return NULL;
+	Py_RETURN_NONE;
 }
 
-/*
- * Fully populate the radix tree.
- */
-static int nt_populate(indexObject *self) {
-	int rev;
-	if (self->ntrev > 0) {
-		for (rev = self->ntrev - 1; rev >= 0; rev--) {
-			const char *n = index_node_existing(self, rev);
-			if (n == NULL)
-				return -1;
-			if (nt_insert(self, n, rev) == -1)
-				return -1;
-		}
-		self->ntrev = -1;
+static int nt_delete_node(nodetree *self, const char *node)
+{
+	/* rev==-2 happens to get encoded as 0, which is interpreted as not set */
+	return nt_insert(self, node, -2);
+}
+
+static int nt_init(nodetree *self, indexObject *index, unsigned capacity)
+{
+	/* Initialize before overflow-checking to avoid nt_dealloc() crash. */
+	self->nodes = NULL;
+
+	self->index = index;
+	/* The input capacity is in terms of revisions, while the field is in
+	 * terms of nodetree nodes. */
+	self->capacity = (capacity < 4 ? 4 : capacity / 2);
+	self->depth = 0;
+	self->splits = 0;
+	if ((size_t)self->capacity > INT_MAX / sizeof(nodetreenode)) {
+		PyErr_SetString(PyExc_ValueError, "overflow in init_nt");
+		return -1;
 	}
+	self->nodes = calloc(self->capacity, sizeof(nodetreenode));
+	if (self->nodes == NULL) {
+		PyErr_NoMemory();
+		return -1;
+	}
+	self->length = 1;
 	return 0;
 }
 
-static int nt_partialmatch(indexObject *self, const char *node,
+static PyTypeObject indexType;
+
+static int ntobj_init(nodetreeObject *self, PyObject *args)
+{
+	PyObject *index;
+	unsigned capacity;
+	if (!PyArg_ParseTuple(args, "O!I", &indexType, &index, &capacity))
+		return -1;
+	Py_INCREF(index);
+	return nt_init(&self->nt, (indexObject*)index, capacity);
+}
+
+static int nt_partialmatch(nodetree *self, const char *node,
 			   Py_ssize_t nodelen)
 {
-	if (nt_init(self) == -1)
-		return -3;
-	if (nt_populate(self) == -1)
-		return -3;
-
 	return nt_find(self, node, nodelen, 1);
 }
 
@@ -1268,24 +1167,19 @@ static int nt_partialmatch(indexObject *self, const char *node,
  *   -2: not found (no exception set)
  * rest: length of shortest prefix
  */
-static int nt_shortest(indexObject *self, const char *node)
+static int nt_shortest(nodetree *self, const char *node)
 {
 	int level, off;
 
-	if (nt_init(self) == -1)
-		return -3;
-	if (nt_populate(self) == -1)
-		return -3;
-
 	for (level = off = 0; level < 40; level++) {
 		int k, v;
-		nodetree *n = &self->nt[off];
+		nodetreenode *n = &self->nodes[off];
 		k = nt_level(node, level);
 		v = n->children[k];
 		if (v < 0) {
 			const char *n;
-			v = -(v + 1);
-			n = index_node_existing(self, v);
+			v = -(v + 2);
+			n = index_node_existing(self->index, v);
 			if (n == NULL)
 				return -3;
 			if (memcmp(node, n, 20) != 0)
@@ -1308,6 +1202,204 @@ static int nt_shortest(indexObject *self, const char *node)
 	 */
 	PyErr_SetString(PyExc_Exception, "broken node tree");
 	return -3;
+}
+
+static PyObject *ntobj_shortest(nodetreeObject *self, PyObject *args)
+{
+	PyObject *val;
+	char *node;
+	int length;
+
+	if (!PyArg_ParseTuple(args, "O", &val))
+		return NULL;
+	if (node_check(val, &node) == -1)
+		return NULL;
+
+	length = nt_shortest(&self->nt, node);
+	if (length == -3)
+		return NULL;
+	if (length == -2) {
+		raise_revlog_error();
+		return NULL;
+	}
+	return PyInt_FromLong(length);
+}
+
+static void nt_dealloc(nodetree *self)
+{
+	free(self->nodes);
+	self->nodes = NULL;
+}
+
+static void ntobj_dealloc(nodetreeObject *self)
+{
+	Py_XDECREF(self->nt.index);
+	nt_dealloc(&self->nt);
+	PyObject_Del(self);
+}
+
+static PyMethodDef ntobj_methods[] = {
+	{"insert", (PyCFunction)ntobj_insert, METH_VARARGS,
+	 "insert an index entry"},
+	{"shortest", (PyCFunction)ntobj_shortest, METH_VARARGS,
+	 "find length of shortest hex nodeid of a binary ID"},
+	{NULL} /* Sentinel */
+};
+
+static PyTypeObject nodetreeType = {
+	PyVarObject_HEAD_INIT(NULL, 0) /* header */
+	"parsers.nodetree",        /* tp_name */
+	sizeof(nodetreeObject) ,   /* tp_basicsize */
+	0,                         /* tp_itemsize */
+	(destructor)ntobj_dealloc, /* tp_dealloc */
+	0,                         /* tp_print */
+	0,                         /* tp_getattr */
+	0,                         /* tp_setattr */
+	0,                         /* tp_compare */
+	0,                         /* tp_repr */
+	0,                         /* tp_as_number */
+	0,                         /* tp_as_sequence */
+	0,                         /* tp_as_mapping */
+	0,                         /* tp_hash */
+	0,                         /* tp_call */
+	0,                         /* tp_str */
+	0,                         /* tp_getattro */
+	0,                         /* tp_setattro */
+	0,                         /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,        /* tp_flags */
+	"nodetree",                /* tp_doc */
+	0,                         /* tp_traverse */
+	0,                         /* tp_clear */
+	0,                         /* tp_richcompare */
+	0,                         /* tp_weaklistoffset */
+	0,                         /* tp_iter */
+	0,                         /* tp_iternext */
+	ntobj_methods,             /* tp_methods */
+	0,                         /* tp_members */
+	0,                         /* tp_getset */
+	0,                         /* tp_base */
+	0,                         /* tp_dict */
+	0,                         /* tp_descr_get */
+	0,                         /* tp_descr_set */
+	0,                         /* tp_dictoffset */
+	(initproc)ntobj_init,      /* tp_init */
+	0,                         /* tp_alloc */
+};
+
+static int index_init_nt(indexObject *self)
+{
+	if (!self->ntinitialized) {
+		if (nt_init(&self->nt, self, (int)self->raw_length) == -1) {
+			nt_dealloc(&self->nt);
+			return -1;
+		}
+		if (nt_insert(&self->nt, nullid, -1) == -1) {
+			nt_dealloc(&self->nt);
+			return -1;
+		}
+		self->ntinitialized = 1;
+		self->ntrev = (int)index_length(self);
+		self->ntlookups = 1;
+		self->ntmisses = 0;
+	}
+	return 0;
+}
+
+/*
+ * Return values:
+ *
+ *   -3: error (exception set)
+ *   -2: not found (no exception set)
+ * rest: valid rev
+ */
+static int index_find_node(indexObject *self,
+			   const char *node, Py_ssize_t nodelen)
+{
+	int rev;
+
+	if (index_init_nt(self) == -1)
+		return -3;
+
+	self->ntlookups++;
+	rev = nt_find(&self->nt, node, nodelen, 0);
+	if (rev >= -1)
+		return rev;
+
+	/*
+	 * For the first handful of lookups, we scan the entire index,
+	 * and cache only the matching nodes. This optimizes for cases
+	 * like "hg tip", where only a few nodes are accessed.
+	 *
+	 * After that, we cache every node we visit, using a single
+	 * scan amortized over multiple lookups.  This gives the best
+	 * bulk performance, e.g. for "hg log".
+	 */
+	if (self->ntmisses++ < 4) {
+		for (rev = self->ntrev - 1; rev >= 0; rev--) {
+			const char *n = index_node_existing(self, rev);
+			if (n == NULL)
+				return -3;
+			if (memcmp(node, n, nodelen > 20 ? 20 : nodelen) == 0) {
+				if (nt_insert(&self->nt, n, rev) == -1)
+					return -3;
+				break;
+			}
+		}
+	} else {
+		for (rev = self->ntrev - 1; rev >= 0; rev--) {
+			const char *n = index_node_existing(self, rev);
+			if (n == NULL)
+				return -3;
+			if (nt_insert(&self->nt, n, rev) == -1) {
+				self->ntrev = rev + 1;
+				return -3;
+			}
+			if (memcmp(node, n, nodelen > 20 ? 20 : nodelen) == 0) {
+				break;
+			}
+		}
+		self->ntrev = rev;
+	}
+
+	if (rev >= 0)
+		return rev;
+	return -2;
+}
+
+static PyObject *index_getitem(indexObject *self, PyObject *value)
+{
+	char *node;
+	int rev;
+
+	if (PyInt_Check(value))
+		return index_get(self, PyInt_AS_LONG(value));
+
+	if (node_check(value, &node) == -1)
+		return NULL;
+	rev = index_find_node(self, node, 20);
+	if (rev >= -1)
+		return PyInt_FromLong(rev);
+	if (rev == -2)
+		raise_revlog_error();
+	return NULL;
+}
+
+/*
+ * Fully populate the radix tree.
+ */
+static int index_populate_nt(indexObject *self) {
+	int rev;
+	if (self->ntrev > 0) {
+		for (rev = self->ntrev - 1; rev >= 0; rev--) {
+			const char *n = index_node_existing(self, rev);
+			if (n == NULL)
+				return -1;
+			if (nt_insert(&self->nt, n, rev) == -1)
+				return -1;
+		}
+		self->ntrev = -1;
+	}
+	return 0;
 }
 
 static PyObject *index_partialmatch(indexObject *self, PyObject *args)
@@ -1338,12 +1430,15 @@ static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 		Py_RETURN_NONE;
 	}
 
-	rev = nt_partialmatch(self, node, nodelen);
+	if (index_init_nt(self) == -1)
+		return NULL;
+	if (index_populate_nt(self) == -1)
+		return NULL;
+	rev = nt_partialmatch(&self->nt, node, nodelen);
 
 	switch (rev) {
 	case -4:
 		raise_revlog_error();
-	case -3:
 		return NULL;
 	case -2:
 		Py_RETURN_NONE;
@@ -1360,18 +1455,21 @@ static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 
 static PyObject *index_shortest(indexObject *self, PyObject *args)
 {
-	Py_ssize_t nodelen;
 	PyObject *val;
 	char *node;
 	int length;
 
 	if (!PyArg_ParseTuple(args, "O", &val))
 		return NULL;
-	if (node_check(val, &node, &nodelen) == -1)
+	if (node_check(val, &node) == -1)
 		return NULL;
 
 	self->ntlookups++;
-	length = nt_shortest(self, node);
+	if (index_init_nt(self) == -1)
+		return NULL;
+	if (index_populate_nt(self) == -1)
+		return NULL;
+	length = nt_shortest(&self->nt, node);
 	if (length == -3)
 		return NULL;
 	if (length == -2) {
@@ -1383,16 +1481,15 @@ static PyObject *index_shortest(indexObject *self, PyObject *args)
 
 static PyObject *index_m_get(indexObject *self, PyObject *args)
 {
-	Py_ssize_t nodelen;
 	PyObject *val;
 	char *node;
 	int rev;
 
 	if (!PyArg_ParseTuple(args, "O", &val))
 		return NULL;
-	if (node_check(val, &node, &nodelen) == -1)
+	if (node_check(val, &node) == -1)
 		return NULL;
-	rev = index_find_node(self, node, nodelen);
+	rev = index_find_node(self, node, 20);
 	if (rev == -3)
 		return NULL;
 	if (rev == -2)
@@ -1403,17 +1500,16 @@ static PyObject *index_m_get(indexObject *self, PyObject *args)
 static int index_contains(indexObject *self, PyObject *value)
 {
 	char *node;
-	Py_ssize_t nodelen;
 
 	if (PyInt_Check(value)) {
 		long rev = PyInt_AS_LONG(value);
 		return rev >= -1 && rev < index_length(self);
 	}
 
-	if (node_check(value, &node, &nodelen) == -1)
+	if (node_check(value, &node) == -1)
 		return -1;
 
-	switch (index_find_node(self, node, nodelen)) {
+	switch (index_find_node(self, node, 20)) {
 	case -3:
 		return -1;
 	case -2:
@@ -1554,7 +1650,7 @@ static PyObject *find_deepest(indexObject *self, PyObject *revs)
 		goto bail;
 	}
 
-	interesting = calloc(sizeof(*interesting), 1 << revcount);
+	interesting = calloc(sizeof(*interesting), ((size_t)1) << revcount);
 	if (interesting == NULL) {
 		PyErr_NoMemory();
 		goto bail;
@@ -1687,7 +1783,7 @@ static PyObject *index_commonancestorsheads(indexObject *self, PyObject *args)
 	revs = PyMem_Malloc(argcount * sizeof(*revs));
 	if (argcount > 0 && revs == NULL)
 		return PyErr_NoMemory();
-	len = index_length(self) - 1;
+	len = index_length(self);
 
 	for (i = 0; i < argcount; i++) {
 		static const int capacity = 24;
@@ -1787,7 +1883,7 @@ static PyObject *index_ancestors(indexObject *self, PyObject *args)
 /*
  * Invalidate any trie entries introduced by added revs.
  */
-static void nt_invalidate_added(indexObject *self, Py_ssize_t start)
+static void index_invalidate_added(indexObject *self, Py_ssize_t start)
 {
 	Py_ssize_t i, len = PyList_GET_SIZE(self->added);
 
@@ -1795,7 +1891,7 @@ static void nt_invalidate_added(indexObject *self, Py_ssize_t start)
 		PyObject *tuple = PyList_GET_ITEM(self->added, i);
 		PyObject *node = PyTuple_GET_ITEM(tuple, 7);
 
-		nt_insert(self, PyBytes_AS_STRING(node), -1);
+		nt_delete_node(&self->nt, PyBytes_AS_STRING(node));
 	}
 
 	if (start == 0)
@@ -1809,16 +1905,17 @@ static void nt_invalidate_added(indexObject *self, Py_ssize_t start)
 static int index_slice_del(indexObject *self, PyObject *item)
 {
 	Py_ssize_t start, stop, step, slicelength;
-	Py_ssize_t length = index_length(self);
+	Py_ssize_t length = index_length(self) + 1;
 	int ret = 0;
 
 /* Argument changed from PySliceObject* to PyObject* in Python 3. */
 #ifdef IS_PY3K
 	if (PySlice_GetIndicesEx(item, length,
+				 &start, &stop, &step, &slicelength) < 0)
 #else
 	if (PySlice_GetIndicesEx((PySliceObject*)item, length,
-#endif
 				 &start, &stop, &step, &slicelength) < 0)
+#endif
 		return -1;
 
 	if (slicelength <= 0)
@@ -1845,23 +1942,23 @@ static int index_slice_del(indexObject *self, PyObject *item)
 		return -1;
 	}
 
-	if (start < self->length - 1) {
-		if (self->nt) {
+	if (start < self->length) {
+		if (self->ntinitialized) {
 			Py_ssize_t i;
 
-			for (i = start + 1; i < self->length - 1; i++) {
+			for (i = start + 1; i < self->length; i++) {
 				const char *node = index_node_existing(self, i);
 				if (node == NULL)
 					return -1;
 
-				nt_insert(self, node, -1);
+				nt_delete_node(&self->nt, node);
 			}
 			if (self->added)
-				nt_invalidate_added(self, 0);
+				index_invalidate_added(self, 0);
 			if (self->ntrev > start)
 				self->ntrev = (int)start;
 		}
-		self->length = start + 1;
+		self->length = start;
 		if (start < self->raw_length) {
 			if (self->cache) {
 				Py_ssize_t i;
@@ -1873,13 +1970,13 @@ static int index_slice_del(indexObject *self, PyObject *item)
 		goto done;
 	}
 
-	if (self->nt) {
-		nt_invalidate_added(self, start - self->length + 1);
+	if (self->ntinitialized) {
+		index_invalidate_added(self, start - self->length);
 		if (self->ntrev > start)
 			self->ntrev = (int)start;
 	}
 	if (self->added)
-		ret = PyList_SetSlice(self->added, start - self->length + 1,
+		ret = PyList_SetSlice(self->added, start - self->length,
 				      PyList_GET_SIZE(self->added), NULL);
 done:
 	Py_CLEAR(self->headrevs);
@@ -1897,17 +1994,16 @@ static int index_assign_subscript(indexObject *self, PyObject *item,
 				  PyObject *value)
 {
 	char *node;
-	Py_ssize_t nodelen;
 	long rev;
 
 	if (PySlice_Check(item) && value == NULL)
 		return index_slice_del(self, item);
 
-	if (node_check(item, &node, &nodelen) == -1)
+	if (node_check(item, &node) == -1)
 		return -1;
 
 	if (value == NULL)
-		return self->nt ? nt_insert(self, node, -1) : 0;
+		return self->ntinitialized ? nt_delete_node(&self->nt, node) : 0;
 	rev = PyInt_AsLong(value);
 	if (rev > INT_MAX || rev < 0) {
 		if (!PyErr_Occurred())
@@ -1915,9 +2011,9 @@ static int index_assign_subscript(indexObject *self, PyObject *item,
 		return -1;
 	}
 
-	if (nt_init(self) == -1)
+	if (index_init_nt(self) == -1)
 		return -1;
-	return nt_insert(self, node, (int)rev);
+	return nt_insert(&self->nt, node, (int)rev);
 }
 
 /*
@@ -1966,7 +2062,7 @@ static int index_init(indexObject *self, PyObject *args)
 	self->headrevs = NULL;
 	self->filteredrevs = Py_None;
 	Py_INCREF(Py_None);
-	self->nt = NULL;
+	self->ntinitialized = 0;
 	self->offsets = NULL;
 
 	if (!PyArg_ParseTuple(args, "OO", &data_obj, &inlined_obj))
@@ -1984,8 +2080,6 @@ static int index_init(indexObject *self, PyObject *args)
 	self->inlined = inlined_obj && PyObject_IsTrue(inlined_obj);
 	self->data = data_obj;
 
-	self->ntlength = self->ntcapacity = 0;
-	self->ntdepth = self->ntsplits = 0;
 	self->ntlookups = self->ntmisses = 0;
 	self->ntrev = -1;
 	Py_INCREF(self->data);
@@ -1995,14 +2089,14 @@ static int index_init(indexObject *self, PyObject *args)
 		if (len == -1)
 			goto bail;
 		self->raw_length = len;
-		self->length = len + 1;
+		self->length = len;
 	} else {
 		if (size % v1_hdrsize) {
 			PyErr_SetString(PyExc_ValueError, "corrupt index file");
 			goto bail;
 		}
 		self->raw_length = size / v1_hdrsize;
-		self->length = self->raw_length + 1;
+		self->length = self->raw_length;
 	}
 
 	return 0;
@@ -2014,6 +2108,35 @@ static PyObject *index_nodemap(indexObject *self)
 {
 	Py_INCREF(self);
 	return (PyObject *)self;
+}
+
+static void _index_clearcaches(indexObject *self)
+{
+	if (self->cache) {
+		Py_ssize_t i;
+
+		for (i = 0; i < self->raw_length; i++)
+			Py_CLEAR(self->cache[i]);
+		free(self->cache);
+		self->cache = NULL;
+	}
+	if (self->offsets) {
+		PyMem_Free((void *)self->offsets);
+		self->offsets = NULL;
+	}
+	if (self->ntinitialized) {
+		nt_dealloc(&self->nt);
+	}
+	self->ntinitialized = 0;
+	Py_CLEAR(self->headrevs);
+}
+
+static PyObject *index_clearcaches(indexObject *self)
+{
+	_index_clearcaches(self);
+	self->ntrev = -1;
+	self->ntlookups = self->ntmisses = 0;
+	Py_RETURN_NONE;
 }
 
 static void index_dealloc(indexObject *self)
@@ -2066,8 +2189,8 @@ static PyMethodDef index_methods[] = {
 	 "get filtered head revisions"}, /* Can always do filtering */
 	{"deltachain", (PyCFunction)index_deltachain, METH_VARARGS,
 	 "determine revisions with deltas to reconstruct fulltext"},
-	{"insert", (PyCFunction)index_insert, METH_VARARGS,
-	 "insert an index entry"},
+	{"append", (PyCFunction)index_append, METH_O,
+	 "append an index entry"},
 	{"partialmatch", (PyCFunction)index_partialmatch, METH_VARARGS,
 	 "match a potentially ambiguous node ID"},
 	{"shortest", (PyCFunction)index_shortest, METH_VARARGS,
@@ -2167,6 +2290,171 @@ bail:
 	return NULL;
 }
 
+#ifdef WITH_RUST
+
+/* rustlazyancestors: iteration over ancestors implemented in Rust
+ *
+ * This class holds a reference to an index and to the Rust iterator.
+ */
+typedef struct rustlazyancestorsObjectStruct rustlazyancestorsObject;
+
+struct rustlazyancestorsObjectStruct {
+	PyObject_HEAD
+	/* Type-specific fields go here. */
+	indexObject *index;    /* Ref kept to avoid GC'ing the index */
+	void *iter;        /* Rust iterator */
+};
+
+/* FFI exposed from Rust code */
+rustlazyancestorsObject *rustlazyancestors_init(
+	indexObject *index,
+	/* to pass index_get_parents() */
+	int (*)(indexObject *, Py_ssize_t, int*, int),
+	/* intrevs vector */
+	int initrevslen, long *initrevs,
+	long stoprev,
+	int inclusive);
+void rustlazyancestors_drop(rustlazyancestorsObject *self);
+int rustlazyancestors_next(rustlazyancestorsObject *self);
+int rustlazyancestors_contains(rustlazyancestorsObject *self, long rev);
+
+/* CPython instance methods */
+static int rustla_init(rustlazyancestorsObject *self,
+                       PyObject *args) {
+	PyObject *initrevsarg = NULL;
+	PyObject *inclusivearg = NULL;
+	long stoprev = 0;
+	long *initrevs = NULL;
+	int inclusive = 0;
+	Py_ssize_t i;
+
+	indexObject *index;
+	if (!PyArg_ParseTuple(args, "O!O!lO!",
+			      &indexType, &index,
+                              &PyList_Type, &initrevsarg,
+                              &stoprev,
+                              &PyBool_Type, &inclusivearg))
+	return -1;
+
+	Py_INCREF(index);
+	self->index = index;
+
+	if (inclusivearg == Py_True)
+		inclusive = 1;
+
+	Py_ssize_t linit = PyList_GET_SIZE(initrevsarg);
+
+	initrevs = (long*)calloc(linit, sizeof(long));
+
+	if (initrevs == NULL) {
+		PyErr_NoMemory();
+		goto bail;
+	}
+
+	for (i=0; i<linit; i++) {
+		initrevs[i] = PyInt_AsLong(PyList_GET_ITEM(initrevsarg, i));
+	}
+	if (PyErr_Occurred())
+		goto bail;
+
+	self->iter = rustlazyancestors_init(index,
+		                            index_get_parents,
+		                            linit, initrevs,
+		                            stoprev, inclusive);
+	if (self->iter == NULL) {
+		/* if this is because of GraphError::ParentOutOfRange
+		 * index_get_parents() has already set the proper ValueError */
+		goto bail;
+	}
+
+	free(initrevs);
+	return 0;
+
+bail:
+	free(initrevs);
+	return -1;
+};
+
+static void rustla_dealloc(rustlazyancestorsObject *self)
+{
+	Py_XDECREF(self->index);
+	if (self->iter != NULL) { /* can happen if rustla_init failed */
+		rustlazyancestors_drop(self->iter);
+	}
+	PyObject_Del(self);
+}
+
+static PyObject *rustla_next(rustlazyancestorsObject *self) {
+	int res = rustlazyancestors_next(self->iter);
+	if (res == -1) {
+		/* Setting an explicit exception seems unnecessary
+		 * as examples from Python source code (Objects/rangeobjets.c and
+		 * Modules/_io/stringio.c) seem to demonstrate.
+		 */
+		return NULL;
+	}
+	return PyInt_FromLong(res);
+}
+
+static int rustla_contains(rustlazyancestorsObject *self, PyObject *rev) {
+	if (!(PyInt_Check(rev))) {
+		return 0;
+	}
+	return rustlazyancestors_contains(self->iter, PyInt_AS_LONG(rev));
+}
+
+static PySequenceMethods rustla_sequence_methods = {
+	0,                       /* sq_length */
+	0,                       /* sq_concat */
+	0,                       /* sq_repeat */
+	0,                       /* sq_item */
+	0,                       /* sq_slice */
+	0,                       /* sq_ass_item */
+	0,                       /* sq_ass_slice */
+	(objobjproc)rustla_contains, /* sq_contains */
+};
+
+static PyTypeObject rustlazyancestorsType = {
+	PyVarObject_HEAD_INIT(NULL, 0) /* header */
+	"parsers.rustlazyancestors",           /* tp_name */
+	sizeof(rustlazyancestorsObject),       /* tp_basicsize */
+	0,                         /* tp_itemsize */
+	(destructor)rustla_dealloc, /* tp_dealloc */
+	0,                         /* tp_print */
+	0,                         /* tp_getattr */
+	0,                         /* tp_setattr */
+	0,                         /* tp_compare */
+	0,                         /* tp_repr */
+	0,                         /* tp_as_number */
+	&rustla_sequence_methods,  /* tp_as_sequence */
+	0,                         /* tp_as_mapping */
+	0,                         /* tp_hash */
+	0,                         /* tp_call */
+	0,                         /* tp_str */
+	0,                         /* tp_getattro */
+	0,                         /* tp_setattro */
+	0,                         /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,        /* tp_flags */
+	"Iterator over ancestors, implemented in Rust", /* tp_doc */
+	0,                         /* tp_traverse */
+	0,                         /* tp_clear */
+	0,                         /* tp_richcompare */
+	0,                         /* tp_weaklistoffset */
+	0,                         /* tp_iter */
+	(iternextfunc)rustla_next, /* tp_iternext */
+	0,                         /* tp_methods */
+	0,                         /* tp_members */
+	0,                         /* tp_getset */
+	0,                         /* tp_base */
+	0,                         /* tp_dict */
+	0,                         /* tp_descr_get */
+	0,                         /* tp_descr_set */
+	0,                         /* tp_dictoffset */
+	(initproc)rustla_init,     /* tp_init */
+	0,                         /* tp_alloc */
+};
+#endif /* WITH_RUST */
+
 void revlog_module_init(PyObject *mod)
 {
 	indexType.tp_new = PyType_GenericNew;
@@ -2175,8 +2463,26 @@ void revlog_module_init(PyObject *mod)
 	Py_INCREF(&indexType);
 	PyModule_AddObject(mod, "index", (PyObject *)&indexType);
 
-	nullentry = Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0,
-				  -1, -1, -1, -1, nullid, 20);
+	nodetreeType.tp_new = PyType_GenericNew;
+	if (PyType_Ready(&nodetreeType) < 0)
+		return;
+	Py_INCREF(&nodetreeType);
+	PyModule_AddObject(mod, "nodetree", (PyObject *)&nodetreeType);
+
+	if (!nullentry) {
+		nullentry = Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0,
+					  -1, -1, -1, -1, nullid, 20);
+	}
 	if (nullentry)
 		PyObject_GC_UnTrack(nullentry);
+
+#ifdef WITH_RUST
+	rustlazyancestorsType.tp_new = PyType_GenericNew;
+	if (PyType_Ready(&rustlazyancestorsType) < 0)
+		return;
+	Py_INCREF(&rustlazyancestorsType);
+	PyModule_AddObject(mod, "rustlazyancestors",
+		(PyObject *)&rustlazyancestorsType);
+#endif
+
 }

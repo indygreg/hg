@@ -4,7 +4,7 @@ This tests if CGI files from before d0db3462d568 still work.
 
   $ hg init test
   $ cat >hgweb.cgi <<HGWEB
-  > #!$PYTHON
+  > #!"$PYTHON"
   > #
   > # An example CGI script to use hgweb, edit as necessary
   > 
@@ -14,7 +14,7 @@ This tests if CGI files from before d0db3462d568 still work.
   > # sys.path.insert(0, "/path/to/python/lib") # if not a system-wide install
   > from mercurial import hgweb
   > 
-  > h = hgweb.hgweb("test", "Empty test repository")
+  > h = hgweb.hgweb(b"test", b"Empty test repository")
   > h.run()
   > HGWEB
 
@@ -26,7 +26,7 @@ This tests if CGI files from before d0db3462d568 still work.
   > HGWEBDIRCONF
 
   $ cat >hgwebdir.cgi <<HGWEBDIR
-  > #!$PYTHON
+  > #!"$PYTHON"
   > #
   > # An example CGI script to export multiple hgweb repos, edit as necessary
   > 
@@ -62,15 +62,15 @@ This tests if CGI files from before d0db3462d568 still work.
   $ chmod 755 hgwebdir.cgi
 
   $ . "$TESTDIR/cgienv"
-  $ $PYTHON hgweb.cgi > page1
-  $ $PYTHON hgwebdir.cgi > page2
+  $ "$PYTHON" hgweb.cgi > page1
+  $ "$PYTHON" hgwebdir.cgi > page2
 
   $ PATH_INFO="/test/"
   $ PATH_TRANSLATED="/var/something/test.cgi"
   $ REQUEST_URI="/test/test/"
   $ SCRIPT_URI="http://hg.omnifarious.org/test/test/"
   $ SCRIPT_URL="/test/test/"
-  $ $PYTHON hgwebdir.cgi > page3
+  $ "$PYTHON" hgwebdir.cgi > page3
 
   $ grep -i error page1 page2 page3
   [1]

@@ -16,8 +16,6 @@ from __future__ import absolute_import
 import difflib
 import errno
 import re
-import sys
-import textwrap
 
 from mercurial.i18n import _
 from mercurial import (
@@ -29,6 +27,9 @@ from mercurial import (
     registrar,
     scmutil,
     util,
+)
+from mercurial.utils import (
+    stringutil,
 )
 
 cmdtable = {}
@@ -55,7 +56,7 @@ DEFAULT_SECTIONS = [
 ]
 
 RE_DIRECTIVE = re.compile('^\.\. ([a-zA-Z0-9_]+)::\s*([^$]+)?$')
-RE_ISSUE = r'\bissue ?[0-9]{4,6}(?![0-9])\b'
+RE_ISSUE = br'\bissue ?[0-9]{4,6}(?![0-9])\b'
 
 BULLET_SECTION = _('Other Changes')
 
@@ -444,11 +445,11 @@ def serializenotes(sections, notes):
             lines.append('-' * len(title))
             lines.append('')
 
-            wrapper = textwrap.TextWrapper(width=78)
             for i, para in enumerate(paragraphs):
                 if i:
                     lines.append('')
-                lines.extend(wrapper.wrap(' '.join(para)))
+                lines.extend(stringutil.wrap(' '.join(para),
+                                             width=78).splitlines())
 
             lines.append('')
 
@@ -466,17 +467,17 @@ def serializenotes(sections, notes):
             lines.append('')
 
         for paragraphs in nontitled:
-            wrapper = textwrap.TextWrapper(initial_indent='* ',
-                                           subsequent_indent='  ',
-                                           width=78)
-            lines.extend(wrapper.wrap(' '.join(paragraphs[0])))
+            lines.extend(stringutil.wrap(' '.join(paragraphs[0]),
+                                         width=78,
+                                         initindent='* ',
+                                         hangindent='  ').splitlines())
 
-            wrapper = textwrap.TextWrapper(initial_indent='  ',
-                                           subsequent_indent='  ',
-                                           width=78)
             for para in paragraphs[1:]:
                 lines.append('')
-                lines.extend(wrapper.wrap(' '.join(para)))
+                lines.extend(stringutil.wrap(' '.join(para),
+                                             width=78,
+                                             initindent='  ',
+                                             hangindent='  ').splitlines())
 
             lines.append('')
 
@@ -491,7 +492,8 @@ def serializenotes(sections, notes):
         _('REV')),
     ('l', 'list', False, _('list the available admonitions with their title'),
         None)],
-    _('hg releasenotes [-r REV] [-c] FILE'))
+    _('hg releasenotes [-r REV] [-c] FILE'),
+    helpcategory=command.CATEGORY_CHANGE_NAVIGATION)
 def releasenotes(ui, repo, file_=None, **opts):
     """parse release notes from commit messages into an output file
 
@@ -617,7 +619,7 @@ def releasenotes(ui, repo, file_=None, **opts):
 def debugparsereleasenotes(ui, path, repo=None):
     """parse release notes and print resulting data structure"""
     if path == '-':
-        text = sys.stdin.read()
+        text = pycompat.stdin.read()
     else:
         with open(path, 'rb') as fh:
             text = fh.read()

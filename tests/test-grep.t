@@ -18,7 +18,7 @@
 pattern error
 
   $ hg grep '**test**'
-  grep: invalid match pattern: nothing to repeat
+  grep: invalid match pattern: nothing to repeat* (glob)
   [1]
 
 simple
@@ -43,17 +43,17 @@ simple with color
 simple templated
 
   $ hg grep port -r tip:0 \
-  > -T '{file}:{rev}:{node|short}:{texts % "{if(matched, text|upper, text)}"}\n'
+  > -T '{path}:{rev}:{node|short}:{texts % "{if(matched, text|upper, text)}"}\n'
   port:4:914fa752cdea:exPORT
   port:4:914fa752cdea:vaPORTight
   port:4:914fa752cdea:imPORT/exPORT
 
-  $ hg grep port -r tip:0 -T '{file}:{rev}:{texts}\n'
+  $ hg grep port -r tip:0 -T '{path}:{rev}:{texts}\n'
   port:4:export
   port:4:vaportight
   port:4:import/export
 
-  $ hg grep port -r tip:0 -T '{file}:{tags}:{texts}\n'
+  $ hg grep port -r tip:0 -T '{path}:{tags}:{texts}\n'
   port:tip:export
   port:tip:vaportight
   port:tip:import/export
@@ -64,27 +64,27 @@ simple JSON (no "change" field)
   [
    {
     "date": [4, 0],
-    "file": "port",
-    "line_number": 1,
+    "lineno": 1,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
+    "path": "port",
     "rev": 4,
     "texts": [{"matched": false, "text": "ex"}, {"matched": true, "text": "port"}],
     "user": "spam"
    },
    {
     "date": [4, 0],
-    "file": "port",
-    "line_number": 2,
+    "lineno": 2,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
+    "path": "port",
     "rev": 4,
     "texts": [{"matched": false, "text": "va"}, {"matched": true, "text": "port"}, {"matched": false, "text": "ight"}],
     "user": "spam"
    },
    {
     "date": [4, 0],
-    "file": "port",
-    "line_number": 3,
+    "lineno": 3,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
+    "path": "port",
     "rev": 4,
     "texts": [{"matched": false, "text": "im"}, {"matched": true, "text": "port"}, {"matched": false, "text": "/ex"}, {"matched": true, "text": "port"}],
     "user": "spam"
@@ -97,9 +97,9 @@ simple JSON without matching lines
   [
    {
     "date": [4, 0],
-    "file": "port",
-    "line_number": 1,
+    "lineno": 1,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
+    "path": "port",
     "rev": 4,
     "user": "spam"
    }
@@ -125,9 +125,9 @@ all JSON
    {
     "change": "-",
     "date": [4, 0],
-    "file": "port",
-    "line_number": 4,
+    "lineno": 4,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
+    "path": "port",
     "rev": 4,
     "texts": [{"matched": false, "text": "im"}, {"matched": true, "text": "port"}, {"matched": false, "text": "/ex"}, {"matched": true, "text": "port"}],
     "user": "spam"
@@ -135,9 +135,9 @@ all JSON
    {
     "change": "+",
     "date": [3, 0],
-    "file": "port",
-    "line_number": 4,
+    "lineno": 4,
     "node": "95040cfd017d658c536071c6290230a613c4c2a6",
+    "path": "port",
     "rev": 3,
     "texts": [{"matched": false, "text": "im"}, {"matched": true, "text": "port"}, {"matched": false, "text": "/ex"}, {"matched": true, "text": "port"}],
     "user": "eggs"
@@ -145,9 +145,9 @@ all JSON
    {
     "change": "-",
     "date": [2, 0],
-    "file": "port",
-    "line_number": 1,
+    "lineno": 1,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
+    "path": "port",
     "rev": 2,
     "texts": [{"matched": false, "text": "im"}, {"matched": true, "text": "port"}],
     "user": "spam"
@@ -155,9 +155,9 @@ all JSON
    {
     "change": "-",
     "date": [2, 0],
-    "file": "port",
-    "line_number": 2,
+    "lineno": 2,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
+    "path": "port",
     "rev": 2,
     "texts": [{"matched": false, "text": "ex"}, {"matched": true, "text": "port"}],
     "user": "spam"
@@ -165,9 +165,9 @@ all JSON
    {
     "change": "+",
     "date": [2, 0],
-    "file": "port",
-    "line_number": 1,
+    "lineno": 1,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
+    "path": "port",
     "rev": 2,
     "texts": [{"matched": false, "text": "ex"}, {"matched": true, "text": "port"}],
     "user": "spam"
@@ -175,9 +175,9 @@ all JSON
    {
     "change": "+",
     "date": [2, 0],
-    "file": "port",
-    "line_number": 2,
+    "lineno": 2,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
+    "path": "port",
     "rev": 2,
     "texts": [{"matched": false, "text": "va"}, {"matched": true, "text": "port"}, {"matched": false, "text": "ight"}],
     "user": "spam"
@@ -185,9 +185,9 @@ all JSON
    {
     "change": "+",
     "date": [2, 0],
-    "file": "port",
-    "line_number": 3,
+    "lineno": 3,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
+    "path": "port",
     "rev": 2,
     "texts": [{"matched": false, "text": "im"}, {"matched": true, "text": "port"}, {"matched": false, "text": "/ex"}, {"matched": true, "text": "port"}],
     "user": "spam"
@@ -195,9 +195,9 @@ all JSON
    {
     "change": "+",
     "date": [1, 0],
-    "file": "port",
-    "line_number": 2,
+    "lineno": 2,
     "node": "8b20f75c158513ff5ac80bd0e5219bfb6f0eb587",
+    "path": "port",
     "rev": 1,
     "texts": [{"matched": false, "text": "ex"}, {"matched": true, "text": "port"}],
     "user": "eggs"
@@ -205,9 +205,9 @@ all JSON
    {
     "change": "+",
     "date": [0, 0],
-    "file": "port",
-    "line_number": 1,
+    "lineno": 1,
     "node": "f31323c9217050ba245ee8b537c713ec2e8ab226",
+    "path": "port",
     "rev": 0,
     "texts": [{"matched": false, "text": "im"}, {"matched": true, "text": "port"}],
     "user": "spam"
@@ -300,7 +300,7 @@ test substring match: '^' should only match at the beginning
 
 match in last "line" without newline
 
-  $ $PYTHON -c 'fp = open("noeol", "wb"); fp.write(b"no infinite loop"); fp.close();'
+  $ "$PYTHON" -c 'fp = open("noeol", "wb"); fp.write(b"no infinite loop"); fp.close();'
   $ hg ci -Amnoeol
   adding noeol
   $ hg grep -r tip:0 loop
@@ -481,9 +481,9 @@ but it should be available in template dict:
   [
    {
     "date": [0, 0],
-    "file": "file2",
-    "line_number": 1,
+    "lineno": 1,
     "node": "ffffffffffffffffffffffffffffffffffffffff",
+    "path": "file2",
     "rev": 2147483647,
     "texts": [{"matched": true, "text": "some"}, {"matched": false, "text": " text"}],
     "user": "test"
@@ -491,3 +491,17 @@ but it should be available in template dict:
   ]
 
   $ cd ..
+
+test -rMULTIREV with --all-files
+
+  $ cd sng
+  $ hg rm um
+  $ hg commit -m "deletes um"
+  $ hg grep -r "0:2" "unmod" --all-files
+  um:0:unmod
+  um:1:unmod
+  $ hg grep -r "0:2" "unmod" --all-files um
+  um:0:unmod
+  um:1:unmod
+  $ cd ..
+

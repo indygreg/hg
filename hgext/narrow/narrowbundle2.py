@@ -7,7 +7,6 @@
 
 from __future__ import absolute_import
 
-import collections
 import errno
 import struct
 
@@ -15,17 +14,16 @@ from mercurial.i18n import _
 from mercurial.node import (
     bin,
     nullid,
-    nullrev,
 )
 from mercurial import (
     bundle2,
     changegroup,
-    dagutil,
     error,
     exchange,
     extensions,
     narrowspec,
     repair,
+    repository,
     util,
     wireprototypes,
 )
@@ -52,171 +50,12 @@ def getrepocaps_narrow(orig, repo, **kwargs):
     caps[NARROWCAP] = ['v0']
     return caps
 
-def _computeellipsis(repo, common, heads, known, match, depth=None):
-    """Compute the shape of a narrowed DAG.
-
-    Args:
-      repo: The repository we're transferring.
-      common: The roots of the DAG range we're transferring.
-              May be just [nullid], which means all ancestors of heads.
-      heads: The heads of the DAG range we're transferring.
-      match: The narrowmatcher that allows us to identify relevant changes.
-      depth: If not None, only consider nodes to be full nodes if they are at
-             most depth changesets away from one of heads.
-
-    Returns:
-      A tuple of (visitnodes, relevant_nodes, ellipsisroots) where:
-
-        visitnodes: The list of nodes (either full or ellipsis) which
-                    need to be sent to the client.
-        relevant_nodes: The set of changelog nodes which change a file inside
-                 the narrowspec. The client needs these as non-ellipsis nodes.
-        ellipsisroots: A dict of {rev: parents} that is used in
-                       narrowchangegroup to produce ellipsis nodes with the
-                       correct parents.
-    """
-    cl = repo.changelog
-    mfl = repo.manifestlog
-
-    cldag = dagutil.revlogdag(cl)
-    # dagutil does not like nullid/nullrev
-    commonrevs = cldag.internalizeall(common - set([nullid])) | set([nullrev])
-    headsrevs = cldag.internalizeall(heads)
-    if depth:
-        revdepth = {h: 0 for h in headsrevs}
-
-    ellipsisheads = collections.defaultdict(set)
-    ellipsisroots = collections.defaultdict(set)
-
-    def addroot(head, curchange):
-        """Add a root to an ellipsis head, splitting heads with 3 roots."""
-        ellipsisroots[head].add(curchange)
-        # Recursively split ellipsis heads with 3 roots by finding the
-        # roots' youngest common descendant which is an elided merge commit.
-        # That descendant takes 2 of the 3 roots as its own, and becomes a
-        # root of the head.
-        while len(ellipsisroots[head]) > 2:
-            child, roots = splithead(head)
-            splitroots(head, child, roots)
-            head = child  # Recurse in case we just added a 3rd root
-
-    def splitroots(head, child, roots):
-        ellipsisroots[head].difference_update(roots)
-        ellipsisroots[head].add(child)
-        ellipsisroots[child].update(roots)
-        ellipsisroots[child].discard(child)
-
-    def splithead(head):
-        r1, r2, r3 = sorted(ellipsisroots[head])
-        for nr1, nr2 in ((r2, r3), (r1, r3), (r1, r2)):
-            mid = repo.revs('sort(merge() & %d::%d & %d::%d, -rev)',
-                            nr1, head, nr2, head)
-            for j in mid:
-                if j == nr2:
-                    return nr2, (nr1, nr2)
-                if j not in ellipsisroots or len(ellipsisroots[j]) < 2:
-                    return j, (nr1, nr2)
-        raise error.Abort('Failed to split up ellipsis node! head: %d, '
-                          'roots: %d %d %d' % (head, r1, r2, r3))
-
-    missing = list(cl.findmissingrevs(common=commonrevs, heads=headsrevs))
-    visit = reversed(missing)
-    relevant_nodes = set()
-    visitnodes = [cl.node(m) for m in missing]
-    required = set(headsrevs) | known
-    for rev in visit:
-        clrev = cl.changelogrevision(rev)
-        ps = cldag.parents(rev)
-        if depth is not None:
-            curdepth = revdepth[rev]
-            for p in ps:
-                revdepth[p] = min(curdepth + 1, revdepth.get(p, depth + 1))
-        needed = False
-        shallow_enough = depth is None or revdepth[rev] <= depth
-        if shallow_enough:
-            curmf = mfl[clrev.manifest].read()
-            if ps:
-                # We choose to not trust the changed files list in
-                # changesets because it's not always correct. TODO: could
-                # we trust it for the non-merge case?
-                p1mf = mfl[cl.changelogrevision(ps[0]).manifest].read()
-                needed = bool(curmf.diff(p1mf, match))
-                if not needed and len(ps) > 1:
-                    # For merge changes, the list of changed files is not
-                    # helpful, since we need to emit the merge if a file
-                    # in the narrow spec has changed on either side of the
-                    # merge. As a result, we do a manifest diff to check.
-                    p2mf = mfl[cl.changelogrevision(ps[1]).manifest].read()
-                    needed = bool(curmf.diff(p2mf, match))
-            else:
-                # For a root node, we need to include the node if any
-                # files in the node match the narrowspec.
-                needed = any(curmf.walk(match))
-
-        if needed:
-            for head in ellipsisheads[rev]:
-                addroot(head, rev)
-            for p in ps:
-                required.add(p)
-            relevant_nodes.add(cl.node(rev))
-        else:
-            if not ps:
-                ps = [nullrev]
-            if rev in required:
-                for head in ellipsisheads[rev]:
-                    addroot(head, rev)
-                for p in ps:
-                    ellipsisheads[p].add(rev)
-            else:
-                for p in ps:
-                    ellipsisheads[p] |= ellipsisheads[rev]
-
-    # add common changesets as roots of their reachable ellipsis heads
-    for c in commonrevs:
-        for head in ellipsisheads[c]:
-            addroot(head, c)
-    return visitnodes, relevant_nodes, ellipsisroots
-
-def _packellipsischangegroup(repo, common, match, relevant_nodes,
-                             ellipsisroots, visitnodes, depth, source, version):
-    if version in ('01', '02'):
-        raise error.Abort(
-            'ellipsis nodes require at least cg3 on client and server, '
-            'but negotiated version %s' % version)
-    # We wrap cg1packer.revchunk, using a side channel to pass
-    # relevant_nodes into that area. Then if linknode isn't in the
-    # set, we know we have an ellipsis node and we should defer
-    # sending that node's data. We override close() to detect
-    # pending ellipsis nodes and flush them.
-    packer = changegroup.getbundler(version, repo)
-    # Let the packer have access to the narrow matcher so it can
-    # omit filelogs and dirlogs as needed
-    packer._narrow_matcher = lambda : match
-    # Give the packer the list of nodes which should not be
-    # ellipsis nodes. We store this rather than the set of nodes
-    # that should be an ellipsis because for very large histories
-    # we expect this to be significantly smaller.
-    packer.full_nodes = relevant_nodes
-    # Maps ellipsis revs to their roots at the changelog level.
-    packer.precomputed_ellipsis = ellipsisroots
-    # Maps CL revs to per-revlog revisions. Cleared in close() at
-    # the end of each group.
-    packer.clrev_to_localrev = {}
-    packer.next_clrev_to_localrev = {}
-    # Maps changelog nodes to changelog revs. Filled in once
-    # during changelog stage and then left unmodified.
-    packer.clnode_to_rev = {}
-    packer.changelog_done = False
-    # If true, informs the packer that it is serving shallow content and might
-    # need to pack file contents not introduced by the changes being packed.
-    packer.is_shallow = depth is not None
-
-    return packer.generate(common, visitnodes, False, source)
-
 # Serve a changegroup for a client with a narrow clone.
 def getbundlechangegrouppart_narrow(bundler, repo, source,
                                     bundlecaps=None, b2caps=None, heads=None,
                                     common=None, **kwargs):
+    assert repo.ui.configbool('experimental', 'narrowservebrokenellipses')
+
     cgversions = b2caps.get('changegroup')
     if cgversions:  # 3.1 and 3.2 ship with an empty value
         cgversions = [v for v in cgversions
@@ -231,32 +70,6 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
     include = sorted(filter(bool, kwargs.get(r'includepats', [])))
     exclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
     newmatch = narrowspec.match(repo.root, include=include, exclude=exclude)
-    if not repo.ui.configbool("experimental", "narrowservebrokenellipses"):
-        outgoing = exchange._computeoutgoing(repo, heads, common)
-        if not outgoing.missing:
-            return
-        def wrappedgetbundler(orig, *args, **kwargs):
-            bundler = orig(*args, **kwargs)
-            bundler._narrow_matcher = lambda : newmatch
-            return bundler
-        with extensions.wrappedfunction(changegroup, 'getbundler',
-                                        wrappedgetbundler):
-            cg = changegroup.makestream(repo, outgoing, version, source)
-        part = bundler.newpart('changegroup', data=cg)
-        part.addparam('version', version)
-        if 'treemanifest' in repo.requirements:
-            part.addparam('treemanifest', '1')
-
-        if include or exclude:
-            narrowspecpart = bundler.newpart(_SPECPART)
-            if include:
-                narrowspecpart.addparam(
-                    _SPECPART_INCLUDE, '\n'.join(include), mandatory=True)
-            if exclude:
-                narrowspecpart.addparam(
-                    _SPECPART_EXCLUDE, '\n'.join(exclude), mandatory=True)
-
-        return
 
     depth = kwargs.get(r'depth', None)
     if depth is not None:
@@ -300,72 +113,49 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
                 yield repo.changelog.node(r)
             yield _DONESIGNAL
         bundler.newpart(_CHANGESPECPART, data=genkills())
-        newvisit, newfull, newellipsis = _computeellipsis(
+        newvisit, newfull, newellipsis = exchange._computeellipsis(
             repo, set(), common, known, newmatch)
         if newvisit:
-            cg = _packellipsischangegroup(
-                repo, common, newmatch, newfull, newellipsis,
-                newvisit, depth, source, version)
-            part = bundler.newpart('changegroup', data=cg)
+            packer = changegroup.getbundler(version, repo,
+                                            matcher=newmatch,
+                                            ellipses=True,
+                                            shallow=depth is not None,
+                                            ellipsisroots=newellipsis,
+                                            fullnodes=newfull)
+            cgdata = packer.generate(common, newvisit, False, 'narrow_widen')
+
+            part = bundler.newpart('changegroup', data=cgdata)
             part.addparam('version', version)
             if 'treemanifest' in repo.requirements:
                 part.addparam('treemanifest', '1')
 
-    visitnodes, relevant_nodes, ellipsisroots = _computeellipsis(
+    visitnodes, relevant_nodes, ellipsisroots = exchange._computeellipsis(
         repo, common, heads, set(), newmatch, depth=depth)
 
     repo.ui.debug('Found %d relevant revs\n' % len(relevant_nodes))
     if visitnodes:
-        cg = _packellipsischangegroup(
-            repo, common, newmatch, relevant_nodes, ellipsisroots,
-            visitnodes, depth, source, version)
-        part = bundler.newpart('changegroup', data=cg)
+        packer = changegroup.getbundler(version, repo,
+                                        matcher=newmatch,
+                                        ellipses=True,
+                                        shallow=depth is not None,
+                                        ellipsisroots=ellipsisroots,
+                                        fullnodes=relevant_nodes)
+        cgdata = packer.generate(common, visitnodes, False, 'narrow_widen')
+
+        part = bundler.newpart('changegroup', data=cgdata)
         part.addparam('version', version)
         if 'treemanifest' in repo.requirements:
             part.addparam('treemanifest', '1')
-
-def applyacl_narrow(repo, kwargs):
-    ui = repo.ui
-    username = ui.shortuser(ui.environ.get('REMOTE_USER') or ui.username())
-    user_includes = ui.configlist(
-        _NARROWACL_SECTION, username + '.includes',
-        ui.configlist(_NARROWACL_SECTION, 'default.includes'))
-    user_excludes = ui.configlist(
-        _NARROWACL_SECTION, username + '.excludes',
-        ui.configlist(_NARROWACL_SECTION, 'default.excludes'))
-    if not user_includes:
-        raise error.Abort(_("{} configuration for user {} is empty")
-                          .format(_NARROWACL_SECTION, username))
-
-    user_includes = [
-        'path:.' if p == '*' else 'path:' + p for p in user_includes]
-    user_excludes = [
-        'path:.' if p == '*' else 'path:' + p for p in user_excludes]
-
-    req_includes = set(kwargs.get(r'includepats', []))
-    req_excludes = set(kwargs.get(r'excludepats', []))
-
-    req_includes, req_excludes, invalid_includes = narrowspec.restrictpatterns(
-        req_includes, req_excludes, user_includes, user_excludes)
-
-    if invalid_includes:
-        raise error.Abort(
-            _("The following includes are not accessible for {}: {}")
-            .format(username, invalid_includes))
-
-    new_args = {}
-    new_args.update(kwargs)
-    new_args['includepats'] = req_includes
-    if req_excludes:
-        new_args['excludepats'] = req_excludes
-    return new_args
 
 @bundle2.parthandler(_SPECPART, (_SPECPART_INCLUDE, _SPECPART_EXCLUDE))
 def _handlechangespec_2(op, inpart):
     includepats = set(inpart.params.get(_SPECPART_INCLUDE, '').splitlines())
     excludepats = set(inpart.params.get(_SPECPART_EXCLUDE, '').splitlines())
-    if not changegroup.NARROW_REQUIREMENT in op.repo.requirements:
-        op.repo.requirements.add(changegroup.NARROW_REQUIREMENT)
+    narrowspec.validatepatterns(includepats)
+    narrowspec.validatepatterns(excludepats)
+
+    if not repository.NARROW_REQUIREMENT in op.repo.requirements:
+        op.repo.requirements.add(repository.NARROW_REQUIREMENT)
         op.repo._writerequirements()
     op.repo.setnarrowpats(includepats, excludepats)
 
@@ -479,26 +269,14 @@ def setup():
     def wrappedcgfn(*args, **kwargs):
         repo = args[1]
         if repo.ui.has_section(_NARROWACL_SECTION):
-            getbundlechangegrouppart_narrow(
-                *args, **applyacl_narrow(repo, kwargs))
-        elif kwargs.get(r'narrow', False):
+            kwargs = exchange.applynarrowacl(repo, kwargs)
+
+        if (kwargs.get(r'narrow', False) and
+            repo.ui.configbool('experimental', 'narrowservebrokenellipses')):
             getbundlechangegrouppart_narrow(*args, **kwargs)
         else:
             origcgfn(*args, **kwargs)
     exchange.getbundle2partsmapping['changegroup'] = wrappedcgfn
-
-    # disable rev branch cache exchange when serving a narrow bundle
-    # (currently incompatible with that part)
-    origrbcfn = exchange.getbundle2partsmapping['cache:rev-branch-cache']
-    def wrappedcgfn(*args, **kwargs):
-        repo = args[1]
-        if repo.ui.has_section(_NARROWACL_SECTION):
-            return
-        elif kwargs.get(r'narrow', False):
-            return
-        else:
-            origrbcfn(*args, **kwargs)
-    exchange.getbundle2partsmapping['cache:rev-branch-cache'] = wrappedcgfn
 
     # Extend changegroup receiver so client can fixup after widen requests.
     origcghandler = bundle2.parthandlermapping['changegroup']

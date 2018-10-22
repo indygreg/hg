@@ -10,11 +10,11 @@ we need a repo with some legacy latin-1 changesets
   adding manifests
   adding file changes
   added 2 changesets with 2 changes to 1 files
-  new changesets 1e78a93102a3:0e5b7e3f9c4a
+  new changesets 1e78a93102a3:0e5b7e3f9c4a (2 drafts)
   (run 'hg update' to get a working copy)
   $ hg co
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ $PYTHON << EOF
+  $ "$PYTHON" << EOF
   > f = open('latin-1', 'wb'); f.write(b"latin-1 e' encoded: \xe9"); f.close()
   > f = open('utf-8', 'wb'); f.write(b"utf-8 e' encoded: \xc3\xa9"); f.close()
   > f = open('latin-1-tag', 'wb'); f.write(b"\xe9"); f.close()
@@ -278,9 +278,10 @@ Test roundtrip encoding/decoding of utf8b for generated data
 
 #if hypothesis
 
-  >>> from hypothesishelpers import *
+  >>> import hypothesishelpers
   >>> from mercurial import encoding
-  >>> roundtrips(st.binary(), encoding.fromutf8b, encoding.toutf8b)
+  >>> hypothesishelpers.roundtrips(hypothesishelpers.st.binary(),
+  ...                              encoding.fromutf8b, encoding.toutf8b)
   Round trip OK
 
 #endif

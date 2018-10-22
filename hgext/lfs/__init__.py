@@ -124,6 +124,8 @@ Configs::
 
 from __future__ import absolute_import
 
+import sys
+
 from mercurial.i18n import _
 
 from mercurial import (
@@ -136,13 +138,13 @@ from mercurial import (
     exchange,
     extensions,
     filelog,
-    fileset,
-    hg,
+    filesetlang,
     localrepo,
     minifileset,
     node,
     pycompat,
     registrar,
+    repository,
     revlog,
     scmutil,
     templateutil,
@@ -204,6 +206,12 @@ command = registrar.command(cmdtable)
 templatekeyword = registrar.templatekeyword()
 filesetpredicate = registrar.filesetpredicate()
 
+lfsprocessor = (
+    wrapper.readfromstore,
+    wrapper.writetostore,
+    wrapper.bypasscheckhash,
+)
+
 def featuresetup(ui, supported):
     # don't die on seeing a repo with the lfs requirement
     supported |= {'lfs'}
@@ -244,6 +252,7 @@ def reposetup(ui, repo):
                 if any(ctx[f].islfs() for f in ctx.files()
                        if f in ctx and match(f)):
                     repo.requirements.add('lfs')
+                    repo.features.add(repository.REPO_FEATURE_LFS)
                     repo._writerequirements()
                     repo.prepushoutgoinghooks.add('lfs', wrapper.prepush)
                     break
@@ -263,7 +272,7 @@ def _trackedmatcher(repo):
         # deprecated config: lfs.threshold
         threshold = repo.ui.configbytes('lfs', 'threshold')
         if threshold:
-            fileset.parse(trackspec)  # make sure syntax errors are confined
+            filesetlang.parse(trackspec)  # make sure syntax errors are confined
             trackspec = "(%s) | size('>%d')" % (trackspec, threshold)
 
         return minifileset.compile(trackspec)
@@ -303,10 +312,28 @@ def wrapfilelog(filelog):
     wrapfunction(filelog, 'renamed', wrapper.filelogrenamed)
     wrapfunction(filelog, 'size', wrapper.filelogsize)
 
+def _resolverevlogstorevfsoptions(orig, ui, requirements, features):
+    opts = orig(ui, requirements, features)
+    for name, module in extensions.extensions(ui):
+        if module is sys.modules[__name__]:
+            if revlog.REVIDX_EXTSTORED in opts[b'flagprocessors']:
+                msg = (_(b"cannot register multiple processors on flag '%#x'.")
+                       % revlog.REVIDX_EXTSTORED)
+                raise error.Abort(msg)
+
+            opts[b'flagprocessors'][revlog.REVIDX_EXTSTORED] = lfsprocessor
+            break
+
+    return opts
+
 def extsetup(ui):
     wrapfilelog(filelog.filelog)
 
     wrapfunction = extensions.wrapfunction
+
+    wrapfunction(localrepo, 'makefilestorage', wrapper.localrepomakefilestorage)
+    wrapfunction(localrepo, 'resolverevlogstorevfsoptions',
+                 _resolverevlogstorevfsoptions)
 
     wrapfunction(cmdutil, '_updatecatformatter', wrapper._updatecatformatter)
     wrapfunction(scmutil, 'wrapconvertsink', wrapper.convertsink)
@@ -333,18 +360,6 @@ def extsetup(ui):
     wrapfunction(context.basefilectx, 'isbinary', wrapper.filectxisbinary)
     context.basefilectx.islfs = wrapper.filectxislfs
 
-    revlog.addflagprocessor(
-        revlog.REVIDX_EXTSTORED,
-        (
-            wrapper.readfromstore,
-            wrapper.writetostore,
-            wrapper.bypasscheckhash,
-        ),
-    )
-
-    wrapfunction(hg, 'clone', wrapper.hgclone)
-    wrapfunction(hg, 'postshare', wrapper.hgpostshare)
-
     scmutil.fileprefetchhooks.add('lfs', wrapper._prefetchfiles)
 
     # Make bundle choose changegroup3 instead of changegroup2. This affects
@@ -359,11 +374,11 @@ def extsetup(ui):
     # when writing a bundle via "hg bundle" command, upload related LFS blobs
     wrapfunction(bundle2, 'writenewbundle', wrapper.writenewbundle)
 
-@filesetpredicate('lfs()', callstatus=True)
+@filesetpredicate('lfs()')
 def lfsfileset(mctx, x):
     """File that uses LFS storage."""
     # i18n: "lfs" is a keyword
-    fileset.getargs(x, 0, 0, _("lfs takes no arguments"))
+    filesetlang.getargs(x, 0, 0, _("lfs takes no arguments"))
     ctx = mctx.ctx
     def lfsfilep(f):
         return wrapper.pointerfromctx(ctx, f, removed=True) is not None

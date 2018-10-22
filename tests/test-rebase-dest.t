@@ -119,7 +119,7 @@ Setup rebase with multiple destinations
   > EOF
 
   $ rebasewithdag() {
-  >   N=`$PYTHON -c "print($N+1)"`
+  >   N=`"$PYTHON" -c "print($N+1)"`
   >   hg init repo$N && cd repo$N
   >   hg debugdrawdag
   >   hg rebase "$@" > _rebasetmp

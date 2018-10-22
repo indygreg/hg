@@ -75,7 +75,9 @@ def gettext(message):
             # goofy unicode docstrings in test
             paragraphs = message.split(u'\n\n')
         else:
-            paragraphs = [p.decode("ascii") for p in message.split('\n\n')]
+            # should be ascii, but we have unicode docstrings in test, which
+            # are converted to utf-8 bytes on Python 3.
+            paragraphs = [p.decode("utf-8") for p in message.split('\n\n')]
         # Be careful not to translate the empty string -- it holds the
         # meta data of the .po file.
         u = u'\n\n'.join([p and _ugettext(p) or u'' for p in paragraphs])

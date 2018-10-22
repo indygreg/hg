@@ -56,20 +56,20 @@ elif ctypes.sizeof(ctypes.c_longlong) == ctypes.sizeof(ctypes.c_void_p):
     _LPARAM = ctypes.c_longlong
 
 class _FILETIME(ctypes.Structure):
-    _fields_ = [('dwLowDateTime', _DWORD),
-                ('dwHighDateTime', _DWORD)]
+    _fields_ = [(r'dwLowDateTime', _DWORD),
+                (r'dwHighDateTime', _DWORD)]
 
 class _BY_HANDLE_FILE_INFORMATION(ctypes.Structure):
-    _fields_ = [('dwFileAttributes', _DWORD),
-                ('ftCreationTime', _FILETIME),
-                ('ftLastAccessTime', _FILETIME),
-                ('ftLastWriteTime', _FILETIME),
-                ('dwVolumeSerialNumber', _DWORD),
-                ('nFileSizeHigh', _DWORD),
-                ('nFileSizeLow', _DWORD),
-                ('nNumberOfLinks', _DWORD),
-                ('nFileIndexHigh', _DWORD),
-                ('nFileIndexLow', _DWORD)]
+    _fields_ = [(r'dwFileAttributes', _DWORD),
+                (r'ftCreationTime', _FILETIME),
+                (r'ftLastAccessTime', _FILETIME),
+                (r'ftLastWriteTime', _FILETIME),
+                (r'dwVolumeSerialNumber', _DWORD),
+                (r'nFileSizeHigh', _DWORD),
+                (r'nFileSizeLow', _DWORD),
+                (r'nNumberOfLinks', _DWORD),
+                (r'nFileIndexHigh', _DWORD),
+                (r'nFileIndexLow', _DWORD)]
 
 # CreateFile
 _FILE_SHARE_READ = 0x00000001
@@ -91,50 +91,50 @@ _PROCESS_QUERY_INFORMATION = 0x0400
 _STILL_ACTIVE = 259
 
 class _STARTUPINFO(ctypes.Structure):
-    _fields_ = [('cb', _DWORD),
-                ('lpReserved', _LPSTR),
-                ('lpDesktop', _LPSTR),
-                ('lpTitle', _LPSTR),
-                ('dwX', _DWORD),
-                ('dwY', _DWORD),
-                ('dwXSize', _DWORD),
-                ('dwYSize', _DWORD),
-                ('dwXCountChars', _DWORD),
-                ('dwYCountChars', _DWORD),
-                ('dwFillAttribute', _DWORD),
-                ('dwFlags', _DWORD),
-                ('wShowWindow', _WORD),
-                ('cbReserved2', _WORD),
-                ('lpReserved2', ctypes.c_char_p),
-                ('hStdInput', _HANDLE),
-                ('hStdOutput', _HANDLE),
-                ('hStdError', _HANDLE)]
+    _fields_ = [(r'cb', _DWORD),
+                (r'lpReserved', _LPSTR),
+                (r'lpDesktop', _LPSTR),
+                (r'lpTitle', _LPSTR),
+                (r'dwX', _DWORD),
+                (r'dwY', _DWORD),
+                (r'dwXSize', _DWORD),
+                (r'dwYSize', _DWORD),
+                (r'dwXCountChars', _DWORD),
+                (r'dwYCountChars', _DWORD),
+                (r'dwFillAttribute', _DWORD),
+                (r'dwFlags', _DWORD),
+                (r'wShowWindow', _WORD),
+                (r'cbReserved2', _WORD),
+                (r'lpReserved2', ctypes.c_char_p),
+                (r'hStdInput', _HANDLE),
+                (r'hStdOutput', _HANDLE),
+                (r'hStdError', _HANDLE)]
 
 class _PROCESS_INFORMATION(ctypes.Structure):
-    _fields_ = [('hProcess', _HANDLE),
-                ('hThread', _HANDLE),
-                ('dwProcessId', _DWORD),
-                ('dwThreadId', _DWORD)]
+    _fields_ = [(r'hProcess', _HANDLE),
+                (r'hThread', _HANDLE),
+                (r'dwProcessId', _DWORD),
+                (r'dwThreadId', _DWORD)]
 
 _CREATE_NO_WINDOW = 0x08000000
 _SW_HIDE = 0
 
 class _COORD(ctypes.Structure):
-    _fields_ = [('X', ctypes.c_short),
-                ('Y', ctypes.c_short)]
+    _fields_ = [(r'X', ctypes.c_short),
+                (r'Y', ctypes.c_short)]
 
 class _SMALL_RECT(ctypes.Structure):
-    _fields_ = [('Left', ctypes.c_short),
-                ('Top', ctypes.c_short),
-                ('Right', ctypes.c_short),
-                ('Bottom', ctypes.c_short)]
+    _fields_ = [(r'Left', ctypes.c_short),
+                (r'Top', ctypes.c_short),
+                (r'Right', ctypes.c_short),
+                (r'Bottom', ctypes.c_short)]
 
 class _CONSOLE_SCREEN_BUFFER_INFO(ctypes.Structure):
-    _fields_ = [('dwSize', _COORD),
-                ('dwCursorPosition', _COORD),
-                ('wAttributes', _WORD),
-                ('srWindow', _SMALL_RECT),
-                ('dwMaximumWindowSize', _COORD)]
+    _fields_ = [(r'dwSize', _COORD),
+                (r'dwCursorPosition', _COORD),
+                (r'wAttributes', _WORD),
+                (r'srWindow', _SMALL_RECT),
+                (r'dwMaximumWindowSize', _COORD)]
 
 _STD_OUTPUT_HANDLE = _DWORD(-11).value
 _STD_ERROR_HANDLE = _DWORD(-12).value
@@ -149,40 +149,40 @@ PKCS_7_ASN_ENCODING = 0x00010000
 # These structs are only complete enough to achieve what we need.
 class CERT_CHAIN_CONTEXT(ctypes.Structure):
     _fields_ = (
-        ("cbSize", _DWORD),
+        (r"cbSize", _DWORD),
 
         # CERT_TRUST_STATUS struct
-        ("dwErrorStatus", _DWORD),
-        ("dwInfoStatus", _DWORD),
+        (r"dwErrorStatus", _DWORD),
+        (r"dwInfoStatus", _DWORD),
 
-        ("cChain", _DWORD),
-        ("rgpChain", ctypes.c_void_p),
-        ("cLowerQualityChainContext", _DWORD),
-        ("rgpLowerQualityChainContext", ctypes.c_void_p),
-        ("fHasRevocationFreshnessTime", _BOOL),
-        ("dwRevocationFreshnessTime", _DWORD),
+        (r"cChain", _DWORD),
+        (r"rgpChain", ctypes.c_void_p),
+        (r"cLowerQualityChainContext", _DWORD),
+        (r"rgpLowerQualityChainContext", ctypes.c_void_p),
+        (r"fHasRevocationFreshnessTime", _BOOL),
+        (r"dwRevocationFreshnessTime", _DWORD),
     )
 
 class CERT_USAGE_MATCH(ctypes.Structure):
     _fields_ = (
-        ("dwType", _DWORD),
+        (r"dwType", _DWORD),
 
          # CERT_ENHKEY_USAGE struct
-        ("cUsageIdentifier", _DWORD),
-        ("rgpszUsageIdentifier", ctypes.c_void_p), # LPSTR *
+        (r"cUsageIdentifier", _DWORD),
+        (r"rgpszUsageIdentifier", ctypes.c_void_p), # LPSTR *
     )
 
 class CERT_CHAIN_PARA(ctypes.Structure):
     _fields_ = (
-        ("cbSize", _DWORD),
-        ("RequestedUsage", CERT_USAGE_MATCH),
-        ("RequestedIssuancePolicy", CERT_USAGE_MATCH),
-        ("dwUrlRetrievalTimeout", _DWORD),
-        ("fCheckRevocationFreshnessTime", _BOOL),
-        ("dwRevocationFreshnessTime", _DWORD),
-        ("pftCacheResync", ctypes.c_void_p), # LPFILETIME
-        ("pStrongSignPara", ctypes.c_void_p), # PCCERT_STRONG_SIGN_PARA
-        ("dwStrongSignFlags", _DWORD),
+        (r"cbSize", _DWORD),
+        (r"RequestedUsage", CERT_USAGE_MATCH),
+        (r"RequestedIssuancePolicy", CERT_USAGE_MATCH),
+        (r"dwUrlRetrievalTimeout", _DWORD),
+        (r"fCheckRevocationFreshnessTime", _BOOL),
+        (r"dwRevocationFreshnessTime", _DWORD),
+        (r"pftCacheResync", ctypes.c_void_p), # LPFILETIME
+        (r"pStrongSignPara", ctypes.c_void_p), # PCCERT_STRONG_SIGN_PARA
+        (r"dwStrongSignFlags", _DWORD),
     )
 
 # types of parameters of C functions used (required by pypy)
@@ -307,8 +307,8 @@ def _raiseoserror(name):
     if code > 0x7fffffff:
         code -= 2**32
     err = ctypes.WinError(code=code)
-    raise OSError(err.errno, '%s: %s' % (name,
-                                         encoding.strtolocal(err.strerror)))
+    raise OSError(err.errno, r'%s: %s' % (encoding.strfromlocal(name),
+                                          err.strerror))
 
 def _getfileinfo(name):
     fh = _kernel32.CreateFileA(name, 0,
@@ -579,11 +579,12 @@ def spawndetached(args):
         env = '\0'
     env += '\0'
 
-    args = subprocess.list2cmdline(args)
+    args = subprocess.list2cmdline(pycompat.rapply(encoding.strfromlocal, args))
 
+    # TODO: CreateProcessW on py3?
     res = _kernel32.CreateProcessA(
-        None, args, None, None, False, _CREATE_NO_WINDOW,
-        env, pycompat.getcwd(), ctypes.byref(si), ctypes.byref(pi))
+        None, encoding.strtolocal(args), None, None, False, _CREATE_NO_WINDOW,
+        env, encoding.getcwd(), ctypes.byref(si), ctypes.byref(pi))
     if not res:
         raise ctypes.WinError()
 
@@ -596,7 +597,8 @@ def unlink(f):
         # use EPERM because it is POSIX prescribed value, even though
         # unlink(2) on directories returns EISDIR on Linux
         raise IOError(errno.EPERM,
-                      "Unlinking directory not permitted: '%s'" % f)
+                      r"Unlinking directory not permitted: '%s'"
+                      % encoding.strfromlocal(f))
 
     # POSIX allows to unlink and rename open files. Windows has serious
     # problems with doing that:
@@ -615,7 +617,7 @@ def unlink(f):
     # callers to recreate f immediately while having other readers do their
     # implicit zombie filename blocking on a temporary name.
 
-    for tries in xrange(10):
+    for tries in pycompat.xrange(10):
         temp = '%s-%08x' % (f, random.randint(0, 0xffffffff))
         try:
             os.rename(f, temp)  # raises OSError EEXIST if temp exists
@@ -624,7 +626,7 @@ def unlink(f):
             if e.errno != errno.EEXIST:
                 raise
     else:
-        raise IOError(errno.EEXIST, "No usable temporary filename found")
+        raise IOError(errno.EEXIST, r"No usable temporary filename found")
 
     try:
         os.unlink(temp)

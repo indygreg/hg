@@ -73,7 +73,7 @@ You can set patchbomb to always ask for confirmation by setting
 '''
 from __future__ import absolute_import
 
-import email as emailmod
+import email.encoders as emailencoders
 import email.generator as emailgen
 import email.mime.base as emimebase
 import email.mime.multipart as emimemultipart
@@ -139,6 +139,11 @@ configitem('patchbomb', 'to',
     default=None,
 )
 
+if pycompat.ispy3:
+    _bytesgenerator = emailgen.BytesGenerator
+else:
+    _bytesgenerator = emailgen.Generator
+
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
@@ -182,12 +187,12 @@ def introwanted(ui, opts, number):
     elif introconfig == 'never':
         intro = False
     elif introconfig == 'auto':
-        intro = 1 < number
+        intro = number > 1
     else:
         ui.write_err(_('warning: invalid patchbomb.intro value "%s"\n')
                      % introconfig)
         ui.write_err(_('(should be one of always, never, auto)\n'))
-        intro = 1 < number
+        intro = number > 1
     return intro
 
 def _formatflags(ui, repo, rev, flags):
@@ -273,10 +278,11 @@ def makepatch(ui, repo, rev, patchlines, opts, _charsets, idx, total, numbered,
                                                  seqno=idx, total=total)
             else:
                 patchname = cmdutil.makefilename(repo[node], '%b.patch')
-        disposition = 'inline'
+        disposition = r'inline'
         if opts.get('attach'):
-            disposition = 'attachment'
-        p['Content-Disposition'] = disposition + '; filename=' + patchname
+            disposition = r'attachment'
+        p[r'Content-Disposition'] = (
+            disposition + r'; filename=' + encoding.strfromlocal(patchname))
         msg.attach(p)
     else:
         msg = mail.mimetextpatch(body, display=opts.get('test'))
@@ -370,12 +376,12 @@ def _getbundlemsgs(repo, sender, bundle, **opts):
     msg = emimemultipart.MIMEMultipart()
     if body:
         msg.attach(mail.mimeencode(ui, body, _charsets, opts.get(r'test')))
-    datapart = emimebase.MIMEBase('application', 'x-mercurial-bundle')
+    datapart = emimebase.MIMEBase(r'application', r'x-mercurial-bundle')
     datapart.set_payload(bundle)
     bundlename = '%s.hg' % opts.get(r'bundlename', 'bundle')
-    datapart.add_header('Content-Disposition', 'attachment',
-                        filename=bundlename)
-    emailmod.Encoders.encode_base64(datapart)
+    datapart.add_header(r'Content-Disposition', r'attachment',
+                        filename=encoding.strfromlocal(bundlename))
+    emailencoders.encode_base64(datapart)
     msg.attach(datapart)
     msg['Subject'] = mail.headencode(ui, subj, _charsets, opts.get(r'test'))
     return [(msg, subj, None)]
@@ -463,24 +469,34 @@ def _getoutgoing(repo, dest, revs):
         ui.status(_("no changes found\n"))
     return revs
 
+def _msgid(node, timestamp):
+    hostname = encoding.strtolocal(socket.getfqdn())
+    hostname = encoding.environ.get('HGHOSTNAME', hostname)
+    return '<%s.%d@%s>' % (node, timestamp, hostname)
+
 emailopts = [
     ('', 'body', None, _('send patches as inline message text (default)')),
     ('a', 'attach', None, _('send patches as attachments')),
     ('i', 'inline', None, _('send patches as inline attachments')),
-    ('', 'bcc', [], _('email addresses of blind carbon copy recipients')),
-    ('c', 'cc', [], _('email addresses of copy recipients')),
+    ('', 'bcc', [],
+     _('email addresses of blind carbon copy recipients'), _('EMAIL')),
+    ('c', 'cc', [], _('email addresses of copy recipients'), _('EMAIL')),
     ('', 'confirm', None, _('ask for confirmation before sending')),
     ('d', 'diffstat', None, _('add diffstat output to messages')),
-    ('', 'date', '', _('use the given date as the sending date')),
-    ('', 'desc', '', _('use the given file as the series description')),
-    ('f', 'from', '', _('email address of sender')),
+    ('', 'date', '', _('use the given date as the sending date'), _('DATE')),
+    ('', 'desc', '',
+     _('use the given file as the series description'), _('FILE')),
+    ('f', 'from', '', _('email address of sender'), _('EMAIL')),
     ('n', 'test', None, _('print messages that would be sent')),
-    ('m', 'mbox', '', _('write messages to mbox file instead of sending them')),
-    ('', 'reply-to', [], _('email addresses replies should be sent to')),
-    ('s', 'subject', '', _('subject of first message (intro or single patch)')),
-    ('', 'in-reply-to', '', _('message identifier to reply to')),
-    ('', 'flag', [], _('flags to add in subject prefixes')),
-    ('t', 'to', [], _('email addresses of recipients'))]
+    ('m', 'mbox', '',
+     _('write messages to mbox file instead of sending them'), _('FILE')),
+    ('', 'reply-to', [],
+     _('email addresses replies should be sent to'), _('EMAIL')),
+    ('s', 'subject', '',
+     _('subject of first message (intro or single patch)'), _('TEXT')),
+    ('', 'in-reply-to', '', _('message identifier to reply to'), _('MSGID')),
+    ('', 'flag', [], _('flags to add in subject prefixes'), _('FLAG')),
+    ('t', 'to', [], _('email addresses of recipients'), _('EMAIL'))]
 
 @command('email',
     [('g', 'git', None, _('use git extended diff format')),
@@ -488,7 +504,8 @@ emailopts = [
     ('o', 'outgoing', None,
      _('send changes not found in the target repository')),
     ('b', 'bundle', None, _('send changes not in target as a binary bundle')),
-    ('B', 'bookmark', '', _('send changes only reachable by given bookmark')),
+    ('B', 'bookmark', '',
+     _('send changes only reachable by given bookmark'), _('BOOKMARK')),
     ('', 'bundlename', 'bundle',
      _('name of the bundle attachment file'), _('NAME')),
     ('r', 'rev', [], _('a revision to send'), _('REV')),
@@ -498,7 +515,8 @@ emailopts = [
        '(with -b/--bundle)'), _('REV')),
     ('', 'intro', None, _('send an introduction email for a single patch')),
     ] + emailopts + cmdutil.remoteopts,
-    _('hg email [OPTION]... [DEST]...'))
+    _('hg email [OPTION]... [DEST]...'),
+    helpcategory=command.CATEGORY_IMPORT_EXPORT)
 def email(ui, repo, *revs, **opts):
     '''send changesets by email
 
@@ -652,7 +670,7 @@ def email(ui, repo, *revs, **opts):
                 if not known[idx]:
                     missing.append(h)
             if missing:
-                if 1 < len(missing):
+                if len(missing) > 1:
                     msg = _('public "%s" is missing %s and %i others')
                     msg %= (publicurl, missing[0], len(missing) - 1)
                 else:
@@ -671,8 +689,7 @@ def email(ui, repo, *revs, **opts):
         start_time = dateutil.makedate()
 
     def genmsgid(id):
-        return '<%s.%d@%s>' % (id[:20], int(start_time[0]),
-                               encoding.strtolocal(socket.getfqdn()))
+        return _msgid(id[:20], int(start_time[0]))
 
     # deprecated config: patchbomb.from
     sender = (opts.get('from') or ui.config('email', 'from') or
@@ -780,10 +797,27 @@ def email(ui, repo, *revs, **opts):
             m['Bcc'] = ', '.join(bcc)
         if replyto:
             m['Reply-To'] = ', '.join(replyto)
+        # Fix up all headers to be native strings.
+        # TODO(durin42): this should probably be cleaned up above in the future.
+        if pycompat.ispy3:
+            for hdr, val in list(m.items()):
+                change = False
+                if isinstance(hdr, bytes):
+                    del m[hdr]
+                    hdr = pycompat.strurl(hdr)
+                    change = True
+                if isinstance(val, bytes):
+                    val = pycompat.strurl(val)
+                    if not change:
+                        # prevent duplicate headers
+                        del m[hdr]
+                    change = True
+                if change:
+                    m[hdr] = val
         if opts.get('test'):
             ui.status(_('displaying '), subj, ' ...\n')
             ui.pager('email')
-            generator = emailgen.Generator(ui, mangle_from_=False)
+            generator = _bytesgenerator(ui, mangle_from_=False)
             try:
                 generator.flatten(m, 0)
                 ui.write('\n')
@@ -799,8 +833,10 @@ def email(ui, repo, *revs, **opts):
                 # Exim does not remove the Bcc field
                 del m['Bcc']
             fp = stringio()
-            generator = emailgen.Generator(fp, mangle_from_=False)
+            generator = _bytesgenerator(fp, mangle_from_=False)
             generator.flatten(m, 0)
-            sendmail(sender_addr, to + bcc + cc, fp.getvalue())
+            alldests = to + bcc + cc
+            alldests = [encoding.strfromlocal(d) for d in alldests]
+            sendmail(sender_addr, alldests, fp.getvalue())
 
     progress.complete()

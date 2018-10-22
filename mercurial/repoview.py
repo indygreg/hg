@@ -28,7 +28,10 @@ def hideablerevs(repo):
     branchmap (see mercurial.branchmap.subsettable), you cannot set "public"
     changesets as "hideable". Doing so would break multiple code assertions and
     lead to crashes."""
-    return obsolete.getrevs(repo, 'obsolete')
+    obsoletes = obsolete.getrevs(repo, 'obsolete')
+    internals = repo._phasecache.getrevset(repo, phases.localhiddenphases)
+    internals = frozenset(internals)
+    return obsoletes | internals
 
 def pinnedrevs(repo):
     """revisions blocking hidden changesets from being filtered
@@ -128,7 +131,7 @@ def computeimpactable(repo, visibilityexceptions=None):
             firstmutable = min(firstmutable, min(cl.rev(r) for r in roots))
     # protect from nullrev root
     firstmutable = max(0, firstmutable)
-    return frozenset(xrange(firstmutable, len(cl)))
+    return frozenset(pycompat.xrange(firstmutable, len(cl)))
 
 # function to compute filtered set
 #
@@ -210,7 +213,7 @@ class repoview(object):
         unfichangelog = unfi.changelog
         # bypass call to changelog.method
         unfiindex = unfichangelog.index
-        unfilen = len(unfiindex) - 1
+        unfilen = len(unfiindex)
         unfinode = unfiindex[unfilen - 1][7]
 
         revs = filterrevs(unfi, self.filtername, self._visibilityexceptions)

@@ -12,9 +12,6 @@ import sys
 import threading
 
 from .i18n import _
-from .thirdparty import (
-    cbor,
-)
 from . import (
     encoding,
     error,
@@ -25,6 +22,7 @@ from . import (
     wireprotov2server,
 )
 from .utils import (
+    cborutil,
     interfaceutil,
     procutil,
 )
@@ -389,7 +387,7 @@ def processcapabilitieshandshake(repo, req, res, proto):
 
     res.status = b'200 OK'
     res.headers[b'Content-Type'] = b'application/mercurial-cbor'
-    res.setbodybytes(cbor.dumps(m, canonical=True))
+    res.setbodybytes(b''.join(cborutil.streamencode(m)))
 
     return True
 
@@ -502,14 +500,14 @@ class sshv1protocolhandler(object):
     def getargs(self, args):
         data = {}
         keys = args.split()
-        for n in xrange(len(keys)):
+        for n in pycompat.xrange(len(keys)):
             argline = self._fin.readline()[:-1]
             arg, l = argline.split()
             if arg not in keys:
                 raise error.Abort(_("unexpected parameter %r") % arg)
             if arg == '*':
                 star = {}
-                for k in xrange(int(l)):
+                for k in pycompat.xrange(int(l)):
                     argline = self._fin.readline()[:-1]
                     arg, l = argline.split()
                     val = self._fin.read(int(l))

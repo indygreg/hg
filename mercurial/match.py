@@ -8,6 +8,7 @@
 from __future__ import absolute_import, print_function
 
 import copy
+import itertools
 import os
 import re
 
@@ -331,6 +332,49 @@ class basematcher(object):
         '''
         return True
 
+    def visitchildrenset(self, dir):
+        '''Decides whether a directory should be visited based on whether it
+        has potential matches in it or one of its subdirectories, and
+        potentially lists which subdirectories of that directory should be
+        visited. This is based on the match's primary, included, and excluded
+        patterns.
+
+        This function is very similar to 'visitdir', and the following mapping
+        can be applied:
+
+             visitdir | visitchildrenlist
+            ----------+-------------------
+             False    | set()
+             'all'    | 'all'
+             True     | 'this' OR non-empty set of subdirs -or files- to visit
+
+        Example:
+          Assume matchers ['path:foo/bar', 'rootfilesin:qux'], we would return
+          the following values (assuming the implementation of visitchildrenset
+          is capable of recognizing this; some implementations are not).
+
+          '.' -> {'foo', 'qux'}
+          'baz' -> set()
+          'foo' -> {'bar'}
+          # Ideally this would be 'all', but since the prefix nature of matchers
+          # is applied to the entire matcher, we have to downgrade this to
+          # 'this' due to the non-prefix 'rootfilesin'-kind matcher being mixed
+          # in.
+          'foo/bar' -> 'this'
+          'qux' -> 'this'
+
+        Important:
+          Most matchers do not know if they're representing files or
+          directories. They see ['path:dir/f'] and don't know whether 'f' is a
+          file or a directory, so visitchildrenset('dir') for most matchers will
+          return {'f'}, but if the matcher knows it's a file (like exactmatcher
+          does), it may return 'this'. Do not rely on the return being a set
+          indicating that there are no files in this dir to investigate (or
+          equivalently that if there are files to investigate in 'dir' that it
+          will always return 'this').
+        '''
+        return 'this'
+
     def always(self):
         '''Matcher will match everything and .files() will be empty --
         optimization might be possible.'''
@@ -367,6 +411,9 @@ class alwaysmatcher(basematcher):
     def visitdir(self, dir):
         return 'all'
 
+    def visitchildrenset(self, dir):
+        return 'all'
+
     def __repr__(self):
         return r'<alwaysmatcher>'
 
@@ -389,6 +436,9 @@ class nevermatcher(basematcher):
 
     def visitdir(self, dir):
         return False
+
+    def visitchildrenset(self, dir):
+        return set()
 
     def __repr__(self):
         return r'<nevermatcher>'
@@ -430,12 +480,61 @@ class patternmatcher(basematcher):
                 any(parentdir in self._fileset
                     for parentdir in util.finddirs(dir)))
 
+    def visitchildrenset(self, dir):
+        ret = self.visitdir(dir)
+        if ret is True:
+            return 'this'
+        elif not ret:
+            return set()
+        assert ret == 'all'
+        return 'all'
+
     def prefix(self):
         return self._prefix
 
     @encoding.strmethod
     def __repr__(self):
         return ('<patternmatcher patterns=%r>' % pycompat.bytestr(self._pats))
+
+# This is basically a reimplementation of util.dirs that stores the children
+# instead of just a count of them, plus a small optional optimization to avoid
+# some directories we don't need.
+class _dirchildren(object):
+    def __init__(self, paths, onlyinclude=None):
+        self._dirs = {}
+        self._onlyinclude = onlyinclude or []
+        addpath = self.addpath
+        for f in paths:
+            addpath(f)
+
+    def addpath(self, path):
+        if path == '.':
+            return
+        dirs = self._dirs
+        findsplitdirs = _dirchildren._findsplitdirs
+        for d, b in findsplitdirs(path):
+            if d not in self._onlyinclude:
+                continue
+            dirs.setdefault(d, set()).add(b)
+
+    @staticmethod
+    def _findsplitdirs(path):
+        # yields (dirname, basename) tuples, walking back to the root.  This is
+        # very similar to util.finddirs, except:
+        #  - produces a (dirname, basename) tuple, not just 'dirname'
+        #  - includes root dir
+        # Unlike manifest._splittopdir, this does not suffix `dirname` with a
+        # slash, and produces '.' for the root instead of ''.
+        oldpos = len(path)
+        pos = path.rfind('/')
+        while pos != -1:
+            yield path[:pos], path[pos + 1:oldpos]
+            oldpos = pos
+            pos = path.rfind('/', 0, pos)
+        yield '.', path[:oldpos]
+
+    def get(self, path):
+        return self._dirs.get(path, set())
 
 class includematcher(basematcher):
 
@@ -445,11 +544,14 @@ class includematcher(basematcher):
         self._pats, self.matchfn = _buildmatch(kindpats, '(?:/|$)',
                                                listsubrepos, root)
         self._prefix = _prefix(kindpats)
-        roots, dirs = _rootsanddirs(kindpats)
+        roots, dirs, parents = _rootsdirsandparents(kindpats)
         # roots are directories which are recursively included.
         self._roots = set(roots)
         # dirs are directories which are non-recursively included.
         self._dirs = set(dirs)
+        # parents are directories which are non-recursively included because
+        # they are needed to get to items in _dirs or _roots.
+        self._parents = set(parents)
 
     def visitdir(self, dir):
         if self._prefix and dir in self._roots:
@@ -457,8 +559,37 @@ class includematcher(basematcher):
         return ('.' in self._roots or
                 dir in self._roots or
                 dir in self._dirs or
+                dir in self._parents or
                 any(parentdir in self._roots
                     for parentdir in util.finddirs(dir)))
+
+    @propertycache
+    def _allparentschildren(self):
+        # It may seem odd that we add dirs, roots, and parents, and then
+        # restrict to only parents. This is to catch the case of:
+        #   dirs = ['foo/bar']
+        #   parents = ['foo']
+        # if we asked for the children of 'foo', but had only added
+        # self._parents, we wouldn't be able to respond ['bar'].
+        return _dirchildren(
+                itertools.chain(self._dirs, self._roots, self._parents),
+                onlyinclude=self._parents)
+
+    def visitchildrenset(self, dir):
+        if self._prefix and dir in self._roots:
+            return 'all'
+        # Note: this does *not* include the 'dir in self._parents' case from
+        # visitdir, that's handled below.
+        if ('.' in self._roots or
+            dir in self._roots or
+            dir in self._dirs or
+            any(parentdir in self._roots
+                for parentdir in util.finddirs(dir))):
+            return 'this'
+
+        if dir in self._parents:
+            return self._allparentschildren.get(dir) or set()
+        return set()
 
     @encoding.strmethod
     def __repr__(self):
@@ -485,6 +616,26 @@ class exactmatcher(basematcher):
 
     def visitdir(self, dir):
         return dir in self._dirs
+
+    def visitchildrenset(self, dir):
+        if not self._fileset or dir not in self._dirs:
+            return set()
+
+        candidates = self._fileset | self._dirs - {'.'}
+        if dir != '.':
+            d = dir + '/'
+            candidates = set(c[len(d):] for c in candidates if
+                             c.startswith(d))
+        # self._dirs includes all of the directories, recursively, so if
+        # we're attempting to match foo/bar/baz.txt, it'll have '.', 'foo',
+        # 'foo/bar' in it. Thus we can safely ignore a candidate that has a
+        # '/' in it, indicating a it's for a subdir-of-a-subdir; the
+        # immediate subdir will be in there without a slash.
+        ret = {c for c in candidates if '/' not in c}
+        # We really do not expect ret to be empty, since that would imply that
+        # there's something in _dirs that didn't have a file in _fileset.
+        assert ret
+        return ret
 
     def isexact(self):
         return True
@@ -526,6 +677,31 @@ class differencematcher(basematcher):
         if self._m2.visitdir(dir) == 'all':
             return False
         return bool(self._m1.visitdir(dir))
+
+    def visitchildrenset(self, dir):
+        m2_set = self._m2.visitchildrenset(dir)
+        if m2_set == 'all':
+            return set()
+        m1_set = self._m1.visitchildrenset(dir)
+        # Possible values for m1: 'all', 'this', set(...), set()
+        # Possible values for m2:        'this', set(...), set()
+        # If m2 has nothing under here that we care about, return m1, even if
+        # it's 'all'. This is a change in behavior from visitdir, which would
+        # return True, not 'all', for some reason.
+        if not m2_set:
+            return m1_set
+        if m1_set in ['all', 'this']:
+            # Never return 'all' here if m2_set is any kind of non-empty (either
+            # 'this' or set(foo)), since m2 might return set() for a
+            # subdirectory.
+            return 'this'
+        # Possible values for m1:         set(...), set()
+        # Possible values for m2: 'this', set(...)
+        # We ignore m2's set results. They're possibly incorrect:
+        #  m1 = path:dir/subdir, m2=rootfilesin:dir, visitchildrenset('.'):
+        #    m1 returns {'dir'}, m2 returns {'dir'}, if we subtracted we'd
+        #    return set(), which is *not* correct, we still need to visit 'dir'!
+        return m1_set
 
     def isexact(self):
         return self._m1.isexact()
@@ -590,6 +766,25 @@ class intersectionmatcher(basematcher):
             return self._m2.visitdir(dir)
         # bool() because visit1=True + visit2='all' should not be 'all'
         return bool(visit1 and self._m2.visitdir(dir))
+
+    def visitchildrenset(self, dir):
+        m1_set = self._m1.visitchildrenset(dir)
+        if not m1_set:
+            return set()
+        m2_set = self._m2.visitchildrenset(dir)
+        if not m2_set:
+            return set()
+
+        if m1_set == 'all':
+            return m2_set
+        elif m2_set == 'all':
+            return m1_set
+
+        if m1_set == 'this' or m2_set == 'this':
+            return 'this'
+
+        assert isinstance(m1_set, set) and isinstance(m2_set, set)
+        return m1_set.intersection(m2_set)
 
     def always(self):
         return self._m1.always() and self._m2.always()
@@ -672,6 +867,13 @@ class subdirmatcher(basematcher):
             dir = self._path + "/" + dir
         return self._matcher.visitdir(dir)
 
+    def visitchildrenset(self, dir):
+        if dir == '.':
+            dir = self._path
+        else:
+            dir = self._path + "/" + dir
+        return self._matcher.visitchildrenset(dir)
+
     def always(self):
         return self._always
 
@@ -744,6 +946,15 @@ class prefixdirmatcher(basematcher):
             return self._matcher.visitdir(dir[len(self._pathprefix):])
         return dir in self._pathdirs
 
+    def visitchildrenset(self, dir):
+        if dir == self._path:
+            return self._matcher.visitchildrenset('.')
+        if dir.startswith(self._pathprefix):
+            return self._matcher.visitchildrenset(dir[len(self._pathprefix):])
+        if dir in self._pathdirs:
+            return 'this'
+        return set()
+
     def isexact(self):
         return self._matcher.isexact()
 
@@ -782,6 +993,25 @@ class unionmatcher(basematcher):
             if v == 'all':
                 return v
             r |= v
+        return r
+
+    def visitchildrenset(self, dir):
+        r = set()
+        this = False
+        for m in self._matchers:
+            v = m.visitchildrenset(dir)
+            if not v:
+                continue
+            if v == 'all':
+                return v
+            if this or v == 'this':
+                this = True
+                # don't break, we might have an 'all' in here.
+                continue
+            assert isinstance(v, set)
+            r = r.union(v)
+        if this:
+            return 'this'
         return r
 
     @encoding.strmethod
@@ -934,8 +1164,20 @@ def _buildmatch(kindpats, globsuffix, listsubrepos, root):
 
     regex = ''
     if kindpats:
-        regex, mf = _buildregexmatch(kindpats, globsuffix)
-        matchfuncs.append(mf)
+        if all(k == 'rootfilesin' for k, p, s in kindpats):
+            dirs = {p for k, p, s in kindpats}
+            def mf(f):
+                i = f.rfind('/')
+                if i >= 0:
+                    dir = f[:i]
+                else:
+                    dir = '.'
+                return dir in dirs
+            regex = b'rootfilesin: %s' % stringutil.pprint(list(sorted(dirs)))
+            matchfuncs.append(mf)
+        else:
+            regex, mf = _buildregexmatch(kindpats, globsuffix)
+            matchfuncs.append(mf)
 
     if len(matchfuncs) == 1:
         return regex, matchfuncs[0]
@@ -1004,40 +1246,46 @@ def _roots(kindpats):
     roots, dirs = _patternrootsanddirs(kindpats)
     return roots
 
-def _rootsanddirs(kindpats):
+def _rootsdirsandparents(kindpats):
     '''Returns roots and exact directories from patterns.
 
-    roots are directories to match recursively, whereas exact directories should
-    be matched non-recursively. The returned (roots, dirs) tuple will also
-    include directories that need to be implicitly considered as either, such as
-    parent directories.
+    `roots` are directories to match recursively, `dirs` should
+    be matched non-recursively, and `parents` are the implicitly required
+    directories to walk to items in either roots or dirs.
 
-    >>> _rootsanddirs(
+    Returns a tuple of (roots, dirs, parents).
+
+    >>> _rootsdirsandparents(
     ...     [(b'glob', b'g/h/*', b''), (b'glob', b'g/h', b''),
     ...      (b'glob', b'g*', b'')])
-    (['g/h', 'g/h', '.'], ['g', '.'])
-    >>> _rootsanddirs(
+    (['g/h', 'g/h', '.'], [], ['g', '.'])
+    >>> _rootsdirsandparents(
     ...     [(b'rootfilesin', b'g/h', b''), (b'rootfilesin', b'', b'')])
-    ([], ['g/h', '.', 'g', '.'])
-    >>> _rootsanddirs(
+    ([], ['g/h', '.'], ['g', '.'])
+    >>> _rootsdirsandparents(
     ...     [(b'relpath', b'r', b''), (b'path', b'p/p', b''),
     ...      (b'path', b'', b'')])
-    (['r', 'p/p', '.'], ['p', '.'])
-    >>> _rootsanddirs(
+    (['r', 'p/p', '.'], [], ['p', '.'])
+    >>> _rootsdirsandparents(
     ...     [(b'relglob', b'rg*', b''), (b're', b're/', b''),
     ...      (b'relre', b'rr', b'')])
-    (['.', '.', '.'], ['.'])
+    (['.', '.', '.'], [], ['.'])
     '''
     r, d = _patternrootsanddirs(kindpats)
 
+    p = []
     # Append the parents as non-recursive/exact directories, since they must be
     # scanned to get to either the roots or the other exact directories.
-    d.extend(util.dirs(d))
-    d.extend(util.dirs(r))
+    p.extend(util.dirs(d))
+    p.extend(util.dirs(r))
     # util.dirs() does not include the root directory, so add it manually
-    d.append('.')
+    p.append('.')
 
-    return r, d
+    # FIXME: all uses of this function convert these to sets, do so before
+    # returning.
+    # FIXME: all uses of this function do not need anything in 'roots' and
+    # 'dirs' to also be in 'parents', consider removing them before returning.
+    return r, d, p
 
 def _explicitfiles(kindpats):
     '''Returns the potential explicit filenames from the patterns.

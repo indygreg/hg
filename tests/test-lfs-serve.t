@@ -35,6 +35,26 @@ make command server magic visible
   $ hg init server
   $ SERVER_REQUIRES="$TESTTMP/server/.hg/requires"
 
+  $ cat > $TESTTMP/debugprocessors.py <<EOF
+  > from mercurial import (
+  >     cmdutil,
+  >     commands,
+  >     pycompat,
+  >     registrar,
+  > )
+  > cmdtable = {}
+  > command = registrar.command(cmdtable)
+  > @command(b'debugprocessors', [], b'FILE')
+  > def debugprocessors(ui, repo, file_=None, **opts):
+  >     opts = pycompat.byteskwargs(opts)
+  >     opts[b'changelog'] = False
+  >     opts[b'manifest'] = False
+  >     opts[b'dir'] = False
+  >     rl = cmdutil.openrevlog(repo, b'debugprocessors', file_, opts)
+  >     for flag, proc in rl._flagprocessors.iteritems():
+  >         ui.status(b"registered processor '%#x'\n" % (flag))
+  > EOF
+
 Skip the experimental.changegroup3=True config.  Failure to agree on this comes
 first, and causes a "ValueError: no common changegroup version" or "abort:
 HTTP Error 500: Internal Server Error", if the extension is only loaded on one
@@ -42,6 +62,8 @@ side.  If that *is* enabled, the subsequent failure is "abort: missing processor
 for flag '0x2000'!" if the extension is only loaded on one side (possibly also
 masked by the Internal Server Error message).
   $ cat >> $HGRCPATH <<EOF
+  > [extensions]
+  > debugprocessors = $TESTTMP/debugprocessors.py
   > [experimental]
   > lfs.disableusercache = True
   > [lfs]
@@ -50,6 +72,8 @@ masked by the Internal Server Error message).
   > allow_push=*
   > push_ssl=False
   > EOF
+
+  $ cp $HGRCPATH $HGRCPATH.orig
 
 #if lfsremote-on
   $ hg --config extensions.lfs= -R server \
@@ -114,12 +138,12 @@ non-lfs content, and the extension enabled.
   creating temporary repository to stage migrated data: * (glob)
   (it is safe to interrupt this process any time before data migration completes)
   migrating 3 total revisions (1 in filelogs, 1 in manifests, 1 in changelog)
-  migrating 132 bytes in store; 129 bytes tracked data
-  migrating 1 filelogs containing 1 revisions (9 bytes in store; 8 bytes tracked data)
+  migrating 324 bytes in store; 129 bytes tracked data
+  migrating 1 filelogs containing 1 revisions (73 bytes in store; 8 bytes tracked data)
   finished migrating 1 filelog revisions across 1 filelogs; change in size: 0 bytes
-  migrating 1 manifests containing 1 revisions (53 bytes in store; 52 bytes tracked data)
+  migrating 1 manifests containing 1 revisions (117 bytes in store; 52 bytes tracked data)
   finished migrating 1 manifest revisions across 1 manifests; change in size: 0 bytes
-  migrating changelog containing 1 revisions (70 bytes in store; 69 bytes tracked data)
+  migrating changelog containing 1 revisions (134 bytes in store; 69 bytes tracked data)
   finished migrating 1 changelog revisions; change in size: 0 bytes
   finished migrating 3 total revisions; total change in store size: 0 bytes
   copying phaseroots
@@ -280,10 +304,10 @@ lfs content, and the extension enabled.
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
   $TESTTMP/server/.hg/requires:lfs
 
-TODO: fail more gracefully.
-
-  $ hg clone -q http://localhost:$HGPORT $TESTTMP/client4_clone
-  abort: HTTP Error 500: Internal Server Error
+  $ hg clone http://localhost:$HGPORT $TESTTMP/client4_clone
+  (remote is using large file support (lfs), but it is explicitly disabled in the local configuration)
+  abort: repository requires features unknown to this Mercurial: lfs!
+  (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
   $ grep 'lfs' $TESTTMP/client4_clone/.hg/requires $SERVER_REQUIRES
   grep: $TESTTMP/client4_clone/.hg/requires: $ENOENT$
@@ -330,6 +354,103 @@ lfs content, and the extension enabled.
 
   $ hg identify http://localhost:$HGPORT
   c729025cc5e3
+
+  $ mv $HGRCPATH $HGRCPATH.tmp
+  $ cp $HGRCPATH.orig $HGRCPATH
+
+  >>> from __future__ import absolute_import
+  >>> from hgclient import check, readchannel, runcommand
+  >>> @check
+  ... def checkflags(server):
+  ...     readchannel(server)
+  ...     print('')
+  ...     print('# LFS required- both lfs and non-lfs revlogs have 0x2000 flag')
+  ...     runcommand(server, ['debugprocessors', 'lfs.bin', '-R',
+  ...                '../server'])
+  ...     runcommand(server, ['debugprocessors', 'nonlfs2.txt', '-R',
+  ...                '../server'])
+  ...     runcommand(server, ['config', 'extensions', '--cwd',
+  ...                '../server'])
+  ... 
+  ...     print("\n# LFS not enabled- revlogs don't have 0x2000 flag")
+  ...     runcommand(server, ['debugprocessors', 'nonlfs3.txt'])
+  ...     runcommand(server, ['config', 'extensions'])
+  
+  # LFS required- both lfs and non-lfs revlogs have 0x2000 flag
+  *** runcommand debugprocessors lfs.bin -R ../server
+  registered processor '0x8000'
+  registered processor '0x2000'
+  *** runcommand debugprocessors nonlfs2.txt -R ../server
+  registered processor '0x8000'
+  registered processor '0x2000'
+  *** runcommand config extensions --cwd ../server
+  extensions.debugprocessors=$TESTTMP/debugprocessors.py
+  extensions.lfs=
+  
+  # LFS not enabled- revlogs don't have 0x2000 flag
+  *** runcommand debugprocessors nonlfs3.txt
+  registered processor '0x8000'
+  *** runcommand config extensions
+  extensions.debugprocessors=$TESTTMP/debugprocessors.py
+
+  $ rm $HGRCPATH
+  $ mv $HGRCPATH.tmp $HGRCPATH
+
+  $ hg clone $TESTTMP/client $TESTTMP/nonlfs -qr 0 --config extensions.lfs=
+  $ cat >> $TESTTMP/nonlfs/.hg/hgrc <<EOF
+  > [extensions]
+  > lfs = !
+  > EOF
+
+  >>> from __future__ import absolute_import, print_function
+  >>> from hgclient import check, readchannel, runcommand
+  >>> @check
+  ... def checkflags2(server):
+  ...     readchannel(server)
+  ...     print('')
+  ...     print('# LFS enabled- both lfs and non-lfs revlogs have 0x2000 flag')
+  ...     runcommand(server, ['debugprocessors', 'lfs.bin', '-R',
+  ...                '../server'])
+  ...     runcommand(server, ['debugprocessors', 'nonlfs2.txt', '-R',
+  ...                '../server'])
+  ...     runcommand(server, ['config', 'extensions', '--cwd',
+  ...                '../server'])
+  ... 
+  ...     print('\n# LFS enabled without requirement- revlogs have 0x2000 flag')
+  ...     runcommand(server, ['debugprocessors', 'nonlfs3.txt'])
+  ...     runcommand(server, ['config', 'extensions'])
+  ... 
+  ...     print("\n# LFS disabled locally- revlogs don't have 0x2000 flag")
+  ...     runcommand(server, ['debugprocessors', 'nonlfs.txt', '-R',
+  ...                '../nonlfs'])
+  ...     runcommand(server, ['config', 'extensions', '--cwd',
+  ...                '../nonlfs'])
+  
+  # LFS enabled- both lfs and non-lfs revlogs have 0x2000 flag
+  *** runcommand debugprocessors lfs.bin -R ../server
+  registered processor '0x8000'
+  registered processor '0x2000'
+  *** runcommand debugprocessors nonlfs2.txt -R ../server
+  registered processor '0x8000'
+  registered processor '0x2000'
+  *** runcommand config extensions --cwd ../server
+  extensions.debugprocessors=$TESTTMP/debugprocessors.py
+  extensions.lfs=
+  
+  # LFS enabled without requirement- revlogs have 0x2000 flag
+  *** runcommand debugprocessors nonlfs3.txt
+  registered processor '0x8000'
+  registered processor '0x2000'
+  *** runcommand config extensions
+  extensions.debugprocessors=$TESTTMP/debugprocessors.py
+  extensions.lfs=
+  
+  # LFS disabled locally- revlogs don't have 0x2000 flag
+  *** runcommand debugprocessors nonlfs.txt -R ../nonlfs
+  registered processor '0x8000'
+  *** runcommand config extensions --cwd ../nonlfs
+  extensions.debugprocessors=$TESTTMP/debugprocessors.py
+  extensions.lfs=!
 
 --------------------------------------------------------------------------------
 Case #6: client with lfs content and the extension enabled; server with
@@ -386,6 +507,7 @@ lfs content, and the extension enabled.
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   updated to "d3b84d50eacb: lfs file with lfs client"
   1 other heads for branch "default"
+  (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
   $ grep 'lfs' $TESTTMP/client6_pull/.hg/requires $SERVER_REQUIRES
   $TESTTMP/client6_pull/.hg/requires:lfs
   $TESTTMP/server/.hg/requires:lfs
@@ -533,12 +655,10 @@ Only the files required by diff are prefetched
 
 #endif
 
-  $ $PYTHON $TESTDIR/killdaemons.py $DAEMON_PIDS
+  $ "$PYTHON" $TESTDIR/killdaemons.py $DAEMON_PIDS
 
 #if lfsremote-on
   $ cat $TESTTMP/errors.log | grep '^[A-Z]'
-  Traceback (most recent call last):
-  ValueError: no common changegroup version
   Traceback (most recent call last):
   ValueError: no common changegroup version
 #else

@@ -208,7 +208,7 @@ def _defaultkwmaps(ui):
 def _shrinktext(text, subfunc):
     '''Helper for keyword expansion removal in text.
     Depending on subfunc also returns number of substitutions.'''
-    return subfunc(r'$\1$', text)
+    return subfunc(br'$\1$', text)
 
 def _preselect(wstatus, changed):
     '''Retrieves modified and added files from a working directory state
@@ -250,12 +250,12 @@ class kwtemplater(object):
     @util.propertycache
     def rekw(self):
         '''Returns regex for unexpanded keywords.'''
-        return re.compile(r'\$(%s)\$' % self.escape)
+        return re.compile(br'\$(%s)\$' % self.escape)
 
     @util.propertycache
     def rekwexp(self):
         '''Returns regex for expanded keywords.'''
-        return re.compile(r'\$(%s): [^$\n\r]*? \$' % self.escape)
+        return re.compile(br'\$(%s): [^$\n\r]*? \$' % self.escape)
 
     def substitute(self, data, path, ctx, subfunc):
         '''Replaces keywords in data with expanded template.'''
@@ -430,6 +430,8 @@ def demo(ui, repo, *args, **opts):
     def demoitems(section, items):
         ui.write('[%s]\n' % section)
         for k, v in sorted(items):
+            if isinstance(v, bool):
+                v = stringutil.pprint(v)
             ui.write('%s = %s\n' % (k, v))
 
     fn = 'demo.txt'
@@ -439,7 +441,7 @@ def demo(ui, repo, *args, **opts):
         baseui = ui
     else:
         baseui = repo.baseui
-    repo = localrepo.localrepository(baseui, tmpdir, True)
+    repo = localrepo.instance(baseui, tmpdir, create=True)
     ui.setconfig('keyword', fn, '', 'keyword')
     svn = ui.configbool('keywordset', 'svn')
     # explicitly set keywordset for demo output
@@ -567,7 +569,7 @@ def files(ui, repo, *pats, **opts):
         showfiles += ([f for f in files if f not in kwfiles],
                       [f for f in status.unknown if f not in kwunknown])
     kwlabels = 'enabled deleted enabledunknown ignored ignoredunknown'.split()
-    kwstates = zip(kwlabels, 'K!kIi', showfiles)
+    kwstates = zip(kwlabels, pycompat.bytestr('K!kIi'), showfiles)
     fm = ui.formatter('kwfiles', opts)
     fmt = '%.0s%s\n'
     if opts.get('all') or ui.verbose:
@@ -576,8 +578,8 @@ def files(ui, repo, *pats, **opts):
         label = 'kwfiles.' + kwstate
         for f in filenames:
             fm.startitem()
-            fm.write('kwstatus path', fmt, char,
-                     repo.pathto(f, cwd), label=label)
+            fm.data(kwstatus=char, path=f)
+            fm.plain(fmt % (char, repo.pathto(f, cwd)), label=label)
     fm.end()
 
 @command('kwshrink',

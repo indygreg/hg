@@ -39,25 +39,21 @@ def offset_type(offset, type):
 
 class BaseIndexObject(object):
     def __len__(self):
-        return self._lgt + len(self._extra) + 1
+        return self._lgt + len(self._extra)
 
-    def insert(self, i, tup):
-        assert i == -1
+    def append(self, tup):
         self._extra.append(tup)
 
-    def _fix_index(self, i):
+    def _check_index(self, i):
         if not isinstance(i, int):
             raise TypeError("expecting int indexes")
-        if i < 0:
-            i = len(self) + i
         if i < 0 or i >= len(self):
             raise IndexError
-        return i
 
     def __getitem__(self, i):
-        i = self._fix_index(i)
-        if i == len(self) - 1:
+        if i == -1:
             return (0, 0, 0, -1, -1, -1, -1, nullid)
+        self._check_index(i)
         if i >= self._lgt:
             return self._extra[i - self._lgt]
         index = self._calculate_index(i)
@@ -82,7 +78,8 @@ class IndexObject(BaseIndexObject):
     def __delitem__(self, i):
         if not isinstance(i, slice) or not i.stop == -1 or i.step is not None:
             raise ValueError("deleting slices only supports a:-1 with step 1")
-        i = self._fix_index(i.start)
+        i = i.start
+        self._check_index(i)
         if i < self._lgt:
             self._data = self._data[:i * indexsize]
             self._lgt = i
@@ -116,7 +113,8 @@ class InlinedIndexObject(BaseIndexObject):
     def __delitem__(self, i):
         if not isinstance(i, slice) or not i.stop == -1 or i.step is not None:
             raise ValueError("deleting slices only supports a:-1 with step 1")
-        i = self._fix_index(i.start)
+        i = i.start
+        self._check_index(i)
         if i < self._lgt:
             self._offsets = self._offsets[:i]
             self._lgt = i

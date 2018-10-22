@@ -73,28 +73,45 @@ help
   
   list of commands:
   
-   qapplied      print the patches already applied
+  Repository creation:
+  
    qclone        clone main and patch repository at same time
-   qdelete       remove patches from queue
-   qdiff         diff of the current patch and subsequent modifications
-   qfinish       move applied patches into repository history
+  
+  Change creation:
+  
+   qnew          create a new patch
+   qrefresh      update the current patch
+  
+  Change manipulation:
+  
    qfold         fold the named patches into the current patch
+  
+  Change organization:
+  
+   qapplied      print the patches already applied
+   qdelete       remove patches from queue
+   qfinish       move applied patches into repository history
    qgoto         push or pop patches until named patch is at top of stack
    qguard        set or print guards for a patch
    qheader       print the header of the topmost or specified patch
-   qimport       import a patch or existing changeset
-   qnew          create a new patch
    qnext         print the name of the next pushable patch
    qpop          pop the current patch off the stack
    qprev         print the name of the preceding applied patch
    qpush         push the next patch onto the stack
    qqueue        manage multiple patch queues
-   qrefresh      update the current patch
    qrename       rename a patch
    qselect       set or print guarded patches to push
    qseries       print the entire series file
    qtop          print the name of the current patch
    qunapplied    print the patches not yet applied
+  
+  File content management:
+  
+   qdiff         diff of the current patch and subsequent modifications
+  
+  Change import/export:
+  
+   qimport       import a patch or existing changeset
   
   (use 'hg help -v mq' to show built-in aliases and global options)
 
@@ -782,7 +799,7 @@ strip
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 770eb8fce608
+  new changesets 770eb8fce608 (1 drafts)
   (run 'hg update' to get a working copy)
 
 
@@ -1128,9 +1145,9 @@ create a git binary patch
   > path = sys.argv[1]
   > open(path, 'wb').write(b'BIN\x00ARY')
   > EOF
-  $ $PYTHON writebin.py bucephalus
+  $ "$PYTHON" writebin.py bucephalus
 
-  $ $PYTHON "$TESTDIR/md5sum.py" bucephalus
+  $ "$PYTHON" "$TESTDIR/md5sum.py" bucephalus
   8ba2a2f3e77b55d03051ff9c24ad65e7  bucephalus
   $ hg add bucephalus
   $ hg qnew -f --git addbucephalus
@@ -1149,7 +1166,7 @@ check binary patches can be popped and pushed
   applying addbucephalus
   now at: addbucephalus
   $ test -f bucephalus
-  $ $PYTHON "$TESTDIR/md5sum.py" bucephalus
+  $ "$PYTHON" "$TESTDIR/md5sum.py" bucephalus
   8ba2a2f3e77b55d03051ff9c24ad65e7  bucephalus
 
 
@@ -1565,7 +1582,7 @@ Test that secret mq patch does not break hgweb
   > from mercurial.hgweb import wsgicgi
   > import cgitb
   > cgitb.enable()
-  > app = hgweb('.', 'test')
+  > app = hgweb(b'.', b'test')
   > wsgicgi.launch(app)
   > HGWEB
   $ . "$TESTDIR/cgienv"
@@ -1575,7 +1592,7 @@ Test that secret mq patch does not break hgweb
   $ PATH_INFO=/tags; export PATH_INFO
 #endif
   $ QUERY_STRING='style=raw'
-  $ $PYTHON hgweb.cgi | grep '^tip'
+  $ "$PYTHON" hgweb.cgi | grep '^tip'
   tip	[0-9a-f]{40} (re)
 
   $ cd ..

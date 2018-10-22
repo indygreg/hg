@@ -320,7 +320,8 @@ def branchentries(repo, stripecount, limit=0):
 
 def cleanpath(repo, path):
     path = path.lstrip('/')
-    return pathutil.canonpath(repo.root, '', path)
+    auditor = pathutil.pathauditor(repo.root, realfs=False)
+    return pathutil.canonpath(repo.root, '', path, auditor=auditor)
 
 def changectx(repo, req):
     changeid = "tip"
@@ -408,8 +409,14 @@ def whyunstable(context, mapping):
 
 whyunstable._requires = {'repo', 'ctx'}
 
+# helper to mark a function as a new-style template keyword; can be removed
+# once old-style function gets unsupported and new-style becomes the default
+def _kwfunc(f):
+    f._requires = ()
+    return f
+
 def commonentry(repo, ctx):
-    node = ctx.node()
+    node = scmutil.binnode(ctx)
     return {
         # TODO: perhaps ctx.changectx() should be assigned if ctx is a
         # filectx, but I'm not pretty sure if that would always work because
@@ -432,8 +439,8 @@ def commonentry(repo, ctx):
         'branches': nodebranchdict(repo, ctx),
         'tags': nodetagsdict(repo, node),
         'bookmarks': nodebookmarksdict(repo, node),
-        'parent': lambda **x: parents(ctx),
-        'child': lambda **x: children(ctx),
+        'parent': _kwfunc(lambda context, mapping: parents(ctx)),
+        'child': _kwfunc(lambda context, mapping: children(ctx)),
     }
 
 def changelistentry(web, ctx):
@@ -444,15 +451,15 @@ def changelistentry(web, ctx):
     '''
     repo = web.repo
     rev = ctx.rev()
-    n = ctx.node()
+    n = scmutil.binnode(ctx)
     showtags = showtag(repo, 'changelogtag', n)
     files = listfilediffs(ctx.files(), n, web.maxfiles)
 
     entry = commonentry(repo, ctx)
     entry.update(
-        allparents=lambda **x: parents(ctx),
-        parent=lambda **x: parents(ctx, rev - 1),
-        child=lambda **x: children(ctx, rev + 1),
+        allparents=_kwfunc(lambda context, mapping: parents(ctx)),
+        parent=_kwfunc(lambda context, mapping: parents(ctx, rev - 1)),
+        child=_kwfunc(lambda context, mapping: children(ctx, rev + 1)),
         changelogtag=showtags,
         files=files,
     )
@@ -478,7 +485,7 @@ def symrevorshortnode(req, ctx):
     if 'node' in req.qsparams:
         return templatefilters.revescape(req.qsparams['node'])
     else:
-        return short(ctx.node())
+        return short(scmutil.binnode(ctx))
 
 def _listfilesgen(context, ctx, stripecount):
     parity = paritygen(stripecount)
@@ -494,8 +501,9 @@ def _listfilesgen(context, ctx, stripecount):
 def changesetentry(web, ctx):
     '''Obtain a dictionary to be used to render the "changeset" template.'''
 
-    showtags = showtag(web.repo, 'changesettag', ctx.node())
-    showbookmarks = showbookmark(web.repo, 'changesetbookmark', ctx.node())
+    showtags = showtag(web.repo, 'changesettag', scmutil.binnode(ctx))
+    showbookmarks = showbookmark(web.repo, 'changesetbookmark',
+                                 scmutil.binnode(ctx))
     showbranch = nodebranchnodefault(ctx)
 
     basectx = basechangectx(web.repo, web.req)
@@ -521,7 +529,7 @@ def changesetentry(web, ctx):
         changesetbranch=showbranch,
         files=templateutil.mappedgenerator(_listfilesgen,
                                            args=(ctx, web.stripecount)),
-        diffsummary=lambda **x: diffsummary(diffstatsgen),
+        diffsummary=_kwfunc(lambda context, mapping: diffsummary(diffstatsgen)),
         diffstat=diffstats,
         archives=web.archivelist(ctx.hex()),
         **pycompat.strkwargs(commonentry(web.repo, ctx)))
@@ -610,24 +618,25 @@ def _compline(type, leftlineno, leftline, rightlineno, rightline):
 
 def _getcompblockgen(context, leftlines, rightlines, opcodes):
     for type, llo, lhi, rlo, rhi in opcodes:
+        type = pycompat.sysbytes(type)
         len1 = lhi - llo
         len2 = rhi - rlo
         count = min(len1, len2)
-        for i in xrange(count):
+        for i in pycompat.xrange(count):
             yield _compline(type=type,
                             leftlineno=llo + i + 1,
                             leftline=leftlines[llo + i],
                             rightlineno=rlo + i + 1,
                             rightline=rightlines[rlo + i])
         if len1 > len2:
-            for i in xrange(llo + count, lhi):
+            for i in pycompat.xrange(llo + count, lhi):
                 yield _compline(type=type,
                                 leftlineno=i + 1,
                                 leftline=leftlines[i],
                                 rightlineno=None,
                                 rightline=None)
         elif len2 > len1:
-            for i in xrange(rlo + count, rhi):
+            for i in pycompat.xrange(rlo + count, rhi):
                 yield _compline(type=type,
                                 leftlineno=None,
                                 leftline=None,

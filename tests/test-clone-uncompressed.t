@@ -2,10 +2,10 @@
 
 #testcases stream-legacy stream-bundle2
 
-#if stream-bundle2
+#if stream-legacy
   $ cat << EOF >> $HGRCPATH
-  > [experimental]
-  > bundle2.stream = yes
+  > [server]
+  > bundle2.stream = no
   > EOF
 #endif
 
@@ -247,6 +247,7 @@ Clone with background file closing enabled
   sending stream_out command
   1027 files to transfer, 96.3 KB of data
   starting 4 threads for background file closing
+  updating the branch cache
   transferred 96.3 KB in * seconds (*/sec) (glob)
   query 1; heads
   sending batch command
@@ -260,6 +261,7 @@ Clone with background file closing enabled
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 1 parts total
   checking for updated bookmarks
+  (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 #endif
 #if stream-bundle2
   $ hg --debug --config worker.backgroundclose=true --config worker.backgroundcloseminfilecount=1 clone --stream -U http://localhost:$HGPORT clone-background | grep -v adding
@@ -275,11 +277,13 @@ Clone with background file closing enabled
   1030 files to transfer, 96.4 KB of data
   starting 4 threads for background file closing
   starting 4 threads for background file closing
+  updating the branch cache
   transferred 96.4 KB in * seconds (* */sec) (glob)
   bundle2-input-part: total payload size 112077
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-bundle: 1 parts total
   checking for updated bookmarks
+  (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
 #endif
 
 Cannot stream clone when there are secret changesets
@@ -510,3 +514,54 @@ stream v1 unsuitable for non-publishing repository.
 #endif
 
   $ killdaemons.py
+
+#if stream-legacy
+
+With v1 of the stream protocol, changeset are always cloned as public. There's
+no obsolescence markers exchange in stream v1.
+
+#endif
+#if stream-bundle2
+
+Stream repository with obsolescence
+-----------------------------------
+
+Clone non-publishing with obsolescence
+
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > evolution=all
+  > EOF
+
+  $ cd server
+  $ echo foo > foo
+  $ hg -q commit -m 'about to be pruned'
+  $ hg debugobsolete `hg log -r . -T '{node}'` -d '0 0' -u test --record-parents
+  obsoleted 1 changesets
+  $ hg up null -q
+  $ hg log -T '{rev}: {phase}\n'
+  1: draft
+  0: draft
+  $ hg serve -p $HGPORT -d --pid-file=hg.pid
+  $ cat hg.pid > $DAEMON_PIDS
+  $ cd ..
+
+  $ hg clone -U --stream http://localhost:$HGPORT with-obsolescence
+  streaming all changes
+  1035 files to transfer, 97.1 KB of data
+  transferred 97.1 KB in * seconds (* */sec) (glob)
+  $ hg -R with-obsolescence log -T '{rev}: {phase}\n'
+  1: draft
+  0: draft
+  $ hg debugobsolete -R with-obsolescence
+  50382b884f66690b7045cac93a540cba4d4c906f 0 {c17445101a72edac06facd130d14808dfbd5c7c2} (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
+
+  $ hg clone -U --stream --config experimental.evolution=0 http://localhost:$HGPORT with-obsolescence-no-evolution
+  streaming all changes
+  remote: abort: server has obsolescence markers, but client cannot receive them via stream clone
+  abort: pull failed on remote
+  [255]
+
+  $ killdaemons.py
+
+#endif

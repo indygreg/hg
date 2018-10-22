@@ -126,7 +126,7 @@ Actual Test
   adding file changes
   added 1 changesets with 1 changes to 1 files
   1 new obsolescence markers
-  new changesets f6298a8ac3a4
+  new changesets f6298a8ac3a4 (1 drafts)
   (run 'hg update' to get a working copy)
   ## post pull state
   # obstore: main

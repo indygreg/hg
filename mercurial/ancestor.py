@@ -7,10 +7,15 @@
 
 from __future__ import absolute_import
 
-import collections
 import heapq
 
 from .node import nullrev
+from . import (
+    policy,
+    pycompat,
+)
+
+parsers = policy.importmod(r'parsers')
 
 def commonancestorsheads(pfunc, *nodes):
     """Returns a set with the heads of all common ancestors of all nodes,
@@ -174,7 +179,7 @@ class incrementalmissingancestors(object):
             # no revs to consider
             return
 
-        for curr in xrange(start, min(revs) - 1, -1):
+        for curr in pycompat.xrange(start, min(revs) - 1, -1):
             if curr not in bases:
                 continue
             revs.discard(curr)
@@ -215,7 +220,7 @@ class incrementalmissingancestors(object):
         # exit.
 
         missing = []
-        for curr in xrange(start, nullrev, -1):
+        for curr in pycompat.xrange(start, nullrev, -1):
             if not revsvisit:
                 break
 
@@ -257,6 +262,50 @@ class incrementalmissingancestors(object):
         missing.reverse()
         return missing
 
+# Extracted from lazyancestors.__iter__ to avoid a reference cycle
+def _lazyancestorsiter(parentrevs, initrevs, stoprev, inclusive):
+    seen = {nullrev}
+    heappush = heapq.heappush
+    heappop = heapq.heappop
+    heapreplace = heapq.heapreplace
+    see = seen.add
+
+    if inclusive:
+        visit = [-r for r in initrevs]
+        seen.update(initrevs)
+        heapq.heapify(visit)
+    else:
+        visit = []
+        heapq.heapify(visit)
+        for r in initrevs:
+            p1, p2 = parentrevs(r)
+            if p1 not in seen:
+                heappush(visit, -p1)
+                see(p1)
+            if p2 not in seen:
+                heappush(visit, -p2)
+                see(p2)
+
+    while visit:
+        current = -visit[0]
+        if current < stoprev:
+            break
+        yield current
+        # optimize out heapq operation if p1 is known to be the next highest
+        # revision, which is quite common in linear history.
+        p1, p2 = parentrevs(current)
+        if p1 not in seen:
+            if current - p1 == 1:
+                visit[0] = -p1
+            else:
+                heapreplace(visit, -p1)
+            see(p1)
+        else:
+            heappop(visit)
+        if p2 not in seen:
+            heappush(visit, -p2)
+            see(p2)
+
 class lazyancestors(object):
     def __init__(self, pfunc, revs, stoprev=0, inclusive=False):
         """Create a new object generating ancestors for the given revs. Does
@@ -271,22 +320,15 @@ class lazyancestors(object):
 
         Result does not include the null revision."""
         self._parentrevs = pfunc
-        self._initrevs = revs
+        self._initrevs = revs = [r for r in revs if r >= stoprev]
         self._stoprev = stoprev
         self._inclusive = inclusive
 
-        # Initialize data structures for __contains__.
-        # For __contains__, we use a heap rather than a deque because
-        # (a) it minimizes the number of parentrevs calls made
-        # (b) it makes the loop termination condition obvious
-        # Python's heap is a min-heap. Multiply all values by -1 to convert it
-        # into a max-heap.
-        self._containsvisit = [-rev for rev in revs]
-        heapq.heapify(self._containsvisit)
-        if inclusive:
-            self._containsseen = set(revs)
-        else:
-            self._containsseen = set()
+        self._containsseen = set()
+        self._containsiter = _lazyancestorsiter(self._parentrevs,
+                                                self._initrevs,
+                                                self._stoprev,
+                                                self._inclusive)
 
     def __nonzero__(self):
         """False if the set is empty, True otherwise."""
@@ -302,66 +344,77 @@ class lazyancestors(object):
         """Generate the ancestors of _initrevs in reverse topological order.
 
         If inclusive is False, yield a sequence of revision numbers starting
-        with the parents of each revision in revs, i.e., each revision is *not*
-        considered an ancestor of itself.  Results are in breadth-first order:
-        parents of each rev in revs, then parents of those, etc.
+        with the parents of each revision in revs, i.e., each revision is
+        *not* considered an ancestor of itself. Results are emitted in reverse
+        revision number order. That order is also topological: a child is
+        always emitted before its parent.
 
-        If inclusive is True, yield all the revs first (ignoring stoprev),
-        then yield all the ancestors of revs as when inclusive is False.
-        If an element in revs is an ancestor of a different rev it is not
-        yielded again."""
-        seen = set()
-        revs = self._initrevs
-        if self._inclusive:
-            for rev in revs:
-                yield rev
-            seen.update(revs)
-
-        parentrevs = self._parentrevs
-        stoprev = self._stoprev
-        visit = collections.deque(revs)
-
-        see = seen.add
-        schedule = visit.append
-
-        while visit:
-            for parent in parentrevs(visit.popleft()):
-                if parent >= stoprev and parent not in seen:
-                    schedule(parent)
-                    see(parent)
-                    yield parent
+        If inclusive is True, the source revisions are also yielded. The
+        reverse revision number order is still enforced."""
+        return _lazyancestorsiter(self._parentrevs, self._initrevs,
+                                  self._stoprev, self._inclusive)
 
     def __contains__(self, target):
         """Test whether target is an ancestor of self._initrevs."""
-        # Trying to do both __iter__ and __contains__ using the same visit
-        # heap and seen set is complex enough that it slows down both. Keep
-        # them separate.
         seen = self._containsseen
         if target in seen:
             return True
+        iter = self._containsiter
+        if iter is None:
+            # Iterator exhausted
+            return False
         # Only integer target is valid, but some callers expect 'None in self'
         # to be False. So we explicitly allow it.
         if target is None:
             return False
 
-        parentrevs = self._parentrevs
-        visit = self._containsvisit
-        stoprev = self._stoprev
-        heappop = heapq.heappop
-        heappush = heapq.heappush
         see = seen.add
+        try:
+            while True:
+                rev = next(iter)
+                see(rev)
+                if rev == target:
+                    return True
+                if rev < target:
+                    return False
+        except StopIteration:
+            # Set to None to indicate fast-path can be used next time, and to
+            # free up memory.
+            self._containsiter = None
+            return False
 
-        targetseen = False
+class rustlazyancestors(object):
 
-        while visit and -visit[0] > target and not targetseen:
-            for parent in parentrevs(-heappop(visit)):
-                if parent < stoprev or parent in seen:
-                    continue
-                # We need to make sure we push all parents into the heap so
-                # that we leave it in a consistent state for future calls.
-                heappush(visit, -parent)
-                see(parent)
-                if parent == target:
-                    targetseen = True
+    def __init__(self, index, revs, stoprev=0, inclusive=False):
+        self._index = index
+        self._stoprev = stoprev
+        self._inclusive = inclusive
+        # no need to prefilter out init revs that are smaller than stoprev,
+        # it's done by rustlazyancestors constructor.
+        # we need to convert to a list, because our ruslazyancestors
+        # constructor (from C code) doesn't understand anything else yet
+        self._initrevs = initrevs = list(revs)
 
-        return targetseen
+        self._containsiter = parsers.rustlazyancestors(
+            index, initrevs, stoprev, inclusive)
+
+    def __nonzero__(self):
+        """False if the set is empty, True otherwise.
+
+        It's better to duplicate this essentially trivial method than
+        to subclass lazyancestors
+        """
+        try:
+            next(iter(self))
+            return True
+        except StopIteration:
+            return False
+
+    def __iter__(self):
+        return parsers.rustlazyancestors(self._index,
+                                         self._initrevs,
+                                         self._stoprev,
+                                         self._inclusive)
+
+    def __contains__(self, target):
+        return target in self._containsiter

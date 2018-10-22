@@ -38,7 +38,7 @@ configure for serving
   > [hooks]
   > changegroup = sh -c "printenv.py changegroup-in-remote 0 ../dummylog"
   > EOF
-  $ cd ..
+  $ cd $TESTTMP
 
 repo not found error
 
@@ -60,10 +60,8 @@ clone remote via stream
 
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --stream ssh://user@dummy/remote local-stream
   streaming all changes
-  4 files to transfer, 602 bytes of data
-  transferred 602 bytes in * seconds (*) (glob)
-  searching for changes
-  no changes found
+  8 files to transfer, 827 bytes of data
+  transferred 827 bytes in * seconds (*) (glob)
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd local-stream
@@ -72,26 +70,24 @@ clone remote via stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 3 changesets, 2 total revisions
+  checked 3 changesets with 2 changes to 2 files
   $ hg branches
   default                        0:1160648e36ce
-  $ cd ..
+  $ cd $TESTTMP
 
 clone bookmarks via stream
 
   $ hg -R local-stream book mybook
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --stream ssh://user@dummy/local-stream stream2
   streaming all changes
-  4 files to transfer, 602 bytes of data
-  transferred 602 bytes in * seconds (*) (glob)
-  searching for changes
-  no changes found
+  9 files to transfer, 870 bytes of data
+  transferred 870 bytes in * seconds (*) (glob)
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd stream2
   $ hg book
      mybook                    0:1160648e36ce
-  $ cd ..
+  $ cd $TESTTMP
   $ rm -rf local-stream stream2
 
 #endif
@@ -116,7 +112,7 @@ verify
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 3 changesets, 2 total revisions
+  checked 3 changesets with 2 changes to 2 files
   $ cat >> .hg/hgrc <<EOF
   > [hooks]
   > changegroup = sh -c "printenv.py changegroup-in-local 0 ../dummylog"
@@ -198,7 +194,7 @@ push
   remote: adding manifests
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
-  $ cd ../remote
+  $ cd $TESTTMP/remote
 
 check remote tip
 
@@ -215,7 +211,7 @@ check remote tip
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 4 changesets, 3 total revisions
+  checked 4 changesets with 3 changes to 2 files
   $ hg cat -r tip foo
   bleah
   $ echo z > z
@@ -224,7 +220,7 @@ check remote tip
 
 test pushkeys and bookmarks
 
-  $ cd ../local
+  $ cd $TESTTMP/local
   $ hg debugpushkey --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/remote namespaces
   bookmarks	
   namespaces	
@@ -284,7 +280,7 @@ a bad, evil hook that prints to stdout
 
   $ cat <<EOF >> ../remote/.hg/hgrc
   > [hooks]
-  > changegroup.stdout = $PYTHON $TESTTMP/badhook
+  > changegroup.stdout = "$PYTHON" $TESTTMP/badhook
   > changegroup.pystdout = python:$TESTTMP/badpyhook.py:hook
   > EOF
   $ echo r > r
@@ -363,7 +359,7 @@ results here)
   abort: password in URL not supported!
   [255]
 
-  $ cd ..
+  $ cd $TESTTMP
 
 hide outer repo
   $ hg init
@@ -428,7 +424,7 @@ parameters:
   abort: no suitable response from remote hg!
   [255]
 
-  $ SSH_ORIGINAL_COMMAND="'hg' -R 'a'repo' serve --stdio" $PYTHON "$TESTDIR/../contrib/hg-ssh"
+  $ SSH_ORIGINAL_COMMAND="'hg' -R 'a'repo' serve --stdio" "$PYTHON" "$TESTDIR/../contrib/hg-ssh"
   Illegal command "'hg' -R 'a'repo' serve --stdio": No closing quotation
   [255]
 
@@ -464,7 +460,7 @@ Test hg-ssh in read-only mode:
   abort: push failed on remote
   [255]
 
-  $ cd ..
+  $ cd $TESTTMP
 
 stderr from remote commands should be printed before stdout from local code (issue4336)
 
@@ -512,14 +508,14 @@ debug output
   $ hg pull --debug ssh://user@dummy/remote --config devel.debug.peer-request=yes
   pulling from ssh://user@dummy/remote
   running .* ".*/dummyssh" ['"]user@dummy['"] ('|")hg -R remote serve --stdio('|") (re)
-  sending upgrade request: * proto=exp-ssh-v2-0001 (glob) (sshv2 !)
+  sending upgrade request: * proto=exp-ssh-v2-0003 (glob) (sshv2 !)
   devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
   sending hello command
   sending between command
-  remote: 413 (sshv1 !)
-  protocol upgraded to exp-ssh-v2-0001 (sshv2 !)
-  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  remote: 427 (sshv1 !)
+  protocol upgraded to exp-ssh-v2-0003 (sshv2 !)
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   remote: 1 (sshv1 !)
   devel-peer-request: protocaps
   devel-peer-request:   caps: * bytes (glob)
@@ -553,7 +549,7 @@ debug output
   bundle2-input-bundle: 2 parts total
   checking for updated bookmarks
 
-  $ cd ..
+  $ cd $TESTTMP
 
   $ cat dummylog
   Got arguments 1:user@dummy 2:hg -R nonexistent serve --stdio

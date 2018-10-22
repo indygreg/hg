@@ -12,7 +12,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 9 changesets, 9 total revisions
+  checked 9 changesets with 9 changes to 1 files
   $ hg serve -p $HGPORT -d --pid-file=hg.pid
   $ cat hg.pid >> $DAEMON_PIDS
   $ cd ..
@@ -329,14 +329,14 @@ test the resulting bundles
   adding manifests
   adding file changes
   added 9 changesets with 9 changes to 1 files
-  new changesets 00a43fa82f62:e4feb4ac9035
+  new changesets 00a43fa82f62:e4feb4ac9035 (9 drafts)
   (run 'hg update' to get a working copy)
   $ hg -R temp2 unbundle test2.hg
   adding changesets
   adding manifests
   adding file changes
   added 9 changesets with 9 changes to 1 files
-  new changesets 00a43fa82f62:e4feb4ac9035
+  new changesets 00a43fa82f62:e4feb4ac9035 (9 drafts)
   (run 'hg update' to get a working copy)
   $ hg -R temp tip
   changeset:   8:e4feb4ac9035
@@ -370,7 +370,7 @@ test outgoing
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 14 changesets, 14 total revisions
+  checked 14 changesets with 14 changes to 1 files
   $ cd ..
   $ hg -R test-dev outgoing test
   comparing with test

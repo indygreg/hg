@@ -321,7 +321,7 @@ applying the bundle on the server to check preservation of phase-information
   adding manifests
   adding file changes
   added 5 changesets with 5 changes to 5 files
-  new changesets eaba929e866c:9b42578d4447
+  new changesets eaba929e866c:9b42578d4447 (1 drafts)
   (run 'hg update' to get a working copy)
 
   $ hg glog
@@ -423,7 +423,7 @@ Unbundling on server to see obsmarkers being applied
   added 1 changesets with 0 changes to 1 files (+1 heads)
   1 new obsolescence markers
   obsoleted 1 changesets
-  new changesets 99949238d9ac
+  new changesets 99949238d9ac (1 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
   $ hg glog

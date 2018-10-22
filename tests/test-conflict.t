@@ -58,8 +58,19 @@
   # To mark files as resolved:  hg resolve --mark FILE
   
   # To continue:    hg commit
-  # To abort:       hg update --clean . (warning: this will discard uncommitted changes)
+  # To abort:       hg merge --abort
   
+  $ hg status -Tjson
+  [
+   {
+    "path": "a",
+    "status": "M"
+   },
+   {
+    "path": "a.orig",
+    "status": "?"
+   }
+  ]
 
   $ cat a
   Small Mathematical Series.
@@ -137,7 +148,7 @@ Verify line splitting of custom conflict marker which causes multiple lines
 Verify line trimming of custom conflict marker using multi-byte characters
 
   $ hg up -q --clean .
-  $ $PYTHON <<EOF
+  $ "$PYTHON" <<EOF
   > fp = open('logfile', 'wb')
   > fp.write(b'12345678901234567890123456789012345678901234567890' +
   >          b'1234567890') # there are 5 more columns for 80 columns

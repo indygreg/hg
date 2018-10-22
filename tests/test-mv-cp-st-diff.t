@@ -1666,4 +1666,19 @@ accessing the parent of 4 (renamed) should not jump use to revision 1.
   @@ -0,0 +1,1 @@
   +change
 
+Check debug output for copy tracing
+
+  $ hg status --copies --rev 'desc(dev)' --rev . --config devel.debug.copies=yes --debug
+  debug.copies: searching copies from a51f36ab1704 to 7935fd48a8f9
+  debug.copies: search mode: forward
+  debug.copies:    looking into rename from a51f36ab1704 to 7935fd48a8f9
+  debug.copies:      search limit: 2
+  debug.copies:      missing file to search: 1
+  debug.copies:        tracing file: renamed
+  debug.copies:          rename of: f
+  debug.copies:          time: * seconds (glob)
+  A renamed
+    f
+  R f
+
   $ cd ..

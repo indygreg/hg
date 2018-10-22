@@ -71,6 +71,7 @@ rename --after a single file to a nonexistent target filename
 
   $ hg rename --after d1/a dummy
   d1/a: not recording move - dummy does not exist
+  [1]
 
 move a single file to an existing directory
 
@@ -266,8 +267,9 @@ overwrite existing files (d2/b)
 
   $ hg rename d1/* d2
   d2/b: not overwriting - file already committed
-  (hg rename --force to replace the file by recording a rename)
+  ('hg rename --force' to replace the file by recording a rename)
   moving d1/d11/a1 to d2/d11/a1
+  [1]
   $ hg status -C
   A d2/a
     d1/a
@@ -338,6 +340,7 @@ move --after some files under d1 to d2/d21
   d1/b: not recording move - d2/d21/b does not exist
   d1/ba: not recording move - d2/d21/ba does not exist
   moving d1/d11/a1 to d2/d21/a1
+  [1]
   $ hg status -C
   A d2/d21/a
     d1/a
@@ -371,7 +374,8 @@ attempt to overwrite an existing file
   $ echo "ca" > d1/ca
   $ hg rename d1/ba d1/ca
   d1/ca: not overwriting - file exists
-  (hg rename --after to record the rename)
+  ('hg rename --after' to record the rename)
+  [1]
   $ hg status -C
   ? d1/ca
   $ hg update -C
@@ -395,7 +399,8 @@ attempt to overwrite an existing broken symlink
   $ ln -s ba d1/ca
   $ hg rename --traceback d1/ba d1/ca
   d1/ca: not overwriting - file exists
-  (hg rename --after to record the rename)
+  ('hg rename --after' to record the rename)
+  [1]
   $ hg status -C
   ? d1/ca
   $ hg update -C
@@ -421,6 +426,7 @@ do not copy more than one source file to the same destination file
   $ hg rename d1/* d2/* d3
   moving d1/d11/a1 to d3/d11/a1
   d3/b: not overwriting - d2/b collides with d1/b
+  [1]
   $ hg status -C
   A d3/a
     d1/a

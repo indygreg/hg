@@ -122,7 +122,7 @@ def replacefilecache(cls, propname, replacement):
                              propname))
 
 def _setuplog(ui):
-    entry = commands.table['^log|history']
+    entry = commands.table['log|history']
     entry[1].append(('', 'sparse', None,
         "limit to changesets affecting the sparse checkout"))
 
@@ -163,7 +163,7 @@ def _clonesparsecmd(orig, ui, repo, *args, **opts):
     return orig(ui, repo, *args, **opts)
 
 def _setupclone(ui):
-    entry = commands.table['^clone']
+    entry = commands.table['clone']
     entry[1].append(('', 'enable-profile', [],
                     'enable a sparse profile'))
     entry[1].append(('', 'include', [],
@@ -173,7 +173,7 @@ def _setupclone(ui):
     extensions.wrapcommand(commands.table, 'clone', _clonesparsecmd)
 
 def _setupadd(ui):
-    entry = commands.table['^add']
+    entry = commands.table['add']
     entry[1].append(('s', 'sparse', None,
                     'also include directories of added files in sparse config'))
 
@@ -237,7 +237,7 @@ def _setupdirstate(ui):
             return orig(self, *args)
         extensions.wrapfunction(dirstate.dirstate, func, _wrapper)
 
-@command('^debugsparse', [
+@command('debugsparse', [
     ('I', 'include', False, _('include files in the sparse checkout')),
     ('X', 'exclude', False, _('exclude files in the sparse checkout')),
     ('d', 'delete', False, _('delete an include/exclude rule')),
@@ -249,7 +249,8 @@ def _setupdirstate(ui):
     ('', 'refresh', False, _('updates the working after sparseness changes')),
     ('', 'reset', False, _('makes the repo full again')),
     ] + commands.templateopts,
-    _('[--OPTION] PATTERN...'))
+    _('[--OPTION] PATTERN...'),
+    helpbasic=True)
 def debugsparse(ui, repo, *pats, **opts):
     """make the current checkout sparse, or edit the existing checkout
 

@@ -184,7 +184,8 @@ class transplanter(object):
                     if pulls:
                         if source != repo:
                             exchange.pull(repo, source.peer(), heads=pulls)
-                        merge.update(repo, pulls[-1], False, False)
+                        merge.update(repo, pulls[-1], branchmerge=False,
+                                     force=False)
                         p1, p2 = repo.dirstate.parents()
                         pulls = []
 
@@ -249,7 +250,7 @@ class transplanter(object):
             tr.close()
             if pulls:
                 exchange.pull(repo, source.peer(), heads=pulls)
-                merge.update(repo, pulls[-1], False, False)
+                merge.update(repo, pulls[-1], branchmerge=False, force=False)
         finally:
             self.saveseries(revmap, merges)
             self.transplants.write()
@@ -503,7 +504,7 @@ class transplanter(object):
 def hasnode(repo, node):
     try:
         return repo.changelog.rev(node) is not None
-    except error.RevlogError:
+    except error.StorageError:
         return False
 
 def browserevs(ui, repo, nodes, opts):
@@ -562,7 +563,8 @@ def browserevs(ui, repo, nodes, opts):
     ('', 'filter', '',
      _('filter changesets through command'), _('CMD'))],
     _('hg transplant [-s REPO] [-b BRANCH [-a]] [-p REV] '
-      '[-m REV] [REV]...'))
+      '[-m REV] [REV]...'),
+    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
 def transplant(ui, repo, *revs, **opts):
     '''transplant changesets from another branch
 

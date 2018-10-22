@@ -15,6 +15,30 @@ from .utils import (
     interfaceutil,
 )
 
+# When narrowing is finalized and no longer subject to format changes,
+# we should move this to just "narrow" or similar.
+NARROW_REQUIREMENT = 'narrowhg-experimental'
+
+# Local repository feature string.
+
+# Revlogs are being used for file storage.
+REPO_FEATURE_REVLOG_FILE_STORAGE = b'revlogfilestorage'
+# The storage part of the repository is shared from an external source.
+REPO_FEATURE_SHARED_STORAGE = b'sharedstore'
+# LFS supported for backing file storage.
+REPO_FEATURE_LFS = b'lfs'
+# Repository supports being stream cloned.
+REPO_FEATURE_STREAM_CLONE = b'streamclone'
+# Files storage may lack data for all ancestors.
+REPO_FEATURE_SHALLOW_FILE_STORAGE = b'shallowfilestorage'
+
+REVISION_FLAG_CENSORED = 1 << 15
+REVISION_FLAG_ELLIPSIS = 1 << 14
+REVISION_FLAG_EXTSTORED = 1 << 13
+
+REVISION_FLAGS_KNOWN = (
+    REVISION_FLAG_CENSORED | REVISION_FLAG_ELLIPSIS | REVISION_FLAG_EXTSTORED)
+
 class ipeerconnection(interfaceutil.Interface):
     """Represents a "connection" to a repository.
 
@@ -290,6 +314,12 @@ class ipeerbase(ipeerconnection, ipeercapabilities, ipeerrequests):
     All peer instances must conform to this interface.
     """
 
+class ipeerv2(ipeerconnection, ipeercapabilities, ipeerrequests):
+    """Unified peer interface for wire protocol version 2 peers."""
+
+    apidescriptor = interfaceutil.Attribute(
+        """Data structure holding description of server API.""")
+
 @interfaceutil.implementer(ipeerbase)
 class peer(object):
     """Base class for peer repositories."""
@@ -313,6 +343,79 @@ class peer(object):
         raise error.CapabilityError(
             _('cannot %s; remote repository does not support the %r '
               'capability') % (purpose, name))
+
+class iverifyproblem(interfaceutil.Interface):
+    """Represents a problem with the integrity of the repository.
+
+    Instances of this interface are emitted to describe an integrity issue
+    with a repository (e.g. corrupt storage, missing data, etc).
+
+    Instances are essentially messages associated with severity.
+    """
+    warning = interfaceutil.Attribute(
+        """Message indicating a non-fatal problem.""")
+
+    error = interfaceutil.Attribute(
+        """Message indicating a fatal problem.""")
+
+    node = interfaceutil.Attribute(
+        """Revision encountering the problem.
+
+        ``None`` means the problem doesn't apply to a single revision.
+        """)
+
+class irevisiondelta(interfaceutil.Interface):
+    """Represents a delta between one revision and another.
+
+    Instances convey enough information to allow a revision to be exchanged
+    with another repository.
+
+    Instances represent the fulltext revision data or a delta against
+    another revision. Therefore the ``revision`` and ``delta`` attributes
+    are mutually exclusive.
+
+    Typically used for changegroup generation.
+    """
+
+    node = interfaceutil.Attribute(
+        """20 byte node of this revision.""")
+
+    p1node = interfaceutil.Attribute(
+        """20 byte node of 1st parent of this revision.""")
+
+    p2node = interfaceutil.Attribute(
+        """20 byte node of 2nd parent of this revision.""")
+
+    linknode = interfaceutil.Attribute(
+        """20 byte node of the changelog revision this node is linked to.""")
+
+    flags = interfaceutil.Attribute(
+        """2 bytes of integer flags that apply to this revision.
+
+        This is a bitwise composition of the ``REVISION_FLAG_*`` constants.
+        """)
+
+    basenode = interfaceutil.Attribute(
+        """20 byte node of the revision this data is a delta against.
+
+        ``nullid`` indicates that the revision is a full revision and not
+        a delta.
+        """)
+
+    baserevisionsize = interfaceutil.Attribute(
+        """Size of base revision this delta is against.
+
+        May be ``None`` if ``basenode`` is ``nullid``.
+        """)
+
+    revision = interfaceutil.Attribute(
+        """Raw fulltext of revision data for this node.""")
+
+    delta = interfaceutil.Attribute(
+        """Delta between ``basenode`` and ``node``.
+
+        Stored in the bdiff delta format.
+        """)
 
 class ifilerevisionssequence(interfaceutil.Interface):
     """Contains index data for all revisions of a file.
@@ -377,14 +480,21 @@ class ifileindex(interfaceutil.Interface):
     * DAG data (storing and querying the relationship between nodes).
     * Metadata to facilitate storage.
     """
-    index = interfaceutil.Attribute(
-        """An ``ifilerevisionssequence`` instance.""")
-
     def __len__():
         """Obtain the number of revisions stored for this file."""
 
     def __iter__():
         """Iterate over revision numbers for this file."""
+
+    def hasnode(node):
+        """Returns a bool indicating if a node is known to this store.
+
+        Implementations must only return True for full, binary node values:
+        hex nodes, revision numbers, and partial node matches must be
+        rejected.
+
+        The null node is never present.
+        """
 
     def revs(start=0, stop=None):
         """Iterate over revision numbers for this file, with control."""
@@ -422,9 +532,6 @@ class ifileindex(interfaceutil.Interface):
     def linkrev(rev):
         """Obtain the changeset revision number a revision is linked to."""
 
-    def flags(rev):
-        """Obtain flags used to affect storage of a revision."""
-
     def iscensored(rev):
         """Return whether a revision's content has been censored."""
 
@@ -438,14 +545,6 @@ class ifileindex(interfaceutil.Interface):
         """Obtain descendant revision numbers for a set of revision numbers.
 
         If ``nullrev`` is in the set, this is equivalent to ``revs()``.
-        """
-
-    def headrevs():
-        """Obtain a list of revision numbers that are DAG heads.
-
-        The list is sorted oldest to newest.
-
-        TODO determine if sorting is required.
         """
 
     def heads(start=None, stop=None):
@@ -464,32 +563,16 @@ class ifileindex(interfaceutil.Interface):
         Returns a list of nodes.
         """
 
-    def deltaparent(rev):
-        """"Return the revision that is a suitable parent to delta against."""
-
-    def candelta(baserev, rev):
-        """"Whether a delta can be generated between two revisions."""
-
 class ifiledata(interfaceutil.Interface):
     """Storage interface for data storage of a specific file.
 
     This complements ``ifileindex`` and provides an interface for accessing
     data for a tracked file.
     """
-    def rawsize(rev):
-        """The size of the fulltext data for a revision as stored."""
-
     def size(rev):
         """Obtain the fulltext size of file data.
 
-        Any metadata is excluded from size measurements. Use ``rawsize()`` if
-        metadata size is important.
-        """
-
-    def checkhash(fulltext, node, p1=None, p2=None, rev=None):
-        """Validate the stored hash of a given fulltext and node.
-
-        Raises ``error.RevlogError`` is hash validation fails.
+        Any metadata is excluded from size measurements.
         """
 
     def revision(node, raw=False):
@@ -527,13 +610,57 @@ class ifiledata(interfaceutil.Interface):
         TODO better document the copy metadata and censoring logic.
         """
 
-    def revdiff(rev1, rev2):
-        """Obtain a delta between two revision numbers.
+    def emitrevisions(nodes,
+                      nodesorder=None,
+                      revisiondata=False,
+                      assumehaveparentrevisions=False,
+                      deltaprevious=False):
+        """Produce ``irevisiondelta`` for revisions.
 
-        Operates on raw data in the store (``revision(node, raw=True)``).
+        Given an iterable of nodes, emits objects conforming to the
+        ``irevisiondelta`` interface that describe revisions in storage.
 
-        The returned data is the result of ``bdiff.bdiff`` on the raw
-        revision data.
+        This method is a generator.
+
+        The input nodes may be unordered. Implementations must ensure that a
+        node's parents are emitted before the node itself. Transitively, this
+        means that a node may only be emitted once all its ancestors in
+        ``nodes`` have also been emitted.
+
+        By default, emits "index" data (the ``node``, ``p1node``, and
+        ``p2node`` attributes). If ``revisiondata`` is set, revision data
+        will also be present on the emitted objects.
+
+        With default argument values, implementations can choose to emit
+        either fulltext revision data or a delta. When emitting deltas,
+        implementations must consider whether the delta's base revision
+        fulltext is available to the receiver.
+
+        The base revision fulltext is guaranteed to be available if any of
+        the following are met:
+
+        * Its fulltext revision was emitted by this method call.
+        * A delta for that revision was emitted by this method call.
+        * ``assumehaveparentrevisions`` is True and the base revision is a
+          parent of the node.
+
+        ``nodesorder`` can be used to control the order that revisions are
+        emitted. By default, revisions can be reordered as long as they are
+        in DAG topological order (see above). If the value is ``nodes``,
+        the iteration order from ``nodes`` should be used. If the value is
+        ``storage``, then the native order from the backing storage layer
+        is used. (Not all storage layers will have strong ordering and behavior
+        of this mode is storage-dependent.) ``nodes`` ordering can force
+        revisions to be emitted before their ancestors, so consumers should
+        use it with care.
+
+        The ``linknode`` attribute on the returned ``irevisiondelta`` may not
+        be set and it is the caller's responsibility to resolve it, if needed.
+
+        If ``deltaprevious`` is True and revision data is requested, all
+        revision data should be emitted as deltas against the revision
+        emitted just prior. The initial revision should be a delta against
+        its 1st parent.
         """
 
 class ifilemutation(interfaceutil.Interface):
@@ -559,7 +686,8 @@ class ifilemutation(interfaceutil.Interface):
         The data passed in already contains a metadata header, if any.
 
         ``node`` and ``flags`` can be used to define the expected node and
-        the flags to use with storage.
+        the flags to use with storage. ``flags`` is a bitwise value composed
+        of the various ``REVISION_FLAG_*`` constants.
 
         ``add()`` is usually called when adding files from e.g. the working
         directory. ``addrevision()`` is often called by ``add()`` and for
@@ -567,7 +695,8 @@ class ifilemutation(interfaceutil.Interface):
         applying raw data from a peer repo.
         """
 
-    def addgroup(deltas, linkmapper, transaction, addrevisioncb=None):
+    def addgroup(deltas, linkmapper, transaction, addrevisioncb=None,
+                 maybemissingparents=False):
         """Process a series of deltas for storage.
 
         ``deltas`` is an iterable of 7-tuples of
@@ -581,8 +710,30 @@ class ifilemutation(interfaceutil.Interface):
 
         ``addrevisioncb`` should be called for each node as it is committed.
 
+        ``maybemissingparents`` is a bool indicating whether the incoming
+        data may reference parents/ancestor revisions that aren't present.
+        This flag is set when receiving data into a "shallow" store that
+        doesn't hold all history.
+
         Returns a list of nodes that were processed. A node will be in the list
         even if it existed in the store previously.
+        """
+
+    def censorrevision(tr, node, tombstone=b''):
+        """Remove the content of a single revision.
+
+        The specified ``node`` will have its content purged from storage.
+        Future attempts to access the revision data for this node will
+        result in failure.
+
+        A ``tombstone`` message can optionally be stored. This message may be
+        displayed to users when they attempt to access the missing revision
+        data.
+
+        Storage backends may have stored deltas against the previous content
+        in this revision. As part of censoring a revision, these storage
+        backends are expected to rewrite any internally stored deltas such
+        that they no longer reference the deleted content.
         """
 
     def getstrippoint(minlink):
@@ -608,27 +759,6 @@ class ifilemutation(interfaceutil.Interface):
 class ifilestorage(ifileindex, ifiledata, ifilemutation):
     """Complete storage interface for a single tracked file."""
 
-    version = interfaceutil.Attribute(
-        """Version number of storage.
-
-        TODO this feels revlog centric and could likely be removed.
-        """)
-
-    storedeltachains = interfaceutil.Attribute(
-        """Whether the store stores deltas.
-
-        TODO deltachains are revlog centric. This can probably removed
-        once there are better abstractions for obtaining/writing
-        data.
-        """)
-
-    _generaldelta = interfaceutil.Attribute(
-        """Whether deltas can be against any parent revision.
-
-        TODO this is used by changegroup code and it could probably be
-        folded into another API.
-        """)
-
     def files():
         """Obtain paths that are backing storage for this file.
 
@@ -636,10 +766,54 @@ class ifilestorage(ifileindex, ifiledata, ifilemutation):
         be a better API for that.
         """
 
-    def checksize():
-        """Obtain the expected sizes of backing files.
+    def storageinfo(exclusivefiles=False, sharedfiles=False,
+                    revisionscount=False, trackedsize=False,
+                    storedsize=False):
+        """Obtain information about storage for this file's data.
 
-        TODO this is used by verify and it should not be part of the interface.
+        Returns a dict describing storage for this tracked path. The keys
+        in the dict map to arguments of the same. The arguments are bools
+        indicating whether to calculate and obtain that data.
+
+        exclusivefiles
+           Iterable of (vfs, path) describing files that are exclusively
+           used to back storage for this tracked path.
+
+        sharedfiles
+           Iterable of (vfs, path) describing files that are used to back
+           storage for this tracked path. Those files may also provide storage
+           for other stored entities.
+
+        revisionscount
+           Number of revisions available for retrieval.
+
+        trackedsize
+           Total size in bytes of all tracked revisions. This is a sum of the
+           length of the fulltext of all revisions.
+
+        storedsize
+           Total size in bytes used to store data for all tracked revisions.
+           This is commonly less than ``trackedsize`` due to internal usage
+           of deltas rather than fulltext revisions.
+
+        Not all storage backends may support all queries are have a reasonable
+        value to use. In that case, the value should be set to ``None`` and
+        callers are expected to handle this special value.
+        """
+
+    def verifyintegrity(state):
+        """Verifies the integrity of file storage.
+
+        ``state`` is a dict holding state of the verifier process. It can be
+        used to communicate data between invocations of multiple storage
+        primitives.
+
+        If individual revisions cannot have their revision content resolved,
+        the method is expected to set the ``skipread`` key to a set of nodes
+        that encountered problems.
+
+        The method yields objects conforming to the ``iverifyproblem``
+        interface.
         """
 
 class idirs(interfaceutil.Interface):
@@ -880,18 +1054,222 @@ class imanifestrevisionstored(imanifestrevisionbase):
 class imanifestrevisionwritable(imanifestrevisionbase):
     """Interface representing a manifest revision that can be committed."""
 
-    def write(transaction, linkrev, p1node, p2node, added, removed):
+    def write(transaction, linkrev, p1node, p2node, added, removed, match=None):
         """Add this revision to storage.
 
         Takes a transaction object, the changeset revision number it will
         be associated with, its parent nodes, and lists of added and
         removed paths.
 
+        If match is provided, storage can choose not to inspect or write out
+        items that do not match. Storage is still required to be able to provide
+        the full manifest in the future for any directories written (these
+        manifests should not be "narrowed on disk").
+
         Returns the binary node of the created revision.
         """
 
+class imanifeststorage(interfaceutil.Interface):
+    """Storage interface for manifest data."""
+
+    tree = interfaceutil.Attribute(
+        """The path to the directory this manifest tracks.
+
+        The empty bytestring represents the root manifest.
+        """)
+
+    index = interfaceutil.Attribute(
+        """An ``ifilerevisionssequence`` instance.""")
+
+    indexfile = interfaceutil.Attribute(
+        """Path of revlog index file.
+
+        TODO this is revlog specific and should not be exposed.
+        """)
+
+    opener = interfaceutil.Attribute(
+        """VFS opener to use to access underlying files used for storage.
+
+        TODO this is revlog specific and should not be exposed.
+        """)
+
+    version = interfaceutil.Attribute(
+        """Revlog version number.
+
+        TODO this is revlog specific and should not be exposed.
+        """)
+
+    _generaldelta = interfaceutil.Attribute(
+        """Whether generaldelta storage is being used.
+
+        TODO this is revlog specific and should not be exposed.
+        """)
+
+    fulltextcache = interfaceutil.Attribute(
+        """Dict with cache of fulltexts.
+
+        TODO this doesn't feel appropriate for the storage interface.
+        """)
+
+    def __len__():
+        """Obtain the number of revisions stored for this manifest."""
+
+    def __iter__():
+        """Iterate over revision numbers for this manifest."""
+
+    def rev(node):
+        """Obtain the revision number given a binary node.
+
+        Raises ``error.LookupError`` if the node is not known.
+        """
+
+    def node(rev):
+        """Obtain the node value given a revision number.
+
+        Raises ``error.LookupError`` if the revision is not known.
+        """
+
+    def lookup(value):
+        """Attempt to resolve a value to a node.
+
+        Value can be a binary node, hex node, revision number, or a bytes
+        that can be converted to an integer.
+
+        Raises ``error.LookupError`` if a ndoe could not be resolved.
+        """
+
+    def parents(node):
+        """Returns a 2-tuple of parent nodes for a node.
+
+        Values will be ``nullid`` if the parent is empty.
+        """
+
+    def parentrevs(rev):
+        """Like parents() but operates on revision numbers."""
+
+    def linkrev(rev):
+        """Obtain the changeset revision number a revision is linked to."""
+
+    def revision(node, _df=None, raw=False):
+        """Obtain fulltext data for a node."""
+
+    def revdiff(rev1, rev2):
+        """Obtain a delta between two revision numbers.
+
+        The returned data is the result of ``bdiff.bdiff()`` on the raw
+        revision data.
+        """
+
+    def cmp(node, fulltext):
+        """Compare fulltext to another revision.
+
+        Returns True if the fulltext is different from what is stored.
+        """
+
+    def emitrevisions(nodes,
+                      nodesorder=None,
+                      revisiondata=False,
+                      assumehaveparentrevisions=False):
+        """Produce ``irevisiondelta`` describing revisions.
+
+        See the documentation for ``ifiledata`` for more.
+        """
+
+    def addgroup(deltas, linkmapper, transaction, addrevisioncb=None):
+        """Process a series of deltas for storage.
+
+        See the documentation in ``ifilemutation`` for more.
+        """
+
+    def rawsize(rev):
+        """Obtain the size of tracked data.
+
+        Is equivalent to ``len(m.revision(node, raw=True))``.
+
+        TODO this method is only used by upgrade code and may be removed.
+        """
+
+    def getstrippoint(minlink):
+        """Find minimum revision that must be stripped to strip a linkrev.
+
+        See the documentation in ``ifilemutation`` for more.
+        """
+
+    def strip(minlink, transaction):
+        """Remove storage of items starting at a linkrev.
+
+        See the documentation in ``ifilemutation`` for more.
+        """
+
+    def checksize():
+        """Obtain the expected sizes of backing files.
+
+        TODO this is used by verify and it should not be part of the interface.
+        """
+
+    def files():
+        """Obtain paths that are backing storage for this manifest.
+
+        TODO this is used by verify and there should probably be a better API
+        for this functionality.
+        """
+
+    def deltaparent(rev):
+        """Obtain the revision that a revision is delta'd against.
+
+        TODO delta encoding is an implementation detail of storage and should
+        not be exposed to the storage interface.
+        """
+
+    def clone(tr, dest, **kwargs):
+        """Clone this instance to another."""
+
+    def clearcaches(clear_persisted_data=False):
+        """Clear any caches associated with this instance."""
+
+    def dirlog(d):
+        """Obtain a manifest storage instance for a tree."""
+
+    def add(m, transaction, link, p1, p2, added, removed, readtree=None,
+            match=None):
+        """Add a revision to storage.
+
+        ``m`` is an object conforming to ``imanifestdict``.
+
+        ``link`` is the linkrev revision number.
+
+        ``p1`` and ``p2`` are the parent revision numbers.
+
+        ``added`` and ``removed`` are iterables of added and removed paths,
+        respectively.
+
+        ``readtree`` is a function that can be used to read the child tree(s)
+        when recursively writing the full tree structure when using
+        treemanifets.
+
+        ``match`` is a matcher that can be used to hint to storage that not all
+        paths must be inspected; this is an optimization and can be safely
+        ignored. Note that the storage must still be able to reproduce a full
+        manifest including files that did not match.
+        """
+
+    def storageinfo(exclusivefiles=False, sharedfiles=False,
+                    revisionscount=False, trackedsize=False,
+                    storedsize=False):
+        """Obtain information about storage for this manifest's data.
+
+        See ``ifilestorage.storageinfo()`` for a description of this method.
+        This one behaves the same way, except for manifest data.
+        """
+
 class imanifestlog(interfaceutil.Interface):
-    """Interface representing a collection of manifest snapshots."""
+    """Interface representing a collection of manifest snapshots.
+
+    Represents the root manifest in a repository.
+
+    Also serves as a means to access nested tree manifests and to cache
+    tree manifests.
+    """
 
     def __getitem__(node):
         """Obtain a manifest instance for a given binary node.
@@ -902,21 +1280,30 @@ class imanifestlog(interfaceutil.Interface):
         interface.
         """
 
-    def get(dir, node, verify=True):
+    def get(tree, node, verify=True):
         """Retrieve the manifest instance for a given directory and binary node.
 
         ``node`` always refers to the node of the root manifest (which will be
         the only manifest if flat manifests are being used).
 
-        If ``dir`` is the empty string, the root manifest is returned. Otherwise
-        the manifest for the specified directory will be returned (requires
-        tree manifests).
+        If ``tree`` is the empty string, the root manifest is returned.
+        Otherwise the manifest for the specified directory will be returned
+        (requires tree manifests).
 
         If ``verify`` is True, ``LookupError`` is raised if the node is not
         known.
 
         The returned object conforms to the ``imanifestrevisionstored``
         interface.
+        """
+
+    def getstorage(tree):
+        """Retrieve an interface to storage for a particular tree.
+
+        If ``tree`` is the empty bytestring, storage for the root manifest will
+        be returned. Otherwise storage for a tree manifest is returned.
+
+        TODO formalize interface for returned object.
         """
 
     def clearcaches():
@@ -928,24 +1315,21 @@ class imanifestlog(interfaceutil.Interface):
         Raises ``error.LookupError`` if the node is not known.
         """
 
-    def addgroup(deltas, linkmapper, transaction):
-        """Process a series of deltas for storage.
+class ilocalrepositoryfilestorage(interfaceutil.Interface):
+    """Local repository sub-interface providing access to tracked file storage.
 
-        ``deltas`` is an iterable of 7-tuples of
-        (node, p1, p2, linknode, deltabase, delta, flags) defining revisions
-        to add.
+    This interface defines how a repository accesses storage for a single
+    tracked file path.
+    """
 
-        The ``delta`` field contains ``mpatch`` data to apply to a base
-        revision, identified by ``deltabase``. The base node can be
-        ``nullid``, in which case the header from the delta can be ignored
-        and the delta used as the fulltext.
+    def file(f):
+        """Obtain a filelog for a tracked path.
 
-        Returns a list of nodes that were processed. A node will be in the list
-        even if it existed in the store previously.
+        The returned type conforms to the ``ifilestorage`` interface.
         """
 
-class completelocalrepository(interfaceutil.Interface):
-    """Monolithic interface for local repositories.
+class ilocalrepositorymain(interfaceutil.Interface):
+    """Main interface for local repositories.
 
     This currently captures the reality of things - not how things should be.
     """
@@ -956,17 +1340,29 @@ class completelocalrepository(interfaceutil.Interface):
         This is actually a class attribute and is shared among all instances.
         """)
 
-    openerreqs = interfaceutil.Attribute(
-        """Set of requirements that are passed to the opener.
-
-        This is actually a class attribute and is shared among all instances.
-        """)
-
     supported = interfaceutil.Attribute(
         """Set of requirements that this repo is capable of opening.""")
 
     requirements = interfaceutil.Attribute(
         """Set of requirements this repo uses.""")
+
+    features = interfaceutil.Attribute(
+        """Set of "features" this repository supports.
+
+        A "feature" is a loosely-defined term. It can refer to a feature
+        in the classical sense or can describe an implementation detail
+        of the repository. For example, a ``readonly`` feature may denote
+        the repository as read-only. Or a ``revlogfilestore`` feature may
+        denote that the repository is using revlogs for file storage.
+
+        The intent of features is to provide a machine-queryable mechanism
+        for repo consumers to test for various repository characteristics.
+
+        Features are similar to ``requirements``. The main difference is that
+        requirements are stored on-disk and represent requirements to open the
+        repository. Features are more run-time capabilities of the repository
+        and more granular capabilities (which may be derived from requirements).
+        """)
 
     filtername = interfaceutil.Attribute(
         """Name of the repoview that is active on this repo.""")
@@ -1167,12 +1563,6 @@ class completelocalrepository(interfaceutil.Interface):
     def wjoin(f, *insidef):
         """Calls self.vfs.reljoin(self.root, f, *insidef)"""
 
-    def file(f):
-        """Obtain a filelog for a tracked path.
-
-        The returned type conforms to the ``ifilestorage`` interface.
-        """
-
     def setparents(p1, p2):
         """Set the parent nodes of the working directory."""
 
@@ -1300,3 +1690,164 @@ class completelocalrepository(interfaceutil.Interface):
 
     def savecommitmessage(text):
         pass
+
+class completelocalrepository(ilocalrepositorymain,
+                              ilocalrepositoryfilestorage):
+    """Complete interface for a local repository."""
+
+class iwireprotocolcommandcacher(interfaceutil.Interface):
+    """Represents a caching backend for wire protocol commands.
+
+    Wire protocol version 2 supports transparent caching of many commands.
+    To leverage this caching, servers can activate objects that cache
+    command responses. Objects handle both cache writing and reading.
+    This interface defines how that response caching mechanism works.
+
+    Wire protocol version 2 commands emit a series of objects that are
+    serialized and sent to the client. The caching layer exists between
+    the invocation of the command function and the sending of its output
+    objects to an output layer.
+
+    Instances of this interface represent a binding to a cache that
+    can serve a response (in place of calling a command function) and/or
+    write responses to a cache for subsequent use.
+
+    When a command request arrives, the following happens with regards
+    to this interface:
+
+    1. The server determines whether the command request is cacheable.
+    2. If it is, an instance of this interface is spawned.
+    3. The cacher is activated in a context manager (``__enter__`` is called).
+    4. A cache *key* for that request is derived. This will call the
+       instance's ``adjustcachekeystate()`` method so the derivation
+       can be influenced.
+    5. The cacher is informed of the derived cache key via a call to
+       ``setcachekey()``.
+    6. The cacher's ``lookup()`` method is called to test for presence of
+       the derived key in the cache.
+    7. If ``lookup()`` returns a hit, that cached result is used in place
+       of invoking the command function. ``__exit__`` is called and the instance
+       is discarded.
+    8. The command function is invoked.
+    9. ``onobject()`` is called for each object emitted by the command
+       function.
+    10. After the final object is seen, ``onfinished()`` is called.
+    11. ``__exit__`` is called to signal the end of use of the instance.
+
+    Cache *key* derivation can be influenced by the instance.
+
+    Cache keys are initially derived by a deterministic representation of
+    the command request. This includes the command name, arguments, protocol
+    version, etc. This initial key derivation is performed by CBOR-encoding a
+    data structure and feeding that output into a hasher.
+
+    Instances of this interface can influence this initial key derivation
+    via ``adjustcachekeystate()``.
+
+    The instance is informed of the derived cache key via a call to
+    ``setcachekey()``. The instance must store the key locally so it can
+    be consulted on subsequent operations that may require it.
+
+    When constructed, the instance has access to a callable that can be used
+    for encoding response objects. This callable receives as its single
+    argument an object emitted by a command function. It returns an iterable
+    of bytes chunks representing the encoded object. Unless the cacher is
+    caching native Python objects in memory or has a way of reconstructing
+    the original Python objects, implementations typically call this function
+    to produce bytes from the output objects and then store those bytes in
+    the cache. When it comes time to re-emit those bytes, they are wrapped
+    in a ``wireprototypes.encodedresponse`` instance to tell the output
+    layer that they are pre-encoded.
+
+    When receiving the objects emitted by the command function, instances
+    can choose what to do with those objects. The simplest thing to do is
+    re-emit the original objects. They will be forwarded to the output
+    layer and will be processed as if the cacher did not exist.
+
+    Implementations could also choose to not emit objects - instead locally
+    buffering objects or their encoded representation. They could then emit
+    a single "coalesced" object when ``onfinished()`` is called. In
+    this way, the implementation would function as a filtering layer of
+    sorts.
+
+    When caching objects, typically the encoded form of the object will
+    be stored. Keep in mind that if the original object is forwarded to
+    the output layer, it will need to be encoded there as well. For large
+    output, this redundant encoding could add overhead. Implementations
+    could wrap the encoded object data in ``wireprototypes.encodedresponse``
+    instances to avoid this overhead.
+    """
+    def __enter__():
+        """Marks the instance as active.
+
+        Should return self.
+        """
+
+    def __exit__(exctype, excvalue, exctb):
+        """Called when cacher is no longer used.
+
+        This can be used by implementations to perform cleanup actions (e.g.
+        disconnecting network sockets, aborting a partially cached response.
+        """
+
+    def adjustcachekeystate(state):
+        """Influences cache key derivation by adjusting state to derive key.
+
+        A dict defining the state used to derive the cache key is passed.
+
+        Implementations can modify this dict to record additional state that
+        is wanted to influence key derivation.
+
+        Implementations are *highly* encouraged to not modify or delete
+        existing keys.
+        """
+
+    def setcachekey(key):
+        """Record the derived cache key for this request.
+
+        Instances may mutate the key for internal usage, as desired. e.g.
+        instances may wish to prepend the repo name, introduce path
+        components for filesystem or URL addressing, etc. Behavior is up to
+        the cache.
+
+        Returns a bool indicating if the request is cacheable by this
+        instance.
+        """
+
+    def lookup():
+        """Attempt to resolve an entry in the cache.
+
+        The instance is instructed to look for the cache key that it was
+        informed about via the call to ``setcachekey()``.
+
+        If there's no cache hit or the cacher doesn't wish to use the cached
+        entry, ``None`` should be returned.
+
+        Else, a dict defining the cached result should be returned. The
+        dict may have the following keys:
+
+        objs
+           An iterable of objects that should be sent to the client. That
+           iterable of objects is expected to be what the command function
+           would return if invoked or an equivalent representation thereof.
+        """
+
+    def onobject(obj):
+        """Called when a new object is emitted from the command function.
+
+        Receives as its argument the object that was emitted from the
+        command function.
+
+        This method returns an iterator of objects to forward to the output
+        layer. The easiest implementation is a generator that just
+        ``yield obj``.
+        """
+
+    def onfinished():
+        """Called after all objects have been emitted from the command function.
+
+        Implementations should return an iterator of objects to forward to
+        the output layer.
+
+        This method can be a generator.
+        """

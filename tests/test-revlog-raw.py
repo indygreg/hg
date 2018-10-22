@@ -20,7 +20,7 @@ tvfs.options = {b'generaldelta': True, b'revlogv1': True}
 
 # The test wants to control whether to use delta explicitly, based on
 # "storedeltachains".
-revlog.revlog._isgooddeltainfo = lambda self, d, textlen: self.storedeltachains
+revlog.revlog._isgooddeltainfo = lambda self, d, textlen: self._storedeltachains
 
 def abort(msg):
     print('abort: %s' % msg)
@@ -78,7 +78,7 @@ def appendrev(rlog, text, tr, isext=False, isdelta=True):
     else:
         flags = revlog.REVIDX_DEFAULT_FLAGS
     # Change storedeltachains temporarily, to override revlog's delta decision
-    rlog.storedeltachains = isdelta
+    rlog._storedeltachains = isdelta
     try:
         rlog.addrevision(text, tr, nextrev, p1, p2, flags=flags)
         return nextrev
@@ -86,7 +86,7 @@ def appendrev(rlog, text, tr, isext=False, isdelta=True):
         abort('rev %d: failed to append: %s' % (nextrev, ex))
     finally:
         # Restore storedeltachains. It is always True, see revlog.__init__
-        rlog.storedeltachains = True
+        rlog._storedeltachains = True
 
 def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
     '''Copy revlog to destname using revlog.addgroup. Return the copied revlog.

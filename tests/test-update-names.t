@@ -50,7 +50,8 @@ make sure that this does not erase untracked data
   $ hg st
   ? name/file
   $ hg up 1
-  abort: Directory not empty: '$TESTTMP/r1/r2/name'
+  abort: Unlinking directory not permitted: *$TESTTMP/r1/r2/name* (glob) (windows !)
+  abort: Directory not empty: '?\$TESTTMP/r1/r2/name'? (re) (no-windows !)
   [255]
   $ cat name/file
   text

@@ -19,7 +19,7 @@ creating 'remote' repo
   adding manifests
   adding file changes
   added 9 changesets with 7 changes to 4 files (+1 heads)
-  new changesets bfaf4b5cbf01:916f1afdef90
+  new changesets bfaf4b5cbf01:916f1afdef90 (9 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg up tip
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -45,7 +45,7 @@ clone remote via stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
   adding changesets
   adding manifests
   adding file changes
@@ -57,7 +57,7 @@ clone remote via stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 1 files
   adding changesets
   adding manifests
   adding file changes
@@ -69,7 +69,7 @@ clone remote via stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 1 files
   adding changesets
   adding manifests
   adding file changes
@@ -81,7 +81,7 @@ clone remote via stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 4 changesets, 4 total revisions
+  checked 4 changesets with 4 changes to 1 files
   adding changesets
   adding manifests
   adding file changes
@@ -93,7 +93,7 @@ clone remote via stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 1 files
   adding changesets
   adding manifests
   adding file changes
@@ -105,7 +105,7 @@ clone remote via stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 1 files
   adding changesets
   adding manifests
   adding file changes
@@ -117,7 +117,7 @@ clone remote via stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 4 changesets, 5 total revisions
+  checked 4 changesets with 5 changes to 2 files
   adding changesets
   adding manifests
   adding file changes
@@ -129,7 +129,7 @@ clone remote via stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 5 changesets, 6 total revisions
+  checked 5 changesets with 6 changes to 3 files
   adding changesets
   adding manifests
   adding file changes
@@ -141,7 +141,7 @@ clone remote via stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 5 changesets, 5 total revisions
+  checked 5 changesets with 5 changes to 2 files
   $ cd test-8
   $ hg pull ../test-7
   pulling from ../test-7
@@ -157,7 +157,7 @@ clone remote via stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 9 changesets, 7 total revisions
+  checked 9 changesets with 7 changes to 4 files
   $ cd ..
   $ cd test-1
   $ hg pull -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" -r 4 ssh://user@dummy/remote
@@ -174,7 +174,7 @@ clone remote via stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 3 changesets, 2 total revisions
+  checked 3 changesets with 2 changes to 1 files
   $ hg pull -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/remote
   pulling from ssh://user@dummy/remote
   searching for changes
@@ -200,7 +200,7 @@ clone remote via stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 5 changesets, 3 total revisions
+  checked 5 changesets with 3 changes to 1 files
   $ hg pull -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/remote
   pulling from ssh://user@dummy/remote
   searching for changes
@@ -215,6 +215,6 @@ clone remote via stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 9 changesets, 7 total revisions
+  checked 9 changesets with 7 changes to 4 files
 
   $ cd ..

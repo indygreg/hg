@@ -43,12 +43,12 @@ Test status and dirstate of largefiles and that summary output is correct.
   $ touch large1 sub/large2
   $ sleep 1
   $ hg st
-  $ hg debugstate --nodates
+  $ hg debugstate --no-dates
   n 644         41 set                 .hglf/large1
   n 644         41 set                 .hglf/sub/large2
   n 644          8 set                 normal1
   n 644          8 set                 sub/normal2
-  $ hg debugstate --large --nodates
+  $ hg debugstate --large --no-dates
   n 644          7 set                 large1
   n 644          7 set                 sub/large2
   $ echo normal11 > normal1
@@ -225,7 +225,7 @@ Test largefiles can be loaded in hgweb (wrapcommand() shouldn't fail)
   $ . "$TESTDIR/cgienv"
 
   $ SCRIPT_NAME='' \
-  > $PYTHON "$TESTTMP/hgweb.cgi" > /dev/null
+  > "$PYTHON" "$TESTTMP/hgweb.cgi" > /dev/null
 
 Test archiving the various revisions.  These hit corner cases known with
 archiving.
@@ -961,7 +961,7 @@ Test clone at revision
   adding manifests
   adding file changes
   added 4 changesets with 10 changes to 4 files
-  new changesets 30d30fe6a5be:9e8fbc4bce62
+  new changesets 30d30fe6a5be:9e8fbc4bce62 (4 drafts)
   updating to branch default
   getting changed largefiles
   2 largefiles updated, 0 removed
@@ -1031,7 +1031,7 @@ Test cloning with --all-largefiles flag
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  10 files, 8 changesets, 24 total revisions
+  checked 8 changesets with 24 changes to 10 files
   searching 8 changesets for largefiles
   verified contents of 13 revisions of 6 largefiles
   $ hg -R a-clone1 sum
@@ -1090,7 +1090,7 @@ downloaded from 'default' instead of 'default-push' when no source is specified
   adding manifests
   adding file changes
   added 2 changesets with 8 changes to 4 files
-  new changesets 30d30fe6a5be:ce8896473775
+  new changesets 30d30fe6a5be:ce8896473775 (2 drafts)
   updating to branch default
   getting changed largefiles
   2 largefiles updated, 0 removed
@@ -1104,7 +1104,7 @@ downloaded from 'default' instead of 'default-push' when no source is specified
   adding manifests
   adding file changes
   added 6 changesets with 16 changes to 8 files
-  new changesets 51a0ae4d5864:daea875e9014
+  new changesets 51a0ae4d5864:daea875e9014 (6 drafts)
   (run 'hg update' to get a working copy)
   6 largefiles cached
 
@@ -1132,7 +1132,7 @@ redo pull with --lfrev and check it pulls largefiles for the right revs
   adding manifests
   adding file changes
   added 6 changesets with 16 changes to 8 files
-  new changesets 51a0ae4d5864:daea875e9014
+  new changesets 51a0ae4d5864:daea875e9014 (6 drafts)
   calling hook changegroup.lfiles: hgext.largefiles.reposetup.checkrequireslfiles
   (run 'hg update' to get a working copy)
   pulling largefiles for revision 7
@@ -1205,13 +1205,13 @@ rebased or not.
   adding manifests
   adding file changes
   added 1 changesets with 2 changes to 2 files (+1 heads)
-  new changesets a381d2c8c80e
+  new changesets a381d2c8c80e (1 drafts)
+  0 largefiles cached
   rebasing 8:f574fb32bb45 "modify normal file largefile in repo d"
   Invoking status precommit hook
   M sub/normal4
   M sub2/large6
   saved backup bundle to $TESTTMP/d/.hg/strip-backup/f574fb32bb45-dd1d9f80-rebase.hg
-  0 largefiles cached
   $ [ -f .hg/largefiles/e166e74c7303192238d60af5a9c4ce9bef0b7928 ]
   $ hg log --template '{rev}:{node|short}  {desc|firstline}\n'
   9:598410d3eb9a  modify normal file largefile in repo d
@@ -1263,7 +1263,7 @@ rebased or not.
   adding manifests
   adding file changes
   added 1 changesets with 2 changes to 2 files (+1 heads)
-  new changesets a381d2c8c80e
+  new changesets a381d2c8c80e (1 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg rebase
   rebasing 8:f574fb32bb45 "modify normal file largefile in repo d"
@@ -1513,9 +1513,9 @@ Test hg remove removes empty largefiles directories
   $ cat sub/large4
   large4-modified
   $ hg revert -a --no-backup
-  undeleting .hglf/sub2/large6
   forgetting .hglf/sub2/large8
   reverting normal3
+  undeleting .hglf/sub2/large6
   $ hg status
   ? sub/large4.orig
   ? sub/normal4.orig
@@ -1549,7 +1549,7 @@ revert some files to an older revision
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  10 files, 10 changesets, 28 total revisions
+  checked 10 changesets with 28 changes to 10 files
   searching 1 changesets for largefiles
   verified existence of 3 revisions of 3 largefiles
 
@@ -1563,7 +1563,7 @@ and make sure that this is caught:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  10 files, 10 changesets, 28 total revisions
+  checked 10 changesets with 28 changes to 10 files
   searching 1 changesets for largefiles
   changeset 9:598410d3eb9a: sub/large4 references missing $TESTTMP/d/.hg/largefiles/e166e74c7303192238d60af5a9c4ce9bef0b7928
   verified existence of 3 revisions of 3 largefiles
@@ -1669,7 +1669,7 @@ correctly.
   adding manifests
   adding file changes
   added 8 changesets with 24 changes to 10 files
-  new changesets 30d30fe6a5be:daea875e9014
+  new changesets 30d30fe6a5be:daea875e9014 (8 drafts)
   updating to branch default
   getting changed largefiles
   3 largefiles updated, 0 removed
@@ -1695,7 +1695,7 @@ correctly.
   adding manifests
   adding file changes
   added 2 changesets with 4 changes to 4 files (+1 heads)
-  new changesets a381d2c8c80e:598410d3eb9a
+  new changesets a381d2c8c80e:598410d3eb9a (2 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   2 largefiles cached
   $ hg merge
@@ -1771,7 +1771,7 @@ Test that transplanting a largefile change works correctly.
   adding manifests
   adding file changes
   added 9 changesets with 26 changes to 10 files
-  new changesets 30d30fe6a5be:a381d2c8c80e
+  new changesets 30d30fe6a5be:a381d2c8c80e (9 drafts)
   updating to branch default
   getting changed largefiles
   3 largefiles updated, 0 removed
@@ -1784,7 +1784,7 @@ Test that transplanting a largefile change works correctly.
   adding manifests
   adding file changes
   added 1 changesets with 2 changes to 2 files
-  new changesets 598410d3eb9a
+  new changesets 598410d3eb9a (1 drafts)
   $ hg log --template '{rev}:{node|short}  {desc|firstline}\n'
   9:598410d3eb9a  modify normal file largefile in repo d
   8:a381d2c8c80e  modify normal file and largefile in repo b

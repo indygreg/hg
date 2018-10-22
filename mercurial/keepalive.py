@@ -172,8 +172,11 @@ class ConnectionManager(object):
             return dict(self._hostmap)
 
 class KeepAliveHandler(object):
-    def __init__(self):
+    def __init__(self, timeout=None):
         self._cm = ConnectionManager()
+        self._timeout = timeout
+        self.requestscount = 0
+        self.sentbytescount = 0
 
     #### Connection Management
     def open_connections(self):
@@ -232,7 +235,7 @@ class KeepAliveHandler(object):
                 h = self._cm.get_ready_conn(host)
             else:
                 # no (working) free connections were found.  Create a new one.
-                h = http_class(host)
+                h = http_class(host, timeout=self._timeout)
                 if DEBUG:
                     DEBUG.info("creating new connection to %s (%d)",
                                host, id(h))
@@ -247,8 +250,10 @@ class KeepAliveHandler(object):
         except (socket.error, httplib.HTTPException) as err:
             raise urlerr.urlerror(err)
 
-        # if not a persistent connection, don't try to reuse it
-        if r.will_close:
+        # If not a persistent connection, don't try to reuse it. Look
+        # for this using getattr() since vcr doesn't define this
+        # attribute, and in that case always close the connection.
+        if getattr(r, r'will_close', True):
             self._cm.remove(h)
 
         if DEBUG:
@@ -310,6 +315,8 @@ class KeepAliveHandler(object):
         return r
 
     def _start_transaction(self, h, req):
+        oldbytescount = getattr(h, 'sentbytescount', 0)
+
         # What follows mostly reimplements HTTPConnection.request()
         # except it adds self.parent.addheaders in the mix and sends headers
         # in a deterministic order (to make testing easier).
@@ -344,6 +351,17 @@ class KeepAliveHandler(object):
         if urllibcompat.hasdata(req):
             h.send(data)
 
+        # This will fail to record events in case of I/O failure. That's OK.
+        self.requestscount += 1
+        self.sentbytescount += getattr(h, 'sentbytescount', 0) - oldbytescount
+
+        try:
+            self.parent.requestscount += 1
+            self.parent.sentbytescount += (
+                getattr(h, 'sentbytescount', 0) - oldbytescount)
+        except AttributeError:
+            pass
+
 class HTTPHandler(KeepAliveHandler, urlreq.httphandler):
     pass
 
@@ -376,6 +394,7 @@ class HTTPResponse(httplib.HTTPResponse):
                                       method=method, **extrakw)
         self.fileno = sock.fileno
         self.code = None
+        self.receivedbytescount = 0
         self._rbuf = ''
         self._rbufsize = 8096
         self._handler = None # inserted by the handler later
@@ -415,9 +434,21 @@ class HTTPResponse(httplib.HTTPResponse):
                 s = self._rbuf[:amt]
                 self._rbuf = self._rbuf[amt:]
                 return s
-
-        s = self._rbuf + self._raw_read(amt)
+        # Careful! http.client.HTTPResponse.read() on Python 3 is
+        # implemented using readinto(), which can duplicate self._rbuf
+        # if it's not empty.
+        s = self._rbuf
         self._rbuf = ''
+        data = self._raw_read(amt)
+
+        self.receivedbytescount += len(data)
+        self._connection.receivedbytescount += len(data)
+        try:
+            self._handler.parent.receivedbytescount += len(data)
+        except AttributeError:
+            pass
+
+        s += data
         return s
 
     # stolen from Python SVN #68532 to fix issue1088
@@ -493,6 +524,13 @@ class HTTPResponse(httplib.HTTPResponse):
             if not new:
                 break
 
+            self.receivedbytescount += len(new)
+            self._connection.receivedbytescount += len(new)
+            try:
+                self._handler.parent.receivedbytescount += len(new)
+            except AttributeError:
+                pass
+
             chunks.append(new)
             i = new.find('\n')
             if i >= 0:
@@ -538,6 +576,14 @@ class HTTPResponse(httplib.HTTPResponse):
             return total
         mv = memoryview(dest)
         got = self._raw_readinto(mv[have:total])
+
+        self.receivedbytescount += got
+        self._connection.receivedbytescount += got
+        try:
+            self._handler.receivedbytescount += got
+        except AttributeError:
+            pass
+
         dest[0:have] = self._rbuf
         got += len(self._rbuf)
         self._rbuf = ''
@@ -580,9 +626,11 @@ def safesend(self, str):
             data = read(blocksize)
             while data:
                 self.sock.sendall(data)
+                self.sentbytescount += len(data)
                 data = read(blocksize)
         else:
             self.sock.sendall(str)
+            self.sentbytescount += len(str)
     except socket.error as v:
         reraise = True
         if v[0] == errno.EPIPE:      # Broken pipe
@@ -610,11 +658,19 @@ def wrapgetresponse(cls):
     return safegetresponse
 
 class HTTPConnection(httplib.HTTPConnection):
+    # url.httpsconnection inherits from this. So when adding/removing
+    # attributes, be sure to audit httpsconnection() for unintended
+    # consequences.
+
     # use the modified response class
     response_class = HTTPResponse
     send = safesend
     getresponse = wrapgetresponse(httplib.HTTPConnection)
 
+    def __init__(self, *args, **kwargs):
+        httplib.HTTPConnection.__init__(self, *args, **kwargs)
+        self.sentbytescount = 0
+        self.receivedbytescount = 0
 
 #########################################################################
 #####   TEST FUNCTIONS

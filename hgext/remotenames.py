@@ -33,6 +33,7 @@ from mercurial.node import (
 )
 from mercurial import (
     bookmarks,
+    error,
     extensions,
     logexchange,
     namespaces,
@@ -41,6 +42,11 @@ from mercurial import (
     revsetlang,
     smartset,
     templateutil,
+    util,
+)
+
+from mercurial.utils import (
+    stringutil,
 )
 
 if pycompat.ispy3:
@@ -230,7 +236,7 @@ class remotenames(object):
                     self._nodetohoists.setdefault(node[0], []).append(name)
         return self._nodetohoists
 
-def wrapprintbookmarks(orig, ui, repo, bmarks, **opts):
+def wrapprintbookmarks(orig, ui, repo, fm, bmarks):
     if 'remotebookmarks' not in repo.names:
         return
     ns = repo.names['remotebookmarks']
@@ -243,7 +249,7 @@ def wrapprintbookmarks(orig, ui, repo, bmarks, **opts):
 
         bmarks[name] = (node, ' ', '')
 
-    return orig(ui, repo, bmarks, **opts)
+    return orig(ui, repo, fm, bmarks)
 
 def extsetup(ui):
     extensions.wrapfunction(bookmarks, '_printbookmarks', wrapprintbookmarks)
@@ -345,32 +351,53 @@ def remotebrancheskw(context, mapping):
 
 def _revsetutil(repo, subset, x, rtypes):
     """utility function to return a set of revs based on the rtypes"""
+    args = revsetlang.getargs(x, 0, 1, _('only one argument accepted'))
+    if args:
+        kind, pattern, matcher = stringutil.stringmatcher(
+            revsetlang.getstring(args[0], _('argument must be a string')))
+    else:
+        kind = pattern = None
+        matcher = util.always
 
-    revs = set()
+    nodes = set()
     cl = repo.changelog
     for rtype in rtypes:
         if rtype in repo.names:
             ns = repo.names[rtype]
             for name in ns.listnames(repo):
-                revs.update(ns.nodes(repo, name))
+                if not matcher(name):
+                    continue
+                nodes.update(ns.nodes(repo, name))
+    if kind == 'literal' and not nodes:
+        raise error.RepoLookupError(_("remote name '%s' does not exist")
+                                    % pattern)
 
-    results = (cl.rev(n) for n in revs if cl.hasnode(n))
-    return subset & smartset.baseset(sorted(results))
+    revs = (cl.rev(n) for n in nodes if cl.hasnode(n))
+    return subset & smartset.baseset(revs)
 
-@revsetpredicate('remotenames()')
+@revsetpredicate('remotenames([name])')
 def remotenamesrevset(repo, subset, x):
-    """All changesets which have a remotename on them."""
-    revsetlang.getargs(x, 0, 0, _("remotenames takes no arguments"))
+    """All changesets which have a remotename on them. If `name` is
+    specified, only remotenames of matching remote paths are considered.
+
+    Pattern matching is supported for `name`. See :hg:`help revisions.patterns`.
+    """
     return _revsetutil(repo, subset, x, ('remotebookmarks', 'remotebranches'))
 
-@revsetpredicate('remotebranches()')
+@revsetpredicate('remotebranches([name])')
 def remotebranchesrevset(repo, subset, x):
-    """All changesets which are branch heads on remotes."""
-    revsetlang.getargs(x, 0, 0, _("remotebranches takes no arguments"))
+    """All changesets which are branch heads on remotes. If `name` is
+    specified, only remotenames of matching remote paths are considered.
+
+    Pattern matching is supported for `name`. See :hg:`help revisions.patterns`.
+    """
     return _revsetutil(repo, subset, x, ('remotebranches',))
 
-@revsetpredicate('remotebookmarks()')
+@revsetpredicate('remotebookmarks([name])')
 def remotebmarksrevset(repo, subset, x):
-    """All changesets which have bookmarks on remotes."""
-    revsetlang.getargs(x, 0, 0, _("remotebookmarks takes no arguments"))
+    """All changesets which have bookmarks on remotes. If `name` is
+    specified, only remotenames of matching remote paths are considered.
+
+    Pattern matching is supported for `name`. See :hg:`help revisions.patterns`.
+    """
     return _revsetutil(repo, subset, x, ('remotebookmarks',))

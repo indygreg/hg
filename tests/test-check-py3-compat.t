@@ -3,10 +3,11 @@
   $ . "$TESTDIR/helpers-testrepo.sh"
   $ cd "$TESTDIR"/..
 
+#if no-py3
   $ testrepohg files 'set:(**.py)' \
   > -X hgdemandimport/demandimportpy2.py \
   > -X mercurial/thirdparty/cbor \
-  > | sed 's|\\|/|g' | xargs $PYTHON contrib/check-py3-compat.py
+  > | sed 's|\\|/|g' | xargs "$PYTHON" contrib/check-py3-compat.py
   contrib/python-zstandard/setup.py not using absolute_import
   contrib/python-zstandard/setup_zstd.py not using absolute_import
   contrib/python-zstandard/tests/common.py not using absolute_import
@@ -21,27 +22,27 @@
   contrib/python-zstandard/tests/test_module_attributes.py not using absolute_import
   contrib/python-zstandard/tests/test_train_dictionary.py not using absolute_import
   setup.py not using absolute_import
+#endif
 
-#if py3exe
+#if py3
   $ testrepohg files 'set:(**.py) - grep(pygments)' \
   > -X hgdemandimport/demandimportpy2.py \
   > -X hgext/fsmonitor/pywatchman \
-  > | sed 's|\\|/|g' | xargs $PYTHON3 contrib/check-py3-compat.py \
+  > -X mercurial/cffi \
+  > -X mercurial/thirdparty \
+  > | sed 's|\\|/|g' | xargs "$PYTHON" contrib/check-py3-compat.py \
   > | sed 's/[0-9][0-9]*)$/*)/'
-  hgext/convert/transport.py: error importing: <*Error> No module named 'svn.client' (error at transport.py:*) (glob)
-  mercurial/cffi/bdiff.py: error importing: <ImportError> cannot import name '_bdiff' (error at bdiff.py:*)
-  mercurial/cffi/bdiffbuild.py: error importing: <ImportError> No module named 'cffi' (error at bdiffbuild.py:*)
-  mercurial/cffi/mpatch.py: error importing: <ImportError> cannot import name '_mpatch' (error at mpatch.py:*)
-  mercurial/cffi/mpatchbuild.py: error importing: <ImportError> No module named 'cffi' (error at mpatchbuild.py:*)
-  mercurial/cffi/osutilbuild.py: error importing: <ImportError> No module named 'cffi' (error at osutilbuild.py:*)
-  mercurial/scmwindows.py: error importing: <*Error> No module named 'msvcrt' (error at win32.py:*) (glob)
-  mercurial/win32.py: error importing: <*Error> No module named 'msvcrt' (error at win32.py:*) (glob)
-  mercurial/windows.py: error importing: <*Error> No module named 'msvcrt' (error at windows.py:*) (glob)
-
+  hgext/convert/transport.py: error importing: <*Error> No module named 'svn.client' (error at transport.py:*) (glob) (?)
+  hgext/infinitepush/sqlindexapi.py: error importing: <*Error> No module named 'mysql' (error at sqlindexapi.py:*) (glob) (?)
+  mercurial/scmwindows.py: error importing: <ValueError> _type_ 'v' not supported (error at win32.py:*) (no-windows !)
+  mercurial/win32.py: error importing: <ValueError> _type_ 'v' not supported (error at win32.py:*) (no-windows !)
+  mercurial/windows.py: error importing: <ModuleNotFoundError> No module named 'msvcrt' (error at windows.py:*) (no-windows !)
+  mercurial/posix.py: error importing: <ModuleNotFoundError> No module named 'fcntl' (error at posix.py:*) (windows !)
+  mercurial/scmposix.py: error importing: <ModuleNotFoundError> No module named 'fcntl' (error at scmposix.py:*) (windows !)
 #endif
 
-#if py3exe py3pygments
+#if py3 pygments
   $ testrepohg files 'set:(**.py) and grep(pygments)' | sed 's|\\|/|g' \
-  > | xargs $PYTHON3 contrib/check-py3-compat.py \
+  > | xargs "$PYTHON" contrib/check-py3-compat.py \
   > | sed 's/[0-9][0-9]*)$/*)/'
 #endif

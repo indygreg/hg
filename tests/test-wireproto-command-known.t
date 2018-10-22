@@ -27,29 +27,6 @@ No arguments returns something reasonable
   > EOF
   creating http peer for wire protocol version 2
   sending known command
-  s>     POST /api/exp-http-v2-0001/ro/known HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 20\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     \x0c\x00\x00\x01\x00\x01\x01\x11\xa1DnameEknown
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     14\r\n
-  s>     \x0c\x00\x00\x01\x00\x02\x012
-  s>     \xa1FstatusBok@
-  s>     \r\n
-  received frame(size=12; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
-  s>     0\r\n
-  s>     \r\n
   response: []
 
 Single known node works
@@ -60,30 +37,9 @@ Single known node works
   > EOF
   creating http peer for wire protocol version 2
   sending known command
-  s>     POST /api/exp-http-v2-0001/ro/known HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 54\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     .\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa1Enodes\x81TBk\xad\xa5\xc6u\x98\xcae\x03mW\xd9\xe4\xb6K\x0c\x1c\xe7\xa0DnameEknown
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     15\r\n
-  s>     \r\x00\x00\x01\x00\x02\x012
-  s>     \xa1FstatusBokA1
-  s>     \r\n
-  received frame(size=13; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
-  s>     0\r\n
-  s>     \r\n
-  response: [True]
+  response: [
+    True
+  ]
 
 Multiple nodes works
 
@@ -93,29 +49,10 @@ Multiple nodes works
   > EOF
   creating http peer for wire protocol version 2
   sending known command
-  s>     POST /api/exp-http-v2-0001/ro/known HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0005\r\n
-  s>     content-type: application/mercurial-exp-framing-0005\r\n
-  s>     content-length: 96\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     X\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa1Enodes\x83TBk\xad\xa5\xc6u\x98\xcae\x03mW\xd9\xe4\xb6K\x0c\x1c\xe7\xa0T00000000000000000000T\x11$x\x96)a\x14q$\xed\xd45I\xae\xdd\x1a3^D\xbfDnameEknown
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     17\r\n
-  s>     \x0f\x00\x00\x01\x00\x02\x012
-  s>     \xa1FstatusBokC101
-  s>     \r\n
-  received frame(size=15; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
-  s>     0\r\n
-  s>     \r\n
-  response: [True, False, True]
+  response: [
+    True,
+    False,
+    True
+  ]
 
   $ cat error.log

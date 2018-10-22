@@ -20,7 +20,7 @@
   1 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
-  $ hg debugstate --nodates
+  $ hg debugstate --no-dates
   m   0         -2 unset               bar
   m   0         -2 unset               foo1
   copy: foo -> foo1
@@ -36,7 +36,7 @@ Removing foo1 and bar:
   $ cp bar B
   $ hg rm -f foo1 bar
 
-  $ hg debugstate --nodates
+  $ hg debugstate --no-dates
   r   0         -1 set                 bar
   r   0         -1 set                 foo1
   copy: foo -> foo1
@@ -54,7 +54,7 @@ Re-adding foo1 and bar:
   adding bar
   adding foo1
 
-  $ hg debugstate --nodates
+  $ hg debugstate --no-dates
   n   0         -2 unset               bar
   n   0         -2 unset               foo1
   copy: foo -> foo1
@@ -69,11 +69,11 @@ Reverting foo1 and bar:
 
   $ hg revert -vr . foo1 bar
   saving current version of bar as bar.orig
-  reverting bar
   saving current version of foo1 as foo1.orig
+  reverting bar
   reverting foo1
 
-  $ hg debugstate --nodates
+  $ hg debugstate --no-dates
   n   0         -2 unset               bar
   n   0         -2 unset               foo1
   copy: foo -> foo1
@@ -102,7 +102,8 @@ Merge should not overwrite local file that is untracked after remove
 Those who use force will lose
 
   $ hg merge -f
-  other [merge rev] changed bar which local [working copy] deleted
+  file 'bar' was deleted in local [working copy] but was modified in other [merge rev].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
   merging foo1 and foo to foo1
   0 files updated, 1 files merged, 0 files removed, 1 files unresolved

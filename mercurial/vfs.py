@@ -206,12 +206,16 @@ class abstractvfs(object):
         return util.rename(srcpath, dstpath)
 
     def readlink(self, path):
-        return os.readlink(self.join(path))
+        return util.readlink(self.join(path))
 
     def removedirs(self, path=None):
         """Remove a leaf directory and all empty intermediate ones
         """
         return util.removedirs(self.join(path))
+
+    def rmdir(self, path=None):
+        """Remove an empty directory."""
+        return os.rmdir(self.join(path))
 
     def rmtree(self, path=None, ignore_errors=False, forcibly=False):
         """Remove a directory tree recursively

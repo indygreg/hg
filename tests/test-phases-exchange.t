@@ -204,7 +204,7 @@ changegroup are added without phase movement
   adding manifests
   adding file changes
   added 5 changesets with 5 changes to 5 files (+1 heads)
-  new changesets 054250a37db4:b555f63b6063
+  new changesets 054250a37db4:b555f63b6063 (5 drafts)
   test-debug-phase: new rev 0:  x -> 1
   test-debug-phase: new rev 1:  x -> 1
   test-debug-phase: new rev 2:  x -> 1
@@ -238,7 +238,7 @@ Pulling from publish=False to publish=False does not move boundary.
   adding manifests
   adding file changes
   added 3 changesets with 3 changes to 3 files
-  new changesets 054250a37db4:54acac6f23ab
+  new changesets 054250a37db4:54acac6f23ab (3 drafts)
   test-debug-phase: new rev 0:  x -> 1
   test-debug-phase: new rev 1:  x -> 1
   test-debug-phase: new rev 2:  x -> 1
@@ -260,7 +260,7 @@ Even for common
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets f54f1bb90ff3
+  new changesets f54f1bb90ff3 (1 drafts)
   test-debug-phase: new rev 3:  x -> 1
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hgph
@@ -333,7 +333,7 @@ pulling from Publish=False to publish=False with some public
   adding manifests
   adding file changes
   added 2 changesets with 2 changes to 2 files
-  new changesets d6bcb4f74035:145e75495359
+  new changesets d6bcb4f74035:145e75495359 (2 drafts)
   4 local changesets published
   test-debug-phase: move rev 0: 1 -> 0
   test-debug-phase: move rev 1: 1 -> 0
@@ -380,7 +380,7 @@ pulling into publish=True
   adding manifests
   adding file changes
   added 2 changesets with 2 changes to 2 files
-  new changesets d6bcb4f74035:145e75495359
+  new changesets d6bcb4f74035:145e75495359 (2 drafts)
   test-debug-phase: new rev 5:  x -> 1
   test-debug-phase: new rev 6:  x -> 1
   (run 'hg update' to get a working copy)
@@ -943,7 +943,7 @@ Discovery locally secret changeset on a remote repository:
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 435b5d83910c
+  new changesets 435b5d83910c (1 drafts)
   test-debug-phase: new rev 10:  x -> 1
   (run 'hg update' to get a working copy)
   $ hgph -R ../mu
@@ -1073,7 +1073,7 @@ pull new changeset with common draft locally
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 5237fb433fc8
+  new changesets 5237fb433fc8 (1 drafts)
   test-debug-phase: new rev 13:  x -> 1
   (run 'hg update' to get a working copy)
   $ hgph
@@ -1448,7 +1448,7 @@ Works with default settings
   adding manifests
   adding file changes
   added 8 changesets with 7 changes to 7 files (+1 heads)
-  new changesets 426bada5c675:bb94757e651a
+  new changesets 426bada5c675:bb94757e651a (4 drafts)
   test-debug-phase: new rev 0:  x -> 0
   test-debug-phase: new rev 1:  x -> 0
   test-debug-phase: new rev 2:  x -> 0
@@ -1490,7 +1490,7 @@ of phase heads computation)
   adding manifests
   adding file changes
   added 8 changesets with 7 changes to 7 files (+1 heads)
-  new changesets 426bada5c675:bb94757e651a
+  new changesets 426bada5c675:bb94757e651a (4 drafts)
   test-debug-phase: new rev 0:  x -> 0
   test-debug-phase: new rev 1:  x -> 0
   test-debug-phase: new rev 2:  x -> 0
@@ -1532,7 +1532,7 @@ of phase heads computation)
   adding manifests
   adding file changes
   added 8 changesets with 7 changes to 7 files (+1 heads)
-  new changesets 426bada5c675:bb94757e651a
+  new changesets 426bada5c675:bb94757e651a (4 drafts)
   test-debug-phase: new rev 0:  x -> 0
   test-debug-phase: new rev 1:  x -> 0
   test-debug-phase: new rev 2:  x -> 0

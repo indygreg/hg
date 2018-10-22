@@ -286,6 +286,11 @@ def _capabilities(repo, proto):
         caps.append('bundle2=' + urlreq.quote(capsblob))
     caps.append('unbundle=%s' % ','.join(bundle2.bundlepriority))
 
+    if repo.ui.configbool('experimental', 'narrow'):
+        caps.append(wireprototypes.NARROWCAP)
+        if repo.ui.configbool('experimental', 'narrowservebrokenellipses'):
+            caps.append(wireprototypes.ELLIPSESCAP)
+
     return proto.addcapabilities(repo, caps)
 
 # If you are writing an extension and consider wrapping this function. Wrap

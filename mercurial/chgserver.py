@@ -19,7 +19,8 @@
 'setenv' command
     replace os.environ completely
 
-'setumask' command
+'setumask' command (DEPRECATED)
+'setumask2' command
     set umask
 
 'validate' command
@@ -313,6 +314,7 @@ class chgcmdserver(commandserver.server):
             _newchgui(ui, channeledsystem(fin, fout, 'S'), self.attachio),
             repo, fin, fout)
         self.clientsock = sock
+        self._ioattached = False
         self._oldios = []  # original (self.ch, ui.fp, fd) before "attachio"
         self.hashstate = hashstate
         self.baseaddress = baseaddress
@@ -326,6 +328,7 @@ class chgcmdserver(commandserver.server):
         # handled by dispatch._dispatch()
         self.ui.flush()
         self._restoreio()
+        self._ioattached = False
 
     def attachio(self):
         """Attach to client's stdio passed via unix domain socket; all
@@ -339,13 +342,13 @@ class chgcmdserver(commandserver.server):
 
         ui = self.ui
         ui.flush()
-        first = self._saveio()
+        self._saveio()
         for fd, (cn, fn, mode) in zip(clientfds, _iochannels):
             assert fd > 0
             fp = getattr(ui, fn)
             os.dup2(fd, fp.fileno())
             os.close(fd)
-            if not first:
+            if self._ioattached:
                 continue
             # reset buffering mode when client is first attached. as we want
             # to see output immediately on pager, the mode stays unchanged
@@ -364,18 +367,18 @@ class chgcmdserver(commandserver.server):
                 setattr(ui, fn, newfp)
             setattr(self, cn, newfp)
 
+        self._ioattached = True
         self.cresult.write(struct.pack('>i', len(clientfds)))
 
     def _saveio(self):
         if self._oldios:
-            return False
+            return
         ui = self.ui
         for cn, fn, _mode in _iochannels:
             ch = getattr(self, cn)
             fp = getattr(ui, fn)
             fd = os.dup(fp.fileno())
             self._oldios.append((ch, fp, fd))
-        return True
 
     def _restoreio(self):
         ui = self.ui
@@ -422,6 +425,13 @@ class chgcmdserver(commandserver.server):
             self.ui.flush()
             self.cresult.write('exit 255')
             return
+        except error.Abort as inst:
+            self.ui.error(_("abort: %s\n") % inst)
+            if inst.hint:
+                self.ui.error(_("(%s)\n") % inst.hint)
+            self.ui.flush()
+            self.cresult.write('exit 255')
+            return
         newhash = hashstate.fromui(lui, self.hashstate.mtimepaths)
         insts = []
         if newhash.mtimehash != self.hashstate.mtimehash:
@@ -450,13 +460,34 @@ class chgcmdserver(commandserver.server):
         os.chdir(path)
 
     def setumask(self):
+        """Change umask (DEPRECATED)"""
+        # BUG: this does not follow the message frame structure, but kept for
+        # backward compatibility with old chg clients for some time
+        self._setumask(self._read(4))
+
+    def setumask2(self):
         """Change umask"""
-        mask = struct.unpack('>I', self._read(4))[0]
+        data = self._readstr()
+        if len(data) != 4:
+            raise ValueError('invalid mask length in setumask2 request')
+        self._setumask(data)
+
+    def _setumask(self, data):
+        mask = struct.unpack('>I', data)[0]
         _log('setumask %r\n' % mask)
         os.umask(mask)
 
     def runcommand(self):
-        return super(chgcmdserver, self).runcommand()
+        # pager may be attached within the runcommand session, which should
+        # be detached at the end of the session. otherwise the pager wouldn't
+        # receive EOF.
+        globaloldios = self._oldios
+        self._oldios = []
+        try:
+            return super(chgcmdserver, self).runcommand()
+        finally:
+            self._restoreio()
+            self._oldios = globaloldios
 
     def setenv(self):
         """Clear and update os.environ
@@ -477,7 +508,8 @@ class chgcmdserver(commandserver.server):
                          'chdir': chdir,
                          'runcommand': runcommand,
                          'setenv': setenv,
-                         'setumask': setumask})
+                         'setumask': setumask,
+                         'setumask2': setumask2})
 
     if util.safehasattr(procutil, 'setprocname'):
         def setprocname(self):

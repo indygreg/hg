@@ -24,6 +24,8 @@ from . import (
     exchange,
     obsolete,
     obsutil,
+    phases,
+    pycompat,
     util,
 )
 from .utils import (
@@ -70,7 +72,7 @@ def _collectfiles(repo, striprev):
     """find out the filelogs affected by the strip"""
     files = set()
 
-    for x in xrange(striprev, len(repo)):
+    for x in pycompat.xrange(striprev, len(repo)):
         files.update(repo[x].files())
 
     return sorted(files)
@@ -80,7 +82,7 @@ def _collectrevlog(revlog, striprev):
     return [revlog.linkrev(r) for r in brokenset]
 
 def _collectmanifest(repo, striprev):
-    return _collectrevlog(repo.manifestlog._revlog, striprev)
+    return _collectrevlog(repo.manifestlog.getstorage(b''), striprev)
 
 def _collectbrokencsets(repo, files, striprev):
     """return the changesets which will be broken by the truncation"""
@@ -189,7 +191,11 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
     with ui.uninterruptable():
         try:
             with repo.transaction("strip") as tr:
-                offset = len(tr.entries)
+                # TODO this code violates the interface abstraction of the
+                # transaction and makes assumptions that file storage is
+                # using append-only files. We'll need some kind of storage
+                # API to handle stripping for us.
+                offset = len(tr._entries)
 
                 tr.startgroup()
                 cl.strip(striprev, tr)
@@ -199,8 +205,8 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
                     repo.file(fn).strip(striprev, tr)
                 tr.endgroup()
 
-                for i in xrange(offset, len(tr.entries)):
-                    file, troffset, ignore = tr.entries[i]
+                for i in pycompat.xrange(offset, len(tr._entries)):
+                    file, troffset, ignore = tr._entries[i]
                     with repo.svfs(file, 'a', checkambig=True) as fp:
                         fp.truncate(troffset)
                     if troffset == 0:
@@ -271,7 +277,8 @@ def safestriproots(ui, repo, nodes):
     # orphaned = affected - wanted
     # affected = descendants(roots(wanted))
     # wanted = revs
-    tostrip = set(repo.revs('%ld-(::((roots(%ld)::)-%ld))', revs, revs, revs))
+    revset = '%ld - ( ::( (roots(%ld):: and not _phase(%s)) -%ld) )'
+    tostrip = set(repo.revs(revset, revs, revs, phases.internal, revs))
     notstrip = revs - tostrip
     if notstrip:
         nodestr = ', '.join(sorted(short(repo[n].node()) for n in notstrip))
@@ -297,31 +304,31 @@ class stripcallback(object):
         if roots:
             strip(self.ui, self.repo, roots, self.backup, self.topic)
 
-def delayedstrip(ui, repo, nodelist, topic=None):
+def delayedstrip(ui, repo, nodelist, topic=None, backup=True):
     """like strip, but works inside transaction and won't strip irreverent revs
 
     nodelist must explicitly contain all descendants. Otherwise a warning will
     be printed that some nodes are not stripped.
 
-    Always do a backup. The last non-None "topic" will be used as the backup
-    topic name. The default backup topic name is "backup".
+    Will do a backup if `backup` is True. The last non-None "topic" will be
+    used as the backup topic name. The default backup topic name is "backup".
     """
     tr = repo.currenttransaction()
     if not tr:
         nodes = safestriproots(ui, repo, nodelist)
-        return strip(ui, repo, nodes, True, topic)
+        return strip(ui, repo, nodes, backup=backup, topic=topic)
     # transaction postclose callbacks are called in alphabet order.
     # use '\xff' as prefix so we are likely to be called last.
     callback = tr.getpostclose('\xffstrip')
     if callback is None:
-        callback = stripcallback(ui, repo, True, topic)
+        callback = stripcallback(ui, repo, backup=backup, topic=topic)
         tr.addpostclose('\xffstrip', callback)
     if topic:
         callback.topic = topic
     callback.addnodes(nodelist)
 
 def stripmanifest(repo, striprev, tr, files):
-    revlog = repo.manifestlog._revlog
+    revlog = repo.manifestlog.getstorage(b'')
     revlog.strip(striprev, tr)
     striptrees(repo, tr, striprev, files)
 
@@ -332,7 +339,7 @@ def striptrees(repo, tr, striprev, files):
             if (unencoded.startswith('meta/') and
                 unencoded.endswith('00manifest.i')):
                 dir = unencoded[5:-12]
-                repo.manifestlog._revlog.dirlog(dir).strip(striprev, tr)
+                repo.manifestlog.getstorage(dir).strip(striprev, tr)
 
 def rebuildfncache(ui, repo):
     """Rebuilds the fncache file from repo history.

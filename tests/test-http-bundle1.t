@@ -49,7 +49,7 @@ clone via stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 1 changesets, 4 total revisions
+  checked 1 changesets with 4 changes to 4 files
 #endif
 
 try to clone via stream, should use pull instead
@@ -101,7 +101,7 @@ clone via pull
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 1 changesets, 4 total revisions
+  checked 1 changesets with 4 changes to 4 files
   $ cd test
   $ echo bar > bar
   $ hg commit -A -d '1 0' -m 2

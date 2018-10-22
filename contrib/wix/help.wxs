@@ -43,12 +43,16 @@
           <Component Id="help.internals" Guid="$(var.help.internals.guid)" Win64='$(var.IsX64)'>
             <File Id="internals.bundle2.txt"      Name="bundle2.txt" />
             <File Id="internals.bundles.txt"      Name="bundles.txt" KeyPath="yes" />
+            <File Id="internals.cbor.txt"         Name="cbor.txt" />
             <File Id="internals.censor.txt"       Name="censor.txt" />
             <File Id="internals.changegroups.txt" Name="changegroups.txt" />
             <File Id="internals.config.txt"       Name="config.txt" />
+            <File Id="internals.linelog.txt"      Name="linelog.txt" />
             <File Id="internals.requirements.txt" Name="requirements.txt" />
             <File Id="internals.revlogs.txt"      Name="revlogs.txt" />
             <File Id="internals.wireprotocol.txt" Name="wireprotocol.txt" />
+            <File Id="internals.wireprotocolrpc.txt" Name="wireprotocolrpc.txt" />
+            <File Id="internals.wireprotocolv2.txt" Name="wireprotocolv2.txt" />
           </Component>
         </Directory>
 

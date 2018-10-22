@@ -70,6 +70,7 @@ comment associated with each format for details.
 from __future__ import absolute_import
 
 import errno
+import hashlib
 import struct
 
 from .i18n import _
@@ -277,7 +278,7 @@ def _fm0decodemeta(data):
     d = {}
     for l in data.split('\0'):
         if l:
-            key, value = l.split(':')
+            key, value = l.split(':', 1)
             d[key] = value
     return d
 
@@ -394,7 +395,7 @@ def _fm1purereadmarkers(data, off, stop):
         off = o3 + metasize * nummeta
         metapairsize = unpack('>' + (metafmt * nummeta), data[o3:off])
         metadata = []
-        for idx in xrange(0, len(metapairsize), 2):
+        for idx in pycompat.xrange(0, len(metapairsize), 2):
             o1 = off + metapairsize[idx]
             o2 = o1 + metapairsize[idx + 1]
             metadata.append((data[off:o1], data[o1:o2]))
@@ -598,7 +599,8 @@ class obsstore(object):
             if len(succ) != 20:
                 raise ValueError(succ)
         if prec in succs:
-            raise ValueError(_('in-marker cycle with %s') % node.hex(prec))
+            raise ValueError(
+                r'in-marker cycle with %s' % pycompat.sysstr(node.hex(prec)))
 
         metadata = tuple(sorted(metadata.iteritems()))
         for k, v in metadata:
@@ -954,12 +956,21 @@ def _computecontentdivergentset(repo):
             toprocess.update(obsstore.predecessors.get(prec, ()))
     return divergent
 
+def makefoldid(relation, user):
+
+    folddigest = hashlib.sha1(user)
+    for p in relation[0] + relation[1]:
+        folddigest.update('%d' % p.rev())
+        folddigest.update(p.node())
+    # Since fold only has to compete against fold for the same successors, it
+    # seems fine to use a small ID. Smaller ID save space.
+    return node.hex(folddigest.digest())[:8]
 
 def createmarkers(repo, relations, flag=0, date=None, metadata=None,
                   operation=None):
     """Add obsolete markers between changesets in a repo
 
-    <relations> must be an iterable of (<old>, (<new>, ...)[,{metadata}])
+    <relations> must be an iterable of ((<old>,...), (<new>, ...)[,{metadata}])
     tuple. `old` and `news` are changectx. metadata is an optional dictionary
     containing metadata for this marker only. It is merged with the global
     metadata specified through the `metadata` argument of this function.
@@ -993,37 +1004,52 @@ def createmarkers(repo, relations, flag=0, date=None, metadata=None,
     with repo.transaction('add-obsolescence-marker') as tr:
         markerargs = []
         for rel in relations:
-            prec = rel[0]
-            sucs = rel[1]
-            localmetadata = metadata.copy()
-            if 2 < len(rel):
-                localmetadata.update(rel[2])
+            predecessors = rel[0]
+            if not isinstance(predecessors, tuple):
+                # preserve compat with old API until all caller are migrated
+                predecessors = (predecessors,)
+            if len(predecessors) > 1 and len(rel[1]) != 1:
+                msg = 'Fold markers can only have 1 successors, not %d'
+                raise error.ProgrammingError(msg % len(rel[1]))
+            foldid = None
+            foldsize = len(predecessors)
+            if 1 < foldsize:
+                foldid = makefoldid(rel, metadata['user'])
+            for foldidx, prec in enumerate(predecessors, 1):
+                sucs = rel[1]
+                localmetadata = metadata.copy()
+                if len(rel) > 2:
+                    localmetadata.update(rel[2])
+                if foldid is not None:
+                    localmetadata['fold-id'] = foldid
+                    localmetadata['fold-idx'] = '%d' % foldidx
+                    localmetadata['fold-size'] = '%d' % foldsize
 
-            if not prec.mutable():
-                raise error.Abort(_("cannot obsolete public changeset: %s")
-                                 % prec,
-                                 hint="see 'hg help phases' for details")
-            nprec = prec.node()
-            nsucs = tuple(s.node() for s in sucs)
-            npare = None
-            if not nsucs:
-                npare = tuple(p.node() for p in prec.parents())
-            if nprec in nsucs:
-                raise error.Abort(_("changeset %s cannot obsolete itself")
-                                  % prec)
+                if not prec.mutable():
+                    raise error.Abort(_("cannot obsolete public changeset: %s")
+                                     % prec,
+                                     hint="see 'hg help phases' for details")
+                nprec = prec.node()
+                nsucs = tuple(s.node() for s in sucs)
+                npare = None
+                if not nsucs:
+                    npare = tuple(p.node() for p in prec.parents())
+                if nprec in nsucs:
+                    raise error.Abort(_("changeset %s cannot obsolete itself")
+                                      % prec)
 
-            # Effect flag can be different by relation
-            if saveeffectflag:
-                # The effect flag is saved in a versioned field name for future
-                # evolution
-                effectflag = obsutil.geteffectflag(rel)
-                localmetadata[obsutil.EFFECTFLAGFIELD] = "%d" % effectflag
+                # Effect flag can be different by relation
+                if saveeffectflag:
+                    # The effect flag is saved in a versioned field name for
+                    # future evolution
+                    effectflag = obsutil.geteffectflag(prec, sucs)
+                    localmetadata[obsutil.EFFECTFLAGFIELD] = "%d" % effectflag
 
-            # Creating the marker causes the hidden cache to become invalid,
-            # which causes recomputation when we ask for prec.parents() above.
-            # Resulting in n^2 behavior.  So let's prepare all of the args
-            # first, then create the markers.
-            markerargs.append((nprec, nsucs, npare, localmetadata))
+                # Creating the marker causes the hidden cache to become
+                # invalid, which causes recomputation when we ask for
+                # prec.parents() above.  Resulting in n^2 behavior.  So let's
+                # prepare all of the args first, then create the markers.
+                markerargs.append((nprec, nsucs, npare, localmetadata))
 
         for args in markerargs:
             nprec, nsucs, npare, localmetadata = args

@@ -22,7 +22,7 @@ Setup
   > c
   > EOF
   $ hg ci -Am adda
-  adding a
+  \x1b[0;32madding a\x1b[0m (esc)
   $ cat > a <<EOF
   > c
   > c
@@ -57,7 +57,7 @@ trailing whitespace
   >>> with open('a', 'rb') as f:
   ...     data = f.read()
   >>> with open('a', 'wb') as f:
-  ...     f.write(data.replace('dd', 'dd \r'))
+  ...     f.write(data.replace(b'dd', b'dd \r')) and None
   $ hg diff --nodates
   \x1b[0;1mdiff -r cf9f4ba66af2 a\x1b[0m (esc)
   \x1b[0;31;1m--- a/a\x1b[0m (esc)
@@ -218,7 +218,7 @@ issue3712: test colorization of subrepo diff
   $ hg init sub
   $ echo b > sub/b
   $ hg -R sub commit -Am 'create sub'
-  adding b
+  \x1b[0;32madding b\x1b[0m (esc)
   $ echo 'sub = sub' > .hgsub
   $ hg add .hgsub
   $ hg commit -m 'add subrepo sub'
@@ -396,12 +396,12 @@ test inline color diff
 
 multibyte character shouldn't be broken up in word diff:
 
-  $ $PYTHON <<'EOF'
+  $ "$PYTHON" <<'EOF'
   > with open("utf8", "wb") as f:
   >     f.write(b"blah \xe3\x82\xa2 blah\n")
   > EOF
   $ hg ci -Am 'add utf8 char' utf8
-  $ $PYTHON <<'EOF'
+  $ "$PYTHON" <<'EOF'
   > with open("utf8", "wb") as f:
   >     f.write(b"blah \xe3\x82\xa4 blah\n")
   > EOF

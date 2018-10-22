@@ -2,15 +2,15 @@
 
 Set up history and working copy
 
-  $ $PYTHON $TESTDIR/generate-working-copy-states.py state 2 1
+  $ "$PYTHON" $TESTDIR/generate-working-copy-states.py state 2 1
   $ hg addremove -q --similarity 0
   $ hg commit -m first
 
-  $ $PYTHON $TESTDIR/generate-working-copy-states.py state 2 2
+  $ "$PYTHON" $TESTDIR/generate-working-copy-states.py state 2 2
   $ hg addremove -q --similarity 0
   $ hg commit -m second
 
-  $ $PYTHON $TESTDIR/generate-working-copy-states.py state 2 wc
+  $ "$PYTHON" $TESTDIR/generate-working-copy-states.py state 2 wc
   $ hg addremove -q --similarity 0
   $ hg forget *_*_*-untracked
   $ rm *_*_missing-*
@@ -187,11 +187,11 @@ Test revert
   undeleting missing_content2_missing-untracked
 
   $ hg revert 'set:deleted()'
+  forgetting content1_missing_missing-tracked
+  forgetting missing_missing_missing-tracked
   reverting content1_content1_missing-tracked
   reverting content1_content2_missing-tracked
-  forgetting content1_missing_missing-tracked
   reverting missing_content2_missing-tracked
-  forgetting missing_missing_missing-tracked
 
   $ hg revert 'set:unknown()'
 

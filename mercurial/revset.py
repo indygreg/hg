@@ -242,7 +242,7 @@ def subscriptset(repo, subset, x, y, order):
 
 def listset(repo, subset, *xs, **opts):
     raise error.ParseError(_("can't use a list in this context"),
-                           hint=_('see hg help "revsets.x or y"'))
+                           hint=_('see \'hg help "revsets.x or y"\''))
 
 def keyvaluepair(repo, subset, k, v, order):
     raise error.ParseError(_("can't use a key-value pair in this context"))
@@ -454,6 +454,8 @@ def bookmark(repo, subset, x):
         kind, pattern, matcher = stringutil.stringmatcher(bm)
         bms = set()
         if kind == 'literal':
+            if bm == pattern:
+                pattern = repo._bookmarks.expandname(pattern)
             bmrev = repo._bookmarks.get(pattern, None)
             if not bmrev:
                 raise error.RepoLookupError(_("bookmark '%s' does not exist")
@@ -1558,6 +1560,12 @@ def _phase(repo, subset, *targets):
     """helper to select all rev in <targets> phases"""
     return repo._phasecache.getrevset(repo, targets, subset)
 
+@predicate('_phase(idx)', safe=True)
+def phase(repo, subset, x):
+    l = getargs(x, 1, 1, ("_phase requires one argument"))
+    target = getinteger(l[0], ("_phase expects a number"))
+    return _phase(repo, subset, target)
+
 @predicate('draft()', safe=True)
 def draft(repo, subset, x):
     """Changeset in draft phase."""
@@ -1742,6 +1750,16 @@ def rev(repo, subset, x):
     if l not in repo.changelog and l not in (node.nullrev, node.wdirrev):
         return baseset()
     return subset & baseset([l])
+
+@predicate('revset(set)', safe=True, takeorder=True)
+def revsetpredicate(repo, subset, x, order):
+    """Strictly interpret the content as a revset.
+
+    The content of this special predicate will be strictly interpreted as a
+    revset. For example, ``revset(id(0))`` will be interpreted as "id(0)"
+    without possible ambiguity with a "id(0)" bookmark or tag.
+    """
+    return getset(repo, subset, x, order)
 
 @predicate('matching(revision [, field])', safe=True)
 def matching(repo, subset, x):

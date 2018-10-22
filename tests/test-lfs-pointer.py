@@ -1,11 +1,5 @@
 from __future__ import absolute_import, print_function
 
-import os
-import sys
-
-# make it runnable using python directly without run-tests.py
-sys.path[0:0] = [os.path.join(os.path.dirname(__file__), '..')]
-
 # Import something from Mercurial, so the module loader gets initialized.
 from mercurial import pycompat
 del pycompat  # unused for now

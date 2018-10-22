@@ -37,7 +37,7 @@
   $ hg mv afile anotherfile
   $ hg commit -m "0.3m"
 
-  $ hg debugindex -f 1 afile
+  $ hg debugrevlogindex -f 1 afile
      rev flag     size   link     p1     p2       nodeid
        0 0000        2      0     -1     -1 362fef284ce2
        1 0000        4      1      0     -1 125144f7e028
@@ -71,7 +71,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 9 changesets, 7 total revisions
+  checked 9 changesets with 7 changes to 4 files
 
   $ cd ..
 
@@ -96,7 +96,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
   
   ---- hg clone -r 1 test test-1
   adding changesets
@@ -110,7 +110,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 1 files
   
   ---- hg clone -r 2 test test-2
   adding changesets
@@ -124,7 +124,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 1 files
   
   ---- hg clone -r 3 test test-3
   adding changesets
@@ -138,7 +138,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 4 changesets, 4 total revisions
+  checked 4 changesets with 4 changes to 1 files
   
   ---- hg clone -r 4 test test-4
   adding changesets
@@ -152,7 +152,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 1 files
   
   ---- hg clone -r 5 test test-5
   adding changesets
@@ -166,7 +166,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 1 files
   
   ---- hg clone -r 6 test test-6
   adding changesets
@@ -180,7 +180,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 4 changesets, 5 total revisions
+  checked 4 changesets with 5 changes to 2 files
   
   ---- hg clone -r 7 test test-7
   adding changesets
@@ -194,7 +194,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 5 changesets, 6 total revisions
+  checked 5 changesets with 6 changes to 3 files
   
   ---- hg clone -r 8 test test-8
   adding changesets
@@ -208,7 +208,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 5 changesets, 5 total revisions
+  checked 5 changesets with 5 changes to 2 files
 
   $ cd test-8
   $ hg pull ../test-7
@@ -225,7 +225,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 9 changesets, 7 total revisions
+  checked 9 changesets with 7 changes to 4 files
   $ cd ..
 
   $ hg clone test test-9

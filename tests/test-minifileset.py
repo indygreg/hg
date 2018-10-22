@@ -1,12 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-import os
-import sys
-
-# make it runnable directly without run-tests.py
-sys.path[0:0] = [os.path.join(os.path.dirname(__file__), '..')]
-
 from mercurial import minifileset
 
 def check(text, truecases, falsecases):

@@ -6,6 +6,7 @@ mercurial/cext/osutil.c
 mercurial/cext/revlog.c
 # Vendored code that we should never format:
 contrib/python-zstandard/c-ext/bufferutil.c
+contrib/python-zstandard/c-ext/compressionchunker.c
 contrib/python-zstandard/c-ext/compressiondict.c
 contrib/python-zstandard/c-ext/compressionparams.c
 contrib/python-zstandard/c-ext/compressionreader.c
@@ -25,6 +26,8 @@ contrib/python-zstandard/zstd.c
 contrib/python-zstandard/zstd/common/bitstream.h
 contrib/python-zstandard/zstd/common/compiler.h
 contrib/python-zstandard/zstd/common/cpu.h
+contrib/python-zstandard/zstd/common/debug.c
+contrib/python-zstandard/zstd/common/debug.h
 contrib/python-zstandard/zstd/common/entropy_common.c
 contrib/python-zstandard/zstd/common/error_private.c
 contrib/python-zstandard/zstd/common/error_private.h
@@ -42,6 +45,8 @@ contrib/python-zstandard/zstd/common/zstd_common.c
 contrib/python-zstandard/zstd/common/zstd_errors.h
 contrib/python-zstandard/zstd/common/zstd_internal.h
 contrib/python-zstandard/zstd/compress/fse_compress.c
+contrib/python-zstandard/zstd/compress/hist.c
+contrib/python-zstandard/zstd/compress/hist.h
 contrib/python-zstandard/zstd/compress/huf_compress.c
 contrib/python-zstandard/zstd/compress/zstd_compress.c
 contrib/python-zstandard/zstd/compress/zstd_compress_internal.h
@@ -64,8 +69,10 @@ contrib/python-zstandard/zstd/deprecated/zbuff_compress.c
 contrib/python-zstandard/zstd/deprecated/zbuff_decompress.c
 contrib/python-zstandard/zstd/deprecated/zbuff.h
 contrib/python-zstandard/zstd/dictBuilder/cover.c
+contrib/python-zstandard/zstd/dictBuilder/cover.h
 contrib/python-zstandard/zstd/dictBuilder/divsufsort.c
 contrib/python-zstandard/zstd/dictBuilder/divsufsort.h
+contrib/python-zstandard/zstd/dictBuilder/fastcover.c
 contrib/python-zstandard/zstd/dictBuilder/zdict.c
 contrib/python-zstandard/zstd/dictBuilder/zdict.h
 contrib/python-zstandard/zstd/zstd.h

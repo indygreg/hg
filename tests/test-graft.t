@@ -237,7 +237,7 @@ Using status to get more context
   # To mark files as resolved:  hg resolve --mark FILE
   
   # To continue:    hg graft --continue
-  # To abort:       hg update --clean . (warning: this will discard uncommitted changes)
+  # To abort:       hg graft --abort
   
 
 Commit while interrupted should fail:
@@ -699,8 +699,24 @@ Transplants of grafts can find a destination...
   summary:     2
   
 ... grafts of grafts unfortunately can't
-  $ hg graft -q 13
+  $ hg graft -q 13 --debug
+  scanning for duplicate grafts
+  grafting 13:7a4785234d87 "2"
+    searching for copies back to rev 12
+    unmatched files in other (from topological common ancestor):
+     g
+    unmatched files new in both:
+     b
+  resolving manifests
+   branchmerge: True, force: True, partial: False
+   ancestor: b592ea63bb0c, local: 7e61b508e709+, remote: 7a4785234d87
+  starting 4 threads for background file closing (?)
+  committing files:
+  b
   warning: can't find ancestor for 'b' copied from 'a'!
+  reusing manifest form p1 (listed files actually unchanged)
+  committing changelog
+  updating the branch cache
   $ hg log -r 'destination(13)'
 All copies of a cset
   $ hg log -r 'origin(13) or destination(origin(13))'
@@ -731,7 +747,7 @@ All copies of a cset
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     2
   
-  changeset:   22:d1cb6591fa4b
+  changeset:   22:3a4e92d81b97
   branch:      dev
   tag:         tip
   user:        foo
@@ -743,8 +759,8 @@ graft works on complex revset
 
   $ hg graft 'origin(13) or destination(origin(13))'
   skipping ancestor revision 21:7e61b508e709
-  skipping ancestor revision 22:d1cb6591fa4b
-  skipping revision 2:5c095ad7e90f (already grafted to 22:d1cb6591fa4b)
+  skipping ancestor revision 22:3a4e92d81b97
+  skipping revision 2:5c095ad7e90f (already grafted to 22:3a4e92d81b97)
   grafting 7:ef0ef43d49e7 "2"
   warning: can't find ancestor for 'b' copied from 'a'!
   grafting 13:7a4785234d87 "2"
@@ -758,7 +774,7 @@ graft with --force (still doesn't graft merges)
   $ hg graft 19 0 6
   skipping ungraftable merge revision 6
   skipping ancestor revision 0:68795b066622
-  skipping already grafted revision 19:9627f653b421 (22:d1cb6591fa4b also has origin 2:5c095ad7e90f)
+  skipping already grafted revision 19:9627f653b421 (22:3a4e92d81b97 also has origin 2:5c095ad7e90f)
   [255]
   $ hg graft 19 0 6 --force
   skipping ungraftable merge revision 6
@@ -773,12 +789,12 @@ graft --force after backout
   $ hg ci -m 28
   $ hg backout 28
   reverting a
-  changeset 29:53177ba928f6 backs out changeset 28:50a516bb8b57
+  changeset 29:9d95e865b00c backs out changeset 28:cc20d29aec8d
   $ hg graft 28
-  skipping ancestor revision 28:50a516bb8b57
+  skipping ancestor revision 28:cc20d29aec8d
   [255]
   $ hg graft 28 --force
-  grafting 28:50a516bb8b57 "28"
+  grafting 28:cc20d29aec8d "28"
   merging a
   $ cat a
   abc
@@ -788,7 +804,7 @@ graft --continue after --force
   $ echo def > a
   $ hg ci -m 31
   $ hg graft 28 --force --tool internal:fail
-  grafting 28:50a516bb8b57 "28"
+  grafting 28:cc20d29aec8d "28"
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
   [255]
@@ -801,7 +817,7 @@ graft --continue after --force
   (no more unresolved files)
   continue: hg graft --continue
   $ hg graft -c
-  grafting 28:50a516bb8b57 "28"
+  grafting 28:cc20d29aec8d "28"
   $ cat a
   abc
 
@@ -822,8 +838,8 @@ Empty graft
   $ hg tag -f something
   $ hg graft -qr 27
   $ hg graft -f 27
-  grafting 27:ed6c7e54e319 "28"
-  note: graft of 27:ed6c7e54e319 created no changes to commit
+  grafting 27:17d42b8f5d50 "28"
+  note: graft of 27:17d42b8f5d50 created no changes to commit
 
   $ cd ..
 
@@ -1863,7 +1879,7 @@ when we created new changesets on top of existing one
   adding manifests
   adding file changes
   added 11 changesets with 9 changes to 8 files (+4 heads)
-  new changesets 9092f1db7931:6b98ff0062dd
+  new changesets 9092f1db7931:6b98ff0062dd (6 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg up 9
   5 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -1878,7 +1894,7 @@ when we created new changesets on top of existing one
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets 311dfc6cf3bf
+  new changesets 311dfc6cf3bf (1 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
 
   $ hg graft --abort

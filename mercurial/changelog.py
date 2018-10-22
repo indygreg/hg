@@ -22,7 +22,6 @@ from . import (
     error,
     pycompat,
     revlog,
-    util,
 )
 from .utils import (
     dateutil,
@@ -304,7 +303,7 @@ class changelog(revlog.revlog):
         # Delta chains for changelogs tend to be very small because entries
         # tend to be small and don't delta well with each. So disable delta
         # chains.
-        self.storedeltachains = False
+        self._storedeltachains = False
 
         self._realopener = opener
         self._delayed = False
@@ -313,7 +312,7 @@ class changelog(revlog.revlog):
         self.filteredrevs = frozenset()
 
     def tiprev(self):
-        for i in xrange(len(self) -1, -2, -1):
+        for i in pycompat.xrange(len(self) -1, -2, -1):
             if i not in self.filteredrevs:
                 return i
 
@@ -332,7 +331,7 @@ class changelog(revlog.revlog):
             return revlog.revlog.__iter__(self)
 
         def filterediter():
-            for i in xrange(len(self)):
+            for i in pycompat.xrange(len(self)):
                 if i not in self.filteredrevs:
                     yield i
 
@@ -343,12 +342,6 @@ class changelog(revlog.revlog):
         for i in super(changelog, self).revs(start, stop):
             if i not in self.filteredrevs:
                 yield i
-
-    @util.propertycache
-    def nodemap(self):
-        # XXX need filtering too
-        self.rev(self.node(0))
-        return self._nodecache
 
     def reachableroots(self, minroot, heads, roots, includepath=False):
         return self.index.reachableroots2(minroot, heads, roots, includepath)
@@ -520,10 +513,10 @@ class changelog(revlog.revlog):
         # revision text contain two "\n\n" sequences -> corrupt
         # repository since read cannot unpack the revision.
         if not user:
-            raise error.RevlogError(_("empty username"))
+            raise error.StorageError(_("empty username"))
         if "\n" in user:
-            raise error.RevlogError(_("username %r contains a newline")
-                                    % pycompat.bytestr(user))
+            raise error.StorageError(_("username %r contains a newline")
+                                     % pycompat.bytestr(user))
 
         desc = stripdesc(desc)
 
@@ -536,8 +529,8 @@ class changelog(revlog.revlog):
             if branch in ("default", ""):
                 del extra["branch"]
             elif branch in (".", "null", "tip"):
-                raise error.RevlogError(_('the name \'%s\' is reserved')
-                                        % branch)
+                raise error.StorageError(_('the name \'%s\' is reserved')
+                                         % branch)
         if extra:
             extra = encodeextra(extra)
             parseddate = "%s %s" % (parseddate, extra)
@@ -553,18 +546,9 @@ class changelog(revlog.revlog):
         extra = self.read(rev)[5]
         return encoding.tolocal(extra.get("branch")), 'close' in extra
 
-    def _addrevision(self, node, rawtext, transaction, *args, **kwargs):
-        # overlay over the standard revlog._addrevision to track the new
-        # revision on the transaction.
-        rev = len(self)
-        node = super(changelog, self)._addrevision(node, rawtext, transaction,
-                                                   *args, **kwargs)
-        revs = transaction.changes.get('revs')
-        if revs is not None:
-            if revs:
-                assert revs[-1] + 1 == rev
-                revs = xrange(revs[0], rev + 1)
-            else:
-                revs = xrange(rev, rev + 1)
-            transaction.changes['revs'] = revs
-        return node
+    def _nodeduplicatecallback(self, transaction, node):
+        # keep track of revisions that got "re-added", eg: unbunde of know rev.
+        #
+        # We track them in a list to preserve their order from the source bundle
+        duplicates = transaction.changes.setdefault('revduplicates', [])
+        duplicates.append(self.rev(node))

@@ -21,7 +21,7 @@ ghost revisions
   $ bzr add -q somefile
   $ bzr commit -q -m 'Initial layout setup'
   $ echo morecontent >> somefile
-  $ $PYTHON ../../ghostcreator.py 'Commit with ghost revision' ghostrev
+  $ "$PYTHON" ../../ghostcreator.py 'Commit with ghost revision' ghostrev
   $ cd ..
   $ hg convert source source-hg
   initializing destination source-hg repository
@@ -31,9 +31,9 @@ ghost revisions
   1 Initial layout setup
   0 Commit with ghost revision
   $ glog -R source-hg
-  o  1@source "Commit with ghost revision" files: somefile
+  o  1@source "Commit with ghost revision" files+: [], files-: [], files: [somefile]
   |
-  o  0@source "Initial layout setup" files: somefile
+  o  0@source "Initial layout setup" files+: [somefile], files-: [], files: []
   
 
   $ cd ..

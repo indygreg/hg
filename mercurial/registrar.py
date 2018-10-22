@@ -146,6 +146,10 @@ class command(_funcregistrarbase):
     to prevent the command from running if the requested intent could not be
     fulfilled.
 
+    If `helpcategory` is set (usually to one of the constants in the help
+    module), the command will be displayed under that category in the help's
+    list of commands.
+
     The following intents are defined:
 
     readonly
@@ -164,14 +168,30 @@ class command(_funcregistrarbase):
     descriptions and examples.
     """
 
+    # Command categories for grouping them in help output.
+    CATEGORY_REPO_CREATION = 'repo'
+    CATEGORY_REMOTE_REPO_MANAGEMENT = 'remote'
+    CATEGORY_COMMITTING = 'commit'
+    CATEGORY_CHANGE_MANAGEMENT = 'management'
+    CATEGORY_CHANGE_ORGANIZATION = 'organization'
+    CATEGORY_FILE_CONTENTS = 'files'
+    CATEGORY_CHANGE_NAVIGATION  = 'navigation'
+    CATEGORY_WORKING_DIRECTORY = 'wdir'
+    CATEGORY_IMPORT_EXPORT = 'import'
+    CATEGORY_MAINTENANCE = 'maintenance'
+    CATEGORY_HELP = 'help'
+    CATEGORY_MISC = 'misc'
+    CATEGORY_NONE = 'none'
+
     def _doregister(self, func, name, options=(), synopsis=None,
                     norepo=False, optionalrepo=False, inferrepo=False,
-                    intents=None):
-
+                    intents=None, helpcategory=None, helpbasic=False):
         func.norepo = norepo
         func.optionalrepo = optionalrepo
         func.inferrepo = inferrepo
         func.intents = intents or set()
+        func.helpcategory = helpcategory
+        func.helpbasic = helpbasic
         if synopsis:
             self._table[name] = func, list(options), synopsis
         else:
@@ -247,6 +267,19 @@ class filesetpredicate(_funcregistrarbase):
      implies 'matchctx.status()' at runtime or not (False, by
      default).
 
+    Optional argument 'weight' indicates the estimated run-time cost, useful
+    for static optimization, default is 1. Higher weight means more expensive.
+    There are predefined weights in the 'filesetlang' module.
+
+    ====== =============================================================
+    Weight Description and examples
+    ====== =============================================================
+    0.5    basic match patterns (e.g. a symbol)
+    10     computing status (e.g. added()) or accessing a few files
+    30     reading file content for each (e.g. grep())
+    50     scanning working directory (ignored())
+    ====== =============================================================
+
     'filesetpredicate' instance in example above can be used to
     decorate multiple functions.
 
@@ -259,8 +292,9 @@ class filesetpredicate(_funcregistrarbase):
     _getname = _funcregistrarbase._parsefuncdecl
     _docformat = "``%s``\n    %s"
 
-    def _extrasetup(self, name, func, callstatus=False):
+    def _extrasetup(self, name, func, callstatus=False, weight=1):
         func._callstatus = callstatus
+        func._weight = weight
 
 class _templateregistrarbase(_funcregistrarbase):
     """Base of decorator to register functions as template specific one
@@ -281,7 +315,7 @@ class templatekeyword(_templateregistrarbase):
             '''
             pass
 
-        # old API
+        # old API (DEPRECATED)
         @templatekeyword('mykeyword')
         def mykeywordfunc(repo, ctx, templ, cache, revcache, **args):
             '''Explanation of this template keyword ....
@@ -385,7 +419,8 @@ class internalmerge(_funcregistrarbase):
         internalmerge = registrar.internalmerge()
 
         @internalmerge('mymerge', internalmerge.mergeonly,
-                       onfailure=None, precheck=None):
+                       onfailure=None, precheck=None,
+                       binary=False, symlink=False):
         def mymergefunc(repo, mynode, orig, fcd, fco, fca,
                         toolconf, files, labels=None):
             '''Explanation of this internal merge tool ....
@@ -416,6 +451,12 @@ class internalmerge(_funcregistrarbase):
     'files' and 'labels'. If it returns false value, merging is aborted
     immediately (and file is marked as "unresolved").
 
+    Optional argument 'binary' is a binary files capability of internal
+    merge tool. 'nomerge' merge type implies binary=True.
+
+    Optional argument 'symlink' is a symlinks capability of inetrnal
+    merge function. 'nomerge' merge type implies symlink=True.
+
     'internalmerge' instance in example above can be used to
     decorate multiple functions.
 
@@ -433,7 +474,14 @@ class internalmerge(_funcregistrarbase):
     fullmerge = 'fullmerge'  # both premerge and merge
 
     def _extrasetup(self, name, func, mergetype,
-                    onfailure=None, precheck=None):
+                    onfailure=None, precheck=None,
+                    binary=False, symlink=False):
         func.mergetype = mergetype
         func.onfailure = onfailure
         func.precheck = precheck
+
+        binarycap = binary or mergetype == self.nomerge
+        symlinkcap = symlink or mergetype == self.nomerge
+
+        # actual capabilities, which this internal merge tool has
+        func.capabilities = {"binary": binarycap, "symlink": symlinkcap}

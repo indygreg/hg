@@ -15,22 +15,15 @@ from __future__ import absolute_import
 testedwith = 'ships-with-hg-core'
 
 from mercurial import (
-    changegroup,
-    extensions,
-    hg,
     localrepo,
     registrar,
-    verify as verifymod,
+    repository,
 )
 
 from . import (
     narrowbundle2,
-    narrowchangegroup,
     narrowcommands,
-    narrowcopies,
-    narrowpatch,
     narrowrepo,
-    narrowrevlog,
     narrowtemplates,
     narrowwirepeer,
 )
@@ -55,15 +48,13 @@ configitem('experimental', 'narrowservebrokenellipses',
 cmdtable = narrowcommands.table
 
 def featuresetup(ui, features):
-    features.add(changegroup.NARROW_REQUIREMENT)
+    features.add(repository.NARROW_REQUIREMENT)
 
 def uisetup(ui):
     """Wraps user-facing mercurial commands with narrow-aware versions."""
     localrepo.featuresetupfuncs.add(featuresetup)
-    narrowrevlog.setup()
     narrowbundle2.setup()
     narrowcommands.setup()
-    narrowchangegroup.setup()
     narrowwirepeer.uisetup()
 
 def reposetup(ui, repo):
@@ -71,23 +62,10 @@ def reposetup(ui, repo):
     if not repo.local():
         return
 
-    if changegroup.NARROW_REQUIREMENT in repo.requirements:
+    repo.ui.setconfig('experimental', 'narrow', True, 'narrow-ext')
+    if repository.NARROW_REQUIREMENT in repo.requirements:
         narrowrepo.wraprepo(repo)
-        narrowcopies.setup(repo)
-        narrowpatch.setup(repo)
         narrowwirepeer.reposetup(repo)
-
-def _verifierinit(orig, self, repo, matcher=None):
-    # The verifier's matcher argument was desgined for narrowhg, so it should
-    # be None from core. If another extension passes a matcher (unlikely),
-    # we'll have to fail until matchers can be composed more easily.
-    assert matcher is None
-    orig(self, repo, repo.narrowmatch())
-
-def extsetup(ui):
-    extensions.wrapfunction(verifymod.verifier, '__init__', _verifierinit)
-    extensions.wrapfunction(hg, 'postshare', narrowrepo.wrappostshare)
-    extensions.wrapfunction(hg, 'copystore', narrowrepo.unsharenarrowspec)
 
 templatekeyword = narrowtemplates.templatekeyword
 revsetpredicate = narrowtemplates.revsetpredicate

@@ -10,14 +10,19 @@ This software may be used and distributed according to the terms
 of the GNU General Public License, incorporated herein by reference.
 """
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import
+
+from . import (
+    pycompat,
+)
 
 def label(code):
     if isinstance(code, str):
-        return '~' + code    # built-in functions ('~' sorts at the end)
+        # built-in functions ('~' sorts at the end)
+        return '~' + pycompat.sysbytes(code)
     else:
-        return '%s %s:%d' % (code.co_name,
-                             code.co_filename,
+        return '%s %s:%d' % (pycompat.sysbytes(code.co_name),
+                             pycompat.sysbytes(code.co_filename),
                              code.co_firstlineno)
 
 class KCacheGrind(object):
@@ -27,7 +32,7 @@ class KCacheGrind(object):
 
     def output(self, out_file):
         self.out_file = out_file
-        print('events: Ticks', file=out_file)
+        out_file.write(b'events: Ticks\n')
         self._print_summary()
         for entry in self.data:
             self._entry(entry)
@@ -37,23 +42,24 @@ class KCacheGrind(object):
         for entry in self.data:
             totaltime = int(entry.totaltime * 1000)
             max_cost = max(max_cost, totaltime)
-        print('summary: %d' % max_cost, file=self.out_file)
+        self.out_file.write(b'summary: %d\n' % max_cost)
 
     def _entry(self, entry):
         out_file = self.out_file
 
         code = entry.code
         if isinstance(code, str):
-            print('fi=~', file=out_file)
+            out_file.write(b'fi=~\n')
         else:
-            print('fi=%s' % code.co_filename, file=out_file)
-        print('fn=%s' % label(code), file=out_file)
+            out_file.write(b'fi=%s\n' % pycompat.sysbytes(code.co_filename))
+
+        out_file.write(b'fn=%s\n' % label(code))
 
         inlinetime = int(entry.inlinetime * 1000)
         if isinstance(code, str):
-            print('0 ', inlinetime, file=out_file)
+            out_file.write(b'0 %d\n' % inlinetime)
         else:
-            print('%d %d' % (code.co_firstlineno, inlinetime), file=out_file)
+            out_file.write(b'%d %d\n' % (code.co_firstlineno, inlinetime))
 
         # recursive calls are counted in entry.calls
         if entry.calls:
@@ -68,19 +74,20 @@ class KCacheGrind(object):
 
         for subentry in calls:
             self._subentry(lineno, subentry)
-        print(file=out_file)
+
+        out_file.write(b'\n')
 
     def _subentry(self, lineno, subentry):
         out_file = self.out_file
         code = subentry.code
-        print('cfn=%s' % label(code), file=out_file)
+        out_file.write(b'cfn=%s\n' % label(code))
         if isinstance(code, str):
-            print('cfi=~', file=out_file)
-            print('calls=%d 0' % subentry.callcount, file=out_file)
+            out_file.write(b'cfi=~\n')
+            out_file.write(b'calls=%d 0\n' % subentry.callcount)
         else:
-            print('cfi=%s' % code.co_filename, file=out_file)
-            print('calls=%d %d' % (
-                subentry.callcount, code.co_firstlineno), file=out_file)
+            out_file.write(b'cfi=%s\n' % pycompat.sysbytes(code.co_filename))
+            out_file.write(b'calls=%d %d\n' % (
+                subentry.callcount, code.co_firstlineno))
 
         totaltime = int(subentry.totaltime * 1000)
-        print('%d %d' % (lineno, totaltime), file=out_file)
+        out_file.write(b'%d %d\n' % (lineno, totaltime))

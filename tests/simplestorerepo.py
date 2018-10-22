@@ -22,6 +22,7 @@ from mercurial.node import (
     nullrev,
 )
 from mercurial.thirdparty import (
+    attr,
     cbor,
 )
 from mercurial import (
@@ -39,6 +40,7 @@ from mercurial import (
 )
 from mercurial.utils import (
     interfaceutil,
+    storageutil,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -59,6 +61,22 @@ def validatenode(node):
 def validaterev(rev):
     if not isinstance(rev, int):
         raise ValueError('expected int')
+
+class simplestoreerror(error.StorageError):
+    pass
+
+@interfaceutil.implementer(repository.irevisiondelta)
+@attr.s(slots=True, frozen=True)
+class simplestorerevisiondelta(object):
+    node = attr.ib()
+    p1node = attr.ib()
+    p2node = attr.ib()
+    basenode = attr.ib()
+    linknode = attr.ib()
+    flags = attr.ib()
+    baserevisionsize = attr.ib()
+    revision = attr.ib()
+    delta = attr.ib()
 
 @interfaceutil.implementer(repository.ifilestorage)
 class filestorage(object):
@@ -86,19 +104,13 @@ class filestorage(object):
         self._indexdata = indexdata or []
         self._indexbynode = {}
         self._indexbyrev = {}
-        self.index = []
+        self._index = []
         self._refreshindex()
-
-        # This is used by changegroup code :/
-        self._generaldelta = True
-        self.storedeltachains = False
-
-        self.version = 1
 
     def _refreshindex(self):
         self._indexbynode.clear()
         self._indexbyrev.clear()
-        self.index = []
+        self._index = []
 
         for i, entry in enumerate(self._indexdata):
             self._indexbynode[entry[b'node']] = entry
@@ -124,10 +136,10 @@ class filestorage(object):
             p1rev, p2rev = self.parentrevs(self.rev(entry[b'node']))
 
             # start, length, rawsize, chainbase, linkrev, p1, p2, node
-            self.index.append((0, 0, 0, -1, entry[b'linkrev'], p1rev, p2rev,
-                               entry[b'node']))
+            self._index.append((0, 0, 0, -1, entry[b'linkrev'], p1rev, p2rev,
+                                entry[b'node']))
 
-        self.index.append((0, 0, 0, -1, -1, -1, -1, nullid))
+        self._index.append((0, 0, 0, -1, -1, -1, -1, nullid))
 
     def __len__(self):
         return len(self._indexdata)
@@ -217,39 +229,28 @@ class filestorage(object):
 
         return self._indexbyrev[rev][b'linkrev']
 
-    def flags(self, rev):
+    def _flags(self, rev):
         validaterev(rev)
 
         return self._indexbyrev[rev][b'flags']
 
-    def deltaparent(self, rev):
-        validaterev(rev)
-
-        p1node = self.parents(self.node(rev))[0]
-        return self.rev(p1node)
-
-    def candelta(self, baserev, rev):
+    def _candelta(self, baserev, rev):
         validaterev(baserev)
         validaterev(rev)
 
-        if ((self.flags(baserev) & revlog.REVIDX_RAWTEXT_CHANGING_FLAGS)
-            or (self.flags(rev) & revlog.REVIDX_RAWTEXT_CHANGING_FLAGS)):
+        if ((self._flags(baserev) & revlog.REVIDX_RAWTEXT_CHANGING_FLAGS)
+            or (self._flags(rev) & revlog.REVIDX_RAWTEXT_CHANGING_FLAGS)):
             return False
 
         return True
-
-    def rawsize(self, rev):
-        validaterev(rev)
-        node = self.node(rev)
-        return len(self.revision(node, raw=True))
 
     def _processflags(self, text, flags, operation, raw=False):
         if flags == 0:
             return text, True
 
         if flags & ~revlog.REVIDX_KNOWN_FLAGS:
-            raise error.RevlogError(_("incompatible revision flag '%#x'") %
-                                    (flags & ~revlog.REVIDX_KNOWN_FLAGS))
+            raise simplestoreerror(_("incompatible revision flag '%#x'") %
+                                   (flags & ~revlog.REVIDX_KNOWN_FLAGS))
 
         validatehash = True
         # Depending on the operation (read or write), the order might be
@@ -266,7 +267,7 @@ class filestorage(object):
 
                 if flag not in revlog._flagprocessors:
                     message = _("missing processor for flag '%#x'") % (flag)
-                    raise revlog.RevlogError(message)
+                    raise simplestoreerror(message)
 
                 processor = revlog._flagprocessors[flag]
                 if processor is not None:
@@ -285,8 +286,8 @@ class filestorage(object):
     def checkhash(self, text, node, p1=None, p2=None, rev=None):
         if p1 is None and p2 is None:
             p1, p2 = self.parents(node)
-        if node != revlog.hash(text, p1, p2):
-            raise error.RevlogError(_("integrity check failed on %s") %
+        if node != storageutil.hashrevisionsha1(text, p1, p2):
+            raise simplestoreerror(_("integrity check failed on %s") %
                 self._path)
 
     def revision(self, node, raw=False):
@@ -296,7 +297,7 @@ class filestorage(object):
             return b''
 
         rev = self.rev(node)
-        flags = self.flags(rev)
+        flags = self._flags(rev)
 
         path = b'/'.join([self._storepath, hex(node)])
         rawtext = self._svfs.read(path)
@@ -325,7 +326,7 @@ class filestorage(object):
             return False
 
         fulltext = self.revision(node)
-        m = revlog.parsemeta(fulltext)[0]
+        m = storageutil.parsemeta(fulltext)[0]
 
         if m and 'copy' in m:
             return m['copy'], bin(m['copyrev'])
@@ -342,7 +343,7 @@ class filestorage(object):
 
         p1, p2 = self.parents(node)
 
-        if revlog.hash(t, p1, p2) == node:
+        if storageutil.hashrevisionsha1(t, p1, p2) == node:
             return False
 
         if self.iscensored(self.rev(node)):
@@ -370,7 +371,7 @@ class filestorage(object):
     def iscensored(self, rev):
         validaterev(rev)
 
-        return self.flags(rev) & revlog.REVIDX_ISCENSORED
+        return self._flags(rev) & repository.REVISION_FLAG_CENSORED
 
     def commonancestorsheads(self, a, b):
         validatenode(a)
@@ -408,13 +409,9 @@ class filestorage(object):
 
         return [b'/'.join((self._storepath, f)) for f in entries]
 
-    # Required by verify.
-    def checksize(self):
-        return 0, 0
-
     def add(self, text, meta, transaction, linkrev, p1, p2):
         if meta or text.startswith(b'\1\n'):
-            text = revlog.packmeta(meta, text)
+            text = storageutil.packmeta(meta, text)
 
         return self.addrevision(text, transaction, linkrev, p1, p2)
 
@@ -424,11 +421,11 @@ class filestorage(object):
         validatenode(p2)
 
         if flags:
-            node = node or revlog.hash(text, p1, p2)
+            node = node or storageutil.hashrevisionsha1(text, p1, p2)
 
         rawtext, validatehash = self._processflags(text, flags, 'write')
 
-        node = node or revlog.hash(text, p1, p2)
+        node = node or storageutil.hashrevisionsha1(text, p1, p2)
 
         if node in self._indexbynode:
             return node
@@ -462,7 +459,12 @@ class filestorage(object):
         self._refreshindex()
         self._svfs.write(self._indexpath, cbor.dumps(self._indexdata))
 
-    def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None):
+    def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None,
+                 maybemissingparents=False):
+        if maybemissingparents:
+            raise error.Abort(_('simple store does not support missing parents '
+                                'write mode'))
+
         nodes = []
 
         transaction.addbackup(self._indexpath)
@@ -489,28 +491,6 @@ class filestorage(object):
                 addrevisioncb(self, node)
 
         return nodes
-
-    def revdiff(self, rev1, rev2):
-        validaterev(rev1)
-        validaterev(rev2)
-
-        node1 = self.node(rev1)
-        node2 = self.node(rev2)
-
-        return mdiff.textdiff(self.revision(node1, raw=True),
-                              self.revision(node2, raw=True))
-
-    def headrevs(self):
-        # Assume all revisions are heads by default.
-        revishead = {rev: True for rev in self._indexbyrev}
-
-        for rev, entry in self._indexbyrev.items():
-            # Unset head flag for all seen parents.
-            revishead[self.rev(entry[b'p1'])] = False
-            revishead[self.rev(entry[b'p2'])] = False
-
-        return [rev for rev, ishead in sorted(revishead.items())
-                if ishead]
 
     def heads(self, start=None, stop=None):
         # This is copied from revlog.py.
@@ -564,8 +544,8 @@ class filestorage(object):
 
         heads = {}
         futurelargelinkrevs = set()
-        for head in self.headrevs():
-            headlinkrev = self.linkrev(head)
+        for head in self.heads():
+            headlinkrev = self.linkrev(self.rev(head))
             heads[head] = headlinkrev
             if headlinkrev >= minlink:
                 futurelargelinkrevs.add(headlinkrev)
@@ -651,9 +631,9 @@ def reposetup(ui, repo):
 def featuresetup(ui, supported):
     supported.add(REQUIREMENT)
 
-def newreporequirements(orig, repo):
+def newreporequirements(orig, ui):
     """Modifies default requirements for new repos to use the simple store."""
-    requirements = orig(repo)
+    requirements = orig(ui)
 
     # These requirements are only used to affect creation of the store
     # object. We have our own store. So we can remove them.

@@ -15,7 +15,6 @@ import stat
 from .i18n import _
 from .node import (
     addednodeid,
-    bin,
     hex,
     modifiednodeid,
     nullid,
@@ -36,7 +35,6 @@ from . import (
     phases,
     pycompat,
     repoview,
-    revlog,
     scmutil,
     sparse,
     subrepo,
@@ -193,25 +191,26 @@ class basectx(object):
         return self.rev() in obsmod.getrevs(self._repo, 'extinct')
 
     def orphan(self):
-        """True if the changeset is not obsolete but it's ancestor are"""
+        """True if the changeset is not obsolete, but its ancestor is"""
         return self.rev() in obsmod.getrevs(self._repo, 'orphan')
 
     def phasedivergent(self):
-        """True if the changeset try to be a successor of a public changeset
+        """True if the changeset tries to be a successor of a public changeset
 
-        Only non-public and non-obsolete changesets may be bumped.
+        Only non-public and non-obsolete changesets may be phase-divergent.
         """
         return self.rev() in obsmod.getrevs(self._repo, 'phasedivergent')
 
     def contentdivergent(self):
-        """Is a successors of a changeset with multiple possible successors set
+        """Is a successor of a changeset with multiple possible successor sets
 
-        Only non-public and non-obsolete changesets may be divergent.
+        Only non-public and non-obsolete changesets may be content-divergent.
         """
         return self.rev() in obsmod.getrevs(self._repo, 'contentdivergent')
 
     def isunstable(self):
-        """True if the changeset is either unstable, bumped or divergent"""
+        """True if the changeset is either orphan, phase-divergent or
+        content-divergent"""
         return self.orphan() or self.phasedivergent() or self.contentdivergent()
 
     def instabilities(self):
@@ -242,7 +241,7 @@ class basectx(object):
         parents = self._parents
         if len(parents) == 2:
             return parents[1]
-        return changectx(self._repo, nullrev)
+        return self._repo[nullrev]
 
     def _fileinfo(self, path):
         if r'_manifest' in self.__dict__:
@@ -344,7 +343,7 @@ class basectx(object):
             reversed = True
             ctx1, ctx2 = ctx2, ctx1
 
-        match = match or matchmod.always(self._repo.root, self._repo.getcwd())
+        match = self._repo.narrowmatch(match)
         match = ctx2._matchstatus(ctx1, match)
         r = scmutil.status([], [], [], [], [], [], [])
         r = ctx2._buildstatus(ctx1, r, match, listignored, listclean,
@@ -381,73 +380,10 @@ class changectx(basectx):
     """A changecontext object makes access to data related to a particular
     changeset convenient. It represents a read-only context already present in
     the repo."""
-    def __init__(self, repo, changeid='.'):
-        """changeid is a revision number, node, or tag"""
+    def __init__(self, repo, rev, node):
         super(changectx, self).__init__(repo)
-
-        try:
-            if isinstance(changeid, int):
-                self._node = repo.changelog.node(changeid)
-                self._rev = changeid
-                return
-            elif changeid == 'null':
-                self._node = nullid
-                self._rev = nullrev
-                return
-            elif changeid == 'tip':
-                self._node = repo.changelog.tip()
-                self._rev = repo.changelog.rev(self._node)
-                return
-            elif (changeid == '.'
-                  or repo.local() and changeid == repo.dirstate.p1()):
-                # this is a hack to delay/avoid loading obsmarkers
-                # when we know that '.' won't be hidden
-                self._node = repo.dirstate.p1()
-                self._rev = repo.unfiltered().changelog.rev(self._node)
-                return
-            elif len(changeid) == 20:
-                try:
-                    self._node = changeid
-                    self._rev = repo.changelog.rev(changeid)
-                    return
-                except error.FilteredLookupError:
-                    changeid = hex(changeid) # for the error message
-                    raise
-                except LookupError:
-                    # check if it might have come from damaged dirstate
-                    #
-                    # XXX we could avoid the unfiltered if we had a recognizable
-                    # exception for filtered changeset access
-                    if (repo.local()
-                        and changeid in repo.unfiltered().dirstate.parents()):
-                        msg = _("working directory has unknown parent '%s'!")
-                        raise error.Abort(msg % short(changeid))
-                    changeid = hex(changeid) # for the error message
-
-            elif len(changeid) == 40:
-                try:
-                    self._node = bin(changeid)
-                    self._rev = repo.changelog.rev(self._node)
-                    return
-                except error.FilteredLookupError:
-                    raise
-                except (TypeError, LookupError):
-                    pass
-            else:
-                raise error.ProgrammingError(
-                        "unsupported changeid '%s' of type %s" %
-                        (changeid, type(changeid)))
-
-            # lookup failed
-        except (error.FilteredIndexError, error.FilteredLookupError):
-            raise error.FilteredRepoLookupError(_("filtered revision '%s'")
-                                                % pycompat.bytestr(changeid))
-        except error.FilteredRepoLookupError:
-            raise
-        except IndexError:
-            pass
-        raise error.RepoLookupError(
-            _("unknown revision '%s'") % changeid)
+        self._rev = rev
+        self._node = node
 
     def __hash__(self):
         try:
@@ -481,8 +417,8 @@ class changectx(basectx):
         repo = self._repo
         p1, p2 = repo.changelog.parentrevs(self._rev)
         if p2 == nullrev:
-            return [changectx(repo, p1)]
-        return [changectx(repo, p1), changectx(repo, p2)]
+            return [repo[p1]]
+        return [repo[p1], repo[p2]]
 
     def changeset(self):
         c = self._changeset
@@ -533,11 +469,11 @@ class changectx(basectx):
         recursively walk children.
         """
         c = self._repo.changelog.children(self._node)
-        return [changectx(self._repo, x) for x in c]
+        return [self._repo[x] for x in c]
 
     def ancestors(self):
         for a in self._repo.changelog.ancestors([self._rev]):
-            yield changectx(self._repo, a)
+            yield self._repo[a]
 
     def descendants(self):
         """Recursively yield all children of the changeset.
@@ -545,7 +481,7 @@ class changectx(basectx):
         For just the immediate children, use children()
         """
         for d in self._repo.changelog.descendants([self._rev]):
-            yield changectx(self._repo, d)
+            yield self._repo[d]
 
     def filectx(self, path, fileid=None, filelog=None):
         """get a file context from this changeset"""
@@ -588,13 +524,7 @@ class changectx(basectx):
                     ''.join(_("      alternatively, use --config "
                               "merge.preferancestor=%s\n") %
                             short(n) for n in sorted(cahs) if n != anc))
-        return changectx(self._repo, anc)
-
-    def descendant(self, other):
-        msg = (b'ctx.descendant(other) is deprecated, '
-               b'use ctx.isancestorof(other)')
-        self._repo.ui.deprecwarn(msg, b'4.7')
-        return self.isancestorof(other)
+        return self._repo[anc]
 
     def isancestorof(self, other):
         """True if this changeset is an ancestor of other"""
@@ -612,7 +542,7 @@ class changectx(basectx):
                 return
             match.bad(fn, _('no such file in rev %s') % self)
 
-        m = matchmod.badmatch(match, bad)
+        m = matchmod.badmatch(self._repo.narrowmatch(match), bad)
         return self._manifest.walk(m)
 
     def matches(self, match):
@@ -625,7 +555,6 @@ class basefilectx(object):
     workingfilectx: a filecontext that represents files from the working
                     directory,
     memfilectx: a filecontext that represents files in-memory,
-    overlayfilectx: duplicate another filecontext with some fields overridden.
     """
     @propertycache
     def _filelog(self):
@@ -800,6 +729,8 @@ class basefilectx(object):
         mfl = repo.manifestlog
         # fetch the linkrev
         lkr = self.linkrev()
+        if srcrev == lkr:
+            return lkr
         # hack to reuse ancestor computation when searching for renames
         memberanc = getattr(self, '_ancestrycontext', None)
         iteranc = None
@@ -840,12 +771,12 @@ class basefilectx(object):
         'linkrev-shadowing' when a file revision is used by multiple
         changesets.
         """
-        lkr = self.linkrev()
         attrs = vars(self)
-        noctx = not (r'_changeid' in attrs or r'_changectx' in attrs)
-        if noctx or self.rev() == lkr:
+        hastoprev = (r'_changeid' in attrs or r'_changectx' in attrs)
+        if hastoprev:
+            return self._adjustlinkrev(self.rev(), inclusive=True)
+        else:
             return self.linkrev()
-        return self._adjustlinkrev(self.rev(), inclusive=True)
 
     def introfilectx(self):
         """Return filectx having identical contents, but pointing to the
@@ -974,7 +905,7 @@ class filectx(basefilectx):
        filerevision convenient."""
     def __init__(self, repo, path, changeid=None, fileid=None,
                  filelog=None, changectx=None):
-        """changeid can be a changeset revision, node, or tag.
+        """changeid must be a revision number, if specified.
            fileid can be a file revision or node."""
         self._repo = repo
         self._path = path
@@ -998,7 +929,7 @@ class filectx(basefilectx):
     @propertycache
     def _changectx(self):
         try:
-            return changectx(self._repo, self._changeid)
+            return self._repo[self._changeid]
         except error.FilteredRepoLookupError:
             # Linkrev may point to any revision in the repository.  When the
             # repository is filtered this may lead to `filectx` trying to build
@@ -1016,7 +947,7 @@ class filectx(basefilectx):
             # Linkrevs have several serious troubles with filtering that are
             # complicated to solve. Proper handling of the issue here should be
             # considered when solving linkrev issue are on the table.
-            return changectx(self._repo.unfiltered(), self._changeid)
+            return self._repo.unfiltered()[self._changeid]
 
     def filectx(self, fileid, changeid=None):
         '''opens an arbitrary revision of the file without
@@ -1054,7 +985,7 @@ class filectx(basefilectx):
 
         renamed = self._filelog.renamed(self._filenode)
         if not renamed:
-            return renamed
+            return None
 
         if self.rev() == self.linkrev():
             return renamed
@@ -1237,11 +1168,12 @@ class committablectx(basectx):
 
     def walk(self, match):
         '''Generates matching file names.'''
-        return sorted(self._repo.dirstate.walk(match,
+        return sorted(self._repo.dirstate.walk(self._repo.narrowmatch(match),
                                                subrepos=sorted(self.substate),
                                                unknown=True, ignored=False))
 
     def matches(self, match):
+        match = self._repo.narrowmatch(match)
         ds = self._repo.dirstate
         return sorted(f for f in ds.matches(match) if ds[f] != 'r')
 
@@ -1250,7 +1182,7 @@ class committablectx(basectx):
             yield p
         for a in self._repo.changelog.ancestors(
             [p.rev() for p in self._parents]):
-            yield changectx(self._repo, a)
+            yield self._repo[a]
 
     def markcommitted(self, node):
         """Perform post-commit cleanup necessary after committing this ctx
@@ -1307,7 +1239,9 @@ class workingctx(committablectx):
         p = self._repo.dirstate.parents()
         if p[1] == nullid:
             p = p[:-1]
-        return [changectx(self._repo, x) for x in p]
+        # use unfiltered repo to delay/avoid loading obsmarkers
+        unfi = self._repo.unfiltered()
+        return [changectx(self._repo, unfi.changelog.rev(n), n) for n in p]
 
     def _fileinfo(self, path):
         # populate __dict__['_manifest'] as workingctx has no _manifestdelta
@@ -1903,23 +1837,28 @@ class overlayworkingctx(committablectx):
         # Test that each new directory to be created to write this path from p2
         # is not a file in p1.
         components = path.split('/')
-        for i in xrange(len(components)):
+        for i in pycompat.xrange(len(components)):
             component = "/".join(components[0:i])
-            if component in self.p1():
+            if component in self.p1() and self._cache[component]['exists']:
                 fail(path, component)
 
         # Test the other direction -- that this path from p2 isn't a directory
         # in p1 (test that p1 doesn't any paths matching `path/*`).
         match = matchmod.match('/', '', [path + '/'], default=b'relpath')
         matches = self.p1().manifest().matches(match)
-        if len(matches) > 0:
-            if len(matches) == 1 and matches.keys()[0] == path:
+        mfiles = matches.keys()
+        if len(mfiles) > 0:
+            if len(mfiles) == 1 and mfiles[0] == path:
+                return
+            # omit the files which are deleted in current IMM wctx
+            mfiles = [m for m in mfiles if self._cache[m]['exists']]
+            if not mfiles:
                 return
             raise error.Abort("error: file '%s' cannot be written because "
                               " '%s/' is a folder in %s (containing %d "
                               "entries: %s)"
-                              % (path, path, self.p1(), len(matches),
-                                 ', '.join(matches.keys())))
+                              % (path, path, self.p1(), len(mfiles),
+                                 ', '.join(mfiles)))
 
     def write(self, path, data, flags='', **kwargs):
         if data is None:
@@ -1929,8 +1868,13 @@ class overlayworkingctx(committablectx):
                         flags=flags)
 
     def setflags(self, path, l, x):
+        flag = ''
+        if l:
+            flag = 'l'
+        elif x:
+            flag = 'x'
         self._markdirty(path, exists=True, date=dateutil.makedate(),
-                        flags=(l and 'l' or '') + (x and 'x' or ''))
+                        flags=flag)
 
     def remove(self, path):
         self._markdirty(path, exists=False)
@@ -2037,6 +1981,13 @@ class overlayworkingctx(committablectx):
         return keys
 
     def _markdirty(self, path, exists, data=None, date=None, flags=''):
+        # data not provided, let's see if we already have some; if not, let's
+        # grab it from our underlying context, so that we always have data if
+        # the file is marked as existing.
+        if exists and data is None:
+            oldentry = self._cache.get(path) or {}
+            data = oldentry.get('data') or self._wrappedctx[path].data()
+
         self._cache[path] = {
             'exists': exists,
             'data': data,
@@ -2117,8 +2068,8 @@ class workingcommitctx(workingctx):
     """
     def __init__(self, repo, changes,
                  text="", user=None, date=None, extra=None):
-        super(workingctx, self).__init__(repo, text, user, date, extra,
-                                         changes)
+        super(workingcommitctx, self).__init__(repo, text, user, date, extra,
+                                               changes)
 
     def _dirstatestatus(self, match, ignored=False, clean=False, unknown=False):
         """Return matched files only in ``self._status``
@@ -2273,17 +2224,10 @@ class memctx(committablectx):
         man = pctx.manifest().copy()
 
         for f in self._status.modified:
-            p1node = nullid
-            p2node = nullid
-            p = pctx[f].parents() # if file isn't in pctx, check p2?
-            if len(p) > 0:
-                p1node = p[0].filenode()
-                if len(p) > 1:
-                    p2node = p[1].filenode()
-            man[f] = revlog.hash(self[f].data(), p1node, p2node)
+            man[f] = modifiednodeid
 
         for f in self._status.added:
-            man[f] = revlog.hash(self[f].data(), nullid, nullid)
+            man[f] = addednodeid
 
         for f in self._status.removed:
             if f in man:
@@ -2355,76 +2299,6 @@ class memfilectx(committablefilectx):
         """wraps repo.wwrite"""
         self._data = data
 
-class overlayfilectx(committablefilectx):
-    """Like memfilectx but take an original filectx and optional parameters to
-    override parts of it. This is useful when fctx.data() is expensive (i.e.
-    flag processor is expensive) and raw data, flags, and filenode could be
-    reused (ex. rebase or mode-only amend a REVIDX_EXTSTORED file).
-    """
-
-    def __init__(self, originalfctx, datafunc=None, path=None, flags=None,
-                 copied=None, ctx=None):
-        """originalfctx: filecontext to duplicate
-
-        datafunc: None or a function to override data (file content). It is a
-        function to be lazy. path, flags, copied, ctx: None or overridden value
-
-        copied could be (path, rev), or False. copied could also be just path,
-        and will be converted to (path, nullid). This simplifies some callers.
-        """
-
-        if path is None:
-            path = originalfctx.path()
-        if ctx is None:
-            ctx = originalfctx.changectx()
-            ctxmatch = lambda: True
-        else:
-            ctxmatch = lambda: ctx == originalfctx.changectx()
-
-        repo = originalfctx.repo()
-        flog = originalfctx.filelog()
-        super(overlayfilectx, self).__init__(repo, path, flog, ctx)
-
-        if copied is None:
-            copied = originalfctx.renamed()
-            copiedmatch = lambda: True
-        else:
-            if copied and not isinstance(copied, tuple):
-                # repo._filecommit will recalculate copyrev so nullid is okay
-                copied = (copied, nullid)
-            copiedmatch = lambda: copied == originalfctx.renamed()
-
-        # When data, copied (could affect data), ctx (could affect filelog
-        # parents) are not overridden, rawdata, rawflags, and filenode may be
-        # reused (repo._filecommit should double check filelog parents).
-        #
-        # path, flags are not hashed in filelog (but in manifestlog) so they do
-        # not affect reusable here.
-        #
-        # If ctx or copied is overridden to a same value with originalfctx,
-        # still consider it's reusable. originalfctx.renamed() may be a bit
-        # expensive so it's not called unless necessary. Assuming datafunc is
-        # always expensive, do not call it for this "reusable" test.
-        reusable = datafunc is None and ctxmatch() and copiedmatch()
-
-        if datafunc is None:
-            datafunc = originalfctx.data
-        if flags is None:
-            flags = originalfctx.flags()
-
-        self._datafunc = datafunc
-        self._flags = flags
-        self._copied = copied
-
-        if reusable:
-            # copy extra fields from originalfctx
-            attrs = ['rawdata', 'rawflags', '_filenode', '_filerev']
-            for attr_ in attrs:
-                if util.safehasattr(originalfctx, attr_):
-                    setattr(self, attr_, getattr(originalfctx, attr_))
-
-    def data(self):
-        return self._datafunc()
 
 class metadataonlyctx(committablectx):
     """Like memctx but it's reusing the manifest of different commit.
@@ -2463,11 +2337,11 @@ class metadataonlyctx(committablectx):
         # manifests of our commit parents
         mp1, mp2 = self.manifestctx().parents
         if p1 != nullid and p1.manifestnode() != mp1:
-            raise RuntimeError('can\'t reuse the manifest: '
-                               'its p1 doesn\'t match the new ctx p1')
+            raise RuntimeError(r"can't reuse the manifest: its p1 "
+                               r"doesn't match the new ctx p1")
         if p2 != nullid and p2.manifestnode() != mp2:
-            raise RuntimeError('can\'t reuse the manifest: '
-                               'its p2 doesn\'t match the new ctx p2')
+            raise RuntimeError(r"can't reuse the manifest: "
+                               r"its p2 doesn't match the new ctx p2")
 
         self._files = originalctx.files()
         self.substate = {}
@@ -2559,5 +2433,5 @@ class arbitraryfilectx(object):
 
     def write(self, data, flags, **kwargs):
         assert not flags
-        with open(self._path, "w") as f:
+        with open(self._path, "wb") as f:
             f.write(data)

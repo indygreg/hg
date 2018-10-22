@@ -1,6 +1,53 @@
 This file contains testcases that tend to be related to special cases or less
 common commands affecting largefile.
 
+  $ hg init requirements
+  $ cd requirements
+
+# largefiles not loaded by default.
+
+  $ hg config extensions
+  [1]
+
+# Adding largefiles to requires file will auto-load largefiles extension.
+
+  $ echo largefiles >> .hg/requires
+  $ hg config extensions
+  extensions.largefiles=
+
+# But only if there is no config entry for the extension already.
+
+  $ cat > .hg/hgrc << EOF
+  > [extensions]
+  > largefiles=!
+  > EOF
+
+  $ hg config extensions
+  abort: repository requires features unknown to this Mercurial: largefiles!
+  (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
+  [255]
+
+  $ cat > .hg/hgrc << EOF
+  > [extensions]
+  > largefiles=
+  > EOF
+
+  $ hg config extensions
+  extensions.largefiles=
+
+  $ cat > .hg/hgrc << EOF
+  > [extensions]
+  > largefiles = missing.py
+  > EOF
+
+  $ hg config extensions
+  *** failed to import extension largefiles from missing.py: [Errno 2] $ENOENT$: 'missing.py'
+  abort: repository requires features unknown to this Mercurial: largefiles!
+  (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
+  [255]
+
+  $ cd ..
+
 Each sections should be independent of each others.
 
   $ USERCACHE="$TESTTMP/cache"; export USERCACHE
@@ -111,7 +158,7 @@ We have to simulate that here by setting $HOME and removing write permissions
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 09a186cfa6da
+  new changesets 09a186cfa6da (1 drafts)
   updating to branch default
   getting changed largefiles
   1 largefiles updated, 0 removed
@@ -220,10 +267,8 @@ sharing a largefile repo automatically enables largefiles on the share
   getting changed largefiles
   1 largefiles updated, 0 removed
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cat ../shared_lfrepo/.hg/hgrc
-  
-  [extensions]
-  largefiles=
+  $ grep largefiles ../shared_lfrepo/.hg/requires
+  largefiles
 
 verify that large files in subrepos handled properly
   $ hg init subrepo
@@ -1095,7 +1140,7 @@ largefiles (issue4547)
 Move (and then undo) a directory move with only largefiles.
 
   $ cd subrepo-root
-  $ $PYTHON $TESTDIR/list-tree.py .hglf dir* large*
+  $ "$PYTHON" $TESTDIR/list-tree.py .hglf dir* large*
   .hglf/
   .hglf/dir/
   .hglf/dir/subdir/
@@ -1110,7 +1155,7 @@ Move (and then undo) a directory move with only largefiles.
   $ hg mv dir/subdir dir/subdir2
   moving .hglf/dir/subdir/large.bin to .hglf/dir/subdir2/large.bin
 
-  $ $PYTHON $TESTDIR/list-tree.py .hglf dir* large*
+  $ "$PYTHON" $TESTDIR/list-tree.py .hglf dir* large*
   .hglf/
   .hglf/dir/
   .hglf/dir/subdir2/
@@ -1135,8 +1180,8 @@ Move (and then undo) a directory move with only largefiles.
   ? large.orig
 
   $ hg revert --all
-  undeleting .hglf/dir/subdir/large.bin
   forgetting .hglf/dir/subdir2/large.bin
+  undeleting .hglf/dir/subdir/large.bin
   reverting subrepo no-largefiles
 
   $ hg status -C
@@ -1150,7 +1195,7 @@ The content of the forgotten file shouldn't be clobbered
 
 The standin for subdir2 should be deleted, not just dropped
 
-  $ $PYTHON $TESTDIR/list-tree.py .hglf dir* large*
+  $ "$PYTHON" $TESTDIR/list-tree.py .hglf dir* large*
   .hglf/
   .hglf/dir/
   .hglf/dir/subdir/
@@ -1177,7 +1222,7 @@ existed under .hglf/.
   R dir/subdir/large.bin
   ? large.orig
 
-  $ $PYTHON $TESTDIR/list-tree.py .hglf dir* large*
+  $ "$PYTHON" $TESTDIR/list-tree.py .hglf dir* large*
   .hglf/
   .hglf/dir/
   .hglf/dir/subdir2/
@@ -1202,7 +1247,7 @@ Start from scratch, and rename something other than the final path component.
     dir/subdir/large.bin
   R dir/subdir/large.bin
 
-  $ $PYTHON $TESTDIR/list-tree.py .hglf dir* large*
+  $ "$PYTHON" $TESTDIR/list-tree.py .hglf dir* large*
   .hglf/
   .hglf/dir2/
   .hglf/dir2/subdir/
@@ -1214,14 +1259,14 @@ Start from scratch, and rename something other than the final path component.
   large
 
   $ hg revert --all
-  undeleting .hglf/dir/subdir/large.bin
   forgetting .hglf/dir2/subdir/large.bin
+  undeleting .hglf/dir/subdir/large.bin
   reverting subrepo no-largefiles
 
   $ hg status -C
   ? dir2/subdir/large.bin
 
-  $ $PYTHON $TESTDIR/list-tree.py .hglf dir* large*
+  $ "$PYTHON" $TESTDIR/list-tree.py .hglf dir* large*
   .hglf/
   .hglf/dir/
   .hglf/dir/subdir/
@@ -1263,7 +1308,7 @@ Test "pull --rebase" when rebase is enabled before largefiles (issue3861)
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets bf5e395ced2c
+  new changesets bf5e395ced2c (1 drafts)
   nothing to rebase - updating instead
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 

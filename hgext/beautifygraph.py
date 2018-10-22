@@ -18,6 +18,7 @@ from mercurial import (
     encoding,
     extensions,
     graphmod,
+    pycompat,
     templatekw,
 )
 
@@ -53,8 +54,10 @@ def prettyedge(before, edge, after):
 def convertedges(line):
     line = ' %s ' % line
     pretty = []
-    for idx in xrange(len(line) - 2):
-        pretty.append(prettyedge(line[idx], line[idx + 1], line[idx + 2]))
+    for idx in pycompat.xrange(len(line) - 2):
+        pretty.append(prettyedge(line[idx:idx + 1],
+                                 line[idx + 1:idx + 2],
+                                 line[idx + 2:idx + 3]))
     return ''.join(pretty)
 
 def getprettygraphnode(orig, *args, **kwargs):
@@ -84,7 +87,7 @@ def extsetup(ui):
         ui.warn(_('beautifygraph: unsupported encoding, UTF-8 required\n'))
         return
 
-    if 'A' in encoding._wide:
+    if r'A' in encoding._wide:
         ui.warn(_('beautifygraph: unsupported terminal settings, '
                   'monospace narrow text required\n'))
         return

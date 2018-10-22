@@ -1217,7 +1217,9 @@ static PyObject *posixfile(PyObject *self, PyObject *args, PyObject *kwds)
 	char fpmode[4];
 	int fppos = 0;
 	int plus;
+#ifndef IS_PY3K
 	FILE *fp;
+#endif
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, PY23("et|si:posixfile",
 							  "et|yi:posixfile"),

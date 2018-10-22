@@ -21,6 +21,7 @@ from .node import (
     bin,
     hex,
     nullid,
+    nullrev,
     short,
     wdirid,
     wdirrev,
@@ -34,9 +35,11 @@ from . import (
     obsutil,
     pathutil,
     phases,
+    policy,
     pycompat,
     revsetlang,
     similar,
+    smartset,
     url,
     util,
     vfs,
@@ -51,6 +54,8 @@ if pycompat.iswindows:
     from . import scmwindows as scmplatform
 else:
     from . import scmposix as scmplatform
+
+parsers = policy.importmod(r'parsers')
 
 termsize = scmplatform.termsize
 
@@ -166,67 +171,68 @@ def callcatch(ui, func):
     # Mercurial-specific first, followed by built-in and library exceptions
     except error.LockHeld as inst:
         if inst.errno == errno.ETIMEDOUT:
-            reason = _('timed out waiting for lock held by %r') % inst.locker
+            reason = _('timed out waiting for lock held by %r') % (
+                pycompat.bytestr(inst.locker))
         else:
             reason = _('lock held by %r') % inst.locker
-        ui.warn(_("abort: %s: %s\n")
-                % (inst.desc or stringutil.forcebytestr(inst.filename), reason))
+        ui.error(_("abort: %s: %s\n") % (
+            inst.desc or stringutil.forcebytestr(inst.filename), reason))
         if not inst.locker:
-            ui.warn(_("(lock might be very busy)\n"))
+            ui.error(_("(lock might be very busy)\n"))
     except error.LockUnavailable as inst:
-        ui.warn(_("abort: could not lock %s: %s\n") %
-                (inst.desc or stringutil.forcebytestr(inst.filename),
-                 encoding.strtolocal(inst.strerror)))
+        ui.error(_("abort: could not lock %s: %s\n") %
+                 (inst.desc or stringutil.forcebytestr(inst.filename),
+                  encoding.strtolocal(inst.strerror)))
     except error.OutOfBandError as inst:
         if inst.args:
             msg = _("abort: remote error:\n")
         else:
             msg = _("abort: remote error\n")
-        ui.warn(msg)
+        ui.error(msg)
         if inst.args:
-            ui.warn(''.join(inst.args))
+            ui.error(''.join(inst.args))
         if inst.hint:
-            ui.warn('(%s)\n' % inst.hint)
+            ui.error('(%s)\n' % inst.hint)
     except error.RepoError as inst:
-        ui.warn(_("abort: %s!\n") % inst)
+        ui.error(_("abort: %s!\n") % inst)
         if inst.hint:
-            ui.warn(_("(%s)\n") % inst.hint)
+            ui.error(_("(%s)\n") % inst.hint)
     except error.ResponseError as inst:
-        ui.warn(_("abort: %s") % inst.args[0])
+        ui.error(_("abort: %s") % inst.args[0])
         msg = inst.args[1]
         if isinstance(msg, type(u'')):
             msg = pycompat.sysbytes(msg)
         if not isinstance(msg, bytes):
-            ui.warn(" %r\n" % (msg,))
+            ui.error(" %r\n" % (msg,))
         elif not msg:
-            ui.warn(_(" empty string\n"))
+            ui.error(_(" empty string\n"))
         else:
-            ui.warn("\n%r\n" % pycompat.bytestr(stringutil.ellipsis(msg)))
+            ui.error("\n%r\n" % pycompat.bytestr(stringutil.ellipsis(msg)))
     except error.CensoredNodeError as inst:
-        ui.warn(_("abort: file censored %s!\n") % inst)
-    except error.RevlogError as inst:
-        ui.warn(_("abort: %s!\n") % inst)
+        ui.error(_("abort: file censored %s!\n") % inst)
+    except error.StorageError as inst:
+        ui.error(_("abort: %s!\n") % inst)
     except error.InterventionRequired as inst:
-        ui.warn("%s\n" % inst)
+        ui.error("%s\n" % inst)
         if inst.hint:
-            ui.warn(_("(%s)\n") % inst.hint)
+            ui.error(_("(%s)\n") % inst.hint)
         return 1
     except error.WdirUnsupported:
-        ui.warn(_("abort: working directory revision cannot be specified\n"))
+        ui.error(_("abort: working directory revision cannot be specified\n"))
     except error.Abort as inst:
-        ui.warn(_("abort: %s\n") % inst)
+        ui.error(_("abort: %s\n") % inst)
         if inst.hint:
-            ui.warn(_("(%s)\n") % inst.hint)
+            ui.error(_("(%s)\n") % inst.hint)
     except ImportError as inst:
-        ui.warn(_("abort: %s!\n") % stringutil.forcebytestr(inst))
+        ui.error(_("abort: %s!\n") % stringutil.forcebytestr(inst))
         m = stringutil.forcebytestr(inst).split()[-1]
         if m in "mpatch bdiff".split():
-            ui.warn(_("(did you forget to compile extensions?)\n"))
+            ui.error(_("(did you forget to compile extensions?)\n"))
         elif m in "zlib".split():
-            ui.warn(_("(is your Python install correct?)\n"))
+            ui.error(_("(is your Python install correct?)\n"))
     except IOError as inst:
         if util.safehasattr(inst, "code"):
-            ui.warn(_("abort: %s\n") % stringutil.forcebytestr(inst))
+            ui.error(_("abort: %s\n") % stringutil.forcebytestr(inst))
         elif util.safehasattr(inst, "reason"):
             try: # usually it is in the form (errno, strerror)
                 reason = inst.reason.args[1]
@@ -236,34 +242,34 @@ def callcatch(ui, func):
             if isinstance(reason, pycompat.unicode):
                 # SSLError of Python 2.7.9 contains a unicode
                 reason = encoding.unitolocal(reason)
-            ui.warn(_("abort: error: %s\n") % reason)
+            ui.error(_("abort: error: %s\n") % reason)
         elif (util.safehasattr(inst, "args")
               and inst.args and inst.args[0] == errno.EPIPE):
             pass
         elif getattr(inst, "strerror", None):
             if getattr(inst, "filename", None):
-                ui.warn(_("abort: %s: %s\n") % (
+                ui.error(_("abort: %s: %s\n") % (
                     encoding.strtolocal(inst.strerror),
                     stringutil.forcebytestr(inst.filename)))
             else:
-                ui.warn(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
+                ui.error(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
         else:
             raise
     except OSError as inst:
         if getattr(inst, "filename", None) is not None:
-            ui.warn(_("abort: %s: '%s'\n") % (
+            ui.error(_("abort: %s: '%s'\n") % (
                 encoding.strtolocal(inst.strerror),
                 stringutil.forcebytestr(inst.filename)))
         else:
-            ui.warn(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
+            ui.error(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
     except MemoryError:
-        ui.warn(_("abort: out of memory\n"))
+        ui.error(_("abort: out of memory\n"))
     except SystemExit as inst:
         # Commands shouldn't sys.exit directly, but give a return code.
         # Just in case catch this and and pass exit code to caller.
         return inst.code
     except socket.error as inst:
-        ui.warn(_("abort: %s\n") % stringutil.forcebytestr(inst.args[-1]))
+        ui.error(_("abort: %s\n") % stringutil.forcebytestr(inst.args[-1]))
 
     return -1
 
@@ -437,40 +443,113 @@ def formatrevnode(ui, rev, node):
     return '%d:%s' % (rev, hexfunc(node))
 
 def resolvehexnodeidprefix(repo, prefix):
-    # Uses unfiltered repo because it's faster when prefix is ambiguous/
-    # This matches the shortesthexnodeidprefix() function below.
-    node = repo.unfiltered().changelog._partialmatch(prefix)
+    if (prefix.startswith('x') and
+        repo.ui.configbool('experimental', 'revisions.prefixhexnode')):
+        prefix = prefix[1:]
+    try:
+        # Uses unfiltered repo because it's faster when prefix is ambiguous/
+        # This matches the shortesthexnodeidprefix() function below.
+        node = repo.unfiltered().changelog._partialmatch(prefix)
+    except error.AmbiguousPrefixLookupError:
+        revset = repo.ui.config('experimental', 'revisions.disambiguatewithin')
+        if revset:
+            # Clear config to avoid infinite recursion
+            configoverrides = {('experimental',
+                                'revisions.disambiguatewithin'): None}
+            with repo.ui.configoverride(configoverrides):
+                revs = repo.anyrevs([revset], user=True)
+                matches = []
+                for rev in revs:
+                    node = repo.changelog.node(rev)
+                    if hex(node).startswith(prefix):
+                        matches.append(node)
+                if len(matches) == 1:
+                    return matches[0]
+        raise
     if node is None:
         return
     repo.changelog.rev(node)  # make sure node isn't filtered
     return node
 
-def shortesthexnodeidprefix(repo, node, minlength=1):
-    """Find the shortest unambiguous prefix that matches hexnode."""
+def mayberevnum(repo, prefix):
+    """Checks if the given prefix may be mistaken for a revision number"""
+    try:
+        i = int(prefix)
+        # if we are a pure int, then starting with zero will not be
+        # confused as a rev; or, obviously, if the int is larger
+        # than the value of the tip rev. We still need to disambiguate if
+        # prefix == '0', since that *is* a valid revnum.
+        if (prefix != b'0' and prefix[0:1] == b'0') or i >= len(repo):
+            return False
+        return True
+    except ValueError:
+        return False
+
+def shortesthexnodeidprefix(repo, node, minlength=1, cache=None):
+    """Find the shortest unambiguous prefix that matches hexnode.
+
+    If "cache" is not None, it must be a dictionary that can be used for
+    caching between calls to this method.
+    """
     # _partialmatch() of filtered changelog could take O(len(repo)) time,
     # which would be unacceptably slow. so we look for hash collision in
     # unfiltered space, which means some hashes may be slightly longer.
-    cl = repo.unfiltered().changelog
 
-    def isrev(prefix):
-        try:
-            i = int(prefix)
-            # if we are a pure int, then starting with zero will not be
-            # confused as a rev; or, obviously, if the int is larger
-            # than the value of the tip rev
-            if prefix[0:1] == b'0' or i > len(cl):
-                return False
-            return True
-        except ValueError:
-            return False
+    minlength=max(minlength, 1)
 
     def disambiguate(prefix):
         """Disambiguate against revnums."""
+        if repo.ui.configbool('experimental', 'revisions.prefixhexnode'):
+            if mayberevnum(repo, prefix):
+                return 'x' + prefix
+            else:
+                return prefix
+
         hexnode = hex(node)
         for length in range(len(prefix), len(hexnode) + 1):
             prefix = hexnode[:length]
-            if not isrev(prefix):
+            if not mayberevnum(repo, prefix):
                 return prefix
+
+    cl = repo.unfiltered().changelog
+    revset = repo.ui.config('experimental', 'revisions.disambiguatewithin')
+    if revset:
+        revs = None
+        if cache is not None:
+            revs = cache.get('disambiguationrevset')
+        if revs is None:
+            revs = repo.anyrevs([revset], user=True)
+            if cache is not None:
+                cache['disambiguationrevset'] = revs
+        if cl.rev(node) in revs:
+            hexnode = hex(node)
+            nodetree = None
+            if cache is not None:
+                nodetree = cache.get('disambiguationnodetree')
+            if not nodetree:
+                try:
+                    nodetree = parsers.nodetree(cl.index, len(revs))
+                except AttributeError:
+                    # no native nodetree
+                    pass
+                else:
+                    for r in revs:
+                        nodetree.insert(r)
+                    if cache is not None:
+                        cache['disambiguationnodetree'] = nodetree
+            if nodetree is not None:
+                length = max(nodetree.shortest(node), minlength)
+                prefix = hexnode[:length]
+                return disambiguate(prefix)
+            for length in range(minlength, len(hexnode) + 1):
+                matches = []
+                prefix = hexnode[:length]
+                for rev in revs:
+                    otherhexnode = repo[rev].hex()
+                    if prefix == otherhexnode[:length]:
+                        matches.append(otherhexnode)
+                if len(matches) == 1:
+                    return disambiguate(prefix)
 
     try:
         return disambiguate(cl.shortest(node, minlength))
@@ -480,8 +559,8 @@ def shortesthexnodeidprefix(repo, node, minlength=1):
 def isrevsymbol(repo, symbol):
     """Checks if a symbol exists in the repo.
 
-    See revsymbol() for details. Raises error.LookupError if the symbol is an
-    ambiguous nodeid prefix.
+    See revsymbol() for details. Raises error.AmbiguousPrefixLookupError if the
+    symbol is an ambiguous nodeid prefix.
     """
     try:
         revsymbol(repo, symbol)
@@ -657,7 +736,7 @@ def meaningfulparents(repo, ctx):
     if len(parents) > 1:
         return parents
     if repo.ui.debugflag:
-        return [parents[0], repo['null']]
+        return [parents[0], repo[nullrev]]
     if parents[0].rev() >= intrev(ctx) - 1:
         return []
     return parents
@@ -780,7 +859,7 @@ class _containsnode(object):
         return self._revcontains(self._torev(node))
 
 def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
-                 fixphase=False, targetphase=None):
+                 fixphase=False, targetphase=None, backup=True):
     """do common cleanups when old nodes are replaced by new nodes
 
     That includes writing obsmarkers or stripping nodes, and moving bookmarks.
@@ -802,39 +881,52 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
 
     # translate mapping's other forms
     if not util.safehasattr(replacements, 'items'):
-        replacements = {n: () for n in replacements}
+        replacements = {(n,): () for n in replacements}
+    else:
+        # upgrading non tuple "source" to tuple ones for BC
+        repls = {}
+        for key, value in replacements.items():
+            if not isinstance(key, tuple):
+                key = (key,)
+            repls[key] = value
+        replacements = repls
 
     # Calculate bookmark movements
     if moves is None:
         moves = {}
     # Unfiltered repo is needed since nodes in replacements might be hidden.
     unfi = repo.unfiltered()
-    for oldnode, newnodes in replacements.items():
-        if oldnode in moves:
-            continue
-        if len(newnodes) > 1:
-            # usually a split, take the one with biggest rev number
-            newnode = next(unfi.set('max(%ln)', newnodes)).node()
-        elif len(newnodes) == 0:
-            # move bookmark backwards
-            roots = list(unfi.set('max((::%n) - %ln)', oldnode,
-                                  list(replacements)))
-            if roots:
-                newnode = roots[0].node()
+    for oldnodes, newnodes in replacements.items():
+        for oldnode in oldnodes:
+            if oldnode in moves:
+                continue
+            if len(newnodes) > 1:
+                # usually a split, take the one with biggest rev number
+                newnode = next(unfi.set('max(%ln)', newnodes)).node()
+            elif len(newnodes) == 0:
+                # move bookmark backwards
+                allreplaced = []
+                for rep in replacements:
+                    allreplaced.extend(rep)
+                roots = list(unfi.set('max((::%n) - %ln)', oldnode,
+                                      allreplaced))
+                if roots:
+                    newnode = roots[0].node()
+                else:
+                    newnode = nullid
             else:
-                newnode = nullid
-        else:
-            newnode = newnodes[0]
-        moves[oldnode] = newnode
+                newnode = newnodes[0]
+            moves[oldnode] = newnode
 
     allnewnodes = [n for ns in replacements.values() for n in ns]
     toretract = {}
     toadvance = {}
     if fixphase:
         precursors = {}
-        for oldnode, newnodes in replacements.items():
-            for newnode in newnodes:
-                precursors.setdefault(newnode, []).append(oldnode)
+        for oldnodes, newnodes in replacements.items():
+            for oldnode in oldnodes:
+                for newnode in newnodes:
+                    precursors.setdefault(newnode, []).append(oldnode)
 
         allnewnodes.sort(key=lambda n: unfi[n].rev())
         newphases = {}
@@ -891,21 +983,22 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
             # unnecessary. That's the "if s or not isobs(n)" check below.
             # Also sort the node in topology order, that might be useful for
             # some obsstore logic.
-            # NOTE: the filtering and sorting might belong to createmarkers.
-            isobs = unfi.obsstore.successors.__contains__
+            # NOTE: the sorting might belong to createmarkers.
             torev = unfi.changelog.rev
-            sortfunc = lambda ns: torev(ns[0])
-            rels = [(unfi[n], tuple(unfi[m] for m in s))
-                    for n, s in sorted(replacements.items(), key=sortfunc)
-                    if s or not isobs(n)]
+            sortfunc = lambda ns: torev(ns[0][0])
+            rels = []
+            for ns, s in sorted(replacements.items(), key=sortfunc):
+                rel = (tuple(unfi[n] for n in ns), tuple(unfi[m] for m in s))
+                rels.append(rel)
             if rels:
                 obsolete.createmarkers(repo, rels, operation=operation,
                                        metadata=metadata)
         else:
             from . import repair # avoid import cycle
-            tostrip = list(replacements)
+            tostrip = list(n for ns in replacements for n in ns)
             if tostrip:
-                repair.delayedstrip(repo.ui, repo, tostrip, operation)
+                repair.delayedstrip(repo.ui, repo, tostrip, operation,
+                                    backup=backup)
 
 def addremove(repo, matcher, prefix, opts=None):
     if opts is None:
@@ -952,9 +1045,11 @@ def addremove(repo, matcher, prefix, opts=None):
         if repo.ui.verbose or not m.exact(abs):
             if abs in unknownset:
                 status = _('adding %s\n') % m.uipath(abs)
+                label = 'ui.addremove.added'
             else:
                 status = _('removing %s\n') % m.uipath(abs)
-            repo.ui.status(status)
+                label = 'ui.addremove.removed'
+            repo.ui.status(status, label=label)
 
     renames = _findrenames(repo, m, added + unknown, removed + deleted,
                            similarity)
@@ -1007,6 +1102,7 @@ def _interestingfiles(repo, matcher):
 
     ctx = repo[None]
     dirstate = repo.dirstate
+    matcher = repo.narrowmatch(matcher, includeexact=True)
     walkresults = dirstate.walk(matcher, subrepos=sorted(ctx.substate),
                                 unknown=True, ignored=False, full=False)
     for abs, st in walkresults.iteritems():
@@ -1068,25 +1164,6 @@ def dirstatecopy(ui, repo, wctx, src, dst, dryrun=False, cwd=None):
                 wctx.add([dst])
         elif not dryrun:
             wctx.copy(origsrc, dst)
-
-def readrequires(opener, supported):
-    '''Reads and parses .hg/requires and checks if all entries found
-    are in the list of supported features.'''
-    requirements = set(opener.read("requires").splitlines())
-    missings = []
-    for r in requirements:
-        if r not in supported:
-            if not r or not r[0:1].isalnum():
-                raise error.RequirementError(_(".hg/requires file is corrupt"))
-            missings.append(r)
-    missings.sort()
-    if missings:
-        raise error.RequirementError(
-            _("repository requires features unknown to this Mercurial: %s")
-            % " ".join(missings),
-            hint=_("see https://mercurial-scm.org/wiki/MissingRequirement"
-                   " for more information"))
-    return requirements
 
 def writerequires(opener, requirements):
     with opener('requires', 'w') as fp:
@@ -1282,9 +1359,11 @@ def extdatasource(repo, source):
         if spec.startswith("shell:"):
             # external commands should be run relative to the repo root
             cmd = spec[6:]
-            proc = subprocess.Popen(cmd, shell=True, bufsize=-1,
+            proc = subprocess.Popen(procutil.tonativestr(cmd),
+                                    shell=True, bufsize=-1,
                                     close_fds=procutil.closefds,
-                                    stdout=subprocess.PIPE, cwd=repo.root)
+                                    stdout=subprocess.PIPE,
+                                    cwd=procutil.tonativestr(repo.root))
             src = proc.stdout
         else:
             # treat as a URL or file
@@ -1542,39 +1621,63 @@ def registersummarycallback(repo, otr, txnname=''):
         @reportsummary
         def reportnewcs(repo, tr):
             """Report the range of new revisions pulled/unbundled."""
-            newrevs = tr.changes.get('revs', xrange(0, 0))
-            if not newrevs:
-                return
-
-            # Compute the bounds of new revisions' range, excluding obsoletes.
+            origrepolen = tr.changes.get('origrepolen', len(repo))
             unfi = repo.unfiltered()
-            revs = unfi.revs('%ld and not obsolete()', newrevs)
-            if not revs:
-                # Got only obsoletes.
+            if origrepolen >= len(unfi):
                 return
-            minrev, maxrev = repo[revs.min()], repo[revs.max()]
 
-            if minrev == maxrev:
-                revrange = minrev
-            else:
-                revrange = '%s:%s' % (minrev, maxrev)
-            repo.ui.status(_('new changesets %s\n') % revrange)
+            # Compute the bounds of new visible revisions' range.
+            revs = smartset.spanset(repo, start=origrepolen)
+            if revs:
+                minrev, maxrev = repo[revs.min()], repo[revs.max()]
+
+                if minrev == maxrev:
+                    revrange = minrev
+                else:
+                    revrange = '%s:%s' % (minrev, maxrev)
+                draft = len(repo.revs('%ld and draft()', revs))
+                secret = len(repo.revs('%ld and secret()', revs))
+                if not (draft or secret):
+                    msg = _('new changesets %s\n') % revrange
+                elif draft and secret:
+                    msg = _('new changesets %s (%d drafts, %d secrets)\n')
+                    msg %= (revrange, draft, secret)
+                elif draft:
+                    msg = _('new changesets %s (%d drafts)\n')
+                    msg %= (revrange, draft)
+                elif secret:
+                    msg = _('new changesets %s (%d secrets)\n')
+                    msg %= (revrange, secret)
+                else:
+                    errormsg = 'entered unreachable condition'
+                    raise error.ProgrammingError(errormsg)
+                repo.ui.status(msg)
+
+            # search new changesets directly pulled as obsolete
+            duplicates = tr.changes.get('revduplicates', ())
+            obsadded = unfi.revs('(%d: + %ld) and obsolete()',
+                                 origrepolen, duplicates)
+            cl = repo.changelog
+            extinctadded = [r for r in obsadded if r not in cl]
+            if extinctadded:
+                # They are not just obsolete, but obsolete and invisible
+                # we call them "extinct" internally but the terms have not been
+                # exposed to users.
+                msg = '(%d other changesets obsolete on arrival)\n'
+                repo.ui.status(msg % len(extinctadded))
 
         @reportsummary
         def reportphasechanges(repo, tr):
             """Report statistics of phase changes for changesets pre-existing
             pull/unbundle.
             """
-            # TODO set() is only appropriate for 4.7 since revs post
-            # 45e05d39d9ce is a pycompat.membershiprange, which has O(n)
-            # membership testing.
-            newrevs = set(tr.changes.get('revs', xrange(0, 0)))
+            origrepolen = tr.changes.get('origrepolen', len(repo))
             phasetracking = tr.changes.get('phases', {})
             if not phasetracking:
                 return
             published = [
                 rev for rev, (old, new) in phasetracking.iteritems()
-                if new == phases.public and rev not in newrevs
+                if new == phases.public and rev < origrepolen
             ]
             if not published:
                 return

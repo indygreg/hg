@@ -16,9 +16,6 @@ import struct
 import weakref
 
 from .i18n import _
-from .thirdparty import (
-    cbor,
-)
 from . import (
     bundle2,
     error,
@@ -35,7 +32,9 @@ from . import (
     wireprotov2server,
 )
 from .utils import (
+    cborutil,
     interfaceutil,
+    stringutil,
 )
 
 httplib = util.httplib
@@ -64,46 +63,11 @@ def encodevalueinheaders(value, header, limit):
     result = []
 
     n = 0
-    for i in xrange(0, len(value), valuelen):
+    for i in pycompat.xrange(0, len(value), valuelen):
         n += 1
         result.append((fmt % str(n), pycompat.strurl(value[i:i + valuelen])))
 
     return result
-
-def _wraphttpresponse(resp):
-    """Wrap an HTTPResponse with common error handlers.
-
-    This ensures that any I/O from any consumer raises the appropriate
-    error and messaging.
-    """
-    origread = resp.read
-
-    class readerproxy(resp.__class__):
-        def read(self, size=None):
-            try:
-                return origread(size)
-            except httplib.IncompleteRead as e:
-                # e.expected is an integer if length known or None otherwise.
-                if e.expected:
-                    msg = _('HTTP request error (incomplete response; '
-                            'expected %d bytes got %d)') % (e.expected,
-                                                           len(e.partial))
-                else:
-                    msg = _('HTTP request error (incomplete response)')
-
-                raise error.PeerTransportError(
-                    msg,
-                    hint=_('this may be an intermittent network failure; '
-                           'if the error persists, consider contacting the '
-                           'network or server operator'))
-            except httplib.HTTPException as e:
-                raise error.PeerTransportError(
-                    _('HTTP request error (%s)') % e,
-                    hint=_('this may be an intermittent network failure; '
-                           'if the error persists, consider contacting the '
-                           'network or server operator'))
-
-    resp.__class__ = readerproxy
 
 class _multifile(object):
     def __init__(self, *fileobjs):
@@ -325,7 +289,7 @@ def sendrequest(ui, opener, req):
                 % (util.timer() - start, code))
 
     # Insert error handlers for common I/O failures.
-    _wraphttpresponse(res)
+    urlmod.wrapresponse(res)
 
     return res
 
@@ -401,8 +365,8 @@ def parsev1commandresponse(ui, baseurl, requrl, qs, resp, compressible,
     elif version_info == (0, 2):
         # application/mercurial-0.2 always identifies the compression
         # engine in the payload header.
-        elen = struct.unpack('B', resp.read(1))[0]
-        ename = resp.read(elen)
+        elen = struct.unpack('B', util.readexactly(resp, 1))[0]
+        ename = util.readexactly(resp, elen)
         engine = util.compengines.forwiretype(ename)
 
         resp = engine.decompressorreader(resp)
@@ -441,7 +405,11 @@ class httppeer(wireprotov1peer.wirepeer):
         return True
 
     def close(self):
-        pass
+        self.ui.note(_('(sent %d HTTP requests and %d bytes; '
+                       'received %d bytes in responses)\n') %
+                     (self._urlopener.requestscount,
+                      self._urlopener.sentbytescount,
+                      self._urlopener.receivedbytescount))
 
     # End of ipeerconnection interface.
 
@@ -544,11 +512,33 @@ class httppeer(wireprotov1peer.wirepeer):
     def _abort(self, exception):
         raise exception
 
-def sendv2request(ui, opener, requestbuilder, apiurl, permission, requests):
-    reactor = wireprotoframing.clientreactor(hasmultiplesend=False,
-                                             buffersends=True)
+def sendv2request(ui, opener, requestbuilder, apiurl, permission, requests,
+                  redirect):
+    wireprotoframing.populatestreamencoders()
 
-    handler = wireprotov2peer.clienthandler(ui, reactor)
+    uiencoders = ui.configlist(b'experimental', b'httppeer.v2-encoder-order')
+
+    if uiencoders:
+        encoders = []
+
+        for encoder in uiencoders:
+            if encoder not in wireprotoframing.STREAM_ENCODERS:
+                ui.warn(_(b'wire protocol version 2 encoder referenced in '
+                          b'config (%s) is not known; ignoring\n') % encoder)
+            else:
+                encoders.append(encoder)
+
+    else:
+        encoders = wireprotoframing.STREAM_ENCODERS_ORDER
+
+    reactor = wireprotoframing.clientreactor(ui,
+                                             hasmultiplesend=False,
+                                             buffersends=True,
+                                             clientcontentencoders=encoders)
+
+    handler = wireprotov2peer.clienthandler(ui, reactor,
+                                            opener=opener,
+                                            requestbuilder=requestbuilder)
 
     url = '%s/%s' % (apiurl, permission)
 
@@ -557,8 +547,12 @@ def sendv2request(ui, opener, requestbuilder, apiurl, permission, requests):
     else:
         url += '/%s' % requests[0][0]
 
+    ui.debug('sending %d commands\n' % len(requests))
     for command, args, f in requests:
-        assert not list(handler.callcommand(command, args, f))
+        ui.debug('sending command %s: %s\n' % (
+            command, stringutil.pprint(args, indent=2)))
+        assert not list(handler.callcommand(command, args, f,
+                                            redirect=redirect))
 
     # TODO stream this.
     body = b''.join(map(bytes, handler.flushcommands()))
@@ -600,12 +594,14 @@ class queuedcommandfuture(pycompat.futures.Future):
 
 @interfaceutil.implementer(repository.ipeercommandexecutor)
 class httpv2executor(object):
-    def __init__(self, ui, opener, requestbuilder, apiurl, descriptor):
+    def __init__(self, ui, opener, requestbuilder, apiurl, descriptor,
+                 redirect):
         self._ui = ui
         self._opener = opener
         self._requestbuilder = requestbuilder
         self._apiurl = apiurl
         self._descriptor = descriptor
+        self._redirect = redirect
         self._sent = False
         self._closed = False
         self._neededpermissions = set()
@@ -705,7 +701,7 @@ class httpv2executor(object):
 
         handler, resp = sendv2request(
             self._ui, self._opener, self._requestbuilder, self._apiurl,
-            permission, calls)
+            permission, calls, self._redirect)
 
         # TODO we probably want to validate the HTTP code, media type, etc.
 
@@ -723,6 +719,8 @@ class httpv2executor(object):
 
         if not self._responsef:
             return
+
+        # TODO ^C here may not result in immediate program termination.
 
         try:
             self._responsef.result()
@@ -743,17 +741,15 @@ class httpv2executor(object):
     def _handleresponse(self, handler, resp):
         # Called in a thread to read the response.
 
-        while handler.readframe(resp):
+        while handler.readdata(resp):
             pass
 
-# TODO implement interface for version 2 peers
-@interfaceutil.implementer(repository.ipeerconnection,
-                           repository.ipeercapabilities,
-                           repository.ipeerrequests)
+@interfaceutil.implementer(repository.ipeerv2)
 class httpv2peer(object):
     def __init__(self, ui, repourl, apipath, opener, requestbuilder,
                  apidescriptor):
         self.ui = ui
+        self.apidescriptor = apidescriptor
 
         if repourl.endswith('/'):
             repourl = repourl[:-1]
@@ -763,7 +759,8 @@ class httpv2peer(object):
         self._apiurl = '%s/%s' % (repourl, apipath)
         self._opener = opener
         self._requestbuilder = requestbuilder
-        self._descriptor = apidescriptor
+
+        self._redirect = wireprotov2peer.supportedredirects(ui, apidescriptor)
 
     # Start of ipeerconnection.
 
@@ -781,7 +778,11 @@ class httpv2peer(object):
         return False
 
     def close(self):
-        pass
+        self.ui.note(_('(sent %d HTTP requests and %d bytes; '
+                       'received %d bytes in responses)\n') %
+                     (self._opener.requestscount,
+                      self._opener.sentbytescount,
+                      self._opener.receivedbytescount))
 
     # End of ipeerconnection.
 
@@ -797,8 +798,12 @@ class httpv2peer(object):
             return True
 
         # Other concepts.
-        if name in ('bundle2',):
+        if name in ('bundle2'):
             return True
+
+        # Alias command-* to presence of command of that name.
+        if name.startswith('command-'):
+            return name[len('command-'):] in self.apidescriptor['commands']
 
         return False
 
@@ -818,7 +823,7 @@ class httpv2peer(object):
 
     def commandexecutor(self):
         return httpv2executor(self.ui, self._opener, self._requestbuilder,
-                              self._apiurl, self._descriptor)
+                              self._apiurl, self.apidescriptor, self._redirect)
 
 # Registry of API service names to metadata about peers that handle it.
 #
@@ -907,8 +912,8 @@ def performhandshake(ui, url, opener, requestbuilder):
     if advertisev2:
         if ct == 'application/mercurial-cbor':
             try:
-                info = cbor.loads(rawdata)
-            except cbor.CBORDecodeError:
+                info = cborutil.decodeall(rawdata)[0]
+            except cborutil.CBORDecodeError:
                 raise error.Abort(_('error decoding CBOR from remote server'),
                                   hint=_('try again and consider contacting '
                                          'the server operator'))
@@ -977,7 +982,7 @@ def makepeer(ui, path, opener=None, requestbuilder=urlreq.request):
     return httppeer(ui, path, respurl, opener, requestbuilder,
                     info['v1capabilities'])
 
-def instance(ui, path, create, intents=None):
+def instance(ui, path, create, intents=None, createopts=None):
     if create:
         raise error.Abort(_('cannot create new http repository'))
     try:

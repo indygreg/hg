@@ -92,6 +92,10 @@ if pycompat.ispy3:
     # (if necessary), and returns str. This is wonky. We provide a custom
     # implementation that only accepts bytes and emits bytes.
     def quote(s, safe=r'/'):
+        # bytestr has an __iter__ that emits characters. quote_from_bytes()
+        # does an iteration and expects ints. We coerce to bytes to appease it.
+        if isinstance(s, pycompat.bytestr):
+            s = bytes(s)
         s = urllib.parse.quote_from_bytes(s, safe=safe)
         return s.encode('ascii', 'strict')
 

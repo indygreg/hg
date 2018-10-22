@@ -342,7 +342,7 @@ Test warning on config option access and registration
   $ cat << EOF > ${TESTTMP}/buggyconfig.py
   > """A small extension that tests our developer warnings for config"""
   > 
-  > from mercurial import registrar, configitems
+  > from mercurial import configitems, registrar
   > 
   > cmdtable = {}
   > command = registrar.command(cmdtable)

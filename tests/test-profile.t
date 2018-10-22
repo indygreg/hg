@@ -66,7 +66,7 @@ Install an extension that can sleep and guarantee a profiler has time to run
 
   $ cat >> sleepext.py << EOF
   > import time
-  > from mercurial import registrar, commands
+  > from mercurial import registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > @command(b'sleep', [], b'hg sleep')
@@ -87,8 +87,10 @@ statistical profiler works
 Various statprof formatters work
 
   $ hg --profile --config profiling.statformat=byline sleep 2>../out
-  $ head -n 1 ../out
+  $ head -n 3 ../out
     %   cumulative      self          
+   time    seconds   seconds  name    
+   * sleepext.py:*:sleep (glob)
   $ cat ../out | statprofran
 
   $ hg --profile --config profiling.statformat=bymethod sleep 2>../out
@@ -105,7 +107,7 @@ Various statprof formatters work
 
 statprof can be used as a standalone module
 
-  $ $PYTHON -m mercurial.statprof hotpath
+  $ "$PYTHON" -m mercurial.statprof hotpath
   must specify --file to load
   [1]
 
@@ -117,11 +119,14 @@ profiler extension could be loaded before other extensions
   $ cat > fooprof.py <<EOF
   > from __future__ import absolute_import
   > import contextlib
+  > import sys
   > @contextlib.contextmanager
   > def profile(ui, fp):
   >     print('fooprof: start profile')
+  >     sys.stdout.flush()
   >     yield
   >     print('fooprof: end profile')
+  >     sys.stdout.flush()
   > def extsetup(ui):
   >     ui.write(b'fooprof: loaded\n')
   > EOF

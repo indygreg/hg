@@ -198,8 +198,9 @@ class requirementformatvariant(formatvariant):
     _requirement = None
 
     @staticmethod
-    def _newreporequirements(repo):
-        return localrepo.newreporequirements(repo)
+    def _newreporequirements(ui):
+        return localrepo.newreporequirements(
+            ui, localrepo.defaultcreateopts(ui))
 
     @classmethod
     def fromrepo(cls, repo):
@@ -209,7 +210,7 @@ class requirementformatvariant(formatvariant):
     @classmethod
     def fromconfig(cls, repo):
         assert cls._requirement is not None
-        return cls._requirement in cls._newreporequirements(repo)
+        return cls._requirement in cls._newreporequirements(repo.ui)
 
 @registerformatvariant
 class fncache(requirementformatvariant):
@@ -450,7 +451,7 @@ def _revlogfrompath(repo, path):
         return changelog.changelog(repo.svfs)
     elif path.endswith('00manifest.i'):
         mandir = path[:-len('00manifest.i')]
-        return manifest.manifestrevlog(repo.svfs, dir=mandir)
+        return manifest.manifestrevlog(repo.svfs, tree=mandir)
     else:
         #reverse of "/".join(("data", path + ".i"))
         return filelog.filelog(repo.svfs, path[5:-2])
@@ -483,15 +484,13 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, deltabothparents):
             continue
 
         rl = _revlogfrompath(srcrepo, unencoded)
-        revcount += len(rl)
 
-        datasize = 0
-        rawsize = 0
-        idx = rl.index
-        for rev in rl:
-            e = idx[rev]
-            datasize += e[1]
-            rawsize += e[2]
+        info = rl.storageinfo(exclusivefiles=True, revisionscount=True,
+                              trackedsize=True, storedsize=True)
+
+        revcount += info['revisionscount'] or 0
+        datasize = info['storedsize'] or 0
+        rawsize = info['trackedsize'] or 0
 
         srcsize += datasize
         srcrawsize += rawsize
@@ -581,10 +580,8 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, deltabothparents):
                     deltareuse=deltareuse,
                     deltabothparents=deltabothparents)
 
-        datasize = 0
-        idx = newrl.index
-        for rev in newrl:
-            datasize += idx[rev][1]
+        info = newrl.storageinfo(storedsize=True)
+        datasize = info['storedsize'] or 0
 
         dstsize += datasize
 
@@ -751,7 +748,8 @@ def upgraderepo(ui, repo, run=False, optimize=None):
 
     # FUTURE there is potentially a need to control the wanted requirements via
     # command arguments or via an extension hook point.
-    newreqs = localrepo.newreporequirements(repo)
+    newreqs = localrepo.newreporequirements(
+        repo.ui, localrepo.defaultcreateopts(repo.ui))
     newreqs.update(preservedrequirements(repo))
 
     noremovereqs = (repo.requirements - newreqs -

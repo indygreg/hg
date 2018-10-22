@@ -27,6 +27,7 @@ from .thirdparty import (
 )
 from . import (
     copies,
+    encoding,
     error,
     filemerge,
     match as matchmod,
@@ -1436,7 +1437,7 @@ def calculateupdates(repo, wctx, mctx, ancestors, branchmerge, force,
 
 def _getcwd():
     try:
-        return pycompat.getcwd()
+        return encoding.getcwd()
     except OSError as err:
         if err.errno == errno.ENOENT:
             return None
@@ -2240,3 +2241,71 @@ def graft(repo, ctx, pctx, labels, keepparent=False,
         # fix up dirstate for copies and renames
         copies.duplicatecopies(repo, repo[None], ctx.rev(), pctx.rev())
     return stats
+
+def purge(repo, matcher, ignored=False, removeemptydirs=True,
+          removefiles=True, abortonerror=False, noop=False):
+    """Purge the working directory of untracked files.
+
+    ``matcher`` is a matcher configured to scan the working directory -
+    potentially a subset.
+
+    ``ignored`` controls whether ignored files should also be purged.
+
+    ``removeemptydirs`` controls whether empty directories should be removed.
+
+    ``removefiles`` controls whether files are removed.
+
+    ``abortonerror`` causes an exception to be raised if an error occurs
+    deleting a file or directory.
+
+    ``noop`` controls whether to actually remove files. If not defined, actions
+    will be taken.
+
+    Returns an iterable of relative paths in the working directory that were
+    or would be removed.
+    """
+
+    def remove(removefn, path):
+        try:
+            removefn(path)
+        except OSError:
+            m = _('%s cannot be removed') % path
+            if abortonerror:
+                raise error.Abort(m)
+            else:
+                repo.ui.warn(_('warning: %s\n') % m)
+
+    # There's no API to copy a matcher. So mutate the passed matcher and
+    # restore it when we're done.
+    oldexplicitdir = matcher.explicitdir
+    oldtraversedir = matcher.traversedir
+
+    res = []
+
+    try:
+        if removeemptydirs:
+            directories = []
+            matcher.explicitdir = matcher.traversedir = directories.append
+
+        status = repo.status(match=matcher, ignored=ignored, unknown=True)
+
+        if removefiles:
+            for f in sorted(status.unknown + status.ignored):
+                if not noop:
+                    repo.ui.note(_('removing file %s\n') % f)
+                    remove(repo.wvfs.unlink, f)
+                res.append(f)
+
+        if removeemptydirs:
+            for f in sorted(directories, reverse=True):
+                if matcher(f) and not repo.wvfs.listdir(f):
+                    if not noop:
+                        repo.ui.note(_('removing directory %s\n') % f)
+                        remove(repo.wvfs.rmdir, f)
+                    res.append(f)
+
+        return res
+
+    finally:
+        matcher.explicitdir = oldexplicitdir
+        matcher.traversedir = oldtraversedir

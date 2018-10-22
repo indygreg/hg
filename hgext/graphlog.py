@@ -54,6 +54,7 @@ testedwith = 'ships-with-hg-core'
      _('do not display revision or any of its ancestors'), _('REV')),
     ] + cmdutil.logopts + cmdutil.walkopts,
     _('[OPTION]... [FILE]'),
+    helpcategory=command.CATEGORY_CHANGE_NAVIGATION,
     inferrepo=True)
 def glog(ui, repo, *pats, **opts):
     """show revision history alongside an ASCII revision graph

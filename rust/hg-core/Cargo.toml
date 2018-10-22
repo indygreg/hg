@@ -1,0 +1,8 @@
+[package]
+name = "hg-core"
+version = "0.1.0"
+authors = ["Georges Racinet <gracinet@anybox.fr>"]
+description = "Mercurial pure Rust core library, with no assumption on Python bindings (FFI)"
+
+[lib]
+name = "hg"

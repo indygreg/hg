@@ -65,7 +65,7 @@ Test fileset
 
 Test template output
 
-  $ hg --cwd tmp cat ../b ../c -T '== {path} ({abspath}) r{rev} ==\n{data}'
+  $ hg --cwd tmp cat ../b ../c -T '== {path|relpath} ({path}) r{rev} ==\n{data}'
   == ../b (b) r2 ==
   1
   == ../c (c) r2 ==
@@ -74,12 +74,10 @@ Test template output
   $ hg cat b c -Tjson --output -
   [
    {
-    "abspath": "b",
     "data": "1\n",
     "path": "b"
    },
    {
-    "abspath": "c",
     "data": "3\n",
     "path": "c"
    }
@@ -89,7 +87,6 @@ Test template output
   $ cat tmp/b.json
   [
    {
-    "abspath": "b",
     "data": "1\n",
     "path": "b"
    }
@@ -97,7 +94,6 @@ Test template output
   $ cat tmp/c.json
   [
    {
-    "abspath": "c",
     "data": "3\n",
     "path": "c"
    }

@@ -9,7 +9,8 @@ PYTHON=python
 $(eval HGROOT := $(shell pwd))
 HGPYTHONS ?= $(HGROOT)/build/pythons
 PURE=
-PYFILES:=$(shell find mercurial hgext doc -name '*.py')
+PYFILESCMD=find mercurial hgext doc -name '*.py'
+PYFILES:=$(shell $(PYFILESCMD))
 DOCFILES=mercurial/help/*.txt
 export LANGUAGE=C
 export LC_ALL=C
@@ -145,7 +146,7 @@ i18n/hg.pot: $(PYFILES) $(DOCFILES) i18n/posplit i18n/hggettext
         # parse them even though they are not marked for translation.
         # Extracting with an explicit encoding of ISO-8859-1 will make
         # xgettext "parse" and ignore them.
-	echo $(PYFILES) | xargs \
+	$(PYFILESCMD) | xargs \
 	  xgettext --package-name "Mercurial" \
 	  --msgid-bugs-address "<mercurial-devel@mercurial-scm.org>" \
 	  --copyright-holder "Matt Mackall <mpm@selenic.com> and others" \

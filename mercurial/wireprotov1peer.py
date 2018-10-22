@@ -64,6 +64,7 @@ def batchable(f):
         encresref.set(self._submitone(cmd, encargsorres))
         return next(batchable)
     setattr(plain, 'batchable', f)
+    setattr(plain, '__name__', f.__name__)
     return plain
 
 class future(object):
@@ -497,7 +498,7 @@ class wirepeer(repository.peer):
     def between(self, pairs):
         batch = 8 # avoid giant requests
         r = []
-        for i in xrange(0, len(pairs), batch):
+        for i in pycompat.xrange(0, len(pairs), batch):
             n = " ".join([wireprototypes.encodelist(p, '-')
                           for p in pairs[i:i + batch]])
             d = self._call("between", pairs=n)

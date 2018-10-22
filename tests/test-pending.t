@@ -41,8 +41,8 @@ utility to run the test - start a push in the background and run pull
 python hook
 
   $ cat <<EOF > reject.py
-  > import os, time
-  > from mercurial import ui, localrepo
+  > import os
+  > import time
   > def rejecthook(ui, repo, hooktype, node, **opts):
   >     ui.write(b'hook %s\\n' % repo[b'tip'].hex())
   >     # create the notify file so caller knows we're running
@@ -50,7 +50,7 @@ python hook
   >     f = open(fpath, 'w')
   >     f.close()
   >     # wait for ack - caller should delete the notify file
-  >     i = $maxwait
+  >     i = int("$maxwait")
   >     while os.path.exists(fpath) and i > 0:
   >         time.sleep(1)
   >         i -= 1

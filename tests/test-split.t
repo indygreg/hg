@@ -1,7 +1,7 @@
 #testcases obsstore-on obsstore-off
 
   $ cat > $TESTTMP/editor.py <<EOF
-  > #!$PYTHON
+  > #!"$PYTHON"
   > import os
   > import sys
   > path = os.path.join(os.environ['TESTTMP'], 'messages')

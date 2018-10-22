@@ -68,6 +68,25 @@ list bookmarks
      X                         0:f7b1eb17ad24
    * X2                        0:f7b1eb17ad24
      Y                         -1:000000000000
+  $ hg bookmarks -l
+     X                         0:f7b1eb17ad24
+   * X2                        0:f7b1eb17ad24
+     Y                         -1:000000000000
+  $ hg bookmarks -l X Y
+     X                         0:f7b1eb17ad24
+     Y                         -1:000000000000
+  $ hg bookmarks -l .
+   * X2                        0:f7b1eb17ad24
+  $ hg bookmarks -l X A Y
+  abort: bookmark 'A' does not exist
+  [255]
+  $ hg bookmarks -l -r0
+  abort: --rev is incompatible with --list
+  [255]
+  $ hg bookmarks -l --inactive
+  abort: --inactive is incompatible with --list
+  [255]
+
   $ hg log -T '{bookmarks % "{rev} {bookmark}\n"}'
   0 X
   0 X2
@@ -151,6 +170,31 @@ bookmarks revset
   summary:     0
   
 
+"." is expanded to the active bookmark:
+
+  $ hg log -r 'bookmark(.)'
+  changeset:   1:925d80f479bb
+  bookmark:    X2
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     1
+  
+
+but "literal:." is not since "." seems not a literal bookmark:
+
+  $ hg log -r 'bookmark("literal:.")'
+  abort: bookmark '.' does not exist!
+  [255]
+
+"." should fail if there's no active bookmark:
+
+  $ hg bookmark --inactive
+  $ hg log -r 'bookmark(.)'
+  abort: no active bookmark!
+  [255]
+  $ hg log -r 'present(bookmark(.))'
+
   $ hg log -r 'bookmark(unknown)'
   abort: bookmark 'unknown' does not exist!
   [255]
@@ -165,6 +209,12 @@ bookmarks revset
 
   $ hg help revsets | grep 'bookmark('
       "bookmark([name])"
+
+reactivate "X2"
+
+  $ hg update X2
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (activating bookmark X2)
 
 bookmarks X and X2 moved to rev 1, Y at rev -1
 
@@ -229,7 +279,7 @@ rename bookmark using . with no active bookmark
   $ hg book rename-me
   $ hg book -i rename-me
   $ hg book -m . renamed
-  abort: no active bookmark
+  abort: no active bookmark!
   [255]
   $ hg up -q Y
   $ hg book -d rename-me
@@ -249,7 +299,7 @@ delete bookmark using . with no active bookmark
   $ hg book delete-me
   $ hg book -i delete-me
   $ hg book -d .
-  abort: no active bookmark
+  abort: no active bookmark!
   [255]
   $ hg up -q Y
   $ hg book -d delete-me
@@ -294,6 +344,12 @@ delete nonexistent bookmark
 
   $ hg bookmark -d A
   abort: bookmark 'A' does not exist
+  [255]
+
+delete with --inactive
+
+  $ hg bookmark -d --inactive Y
+  abort: --inactive is incompatible with --delete
   [255]
 
 bookmark name with spaces should be stripped
@@ -663,7 +719,7 @@ create bundle with two heads
   adding manifests
   adding file changes
   added 2 changesets with 2 changes to 2 files (+1 heads)
-  new changesets 125c9a1d6df6:9ba5f110a0b3
+  new changesets 125c9a1d6df6:9ba5f110a0b3 (2 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
 update to active bookmark if it's not the parent

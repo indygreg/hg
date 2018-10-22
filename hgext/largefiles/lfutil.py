@@ -501,37 +501,37 @@ def getlfilestoupdate(oldstandins, newstandins):
     return filelist
 
 def getlfilestoupload(repo, missing, addfunc):
-    progress = repo.ui.makeprogress(_('finding outgoing largefiles'),
-                                    unit=_('revisions'), total=len(missing))
-    for i, n in enumerate(missing):
-        progress.update(i)
-        parents = [p for p in repo[n].parents() if p != node.nullid]
+    makeprogress = repo.ui.makeprogress
+    with makeprogress(_('finding outgoing largefiles'),
+                      unit=_('revisions'), total=len(missing)) as progress:
+        for i, n in enumerate(missing):
+            progress.update(i)
+            parents = [p for p in repo[n].parents() if p != node.nullid]
 
-        oldlfstatus = repo.lfstatus
-        repo.lfstatus = False
-        try:
-            ctx = repo[n]
-        finally:
-            repo.lfstatus = oldlfstatus
+            oldlfstatus = repo.lfstatus
+            repo.lfstatus = False
+            try:
+                ctx = repo[n]
+            finally:
+                repo.lfstatus = oldlfstatus
 
-        files = set(ctx.files())
-        if len(parents) == 2:
-            mc = ctx.manifest()
-            mp1 = ctx.parents()[0].manifest()
-            mp2 = ctx.parents()[1].manifest()
-            for f in mp1:
-                if f not in mc:
-                    files.add(f)
-            for f in mp2:
-                if f not in mc:
-                    files.add(f)
-            for f in mc:
-                if mc[f] != mp1.get(f, None) or mc[f] != mp2.get(f, None):
-                    files.add(f)
-        for fn in files:
-            if isstandin(fn) and fn in ctx:
-                addfunc(fn, readasstandin(ctx[fn]))
-    progress.complete()
+            files = set(ctx.files())
+            if len(parents) == 2:
+                mc = ctx.manifest()
+                mp1 = ctx.parents()[0].manifest()
+                mp2 = ctx.parents()[1].manifest()
+                for f in mp1:
+                    if f not in mc:
+                        files.add(f)
+                for f in mp2:
+                    if f not in mc:
+                        files.add(f)
+                for f in mc:
+                    if mc[f] != mp1.get(f, None) or mc[f] != mp2.get(f, None):
+                        files.add(f)
+            for fn in files:
+                if isstandin(fn) and fn in ctx:
+                    addfunc(fn, readasstandin(ctx[fn]))
 
 def updatestandinsbymatch(repo, match):
     '''Update standins in the working directory according to specified match

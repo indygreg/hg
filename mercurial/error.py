@@ -34,7 +34,14 @@ class Hint(object):
         self.hint = kw.pop(r'hint', None)
         super(Hint, self).__init__(*args, **kw)
 
-class RevlogError(Hint, Exception):
+class StorageError(Hint, Exception):
+    """Raised when an error occurs in a storage layer.
+
+    Usually subclassed by a storage-specific exception.
+    """
+    __bytes__ = _tobytes
+
+class RevlogError(StorageError):
     __bytes__ = _tobytes
 
 class FilteredIndexError(IndexError):
@@ -57,6 +64,9 @@ class LookupError(RevlogError, KeyError):
 
     def __str__(self):
         return RevlogError.__str__(self)
+
+class AmbiguousPrefixLookupError(LookupError):
+    pass
 
 class FilteredLookupError(LookupError):
     pass
@@ -212,6 +222,14 @@ class PushRaced(RuntimeError):
 
 class ProgrammingError(Hint, RuntimeError):
     """Raised if a mercurial (core or extension) developer made a mistake"""
+
+    def __init__(self, msg, *args, **kwargs):
+        # On Python 3, turn the message back into a string since this is
+        # an internal-only error that won't be printed except in a
+        # stack traces.
+        msg = pycompat.sysstr(msg)
+        super(ProgrammingError, self).__init__(msg, *args, **kwargs)
+
     __bytes__ = _tobytes
 
 class WdirUnsupported(Exception):
@@ -265,7 +283,7 @@ class PushkeyFailed(Abort):
         Abort.__init__(self, 'failed to update value for "%s/%s"'
                        % (namespace, key))
 
-class CensoredNodeError(RevlogError):
+class CensoredNodeError(StorageError):
     """error raised when content verification fails on a censored node
 
     Also contains the tombstone data substituted for the uncensored data.
@@ -273,10 +291,10 @@ class CensoredNodeError(RevlogError):
 
     def __init__(self, filename, node, tombstone):
         from .node import short
-        RevlogError.__init__(self, '%s:%s' % (filename, short(node)))
+        StorageError.__init__(self, '%s:%s' % (filename, short(node)))
         self.tombstone = tombstone
 
-class CensoredBaseError(RevlogError):
+class CensoredBaseError(StorageError):
     """error raised when a delta is rejected because its base is censored
 
     A delta based on a censored revision must be formed as single patch
@@ -305,3 +323,14 @@ class PeerTransportError(Abort):
 class InMemoryMergeConflictsError(Exception):
     """Exception raised when merge conflicts arose during an in-memory merge."""
     __bytes__ = _tobytes
+
+class WireprotoCommandError(Exception):
+    """Represents an error during execution of a wire protocol command.
+
+    Should only be thrown by wire protocol version 2 commands.
+
+    The error is a formatter string and an optional iterable of arguments.
+    """
+    def __init__(self, message, args=None):
+        self.message = message
+        self.messageargs = args

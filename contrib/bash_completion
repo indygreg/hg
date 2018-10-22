@@ -152,7 +152,7 @@ _hg()
 {
     local cur prev cmd cmd_index opts i aliashg
     # global options that receive an argument
-    local global_args='--cwd|-R|--repository'
+    local global_args='--cwd|-R|--repository|--color|--config|--encoding|--encodingmode|--pager'
     local hg="$1"
     local canonical=0
 
@@ -203,6 +203,18 @@ _hg()
         ;;
         --cwd)
             # Stick with default bash completion
+            _hg_fix_wordlist
+            return
+        ;;
+        --color)
+            local choices='true false yes no always auto never debug'
+            COMPREPLY=(${COMPREPLY[@]:-} $(compgen -W '$choices' -- "$cur"))
+            _hg_fix_wordlist
+            return
+        ;;
+        --pager)
+            local choices='true false yes no always auto never'
+            COMPREPLY=(${COMPREPLY[@]:-} $(compgen -W '$choices' -- "$cur"))
             _hg_fix_wordlist
             return
         ;;

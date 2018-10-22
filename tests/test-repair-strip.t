@@ -21,7 +21,7 @@
   >   hg verify
   >   echo % journal contents
   >   if [ -f .hg/store/journal ]; then
-  >       cat .hg/store/journal | $PYTHON $TESTTMP/dumpjournal.py
+  >       cat .hg/store/journal | "$PYTHON" $TESTTMP/dumpjournal.py
   >   else
   >       echo "(no journal)"
   >   fi
@@ -63,7 +63,7 @@
    (expected 1)
    b@?: 736c29771fba not in manifests
   warning: orphan data file 'data/c.i'
-  2 files, 2 changesets, 3 total revisions
+  checked 2 changesets with 3 changes to 2 files
   2 warnings encountered!
   2 integrity errors encountered!
   % journal contents
@@ -76,7 +76,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 2 files
   $ teststrip 0 2 r .hg/store/data/b.i
   % before update 0, strip 2
   changeset:   0:cb9a9f314b8b
@@ -90,7 +90,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 4 changesets, 4 total revisions
+  checked 4 changesets with 4 changes to 3 files
   % journal contents
   (no journal)
   $ teststrip 0 2 w .hg/store/00manifest.i
@@ -120,7 +120,7 @@
    b@?: rev 1 points to nonexistent changeset 2
    (expected 1)
    c@?: rev 0 points to nonexistent changeset 3
-  3 files, 2 changesets, 4 total revisions
+  checked 2 changesets with 4 changes to 3 files
   1 warnings encountered!
   7 integrity errors encountered!
   (first damaged changeset appears to be 3)
@@ -134,6 +134,6 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 2 files
 
   $ cd ..

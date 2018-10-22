@@ -570,6 +570,32 @@ def compatlist(context, mapping, name, data, element=None, fmt=None,
     f = _showcompatlist(context, mapping, name, data, plural, separator)
     return hybridlist(data, name=element or name, fmt=fmt, gen=f)
 
+def compatfilecopiesdict(context, mapping, name, copies):
+    """Wrap list of (dest, source) file names to support old-style list
+    template and field names
+
+    This exists for backward compatibility. Use hybriddict for new template
+    keywords.
+    """
+    # no need to provide {path} to old-style list template
+    c = [{'name': k, 'source': v} for k, v in copies]
+    f = _showcompatlist(context, mapping, name, c, plural='file_copies')
+    copies = util.sortdict(copies)
+    return hybrid(f, copies,
+                  lambda k: {'name': k, 'path': k, 'source': copies[k]},
+                  lambda k: '%s (%s)' % (k, copies[k]))
+
+def compatfileslist(context, mapping, name, files):
+    """Wrap list of file names to support old-style list template and field
+    names
+
+    This exists for backward compatibility. Use hybridlist for new template
+    keywords.
+    """
+    f = _showcompatlist(context, mapping, name, files)
+    return hybrid(f, files, lambda x: {'file': x, 'path': x},
+                  pycompat.identity)
+
 def _showcompatlist(context, mapping, name, values, plural=None, separator=' '):
     """Return a generator that renders old-style list template
 
@@ -810,8 +836,9 @@ def runstring(context, mapping, data):
     return data
 
 def _recursivesymbolblocker(key):
-    def showrecursion(**args):
+    def showrecursion(context, mapping):
         raise error.Abort(_("recursive reference '%s' in template") % key)
+    showrecursion._requires = ()  # mark as new-style templatekw
     return showrecursion
 
 def runsymbol(context, mapping, key, default=''):
@@ -827,12 +854,16 @@ def runsymbol(context, mapping, key, default=''):
             v = default
     if callable(v) and getattr(v, '_requires', None) is None:
         # old templatekw: expand all keywords and resources
-        # (TODO: deprecate this after porting web template keywords to new API)
-        props = {k: context._resources.lookup(context, mapping, k)
+        # (TODO: drop support for old-style functions. 'f._requires = ()'
+        #  can be removed.)
+        props = {k: context._resources.lookup(mapping, k)
                  for k in context._resources.knownkeys()}
         # pass context to _showcompatlist() through templatekw._showlist()
         props['templ'] = context
         props.update(mapping)
+        ui = props.get('ui')
+        if ui:
+            ui.deprecwarn("old-style template keyword '%s'" % key, '4.8')
         return v(**pycompat.strkwargs(props))
     if callable(v):
         # new templatekw

@@ -758,7 +758,7 @@ test with a win32ext like setup (differing EOLs)
   $ cd twin2
   $ echo '[patch]' >> .hg/hgrc
   $ echo 'eol = crlf' >> .hg/hgrc
-  $ $PYTHON -c "open('b', 'wb').write(b'b\r\nb\r\n')"
+  $ "$PYTHON" -c "open('b', 'wb').write(b'b\r\nb\r\n')"
   $ hg ci -Am addb
   adding b
   $ hg transplant -s ../twin1 tip

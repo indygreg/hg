@@ -76,23 +76,23 @@ add more upstream files which we will include in a wider narrow spec
   $ echo 'widest v4' > widest/f
   $ hg commit -m 'update widest v4'
 
-  $ hg log -T "{if(ellipsis, '...')}{node|short}: {desc}\n"
-  *: update widest v4 (glob)
-  *: add outside2 (glob)
-  *: update inside (glob)
-  *: update widest v3 (glob)
-  *: add wider, update widest (glob)
-  *: add outside (glob)
-  *: add widest (glob)
-  *: add inside (glob)
+  $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
+  7: update widest v4
+  6: add outside2
+  5: update inside
+  4: update widest v3
+  3: add wider, update widest
+  2: add outside
+  1: add widest
+  0: add inside
 
   $ cd ..
 
-Widen the narrow spec to see the wider file. This should not get the newly
+Widen the narrow spec to see the widest file. This should not get the newly
 added upstream revisions.
 
   $ cd narrow
-  $ hg tracked --addinclude wider/f
+  $ hg tracked --addinclude widest/f
   comparing with ssh://user@dummy/master
   searching for changes
   no changes found
@@ -100,11 +100,14 @@ added upstream revisions.
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 1 changes to 1 files
+  added 3 changesets with 2 changes to 2 files
   new changesets *:* (glob)
   $ hg tracked
   I path:inside
-  I path:wider/f
+  I path:widest/f
+
+  $ cat widest/f
+  widest
 
 Pull down the newly added upstream revision.
 
@@ -114,28 +117,30 @@ Pull down the newly added upstream revision.
   adding changesets
   adding manifests
   adding file changes
-  added 4 changesets with 2 changes to 2 files
+  added 5 changesets with 4 changes to 2 files
   new changesets *:* (glob)
   (run 'hg update' to get a working copy)
   $ hg update -r 'desc("add wider")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cat wider/f
-  wider
+  $ cat widest/f
+  widest v2
 
   $ hg update -r 'desc("update inside")'
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cat wider/f
-  wider
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cat widest/f
+  widest v3
   $ cat inside/f
   inside v2
 
-  $ hg log -T "{if(ellipsis, '...')}{node|short}: {desc}\n"
-  ...*: update widest v4 (glob)
-  *: update inside (glob)
-  ...*: update widest v3 (glob)
-  *: add wider, update widest (glob)
-  ...*: add outside (glob)
-  *: add inside (glob)
+  $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
+  7: update widest v4
+  ...6: add outside2
+  5: update inside
+  4: update widest v3
+  3: add wider, update widest
+  ...2: add outside
+  1: add widest
+  0: add inside
 
 Check that widening with a newline fails
 
@@ -144,9 +149,9 @@ Check that widening with a newline fails
   abort: newlines are not allowed in narrowspec paths
   [255]
 
-widen the narrow spec to include the widest file
+widen the narrow spec to include the wider file
 
-  $ hg tracked --addinclude widest
+  $ hg tracked --addinclude wider
   comparing with ssh://user@dummy/master
   searching for changes
   no changes found
@@ -158,8 +163,8 @@ widen the narrow spec to include the widest file
   new changesets *:* (glob)
   $ hg tracked
   I path:inside
-  I path:wider/f
-  I path:widest
+  I path:wider
+  I path:widest/f
   $ hg update 'desc("add widest")'
   2 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ cat widest/f
@@ -179,15 +184,15 @@ widen the narrow spec to include the widest file
   $ cat widest/f
   widest v4
 
-  $ hg log -T "{if(ellipsis, '...')}{node|short}: {desc}\n"
-  *: update widest v4 (glob)
-  ...*: add outside2 (glob)
-  *: update inside (glob)
-  *: update widest v3 (glob)
-  *: add wider, update widest (glob)
-  ...*: add outside (glob)
-  *: add widest (glob)
-  *: add inside (glob)
+  $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
+  7: update widest v4
+  ...6: add outside2
+  5: update inside
+  4: update widest v3
+  3: add wider, update widest
+  ...2: add outside
+  1: add widest
+  0: add inside
 
 separate suite of tests: files from 0-10 modified in changes 0-10. This allows
 more obvious precise tests tickling particular corner cases.
@@ -206,18 +211,18 @@ more obvious precise tests tickling particular corner cases.
   >   hg add d$x/f
   >   hg commit -m "add d$x/f"
   > done
-  $ hg log -T "{node|short}: {desc}\n"
-  *: add d10/f (glob)
-  *: add d9/f (glob)
-  *: add d8/f (glob)
-  *: add d7/f (glob)
-  *: add d6/f (glob)
-  *: add d5/f (glob)
-  *: add d4/f (glob)
-  *: add d3/f (glob)
-  *: add d2/f (glob)
-  *: add d1/f (glob)
-  *: add d0/f (glob)
+  $ hg log -T "{rev}: {desc}\n"
+  10: add d10/f
+  9: add d9/f
+  8: add d8/f
+  7: add d7/f
+  6: add d6/f
+  5: add d5/f
+  4: add d4/f
+  3: add d3/f
+  2: add d2/f
+  1: add d1/f
+  0: add d0/f
 
 make narrow clone with every third node.
 
@@ -243,16 +248,16 @@ make narrow clone with every third node.
   checking directory manifests (tree !)
   crosschecking files in changesets and manifests
   checking files
-  4 files, 8 changesets, 4 total revisions
-  $ hg log -T "{if(ellipsis, '...')}{node|short}: {desc}\n"
-  ...*: add d10/f (glob)
-  *: add d9/f (glob)
-  ...*: add d8/f (glob)
-  *: add d6/f (glob)
-  ...*: add d5/f (glob)
-  *: add d3/f (glob)
-  ...*: add d2/f (glob)
-  *: add d0/f (glob)
+  checked 8 changesets with 4 changes to 4 files
+  $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
+  ...7: add d10/f
+  6: add d9/f
+  ...5: add d8/f
+  4: add d6/f
+  ...3: add d5/f
+  2: add d3/f
+  ...1: add d2/f
+  0: add d0/f
   $ hg tracked --addinclude d1
   comparing with ssh://user@dummy/upstream
   searching for changes
@@ -269,16 +274,16 @@ make narrow clone with every third node.
   I path:d3
   I path:d6
   I path:d9
-  $ hg log -T "{if(ellipsis, '...')}{node|short}: {desc}\n"
-  ...*: add d10/f (glob)
-  *: add d9/f (glob)
-  ...*: add d8/f (glob)
-  *: add d6/f (glob)
-  ...*: add d5/f (glob)
-  *: add d3/f (glob)
-  ...*: add d2/f (glob)
-  *: add d1/f (glob)
-  *: add d0/f (glob)
+  $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
+  ...8: add d10/f
+  7: add d9/f
+  ...6: add d8/f
+  5: add d6/f
+  ...4: add d5/f
+  3: add d3/f
+  ...2: add d2/f
+  1: add d1/f
+  0: add d0/f
 
 Verify shouldn't claim the repo is corrupt after a widen.
 
@@ -288,16 +293,16 @@ Verify shouldn't claim the repo is corrupt after a widen.
   checking directory manifests (tree !)
   crosschecking files in changesets and manifests
   checking files
-  5 files, 9 changesets, 5 total revisions
+  checked 9 changesets with 5 changes to 5 files
 
 Widening preserves parent of local commit
 
   $ cd ..
   $ hg clone -q --narrow ssh://user@dummy/upstream narrow3 --include d2 -r 2
   $ cd narrow3
-  $ hg log -T "{if(ellipsis, '...')}{node|short}: {desc}\n"
-  *: add d2/f (glob)
-  ...*: add d1/f (glob)
+  $ hg log -T "{if(ellipsis, '...')}{rev}: {desc}\n"
+  1: add d2/f
+  ...0: add d1/f
   $ hg pull -q -r 3
   $ hg co -q tip
   $ hg pull -q -r 4

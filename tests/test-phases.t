@@ -690,7 +690,7 @@ because repo.cancopy() is False
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  7 files, 8 changesets, 7 total revisions
+  checked 8 changesets with 7 changes to 7 files
 
   $ cd ..
 
@@ -826,3 +826,81 @@ Try various actions. only the draft move should succeed
   rollback completed
   abort: pretxnclose-phase.nopublish_D hook exited with status 1
   [255]
+
+  $ cd ..
+
+Test for the "internal" phase
+=============================
+
+Check we deny its usage on older repository
+
+  $ hg init no-internal-phase --config format.internal-phase=no
+  $ cd no-internal-phase
+  $ cat .hg/requires
+  dotencode
+  fncache
+  generaldelta
+  revlogv1
+  store
+  $ echo X > X
+  $ hg add X
+  $ hg status
+  A X
+  $ hg --config "phases.new-commit=internal" commit -m "my test internal commit" 2>&1 | grep ProgrammingError
+  ** ProgrammingError: this repository does not support the internal phase
+      raise error.ProgrammingError(msg)
+  mercurial.error.ProgrammingError: this repository does not support the internal phase
+
+  $ cd ..
+
+Check it works fine with repository that supports it.
+
+  $ hg init internal-phase --config format.internal-phase=yes
+  $ cd internal-phase
+  $ cat .hg/requires
+  dotencode
+  fncache
+  generaldelta
+  internal-phase
+  revlogv1
+  store
+  $ mkcommit A
+  test-debug-phase: new rev 0:  x -> 1
+  test-hook-close-phase: 4a2df7238c3b48766b5e22fafbb8a2f506ec8256:   -> draft
+
+Commit an internal changesets
+
+  $ echo B > B
+  $ hg add B
+  $ hg status
+  A B
+  $ hg --config "phases.new-commit=internal" commit -m "my test internal commit"
+  test-debug-phase: new rev 1:  x -> 96
+  test-hook-close-phase: c01c42dffc7f81223397e99652a0703f83e1c5ea:   -> internal
+
+Usual visibility rules apply when working directory parents
+
+  $ hg log -G -l 3
+  @  changeset:   1:c01c42dffc7f
+  |  tag:         tip
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     my test internal commit
+  |
+  o  changeset:   0:4a2df7238c3b
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     A
+  
+
+Commit is hidden as expected
+
+  $ hg up 0
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg log -G
+  @  changeset:   0:4a2df7238c3b
+     tag:         tip
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     A
+  

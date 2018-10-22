@@ -30,7 +30,7 @@ if sys.version_info[0] < 3:
     opentext = open
 else:
     def opentext(f):
-        return open(f, encoding='ascii')
+        return open(f, encoding='latin1')
 try:
     xrange
 except NameError:
@@ -503,7 +503,7 @@ py3pats = [
   [
     (r'os\.environ', "use encoding.environ instead (py3)", r'#.*re-exports'),
     (r'os\.name', "use pycompat.osname instead (py3)"),
-    (r'os\.getcwd', "use pycompat.getcwd instead (py3)"),
+    (r'os\.getcwd', "use encoding.getcwd instead (py3)", r'#.*re-exports'),
     (r'os\.sep', "use pycompat.ossep instead (py3)"),
     (r'os\.pathsep', "use pycompat.ospathsep instead (py3)"),
     (r'os\.altsep', "use pycompat.osaltsep instead (py3)"),
@@ -511,6 +511,7 @@ py3pats = [
     (r'getopt\.getopt', "use pycompat.getoptb instead (py3)"),
     (r'os\.getenv', "use encoding.environ.get instead"),
     (r'os\.setenv', "modifying the environ dict is not preferred"),
+    (r'(?<!pycompat\.)xrange', "use pycompat.xrange instead (py3)"),
   ],
   # warnings
   [],

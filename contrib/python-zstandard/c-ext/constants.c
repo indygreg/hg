@@ -27,7 +27,6 @@ void constants_module_init(PyObject* mod) {
 #else
 	version = PyString_FromString(PYTHON_ZSTANDARD_VERSION);
 #endif
-	Py_INCREF(version);
 	PyModule_AddObject(mod, "__version__", version);
 
 	ZstdError = PyErr_NewException("zstd.ZstdError", NULL, NULL);
@@ -41,7 +40,6 @@ void constants_module_init(PyObject* mod) {
 	PyTuple_SetItem(zstdVersion, 0, PyLong_FromLong(ZSTD_VERSION_MAJOR));
 	PyTuple_SetItem(zstdVersion, 1, PyLong_FromLong(ZSTD_VERSION_MINOR));
 	PyTuple_SetItem(zstdVersion, 2, PyLong_FromLong(ZSTD_VERSION_RELEASE));
-	Py_INCREF(zstdVersion);
 	PyModule_AddObject(mod, "ZSTD_VERSION", zstdVersion);
 
 	frameHeader = PyBytes_FromStringAndSize(frame_header, sizeof(frame_header));
@@ -68,6 +66,8 @@ void constants_module_init(PyObject* mod) {
 		(long)ZSTD_DStreamOutSize());
 
 	PyModule_AddIntConstant(mod, "MAGIC_NUMBER", ZSTD_MAGICNUMBER);
+	PyModule_AddIntConstant(mod, "BLOCKSIZELOG_MAX", ZSTD_BLOCKSIZELOG_MAX);
+	PyModule_AddIntConstant(mod, "BLOCKSIZE_MAX", ZSTD_BLOCKSIZE_MAX);
 	PyModule_AddIntConstant(mod, "WINDOWLOG_MIN", ZSTD_WINDOWLOG_MIN);
 	PyModule_AddIntConstant(mod, "WINDOWLOG_MAX", ZSTD_WINDOWLOG_MAX);
 	PyModule_AddIntConstant(mod, "CHAINLOG_MIN", ZSTD_CHAINLOG_MIN);
@@ -80,6 +80,7 @@ void constants_module_init(PyObject* mod) {
 	PyModule_AddIntConstant(mod, "SEARCHLENGTH_MIN", ZSTD_SEARCHLENGTH_MIN);
 	PyModule_AddIntConstant(mod, "SEARCHLENGTH_MAX", ZSTD_SEARCHLENGTH_MAX);
 	PyModule_AddIntConstant(mod, "TARGETLENGTH_MIN", ZSTD_TARGETLENGTH_MIN);
+	PyModule_AddIntConstant(mod, "TARGETLENGTH_MAX", ZSTD_TARGETLENGTH_MAX);
 	PyModule_AddIntConstant(mod, "LDM_MINMATCH_MIN", ZSTD_LDM_MINMATCH_MIN);
 	PyModule_AddIntConstant(mod, "LDM_MINMATCH_MAX", ZSTD_LDM_MINMATCH_MAX);
 	PyModule_AddIntConstant(mod, "LDM_BUCKETSIZELOG_MAX", ZSTD_LDM_BUCKETSIZELOG_MAX);

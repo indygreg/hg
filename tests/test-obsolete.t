@@ -380,7 +380,7 @@ Try to pull markers
   adding file changes
   added 4 changesets with 4 changes to 4 files (+1 heads)
   5 new obsolescence markers
-  new changesets 1f0dee641bb7:6f9641995072
+  new changesets 1f0dee641bb7:6f9641995072 (1 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg debugobsolete
   1337133713371337133713371337133713371337 5601fb93a350734d935195fee37f4054c529ff39 0 (Thu Jan 01 00:22:19 1970 +0000) {'user': 'test'}
@@ -486,7 +486,7 @@ On pull
   adding file changes
   added 4 changesets with 4 changes to 4 files (+1 heads)
   5 new obsolescence markers
-  new changesets 1f0dee641bb7:6f9641995072
+  new changesets 1f0dee641bb7:6f9641995072 (1 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg debugobsolete
   1339133913391339133913391339133913391339 ca819180edb99ed25ceafb3e9584ac287e240b00 0 (Thu Jan 01 00:22:19 1970 +0000) {'user': 'test'}
@@ -805,7 +805,8 @@ check hgweb does not explode
   adding manifests
   adding file changes
   added 62 changesets with 63 changes to 9 files (+60 heads)
-  new changesets 50c51b361e60:c15e9edfca13
+  new changesets 50c51b361e60:c15e9edfca13 (62 drafts)
+  (2 other changesets obsolete on arrival)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
   $ for node in `hg log -r 'desc(babar_)' --template '{node}\n'`;
   > do
@@ -1244,7 +1245,7 @@ Test bundle overlay onto hidden revision
   adding manifests
   adding file changes
   added 2 changesets with 2 changes to 1 files
-  new changesets 4b34ecfb0d56:44526ebb0f98
+  new changesets 4b34ecfb0d56:44526ebb0f98 (2 drafts)
   updating to branch default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd ../other-bundleoverlay
@@ -1513,7 +1514,7 @@ Testing that strip remove markers:
   adding file changes
   added 2 changesets with 2 changes to 2 files
   1 new obsolescence markers
-  new changesets e016b03fd86f:b0551702f918
+  new changesets e016b03fd86f:b0551702f918 (2 drafts)
   (run 'hg update' to get a working copy)
   $ hg debugobsolete | sort
   e008cf2834908e5d6b0f792a9d4b0e2272260fb8 b0551702f918510f01ae838ab03a463054c67b46 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'operation': 'amend', 'user': 'test'}
@@ -1602,6 +1603,7 @@ Test adding changeset after obsmarkers affecting it
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
+  (1 other changesets obsolete on arrival)
   (run 'hg update' to get a working copy)
   $ hg log -G
   @  7:7ae79c5d60f0 (draft) [tip ] dd
@@ -1617,4 +1619,23 @@ Test adding changeset after obsmarkers affecting it
   o  1:f9bd49731b0b (draft) [ ] aa
   
 
+  $ cd ..
+
+Test issue 5783
+
+  $ hg init issue-5783 --config format.obsstore-version=0
+  $ cd issue-5783
+  $ touch a.cpp
+  $ hg add a.cpp
+  $ hg commit -m 'Add a.cpp'
+  $ echo 'Hello' > a.cpp
+  $ hg amend -n 'Testing::Obsstore' --config format.obsstore-version=0 --config extensions.amend=
+  $ touch b.cpp
+  $ hg add b.cpp
+  $ hg commit -m 'Add b.cpp'
+  $ echo 'Hello' > b.cpp
+  $ hg amend -n 'Testing::Obsstore2' --config extensions.amend=
+  $ hg debugobsolete
+  d1b09fe3ad2b2a03e23a72f0c582e29a49570145 1a1a11184d2588af24e767e5335d5d9d07e8c550 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'note': 'Testing::Obsstore', 'operation': 'amend', 'user': 'test'}
+  1bfd8e3868f641e048b6667cd672c68932f26d00 79959ca316d5b27ac6be1dd0cfd0843a5b5412eb 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'note': 'Testing::Obsstore2', 'operation': 'amend', 'user': 'test'}
   $ cd ..

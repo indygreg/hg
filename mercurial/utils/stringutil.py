@@ -13,6 +13,7 @@ import ast
 import codecs
 import re as remod
 import textwrap
+import types
 
 from ..i18n import _
 from ..thirdparty import attr
@@ -42,27 +43,202 @@ def reescape(pat):
         return pat
     return pat.encode('latin1')
 
-def pprint(o, bprefix=False):
+def pprint(o, bprefix=False, indent=0, level=0):
     """Pretty print an object."""
+    return b''.join(pprintgen(o, bprefix=bprefix, indent=indent, level=level))
+
+def pprintgen(o, bprefix=False, indent=0, level=0):
+    """Pretty print an object to a generator of atoms.
+
+    ``bprefix`` is a flag influencing whether bytestrings are preferred with
+    a ``b''`` prefix.
+
+    ``indent`` controls whether collections and nested data structures
+    span multiple lines via the indentation amount in spaces. By default,
+    no newlines are emitted.
+
+    ``level`` specifies the initial indent level. Used if ``indent > 0``.
+    """
+
     if isinstance(o, bytes):
         if bprefix:
-            return "b'%s'" % escapestr(o)
-        return "'%s'" % escapestr(o)
+            yield "b'%s'" % escapestr(o)
+        else:
+            yield "'%s'" % escapestr(o)
     elif isinstance(o, bytearray):
         # codecs.escape_encode() can't handle bytearray, so escapestr fails
         # without coercion.
-        return "bytearray['%s']" % escapestr(bytes(o))
+        yield "bytearray['%s']" % escapestr(bytes(o))
     elif isinstance(o, list):
-        return '[%s]' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
+        if not o:
+            yield '[]'
+            return
+
+        yield '['
+
+        if indent:
+            level += 1
+            yield '\n'
+            yield ' ' * (level * indent)
+
+        for i, a in enumerate(o):
+            for chunk in pprintgen(a, bprefix=bprefix, indent=indent,
+                                   level=level):
+                yield chunk
+
+            if i + 1 < len(o):
+                if indent:
+                    yield ',\n'
+                    yield ' ' * (level * indent)
+                else:
+                    yield ', '
+
+        if indent:
+            level -= 1
+            yield '\n'
+            yield ' ' * (level * indent)
+
+        yield ']'
     elif isinstance(o, dict):
-        return '{%s}' % (b', '.join(
-            '%s: %s' % (pprint(k, bprefix=bprefix),
-                        pprint(v, bprefix=bprefix))
-            for k, v in sorted(o.items())))
+        if not o:
+            yield '{}'
+            return
+
+        yield '{'
+
+        if indent:
+            level += 1
+            yield '\n'
+            yield ' ' * (level * indent)
+
+        for i, (k, v) in enumerate(sorted(o.items())):
+            for chunk in pprintgen(k, bprefix=bprefix, indent=indent,
+                                   level=level):
+                yield chunk
+
+            yield ': '
+
+            for chunk in pprintgen(v, bprefix=bprefix, indent=indent,
+                                   level=level):
+                yield chunk
+
+            if i + 1 < len(o):
+                if indent:
+                    yield ',\n'
+                    yield ' ' * (level * indent)
+                else:
+                    yield ', '
+
+        if indent:
+            level -= 1
+            yield '\n'
+            yield ' ' * (level * indent)
+
+        yield '}'
+    elif isinstance(o, set):
+        if not o:
+            yield 'set([])'
+            return
+
+        yield 'set(['
+
+        if indent:
+            level += 1
+            yield '\n'
+            yield ' ' * (level * indent)
+
+        for i, k in enumerate(sorted(o)):
+            for chunk in pprintgen(k, bprefix=bprefix, indent=indent,
+                                   level=level):
+                yield chunk
+
+            if i + 1 < len(o):
+                if indent:
+                    yield ',\n'
+                    yield ' ' * (level * indent)
+                else:
+                    yield ', '
+
+        if indent:
+            level -= 1
+            yield '\n'
+            yield ' ' * (level * indent)
+
+        yield '])'
     elif isinstance(o, tuple):
-        return '(%s)' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
+        if not o:
+            yield '()'
+            return
+
+        yield '('
+
+        if indent:
+            level += 1
+            yield '\n'
+            yield ' ' * (level * indent)
+
+        for i, a in enumerate(o):
+            for chunk in pprintgen(a, bprefix=bprefix, indent=indent,
+                                   level=level):
+                yield chunk
+
+            if i + 1 < len(o):
+                if indent:
+                    yield ',\n'
+                    yield ' ' * (level * indent)
+                else:
+                    yield ', '
+
+        if indent:
+            level -= 1
+            yield '\n'
+            yield ' ' * (level * indent)
+
+        yield ')'
+    elif isinstance(o, types.GeneratorType):
+        # Special case of empty generator.
+        try:
+            nextitem = next(o)
+        except StopIteration:
+            yield 'gen[]'
+            return
+
+        yield 'gen['
+
+        if indent:
+            level += 1
+            yield '\n'
+            yield ' ' * (level * indent)
+
+        last = False
+
+        while not last:
+            current = nextitem
+
+            try:
+                nextitem = next(o)
+            except StopIteration:
+                last = True
+
+            for chunk in pprintgen(current, bprefix=bprefix, indent=indent,
+                                   level=level):
+                yield chunk
+
+            if not last:
+                if indent:
+                    yield ',\n'
+                    yield ' ' * (level * indent)
+                else:
+                    yield ', '
+
+        if indent:
+            level -= 1
+            yield '\n'
+            yield ' ' * (level * indent)
+
+        yield ']'
     else:
-        return pycompat.byterepr(o)
+        yield pycompat.byterepr(o)
 
 def prettyrepr(o):
     """Pretty print a representation of a possibly-nested object"""
@@ -111,7 +287,7 @@ def buildrepr(r):
     elif callable(r):
         return r()
     else:
-        return pycompat.byterepr(r)
+        return pprint(r)
 
 def binary(s):
     """return true if a string is binary data"""
@@ -424,6 +600,8 @@ def ellipsis(text, maxlength=400):
     return encoding.trim(text, maxlength, ellipsis='...')
 
 def escapestr(s):
+    if isinstance(s, memoryview):
+        s = bytes(s)
     # call underlying function of s.encode('string_escape') directly for
     # Python 3 compatibility
     return codecs.escape_encode(s)[0]
@@ -464,7 +642,7 @@ def _MBTextWrapper(**kwargs):
         def _cutdown(self, ucstr, space_left):
             l = 0
             colwidth = encoding.ucolwidth
-            for i in xrange(len(ucstr)):
+            for i in pycompat.xrange(len(ucstr)):
                 l += colwidth(ucstr[i])
                 if space_left < l:
                     return (ucstr[:i], ucstr[i:])

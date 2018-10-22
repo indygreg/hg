@@ -68,21 +68,21 @@ else:
     environ = dict((k.encode(u'utf-8'), v.encode(u'utf-8'))
                    for k, v in os.environ.items())  # re-exports
 
-_encodingfixers = {
-    '646': lambda: 'ascii',
-    'ANSI_X3.4-1968': lambda: 'ascii',
+_encodingrewrites = {
+    '646': 'ascii',
+    'ANSI_X3.4-1968': 'ascii',
 }
 # cp65001 is a Windows variant of utf-8, which isn't supported on Python 2.
 # No idea if it should be rewritten to the canonical name 'utf-8' on Python 3.
 # https://bugs.python.org/issue13216
 if pycompat.iswindows and not pycompat.ispy3:
-    _encodingfixers['cp65001'] = lambda: 'utf-8'
+    _encodingrewrites['cp65001'] = 'utf-8'
 
 try:
     encoding = environ.get("HGENCODING")
     if not encoding:
         encoding = locale.getpreferredencoding().encode('ascii') or 'ascii'
-        encoding = _encodingfixers.get(encoding, lambda: encoding)()
+        encoding = _encodingrewrites.get(encoding, encoding)
 except locale.Error:
     encoding = 'ascii'
 encodingmode = environ.get("HGENCODINGMODE", "strict")
@@ -233,6 +233,18 @@ if not _nativeenviron:
     environ = dict((tolocal(k.encode(u'utf-8')), tolocal(v.encode(u'utf-8')))
                    for k, v in os.environ.items())  # re-exports
 
+if pycompat.ispy3:
+    # os.getcwd() on Python 3 returns string, but it has os.getcwdb() which
+    # returns bytes.
+    if pycompat.iswindows:
+        # Python 3 on Windows issues a DeprecationWarning about using the bytes
+        # API when os.getcwdb() is called.
+        getcwd = lambda: strtolocal(os.getcwd())  # re-exports
+    else:
+        getcwd = os.getcwdb  # re-exports
+else:
+    getcwd = os.getcwd  # re-exports
+
 # How to treat ambiguous-width characters. Set to 'wide' to treat as wide.
 _wide = _sysstr(environ.get("HGENCODINGAMBIGUOUS", "narrow") == "wide"
                 and "WFA" or "WF")
@@ -251,7 +263,7 @@ def ucolwidth(d):
 def getcols(s, start, c):
     '''Use colwidth to find a c-column substring of s starting at byte
     index start'''
-    for x in xrange(start + c, len(s)):
+    for x in pycompat.xrange(start + c, len(s)):
         t = s[start:x]
         if colwidth(t) == c:
             return t
@@ -346,7 +358,7 @@ def trim(s, width, ellipsis='', leftside=False):
     else:
         uslice = lambda i: u[:-i]
         concat = lambda s: s + ellipsis
-    for i in xrange(1, len(u)):
+    for i in pycompat.xrange(1, len(u)):
         usub = uslice(i)
         if ucolwidth(usub) <= width:
             return concat(usub.encode(_sysstr(encoding)))

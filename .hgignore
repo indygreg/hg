@@ -19,6 +19,7 @@ syntax: glob
 *.zip
 \#*\#
 .\#*
+tests/artifacts/cache/big-file-churn.hg
 tests/.coverage*
 tests/.testtimes*
 tests/.hypothesis
@@ -55,6 +56,7 @@ locale/*/LC_MESSAGES/hg.mo
 hgext/__index__.py
 
 rust/target/
+rust/*/target/
 
 # Generated wheels
 wheelhouse/

@@ -2,19 +2,20 @@ from __future__ import absolute_import
 
 import copy
 import errno
-import os
-import silenttestrunner
 import tempfile
 import types
 import unittest
 
+import silenttestrunner
+
 from mercurial import (
+    encoding,
     error,
     lock,
     vfs as vfsmod,
 )
 
-testlockname = 'testlock'
+testlockname = b'testlock'
 
 # work around http://bugs.python.org/issue1515
 if types.MethodType not in copy._deepcopy_dispatch:
@@ -106,7 +107,7 @@ class teststate(object):
 
 class testlock(unittest.TestCase):
     def testlock(self):
-        state = teststate(self, tempfile.mkdtemp(dir=os.getcwd()))
+        state = teststate(self, tempfile.mkdtemp(dir=encoding.getcwd()))
         lock = state.makelock()
         state.assertacquirecalled(True)
         lock.release()
@@ -115,7 +116,7 @@ class testlock(unittest.TestCase):
         state.assertlockexists(False)
 
     def testrecursivelock(self):
-        state = teststate(self, tempfile.mkdtemp(dir=os.getcwd()))
+        state = teststate(self, tempfile.mkdtemp(dir=encoding.getcwd()))
         lock = state.makelock()
         state.assertacquirecalled(True)
 
@@ -135,7 +136,7 @@ class testlock(unittest.TestCase):
         state.assertlockexists(False)
 
     def testlockfork(self):
-        state = teststate(self, tempfile.mkdtemp(dir=os.getcwd()))
+        state = teststate(self, tempfile.mkdtemp(dir=encoding.getcwd()))
         lock = state.makelock()
         state.assertacquirecalled(True)
 
@@ -154,7 +155,7 @@ class testlock(unittest.TestCase):
         state.assertlockexists(False)
 
     def testinheritlock(self):
-        d = tempfile.mkdtemp(dir=os.getcwd())
+        d = tempfile.mkdtemp(dir=encoding.getcwd())
         parentstate = teststate(self, d)
         parentlock = parentstate.makelock()
         parentstate.assertacquirecalled(True)
@@ -184,7 +185,7 @@ class testlock(unittest.TestCase):
         parentstate.assertlockexists(False)
 
     def testmultilock(self):
-        d = tempfile.mkdtemp(dir=os.getcwd())
+        d = tempfile.mkdtemp(dir=encoding.getcwd())
         state0 = teststate(self, d)
         lock0 = state0.makelock()
         state0.assertacquirecalled(True)
@@ -225,7 +226,7 @@ class testlock(unittest.TestCase):
         lock0.release()
 
     def testinheritlockfork(self):
-        d = tempfile.mkdtemp(dir=os.getcwd())
+        d = tempfile.mkdtemp(dir=encoding.getcwd())
         parentstate = teststate(self, d)
         parentlock = parentstate.makelock()
         parentstate.assertacquirecalled(True)
@@ -253,7 +254,7 @@ class testlock(unittest.TestCase):
         parentlock.release()
 
     def testinheritcheck(self):
-        d = tempfile.mkdtemp(dir=os.getcwd())
+        d = tempfile.mkdtemp(dir=encoding.getcwd())
         state = teststate(self, d)
         def check():
             raise error.LockInheritanceContractViolation('check failed')
@@ -273,7 +274,7 @@ class testlock(unittest.TestCase):
         retrying 5 times.
         """
 
-        d = tempfile.mkdtemp(dir=os.getcwd())
+        d = tempfile.mkdtemp(dir=encoding.getcwd())
         state = teststate(self, d)
 
         def emulatefrequentlock(*args):

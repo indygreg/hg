@@ -11,7 +11,7 @@
 
   $ nlinksdir()
   > {
-  >     find "$@" -type f | $PYTHON $TESTTMP/nlinks.py
+  >     find "$@" -type f | "$PYTHON" $TESTTMP/nlinks.py
   > }
 
 Some implementations of cp can't create hardlinks (replaces 'cp -al' on Linux):
@@ -19,13 +19,14 @@ Some implementations of cp can't create hardlinks (replaces 'cp -al' on Linux):
   $ cat > linkcp.py <<EOF
   > from __future__ import absolute_import
   > import sys
-  > from mercurial import util
-  > util.copyfiles(sys.argv[1], sys.argv[2], hardlink=True)
+  > from mercurial import pycompat, util
+  > util.copyfiles(pycompat.fsencode(sys.argv[1]),
+  >                pycompat.fsencode(sys.argv[2]), hardlink=True)
   > EOF
 
   $ linkcp()
   > {
-  >     $PYTHON $TESTTMP/linkcp.py $1 $2
+  >     "$PYTHON" $TESTTMP/linkcp.py $1 $2
   > }
 
 Prepare repo r1:
@@ -151,7 +152,7 @@ Push to repo r1 should break up most hardlinks in r2:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 2 files
 
   $ cd r3
   $ hg push
@@ -181,7 +182,7 @@ Push to repo r1 should break up most hardlinks in r2:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 2 files
 
 
   $ cd r1
@@ -241,6 +242,7 @@ r4 has hardlinks in the working dir (not just inside .hg):
   2 r4/.hg/cache/checkisexec (execbit !)
   ? r4/.hg/cache/checklink-target (glob) (symlink !)
   2 r4/.hg/cache/checknoexec (execbit !)
+  2 r4/.hg/cache/manifestfulltextcache (reporevlogstore !)
   2 r4/.hg/cache/rbc-names-v1
   2 r4/.hg/cache/rbc-revs-v1
   2 r4/.hg/dirstate
@@ -291,6 +293,7 @@ Update back to revision 12 in r4 should break hardlink of file f1 and f3:
   2 r4/.hg/cache/checkisexec (execbit !)
   2 r4/.hg/cache/checklink-target (symlink !)
   2 r4/.hg/cache/checknoexec (execbit !)
+  2 r4/.hg/cache/manifestfulltextcache (reporevlogstore !)
   2 r4/.hg/cache/rbc-names-v1
   2 r4/.hg/cache/rbc-revs-v1
   1 r4/.hg/dirstate

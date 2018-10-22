@@ -51,11 +51,8 @@ Revert interactive tests
   > n
   > n
   > EOF
-  reverting f
-  reverting folder1/g
-  removing folder1/i
-  reverting folder2/h
   remove added file folder1/i (Yn)? y
+  removing folder1/i
   diff --git a/f b/f
   2 hunks, 2 lines changed
   examine changes to 'f'? [Ynesfdaq?] y
@@ -115,6 +112,8 @@ Revert interactive tests
   2 hunks, 2 lines changed
   examine changes to 'folder2/h'? [Ynesfdaq?] n
   
+  reverting f
+  reverting folder1/g
   $ cat f
   1
   2
@@ -140,8 +139,6 @@ Revert interactive tests
 Test that --interactive lift the need for --all
 
   $ echo q | hg revert -i -r 2
-  reverting folder1/g
-  reverting folder2/h
   diff --git a/folder1/g b/folder1/g
   1 hunks, 1 lines changed
   examine changes to 'folder1/g'? [Ynesfdaq?] q
@@ -197,10 +194,6 @@ Test --no-backup
   > n
   > n
   > EOF
-  reverting f
-  reverting folder1/g
-  removing folder1/i
-  reverting folder2/h
   remove added file folder1/i (Yn)? n
   diff --git a/f b/f
   2 hunks, 2 lines changed
@@ -250,6 +243,8 @@ Test --no-backup
   2 hunks, 2 lines changed
   examine changes to 'folder2/h'? [Ynesfdaq?] n
   
+  reverting f
+  reverting folder1/g
   $ cat f
   1
   2
@@ -354,7 +349,6 @@ Check editing files newly added by a revert
   > y
   > e
   > EOF
-  reverting k
   diff --git a/k b/k
   1 hunks, 2 lines changed
   examine changes to 'k'? [Ynesfdaq?] y
@@ -365,6 +359,7 @@ Check editing files newly added by a revert
   +2
   discard this change to 'k'? [Ynesfdaq?] e
   
+  reverting k
   $ cat k
   42
 
@@ -378,15 +373,14 @@ Check editing files newly added by a revert
   $ hg revert -i <<EOF
   > n
   > EOF
-  forgetting newfile
   forget added file newfile (Yn)? n
   $ hg status
   A newfile
   $ hg revert -i <<EOF
   > y
   > EOF
-  forgetting newfile
   forget added file newfile (Yn)? y
+  forgetting newfile
   $ hg status
   ? newfile
 
@@ -406,7 +400,6 @@ When a line without EOL is selected during "revert -i" (issue5651)
   > y
   > y
   > EOF
-  reverting a
   diff --git a/a b/a
   1 hunks, 1 lines changed
   examine changes to 'a'? [Ynesfdaq?] y
@@ -417,6 +410,7 @@ When a line without EOL is selected during "revert -i" (issue5651)
   \ No newline at end of file
   apply this change to 'a'? [Ynesfdaq?] y
   
+  reverting a
   $ cat a
   0
 

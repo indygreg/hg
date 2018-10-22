@@ -12,6 +12,9 @@
   $ hg forget a
   $ hg add
   adding a
+  $ hg forget a
+  $ hg add --color debug
+  [ui.addremove.added ui.status|adding a]
   $ hg st
   A a
   $ mkdir dir

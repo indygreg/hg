@@ -31,14 +31,15 @@ Verify that narrow is advertised in the bundle2 capabilities:
   > print(unquote(list(sys.stdin)[1]))
   > EOF
   $ echo hello | hg -R . serve --stdio | \
-  >   $PYTHON unquote.py | grep narrow
+  >   "$PYTHON" unquote.py | tr ' ' '\n' | grep narrow
   narrow=v0
+  exp-narrow-1
 
   $ cd ..
 
   $ hg clone --narrow --include f1 http://localhost:$HGPORT1/ narrowclone
   requesting all changes
-  abort: server doesn't support narrow clones
+  abort: server does not support narrow clones
   [255]
 
 Make a narrow clone (via HGPORT2), then try to narrow and widen
@@ -59,7 +60,5 @@ gracefully:
   looking for local changes to affected paths
   $ hg tracked --addinclude f1 http://localhost:$HGPORT1/
   comparing with http://localhost:$HGPORT1/
-  searching for changes
-  no changes found
-  abort: server doesn't support narrow clones
+  abort: server does not support narrow clones
   [255]

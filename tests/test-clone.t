@@ -20,7 +20,7 @@ Prepare repo a:
 
 Create a non-inlined filelog:
 
-  $ $PYTHON -c 'open("data1", "wb").write(b"".join(b"%d\n" % x for x in range(10000)))'
+  $ "$PYTHON" -c 'open("data1", "wb").write(b"".join(b"%d\n" % x for x in range(10000)))'
   $ for j in 0 1 2 3 4 5 6 7 8 9; do
   >   cat data1 >> b
   >   hg commit -m test
@@ -47,6 +47,7 @@ Trigger branchcache creation:
   checklink (symlink !)
   checklink-target (symlink !)
   checknoexec (execbit !)
+  manifestfulltextcache (reporevlogstore !)
   rbc-names-v1
   rbc-revs-v1
 
@@ -74,7 +75,7 @@ Ensure branchcache got copied over:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 11 changesets, 11 total revisions
+  checked 11 changesets with 11 changes to 2 files
 
 Invalid dest '' must abort:
 
@@ -145,7 +146,7 @@ Ensure branchcache got copied over:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 11 changesets, 11 total revisions
+  checked 11 changesets with 11 changes to 2 files
 
 Default destination:
 
@@ -190,7 +191,7 @@ Use --pull:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 11 changesets, 11 total revisions
+  checked 11 changesets with 11 changes to 2 files
 
 Invalid dest '' with --pull must abort (issue2528):
 
@@ -557,27 +558,27 @@ Issue2267: Error in 1.6 hg.py: TypeError: 'NoneType' object is not
 iterable in addbranchrevs()
 
   $ cat <<EOF > simpleclone.py
-  > from mercurial import ui, hg
-  > myui = ui.ui.load()
+  > from mercurial import hg, ui as uimod
+  > myui = uimod.ui.load()
   > repo = hg.repository(myui, b'a')
   > hg.clone(myui, {}, repo, dest=b"ua")
   > EOF
 
-  $ $PYTHON simpleclone.py
+  $ "$PYTHON" simpleclone.py
   updating to branch default
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ rm -r ua
 
   $ cat <<EOF > branchclone.py
-  > from mercurial import ui, hg, extensions
-  > myui = ui.ui.load()
+  > from mercurial import extensions, hg, ui as uimod
+  > myui = uimod.ui.load()
   > extensions.loadall(myui)
   > repo = hg.repository(myui, b'a')
   > hg.clone(myui, {}, repo, dest=b"ua", branch=[b"stable",])
   > EOF
 
-  $ $PYTHON branchclone.py
+  $ "$PYTHON" branchclone.py
   adding changesets
   adding manifests
   adding file changes
@@ -641,7 +642,7 @@ Inaccessible source
   $ mkdir a
   $ chmod 000 a
   $ hg clone a b
-  abort: repository a not found!
+  abort: Permission denied: *$TESTTMP/fail/a/.hg* (glob)
   [255]
 
 Inaccessible destination
@@ -649,7 +650,7 @@ Inaccessible destination
   $ hg init b
   $ cd b
   $ hg clone . ../a
-  abort: Permission denied: '../a'
+  abort: Permission denied: *../a* (glob)
   [255]
   $ cd ..
   $ chmod 700 a
@@ -664,7 +665,7 @@ Source of wrong type
 
   $ mkfifo a
   $ hg clone a b
-  abort: repository a not found!
+  abort: $ENOTDIR$: *$TESTTMP/fail/a/.hg* (glob)
   [255]
   $ rm a
 
@@ -1176,14 +1177,14 @@ SEC: check for unsafe ssh url
 #if windows
   $ hg clone "ssh://%26touch%20owned%20/" --debug
   running sh -c "read l; read l; read l" "&touch owned " "hg -R . serve --stdio"
-  sending upgrade request: * proto=exp-ssh-v2-0001 (glob) (sshv2 !)
+  sending upgrade request: * proto=exp-ssh-v2-0003 (glob) (sshv2 !)
   sending hello command
   sending between command
   abort: no suitable response from remote hg!
   [255]
   $ hg clone "ssh://example.com:%26touch%20owned%20/" --debug
   running sh -c "read l; read l; read l" -p "&touch owned " example.com "hg -R . serve --stdio"
-  sending upgrade request: * proto=exp-ssh-v2-0001 (glob) (sshv2 !)
+  sending upgrade request: * proto=exp-ssh-v2-0003 (glob) (sshv2 !)
   sending hello command
   sending between command
   abort: no suitable response from remote hg!
@@ -1191,14 +1192,14 @@ SEC: check for unsafe ssh url
 #else
   $ hg clone "ssh://%3btouch%20owned%20/" --debug
   running sh -c "read l; read l; read l" ';touch owned ' 'hg -R . serve --stdio'
-  sending upgrade request: * proto=exp-ssh-v2-0001 (glob) (sshv2 !)
+  sending upgrade request: * proto=exp-ssh-v2-0003 (glob) (sshv2 !)
   sending hello command
   sending between command
   abort: no suitable response from remote hg!
   [255]
   $ hg clone "ssh://example.com:%3btouch%20owned%20/" --debug
   running sh -c "read l; read l; read l" -p ';touch owned ' example.com 'hg -R . serve --stdio'
-  sending upgrade request: * proto=exp-ssh-v2-0001 (glob) (sshv2 !)
+  sending upgrade request: * proto=exp-ssh-v2-0003 (glob) (sshv2 !)
   sending hello command
   sending between command
   abort: no suitable response from remote hg!
@@ -1207,7 +1208,7 @@ SEC: check for unsafe ssh url
 
   $ hg clone "ssh://v-alid.example.com/" --debug
   running sh -c "read l; read l; read l" v-alid\.example\.com ['"]hg -R \. serve --stdio['"] (re)
-  sending upgrade request: * proto=exp-ssh-v2-0001 (glob) (sshv2 !)
+  sending upgrade request: * proto=exp-ssh-v2-0003 (glob) (sshv2 !)
   sending hello command
   sending between command
   abort: no suitable response from remote hg!

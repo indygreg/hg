@@ -11,8 +11,13 @@ import subprocess
 from mercurial import (
     hg,
     localrepo,
+    pycompat,
     ui as uimod,
     util,
+)
+
+from mercurial.utils import (
+    procutil,
 )
 
 # create some special property cache that trace they call
@@ -44,8 +49,10 @@ localrepo.localrepository.testcachedunfifoobar = testcachedunfifoobar
 
 # Create an empty repo and instantiate it. It is important to run
 # these tests on the real object to detect regression.
-repopath = os.path.join(os.environ['TESTTMP'], 'repo')
-assert subprocess.call(['hg', 'init', repopath]) == 0
+repopath = pycompat.fsencode(os.path.join(os.environ['TESTTMP'], 'repo'))
+assert subprocess.call(pycompat.rapply(procutil.tonativestr,
+                                       [b'hg', b'init', repopath])) == 0
+
 ui = uimod.ui.load()
 repo = hg.repository(ui, path=repopath).unfiltered()
 

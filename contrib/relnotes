@@ -1,0 +1,181 @@
+#!/usr/bin/env python3
+"""Generate release notes from our commit log.
+
+This uses the relnotes extension directives when they're available,
+and falls back to our old pre-relnotes logic that used to live in the
+release-tools repo.
+"""
+import argparse
+import re
+import subprocess
+
+# Regenerate this list with
+#   hg export 'grep("\.\. [a-z]+::")' | grep '^\.\.' | \
+#     sed 's/.. //;s/::.*//' | sort -u
+rnsections = ["api", "bc", "container", "feature", "fix", "note", "perf"]
+
+rules = {
+    # keep
+    r"\(issue": 100,
+    r"\(BC\)": 100,
+    r"\(API\)": 100,
+    # core commands, bump up
+    r"(commit|files|log|pull|push|patch|status|tag|summary)(|s|es):": 20,
+    r"(annotate|alias|branch|bookmark|clone|graft|import|verify).*:": 20,
+    # extensions, bump up
+    r"(mq|shelve|rebase):": 20,
+    # newsy
+    r": deprecate": 20,
+    r"(option|feature|command|support)": 10,
+    # bug-like?
+    r"(fix|don't break|improve)": 7,
+    # boring stuff, bump down
+    r"^contrib": -5,
+    r"debug": -5,
+    r"help": -5,
+    r"(doc|bundle2|obsolete|obsmarker|rpm|setup|debug\S+:)": -15,
+    r"(check-code|check-commit|import-checker)": -20,
+    # cleanups and refactoring
+    r"(cleanup|whitespace|nesting|indent|spelling|comment)": -20,
+    r"(typo|hint|note|style:|correct doc)": -20,
+    r"_": -10,
+    r"(argument|absolute_import|attribute|assignment|mutable)": -15,
+    r"(unused|useless|unnecessary|duplicate|deprecated|scope|True|False)": -10,
+    r"(redundant|pointless|confusing|uninitialized|meaningless|dead)": -10,
+    r": (drop|remove|inherit|rename|simplify|naming|inline)": -10,
+    r"(docstring|document .* method)": -20,
+    r"(factor|extract|prepare|split|replace| import)": -20,
+    r": add.*(function|method|implementation|test|example)": -10,
+    r": (move|extract) .* (to|into|from)": -20,
+    r": implement ": -5,
+    r": use .* implementation": -20,
+    r"\S\S\S+\.\S\S\S\S+": -5,
+    r": use .* instead of": -20,
+    r"__": -5,
+    # dumb keywords
+    r"\S+/\S+:": -10,
+    r"\S+\.\S+:": -10,
+    # drop
+    r"^i18n-": -50,
+    r"^i18n:.*(hint|comment)": -50,
+    r"perf:": -50,
+    r"check-code:": -50,
+    r"Added.*for changeset": -50,
+    r"tests?:": -50,
+    r"test-": -50,
+    r"add.* tests": -50,
+    r"^_": -50,
+}
+
+cutoff = 10
+commits = []
+
+groupings = [
+    (r"util|parsers|repo|ctx|context|revlog|filelog|alias|cmdutil", "core"),
+    (r"revset|templater|ui|dirstate|hook|i18n|transaction|wire", "core"),
+    (r"color|pager", "core"),
+    (r"hgweb|paper|coal|gitweb", "hgweb"),
+    (r"pull|push|revert|resolve|annotate|bookmark|branch|clone", "commands"),
+    (r"commands|commit|config|files|graft|import|log|merge|patch", "commands"),
+    (r"phases|status|summary|amend|tag|help|verify", "commands"),
+    (r"rebase|mq|convert|eol|histedit|largefiles", "extensions"),
+    (r"shelve|unshelve", "extensions"),
+]
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "startrev",
+        metavar="REV",
+        type=str,
+        nargs=1,
+        help=(
+            "Starting revision for the release notes. This revision "
+            "won't be included, but later revisions will."
+        ),
+    )
+    ap.add_argument(
+        "--stoprev",
+        metavar="REV",
+        type=str,
+        default="@",
+        nargs=1,
+        help=(
+            "Stop revision for release notes. This revision will be included,"
+            " but no later revisions will. This revision needs to be "
+            "a descendant of startrev."
+        ),
+    )
+    args = ap.parse_args()
+    fromext = subprocess.check_output(
+        [
+            "hg",
+            "--config",
+            "extensions.releasenotes=",
+            "releasenotes",
+            "-r",
+            "%s::%s" % (args.startrev[0], args.stoprev[0]),
+        ]
+    ).decode("utf-8")
+    # Find all release notes from un-relnotes-flagged commits.
+    for entry in sorted(
+        subprocess.check_output(
+            [
+                "hg",
+                "log",
+                "-r",
+                r'%s::%s - merge() - grep("\n\.\. (%s)::")'
+                % (args.startrev[0], args.stoprev[0], "|".join(rnsections)),
+                "-T",
+                r"{desc|firstline}\n",
+            ]
+        )
+        .decode("utf-8")
+        .splitlines()
+    ):
+        desc = entry.replace("`", "'")
+
+        score = 0
+        for rule, val in rules.items():
+            if re.search(rule, desc):
+                score += val
+
+        desc = desc.replace("(issue", "(Bts:issue")
+
+        if score >= cutoff:
+            commits.append(desc)
+    # Group unflagged notes.
+    groups = {}
+    bcs = []
+    apis = []
+
+    for d in commits:
+        if "(BC)" in d:
+            bcs.append(d)
+        if "(API)" in d:
+            apis.append(d)
+        for rule, g in groupings:
+            if re.match(rule, d):
+                groups.setdefault(g, []).append(d)
+                break
+        else:
+            groups.setdefault("unsorted", []).append(d)
+    print(fromext)
+    # print legacy release notes sections
+    for g in sorted(groups):
+        print("\n=== %s ===" % g)
+        for d in sorted(groups[g]):
+            print(" * %s" % d)
+
+    print("\n=== BC ===\n")
+
+    for d in sorted(bcs):
+        print(" * %s" % d)
+
+    print("\n=== API Changes ===\n")
+
+    for d in sorted(apis):
+        print(" * %s" % d)
+
+if __name__ == "__main__":
+    main()

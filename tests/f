@@ -66,7 +66,7 @@ def visit(opts, filenames, outfile):
         elif islink:
             if opts.type:
                 facts.append(b'link')
-            content = os.readlink(f)
+            content = os.readlink(f).encode('utf8')
         elif isstdin:
             content = getattr(sys.stdin, 'buffer', sys.stdin).read()
             if opts.size:
@@ -88,9 +88,11 @@ def visit(opts, filenames, outfile):
             if opts.newer:
                 # mtime might be in whole seconds so newer file might be same
                 if stat.st_mtime >= os.stat(opts.newer).st_mtime:
-                    facts.append(b'newer than %s' % opts.newer)
+                    facts.append(b'newer than %s' % opts.newer.encode(
+                        'utf8', 'replace'))
                 else:
-                    facts.append(b'older than %s' % opts.newer)
+                    facts.append(b'older than %s' % opts.newer.encode(
+                        'utf8', 'replace'))
         if opts.md5 and content is not None:
             h = hashlib.md5(content)
             facts.append(b'md5=%s' % binascii.hexlify(h.digest())[:opts.bytes])

@@ -11,6 +11,7 @@ import os
 import sys
 
 from mercurial import (
+    pycompat,
     util,
 )
 
@@ -90,7 +91,7 @@ def request(host, path, show):
             data = json.loads(data)
             lines = json.dumps(data, sort_keys=True, indent=2).splitlines()
             for line in lines:
-                bodyfh.write(line.rstrip())
+                bodyfh.write(pycompat.sysbytes(line.rstrip()))
                 bodyfh.write(b'\n')
         else:
             bodyfh.write(data)

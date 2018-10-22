@@ -13,17 +13,17 @@ typical client does not want echo-back messages, so test without it:
   $ hg init repo
   $ cd repo
 
-  >>> from __future__ import absolute_import, print_function
+  >>> from __future__ import absolute_import
   >>> import os
   >>> import sys
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand
   >>> @check
   ... def hellomessage(server):
   ...     ch, data = readchannel(server)
-  ...     print('%c, %r' % (ch, data))
+  ...     bprint(b'%c, %r' % (ch, data))
   ...     # run an arbitrary command to make sure the next thing the server
   ...     # sends isn't part of the hello message
-  ...     runcommand(server, ['id'])
+  ...     runcommand(server, [b'id'])
   o, 'capabilities: getencoding runcommand\nencoding: *\npid: *' (glob)
   *** runcommand id
   000000000000 tip
@@ -31,7 +31,7 @@ typical client does not want echo-back messages, so test without it:
   >>> from hgclient import check
   >>> @check
   ... def unknowncommand(server):
-  ...     server.stdin.write('unknowncommand\n')
+  ...     server.stdin.write(b'unknowncommand\n')
   abort: unknown command unknowncommand
 
   >>> from hgclient import check, readchannel, runcommand
@@ -44,19 +44,19 @@ typical client does not want echo-back messages, so test without it:
   ...     runcommand(server, [])
   ... 
   ...     # global options
-  ...     runcommand(server, ['id', '--quiet'])
+  ...     runcommand(server, [b'id', b'--quiet'])
   ... 
   ...     # make sure global options don't stick through requests
-  ...     runcommand(server, ['id'])
+  ...     runcommand(server, [b'id'])
   ... 
   ...     # --config
-  ...     runcommand(server, ['id', '--config', 'ui.quiet=True'])
+  ...     runcommand(server, [b'id', b'--config', b'ui.quiet=True'])
   ... 
   ...     # make sure --config doesn't stick
-  ...     runcommand(server, ['id'])
+  ...     runcommand(server, [b'id'])
   ... 
   ...     # negative return code should be masked
-  ...     runcommand(server, ['id', '-runknown'])
+  ...     runcommand(server, [b'id', b'-runknown'])
   *** runcommand 
   Mercurial Distributed SCM
   
@@ -93,16 +93,16 @@ typical client does not want echo-back messages, so test without it:
   abort: unknown revision 'unknown'!
    [255]
 
-  >>> from hgclient import check, readchannel
+  >>> from hgclient import bprint, check, readchannel
   >>> @check
   ... def inputeof(server):
   ...     readchannel(server)
-  ...     server.stdin.write('runcommand\n')
+  ...     server.stdin.write(b'runcommand\n')
   ...     # close stdin while server is waiting for input
   ...     server.stdin.close()
   ... 
   ...     # server exits with 1 if the pipe closed while reading the command
-  ...     print('server exit code =', server.wait())
+  ...     bprint(b'server exit code =', b'%d' % server.wait())
   server exit code = 1
 
   >>> from hgclient import check, readchannel, runcommand, stringio
@@ -110,7 +110,7 @@ typical client does not want echo-back messages, so test without it:
   ... def serverinput(server):
   ...     readchannel(server)
   ... 
-  ...     patch = """
+  ...     patch = b"""
   ... # HG changeset patch
   ... # User test
   ... # Date 0 0
@@ -125,8 +125,8 @@ typical client does not want echo-back messages, so test without it:
   ... +1
   ... """
   ... 
-  ...     runcommand(server, ['import', '-'], input=stringio(patch))
-  ...     runcommand(server, ['log'])
+  ...     runcommand(server, [b'import', b'-'], input=stringio(patch))
+  ...     runcommand(server, [b'log'])
   *** runcommand import -
   applying patch from stdin
   *** runcommand log
@@ -145,23 +145,22 @@ check strict parsing of early options:
   >>> @check
   ... def cwd(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['log', '-b', '--config=alias.log=!echo pwned',
-  ...                         'default'])
+  ...     runcommand(server, [b'log', b'-b', b'--config=alias.log=!echo pwned',
+  ...                         b'default'])
   *** runcommand log -b --config=alias.log=!echo pwned default
   abort: unknown revision '--config=alias.log=!echo pwned'!
    [255]
 
 check that "histedit --commands=-" can read rules from the input channel:
 
-  >>> import cStringIO
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import check, readchannel, runcommand, stringio
   >>> @check
   ... def serverinput(server):
   ...     readchannel(server)
-  ...     rules = 'pick eff892de26ec\n'
-  ...     runcommand(server, ['histedit', '0', '--commands=-',
-  ...                         '--config', 'extensions.histedit='],
-  ...                input=cStringIO.StringIO(rules))
+  ...     rules = b'pick eff892de26ec\n'
+  ...     runcommand(server, [b'histedit', b'0', b'--commands=-',
+  ...                         b'--config', b'extensions.histedit='],
+  ...                input=stringio(rules))
   *** runcommand histedit 0 --commands=- --config extensions.histedit=
 
 check that --cwd doesn't persist between requests:
@@ -172,8 +171,8 @@ check that --cwd doesn't persist between requests:
   >>> @check
   ... def cwd(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['--cwd', 'foo', 'st', 'bar'])
-  ...     runcommand(server, ['st', 'foo/bar'])
+  ...     runcommand(server, [b'--cwd', b'foo', b'st', b'bar'])
+  ...     runcommand(server, [b'st', b'foo/bar'])
   *** runcommand --cwd foo st bar
   ? bar
   *** runcommand st foo/bar
@@ -198,11 +197,11 @@ check that local configs for the cached repo aren't inherited when -R is used:
   ... 
   ...     # the cached repo local hgrc contains ui.foo=bar, so showconfig should
   ...     # show it
-  ...     runcommand(server, ['showconfig'], outfilter=sep)
+  ...     runcommand(server, [b'showconfig'], outfilter=sep)
   ... 
   ...     # but not for this repo
-  ...     runcommand(server, ['init', 'foo'])
-  ...     runcommand(server, ['-R', 'foo', 'showconfig', 'ui', 'defaults'])
+  ...     runcommand(server, [b'init', b'foo'])
+  ...     runcommand(server, [b'-R', b'foo', b'showconfig', b'ui', b'defaults'])
   *** runcommand showconfig
   bundle.mainreporoot=$TESTTMP/repo
   devel.all-warnings=true
@@ -235,21 +234,21 @@ check that local configs for the cached repo aren't inherited when -R is used:
 #endif
 
   $ cat <<EOF > hook.py
-  > from __future__ import print_function
   > import sys
+  > from hgclient import bprint
   > def hook(**args):
-  >     print('hook talking')
-  >     print('now try to read something: %r' % sys.stdin.read())
+  >     bprint(b'hook talking')
+  >     bprint(b'now try to read something: %r' % sys.stdin.read())
   > EOF
 
   >>> from hgclient import check, readchannel, runcommand, stringio
   >>> @check
   ... def hookoutput(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['--config',
-  ...                         'hooks.pre-identify=python:hook.hook',
-  ...                         'id'],
-  ...                input=stringio('some input'))
+  ...     runcommand(server, [b'--config',
+  ...                         b'hooks.pre-identify=python:hook.hook',
+  ...                         b'id'],
+  ...                input=stringio(b'some input'))
   *** runcommand --config hooks.pre-identify=python:hook.hook id
   eff892de26ec tip
   hook talking
@@ -265,10 +264,10 @@ Clean hook cached version
   >>> @check
   ... def outsidechanges(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['status'])
+  ...     runcommand(server, [b'status'])
   ...     os.system('hg ci -Am2')
-  ...     runcommand(server, ['tip'])
-  ...     runcommand(server, ['status'])
+  ...     runcommand(server, [b'tip'])
+  ...     runcommand(server, [b'status'])
   *** runcommand status
   M a
   *** runcommand tip
@@ -281,28 +280,28 @@ Clean hook cached version
   *** runcommand status
 
   >>> import os
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand
   >>> @check
   ... def bookmarks(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['bookmarks'])
+  ...     runcommand(server, [b'bookmarks'])
   ... 
   ...     # changes .hg/bookmarks
   ...     os.system('hg bookmark -i bm1')
   ...     os.system('hg bookmark -i bm2')
-  ...     runcommand(server, ['bookmarks'])
+  ...     runcommand(server, [b'bookmarks'])
   ... 
   ...     # changes .hg/bookmarks.current
   ...     os.system('hg upd bm1 -q')
-  ...     runcommand(server, ['bookmarks'])
+  ...     runcommand(server, [b'bookmarks'])
   ... 
-  ...     runcommand(server, ['bookmarks', 'bm3'])
+  ...     runcommand(server, [b'bookmarks', b'bm3'])
   ...     f = open('a', 'ab')
-  ...     f.write('a\n')
+  ...     f.write(b'a\n') and None
   ...     f.close()
-  ...     runcommand(server, ['commit', '-Amm'])
-  ...     runcommand(server, ['bookmarks'])
-  ...     print('')
+  ...     runcommand(server, [b'commit', b'-Amm'])
+  ...     runcommand(server, [b'bookmarks'])
+  ...     bprint(b'')
   *** runcommand bookmarks
   no bookmarks set
   *** runcommand bookmarks
@@ -324,9 +323,9 @@ Clean hook cached version
   >>> @check
   ... def tagscache(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['id', '-t', '-r', '0'])
+  ...     runcommand(server, [b'id', b'-t', b'-r', b'0'])
   ...     os.system('hg tag -r 0 foo')
-  ...     runcommand(server, ['id', '-t', '-r', '0'])
+  ...     runcommand(server, [b'id', b'-t', b'-r', b'0'])
   *** runcommand id -t -r 0
   
   *** runcommand id -t -r 0
@@ -337,24 +336,24 @@ Clean hook cached version
   >>> @check
   ... def setphase(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['phase', '-r', '.'])
+  ...     runcommand(server, [b'phase', b'-r', b'.'])
   ...     os.system('hg phase -r . -p')
-  ...     runcommand(server, ['phase', '-r', '.'])
+  ...     runcommand(server, [b'phase', b'-r', b'.'])
   *** runcommand phase -r .
   3: draft
   *** runcommand phase -r .
   3: public
 
   $ echo a >> a
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand
   >>> @check
   ... def rollback(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['phase', '-r', '.', '-p'])
-  ...     runcommand(server, ['commit', '-Am.'])
-  ...     runcommand(server, ['rollback'])
-  ...     runcommand(server, ['phase', '-r', '.'])
-  ...     print('')
+  ...     runcommand(server, [b'phase', b'-r', b'.', b'-p'])
+  ...     runcommand(server, [b'commit', b'-Am.'])
+  ...     runcommand(server, [b'rollback'])
+  ...     runcommand(server, [b'phase', b'-r', b'.'])
+  ...     bprint(b'')
   *** runcommand phase -r . -p
   no phases changed
   *** runcommand commit -Am.
@@ -370,9 +369,9 @@ Clean hook cached version
   >>> @check
   ... def branch(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['branch'])
+  ...     runcommand(server, [b'branch'])
   ...     os.system('hg branch foo')
-  ...     runcommand(server, ['branch'])
+  ...     runcommand(server, [b'branch'])
   ...     os.system('hg branch default')
   *** runcommand branch
   default
@@ -385,19 +384,19 @@ Clean hook cached version
 
   $ touch .hgignore
   >>> import os
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand
   >>> @check
   ... def hgignore(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['commit', '-Am.'])
+  ...     runcommand(server, [b'commit', b'-Am.'])
   ...     f = open('ignored-file', 'ab')
-  ...     f.write('')
+  ...     f.write(b'') and None
   ...     f.close()
   ...     f = open('.hgignore', 'ab')
-  ...     f.write('ignored-file')
+  ...     f.write(b'ignored-file')
   ...     f.close()
-  ...     runcommand(server, ['status', '-i', '-u'])
-  ...     print('')
+  ...     runcommand(server, [b'status', b'-i', b'-u'])
+  ...     bprint(b'')
   *** runcommand commit -Am.
   adding .hgignore
   *** runcommand status -i -u
@@ -408,22 +407,22 @@ cache of non-public revisions should be invalidated on repository change
 (issue4855):
 
   >>> import os
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand
   >>> @check
   ... def phasesetscacheaftercommit(server):
   ...     readchannel(server)
   ...     # load _phasecache._phaserevs and _phasesets
-  ...     runcommand(server, ['log', '-qr', 'draft()'])
+  ...     runcommand(server, [b'log', b'-qr', b'draft()'])
   ...     # create draft commits by another process
   ...     for i in range(5, 7):
   ...         f = open('a', 'ab')
   ...         f.seek(0, os.SEEK_END)
-  ...         f.write('a\n')
+  ...         f.write(b'a\n') and None
   ...         f.close()
   ...         os.system('hg commit -Aqm%d' % i)
   ...     # new commits should be listed as draft revisions
-  ...     runcommand(server, ['log', '-qr', 'draft()'])
-  ...     print('')
+  ...     runcommand(server, [b'log', b'-qr', b'draft()'])
+  ...     bprint(b'')
   *** runcommand log -qr draft()
   4:7966c8e3734d
   *** runcommand log -qr draft()
@@ -433,17 +432,17 @@ cache of non-public revisions should be invalidated on repository change
   
 
   >>> import os
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand
   >>> @check
   ... def phasesetscacheafterstrip(server):
   ...     readchannel(server)
   ...     # load _phasecache._phaserevs and _phasesets
-  ...     runcommand(server, ['log', '-qr', 'draft()'])
+  ...     runcommand(server, [b'log', b'-qr', b'draft()'])
   ...     # strip cached revisions by another process
   ...     os.system('hg --config extensions.strip= strip -q 5')
   ...     # shouldn't abort by "unknown revision '6'"
-  ...     runcommand(server, ['log', '-qr', 'draft()'])
-  ...     print('')
+  ...     runcommand(server, [b'log', b'-qr', b'draft()'])
+  ...     bprint(b'')
   *** runcommand log -qr draft()
   4:7966c8e3734d
   5:41f6602d1c4f
@@ -461,23 +460,23 @@ cache of phase roots should be invalidated on strip (issue3827):
   ...     readchannel(server)
   ... 
   ...     # create new head, 5:731265503d86
-  ...     runcommand(server, ['update', '-C', '0'])
+  ...     runcommand(server, [b'update', b'-C', b'0'])
   ...     f = open('a', 'ab')
-  ...     f.write('a\n')
+  ...     f.write(b'a\n') and None
   ...     f.close()
-  ...     runcommand(server, ['commit', '-Am.', 'a'])
-  ...     runcommand(server, ['log', '-Gq'])
+  ...     runcommand(server, [b'commit', b'-Am.', b'a'])
+  ...     runcommand(server, [b'log', b'-Gq'])
   ... 
   ...     # make it public; draft marker moves to 4:7966c8e3734d
-  ...     runcommand(server, ['phase', '-p', '.'])
+  ...     runcommand(server, [b'phase', b'-p', b'.'])
   ...     # load _phasecache.phaseroots
-  ...     runcommand(server, ['phase', '.'], outfilter=sep)
+  ...     runcommand(server, [b'phase', b'.'], outfilter=sep)
   ... 
   ...     # strip 1::4 outside server
   ...     os.system('hg -q --config extensions.mq= strip 1')
   ... 
   ...     # shouldn't raise "7966c8e3734d: no node!"
-  ...     runcommand(server, ['branches'])
+  ...     runcommand(server, [b'branches'])
   *** runcommand update -C 0
   1 files updated, 0 files merged, 2 files removed, 0 files unresolved
   (leaving bookmark bm3)
@@ -510,9 +509,9 @@ changelog and manifest would have invalid node:
   >>> @check
   ... def txabort(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['commit', '--config', 'hooks.pretxncommit=false',
-  ...                         '-mfoo'])
-  ...     runcommand(server, ['verify'])
+  ...     runcommand(server, [b'commit', b'--config', b'hooks.pretxncommit=false',
+  ...                         b'-mfoo'])
+  ...     runcommand(server, [b'verify'])
   *** runcommand commit --config hooks.pretxncommit=false -mfoo
   transaction abort!
   rollback completed
@@ -523,7 +522,7 @@ changelog and manifest would have invalid node:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 1 files
   $ hg revert --no-backup -aq
 
   $ cat >> .hg/hgrc << EOF
@@ -537,14 +536,14 @@ changelog and manifest would have invalid node:
   ... def obsolete(server):
   ...     readchannel(server)
   ... 
-  ...     runcommand(server, ['up', 'null'])
-  ...     runcommand(server, ['phase', '-df', 'tip'])
+  ...     runcommand(server, [b'up', b'null'])
+  ...     runcommand(server, [b'phase', b'-df', b'tip'])
   ...     cmd = 'hg debugobsolete `hg log -r tip --template {node}`'
   ...     if os.name == 'nt':
   ...         cmd = 'sh -c "%s"' % cmd # run in sh, not cmd.exe
   ...     os.system(cmd)
-  ...     runcommand(server, ['log', '--hidden'])
-  ...     runcommand(server, ['log'])
+  ...     runcommand(server, [b'log', b'--hidden'])
+  ...     runcommand(server, [b'log'])
   *** runcommand up null
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   *** runcommand phase -df tip
@@ -588,15 +587,15 @@ changelog and manifest would have invalid node:
   ...     readchannel(server)
   ... 
   ...     # load repo.mq
-  ...     runcommand(server, ['qapplied'])
+  ...     runcommand(server, [b'qapplied'])
   ...     os.system('hg qnew 0.diff')
   ...     # repo.mq should be invalidated
-  ...     runcommand(server, ['qapplied'])
+  ...     runcommand(server, [b'qapplied'])
   ... 
-  ...     runcommand(server, ['qpop', '--all'])
+  ...     runcommand(server, [b'qpop', b'--all'])
   ...     os.system('hg qqueue --create foo')
   ...     # repo.mq should be recreated to point to new queue
-  ...     runcommand(server, ['qqueue', '--active'])
+  ...     runcommand(server, [b'qqueue', b'--active'])
   *** runcommand qapplied
   *** runcommand qapplied
   0.diff
@@ -614,16 +613,16 @@ changelog and manifest would have invalid node:
   > command = registrar.command(cmdtable)
   > @command(b"debuggetpass", norepo=True)
   > def debuggetpass(ui):
-  >     ui.write("%s\\n" % ui.getpass())
+  >     ui.write(b"%s\\n" % ui.getpass())
   > @command(b"debugprompt", norepo=True)
   > def debugprompt(ui):
-  >     ui.write("%s\\n" % ui.prompt("prompt:"))
+  >     ui.write(b"%s\\n" % ui.prompt(b"prompt:"))
   > @command(b"debugreadstdin", norepo=True)
   > def debugreadstdin(ui):
-  >     ui.write("read: %r\n" % sys.stdin.read(1))
+  >     ui.write(b"read: %r\n" % sys.stdin.read(1))
   > @command(b"debugwritestdout", norepo=True)
   > def debugwritestdout(ui):
-  >     os.write(1, "low-level stdout fd and\n")
+  >     os.write(1, b"low-level stdout fd and\n")
   >     sys.stdout.write("stdout should be redirected to stderr\n")
   >     sys.stdout.flush()
   > EOF
@@ -636,20 +635,20 @@ changelog and manifest would have invalid node:
   >>> @check
   ... def getpass(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['debuggetpass', '--config',
-  ...                         'ui.interactive=True'],
-  ...                input=stringio('1234\n'))
-  ...     runcommand(server, ['debuggetpass', '--config',
-  ...                         'ui.interactive=True'],
-  ...                input=stringio('\n'))
-  ...     runcommand(server, ['debuggetpass', '--config',
-  ...                         'ui.interactive=True'],
-  ...                input=stringio(''))
-  ...     runcommand(server, ['debugprompt', '--config',
-  ...                         'ui.interactive=True'],
-  ...                input=stringio('5678\n'))
-  ...     runcommand(server, ['debugreadstdin'])
-  ...     runcommand(server, ['debugwritestdout'])
+  ...     runcommand(server, [b'debuggetpass', b'--config',
+  ...                         b'ui.interactive=True'],
+  ...                input=stringio(b'1234\n'))
+  ...     runcommand(server, [b'debuggetpass', b'--config',
+  ...                         b'ui.interactive=True'],
+  ...                input=stringio(b'\n'))
+  ...     runcommand(server, [b'debuggetpass', b'--config',
+  ...                         b'ui.interactive=True'],
+  ...                input=stringio(b''))
+  ...     runcommand(server, [b'debugprompt', b'--config',
+  ...                         b'ui.interactive=True'],
+  ...                input=stringio(b'5678\n'))
+  ...     runcommand(server, [b'debugreadstdin'])
+  ...     runcommand(server, [b'debugwritestdout'])
   *** runcommand debuggetpass --config ui.interactive=True
   password: 1234
   *** runcommand debuggetpass --config ui.interactive=True
@@ -668,19 +667,18 @@ changelog and manifest would have invalid node:
 
 run commandserver in commandserver, which is silly but should work:
 
-  >>> from __future__ import print_function
-  >>> from hgclient import check, readchannel, runcommand, stringio
+  >>> from hgclient import bprint, check, readchannel, runcommand, stringio
   >>> @check
   ... def nested(server):
-  ...     print('%c, %r' % readchannel(server))
+  ...     bprint(b'%c, %r' % readchannel(server))
   ...     class nestedserver(object):
-  ...         stdin = stringio('getencoding\n')
+  ...         stdin = stringio(b'getencoding\n')
   ...         stdout = stringio()
-  ...     runcommand(server, ['serve', '--cmdserver', 'pipe'],
+  ...     runcommand(server, [b'serve', b'--cmdserver', b'pipe'],
   ...                output=nestedserver.stdout, input=nestedserver.stdin)
   ...     nestedserver.stdout.seek(0)
-  ...     print('%c, %r' % readchannel(nestedserver))  # hello
-  ...     print('%c, %r' % readchannel(nestedserver))  # getencoding
+  ...     bprint(b'%c, %r' % readchannel(nestedserver))  # hello
+  ...     bprint(b'%c, %r' % readchannel(nestedserver))  # getencoding
   o, 'capabilities: getencoding runcommand\nencoding: *\npid: *' (glob)
   *** runcommand serve --cmdserver pipe
   o, 'capabilities: getencoding runcommand\nencoding: *\npid: *' (glob)
@@ -691,15 +689,14 @@ start without repository:
 
   $ cd ..
 
-  >>> from __future__ import print_function
-  >>> from hgclient import check, readchannel, runcommand
+  >>> from hgclient import bprint, check, readchannel, runcommand
   >>> @check
   ... def hellomessage(server):
   ...     ch, data = readchannel(server)
-  ...     print('%c, %r' % (ch, data))
+  ...     bprint(b'%c, %r' % (ch, data))
   ...     # run an arbitrary command to make sure the next thing the server
   ...     # sends isn't part of the hello message
-  ...     runcommand(server, ['id'])
+  ...     runcommand(server, [b'id'])
   o, 'capabilities: getencoding runcommand\nencoding: *\npid: *' (glob)
   *** runcommand id
   abort: there is no Mercurial repository here (.hg not found)
@@ -709,8 +706,8 @@ start without repository:
   >>> @check
   ... def startwithoutrepo(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['init', 'repo2'])
-  ...     runcommand(server, ['id', '-R', 'repo2'])
+  ...     runcommand(server, [b'init', b'repo2'])
+  ...     runcommand(server, [b'id', b'-R', b'repo2'])
   *** runcommand init repo2
   *** runcommand id -R repo2
   000000000000 tip
@@ -732,24 +729,23 @@ unix domain socket:
 
 #if unix-socket unix-permissions
 
-  >>> from __future__ import print_function
-  >>> from hgclient import check, readchannel, runcommand, stringio, unixserver
-  >>> server = unixserver('.hg/server.sock', '.hg/server.log')
+  >>> from hgclient import bprint, check, readchannel, runcommand, stringio, unixserver
+  >>> server = unixserver(b'.hg/server.sock', b'.hg/server.log')
   >>> def hellomessage(conn):
   ...     ch, data = readchannel(conn)
-  ...     print('%c, %r' % (ch, data))
-  ...     runcommand(conn, ['id'])
+  ...     bprint(b'%c, %r' % (ch, data))
+  ...     runcommand(conn, [b'id'])
   >>> check(hellomessage, server.connect)
   o, 'capabilities: getencoding runcommand\nencoding: *\npid: *' (glob)
   *** runcommand id
   eff892de26ec tip bm1/bm2/bm3
   >>> def unknowncommand(conn):
   ...     readchannel(conn)
-  ...     conn.stdin.write('unknowncommand\n')
+  ...     conn.stdin.write(b'unknowncommand\n')
   >>> check(unknowncommand, server.connect)  # error sent to server.log
   >>> def serverinput(conn):
   ...     readchannel(conn)
-  ...     patch = """
+  ...     patch = b"""
   ... # HG changeset patch
   ... # User test
   ... # Date 0 0
@@ -762,8 +758,8 @@ unix domain socket:
   ...  1
   ... +2
   ... """
-  ...     runcommand(conn, ['import', '-'], input=stringio(patch))
-  ...     runcommand(conn, ['log', '-rtip', '-q'])
+  ...     runcommand(conn, [b'import', b'-'], input=stringio(patch))
+  ...     runcommand(conn, [b'log', b'-rtip', b'-q'])
   >>> check(serverinput, server.connect)
   *** runcommand import -
   applying patch from stdin
@@ -784,26 +780,26 @@ unix domain socket:
   > [cmdserver]
   > log = inexistent/path.log
   > EOF
-  >>> from __future__ import print_function
-  >>> from hgclient import check, readchannel, unixserver
-  >>> server = unixserver('.hg/server.sock', '.hg/server.log')
+  >>> from hgclient import bprint, check, readchannel, unixserver
+  >>> server = unixserver(b'.hg/server.sock', b'.hg/server.log')
   >>> def earlycrash(conn):
   ...     while True:
   ...         try:
   ...             ch, data = readchannel(conn)
-  ...             if not data.startswith('  '):
-  ...                 print('%c, %r' % (ch, data))
+  ...             for l in data.splitlines(True):
+  ...                 if not l.startswith(b'  '):
+  ...                     bprint(b'%c, %r' % (ch, l))
   ...         except EOFError:
   ...             break
   >>> check(earlycrash, server.connect)
   e, 'Traceback (most recent call last):\n'
-  e, "IOError: *" (glob)
+  e, "(IOError|FileNotFoundError): .*" (re)
   >>> server.shutdown()
 
   $ cat .hg/server.log | grep -v '^  '
   listening at .hg/server.sock
   Traceback (most recent call last):
-  IOError: * (glob)
+  (IOError|FileNotFoundError): .* (re)
   killed!
 #endif
 #if no-unix-socket
@@ -835,19 +831,19 @@ cases.
   > command = registrar.command(cmdtable)
   > configtable = {}
   > configitem = registrar.configitem(configtable)
-  > configitem('failafterfinalize', 'fail',
+  > configitem(b'failafterfinalize', b'fail',
   >     default=None,
   > )
   > def fail(tr):
-  >     raise error.Abort('fail after finalization')
+  >     raise error.Abort(b'fail after finalization')
   > def reposetup(ui, repo):
   >     class failrepo(repo.__class__):
   >         def commitctx(self, ctx, error=False):
-  >             if self.ui.configbool('failafterfinalize', 'fail'):
+  >             if self.ui.configbool(b'failafterfinalize', b'fail'):
   >                 # 'sorted()' by ASCII code on category names causes
   >                 # invoking 'fail' after finalization of changelog
   >                 # using "'cl-%i' % id(self)" as category name
-  >                 self.currenttransaction().addfinalize('zzzzzzzz', fail)
+  >                 self.currenttransaction().addfinalize(b'zzzzzzzz', fail)
   >             return super(failrepo, self).commitctx(ctx, error)
   >     repo.__class__ = failrepo
   > EOF
@@ -874,11 +870,11 @@ cases.
   >>> @check
   ... def abort(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['commit',
-  ...                         '--config', 'hooks.pretxncommit=false',
-  ...                         '-mfoo'])
-  ...     runcommand(server, ['log'])
-  ...     runcommand(server, ['verify', '-q'])
+  ...     runcommand(server, [b'commit',
+  ...                         b'--config', b'hooks.pretxncommit=false',
+  ...                         b'-mfoo'])
+  ...     runcommand(server, [b'log'])
+  ...     runcommand(server, [b'verify', b'-q'])
   *** runcommand commit --config hooks.pretxncommit=false -mfoo
   transaction abort!
   rollback completed
@@ -893,11 +889,11 @@ cases.
   >>> @check
   ... def abort(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['commit',
-  ...                         '--config', 'failafterfinalize.fail=true',
-  ...                         '-mfoo'])
-  ...     runcommand(server, ['log'])
-  ...     runcommand(server, ['verify', '-q'])
+  ...     runcommand(server, [b'commit',
+  ...                         b'--config', b'failafterfinalize.fail=true',
+  ...                         b'-mfoo'])
+  ...     runcommand(server, [b'log'])
+  ...     runcommand(server, [b'verify', b'-q'])
   *** runcommand commit --config failafterfinalize.fail=true -mfoo
   transaction abort!
   rollback completed
@@ -918,11 +914,11 @@ cases.
   >>> @check
   ... def abort(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['commit',
-  ...                         '--config', 'hooks.pretxncommit=false',
-  ...                         '-mfoo', 'foo'])
-  ...     runcommand(server, ['log'])
-  ...     runcommand(server, ['verify', '-q'])
+  ...     runcommand(server, [b'commit',
+  ...                         b'--config', b'hooks.pretxncommit=false',
+  ...                         b'-mfoo', b'foo'])
+  ...     runcommand(server, [b'log'])
+  ...     runcommand(server, [b'verify', b'-q'])
   *** runcommand commit --config hooks.pretxncommit=false -mfoo foo
   transaction abort!
   rollback completed
@@ -938,11 +934,11 @@ cases.
   >>> @check
   ... def abort(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['commit',
-  ...                         '--config', 'failafterfinalize.fail=true',
-  ...                         '-mfoo', 'foo'])
-  ...     runcommand(server, ['log'])
-  ...     runcommand(server, ['verify', '-q'])
+  ...     runcommand(server, [b'commit',
+  ...                         b'--config', b'failafterfinalize.fail=true',
+  ...                         b'-mfoo', b'foo'])
+  ...     runcommand(server, [b'log'])
+  ...     runcommand(server, [b'verify', b'-q'])
   *** runcommand commit --config failafterfinalize.fail=true -mfoo foo
   transaction abort!
   rollback completed
@@ -989,10 +985,10 @@ and the merge should fail (issue5628)
   ... def merge(server):
   ...     readchannel(server)
   ...     # audit a/poisoned as a good path
-  ...     runcommand(server, ['up', '-qC', '2'])
-  ...     runcommand(server, ['up', '-qC', '1'])
+  ...     runcommand(server, [b'up', b'-qC', b'2'])
+  ...     runcommand(server, [b'up', b'-qC', b'1'])
   ...     # here a is a symlink, so a/poisoned is bad
-  ...     runcommand(server, ['merge', '2'])
+  ...     runcommand(server, [b'merge', b'2'])
   *** runcommand up -qC 2
   *** runcommand up -qC 1
   *** runcommand merge 2
@@ -1009,13 +1005,13 @@ symlinks:
   >>> @check
   ... def files(server):
   ...     readchannel(server)
-  ...     runcommand(server, ['up', '-qC', '2'])
+  ...     runcommand(server, [b'up', b'-qC', b'2'])
   ...     # audit a/poisoned as a good path
-  ...     runcommand(server, ['files', 'a/poisoned'])
-  ...     runcommand(server, ['up', '-qC', '0'])
-  ...     runcommand(server, ['up', '-qC', '1'])
+  ...     runcommand(server, [b'files', b'a/poisoned'])
+  ...     runcommand(server, [b'up', b'-qC', b'0'])
+  ...     runcommand(server, [b'up', b'-qC', b'1'])
   ...     # here 'a' is a symlink, so a/poisoned should be warned
-  ...     runcommand(server, ['files', 'a/poisoned'])
+  ...     runcommand(server, [b'files', b'a/poisoned'])
   *** runcommand up -qC 2
   *** runcommand files a/poisoned
   a/poisoned

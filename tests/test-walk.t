@@ -143,25 +143,25 @@
 
   $ hg debugwalk -v 'rootfilesin:'
   * matcher:
-  <patternmatcher patterns='(?:[^/]+$)'>
+  <patternmatcher patterns="rootfilesin: ['.']">
   f  fennel      ../fennel
   f  fenugreek   ../fenugreek
   f  fiddlehead  ../fiddlehead
   $ hg debugwalk -v -I 'rootfilesin:'
   * matcher:
-  <includematcher includes='(?:[^/]+$)'>
+  <includematcher includes="rootfilesin: ['.']">
   f  fennel      ../fennel
   f  fenugreek   ../fenugreek
   f  fiddlehead  ../fiddlehead
   $ hg debugwalk -v 'rootfilesin:.'
   * matcher:
-  <patternmatcher patterns='(?:[^/]+$)'>
+  <patternmatcher patterns="rootfilesin: ['.']">
   f  fennel      ../fennel
   f  fenugreek   ../fenugreek
   f  fiddlehead  ../fiddlehead
   $ hg debugwalk -v -I 'rootfilesin:.'
   * matcher:
-  <includematcher includes='(?:[^/]+$)'>
+  <includematcher includes="rootfilesin: ['.']">
   f  fennel      ../fennel
   f  fenugreek   ../fenugreek
   f  fiddlehead  ../fiddlehead
@@ -169,7 +169,7 @@
   * matcher:
   <differencematcher
     m1=<alwaysmatcher>,
-    m2=<includematcher includes='(?:[^/]+$)'>>
+    m2=<includematcher includes="rootfilesin: ['.']">>
   f  beans/black                     ../beans/black
   f  beans/borlotti                  ../beans/borlotti
   f  beans/kidney                    ../beans/kidney
@@ -182,19 +182,19 @@
   f  mammals/skunk                   skunk
   $ hg debugwalk -v 'rootfilesin:fennel'
   * matcher:
-  <patternmatcher patterns='(?:fennel/[^/]+$)'>
+  <patternmatcher patterns="rootfilesin: ['fennel']">
   $ hg debugwalk -v -I 'rootfilesin:fennel'
   * matcher:
-  <includematcher includes='(?:fennel/[^/]+$)'>
+  <includematcher includes="rootfilesin: ['fennel']">
   $ hg debugwalk -v 'rootfilesin:skunk'
   * matcher:
-  <patternmatcher patterns='(?:skunk/[^/]+$)'>
+  <patternmatcher patterns="rootfilesin: ['skunk']">
   $ hg debugwalk -v -I 'rootfilesin:skunk'
   * matcher:
-  <includematcher includes='(?:skunk/[^/]+$)'>
+  <includematcher includes="rootfilesin: ['skunk']">
   $ hg debugwalk -v 'rootfilesin:beans'
   * matcher:
-  <patternmatcher patterns='(?:beans/[^/]+$)'>
+  <patternmatcher patterns="rootfilesin: ['beans']">
   f  beans/black     ../beans/black
   f  beans/borlotti  ../beans/borlotti
   f  beans/kidney    ../beans/kidney
@@ -203,7 +203,7 @@
   f  beans/turtle    ../beans/turtle
   $ hg debugwalk -v -I 'rootfilesin:beans'
   * matcher:
-  <includematcher includes='(?:beans/[^/]+$)'>
+  <includematcher includes="rootfilesin: ['beans']">
   f  beans/black     ../beans/black
   f  beans/borlotti  ../beans/borlotti
   f  beans/kidney    ../beans/kidney
@@ -212,25 +212,25 @@
   f  beans/turtle    ../beans/turtle
   $ hg debugwalk -v 'rootfilesin:mammals'
   * matcher:
-  <patternmatcher patterns='(?:mammals/[^/]+$)'>
+  <patternmatcher patterns="rootfilesin: ['mammals']">
   f  mammals/skunk  skunk
   $ hg debugwalk -v -I 'rootfilesin:mammals'
   * matcher:
-  <includematcher includes='(?:mammals/[^/]+$)'>
+  <includematcher includes="rootfilesin: ['mammals']">
   f  mammals/skunk  skunk
   $ hg debugwalk -v 'rootfilesin:mammals/'
   * matcher:
-  <patternmatcher patterns='(?:mammals/[^/]+$)'>
+  <patternmatcher patterns="rootfilesin: ['mammals']">
   f  mammals/skunk  skunk
   $ hg debugwalk -v -I 'rootfilesin:mammals/'
   * matcher:
-  <includematcher includes='(?:mammals/[^/]+$)'>
+  <includematcher includes="rootfilesin: ['mammals']">
   f  mammals/skunk  skunk
   $ hg debugwalk -v -X 'rootfilesin:mammals'
   * matcher:
   <differencematcher
     m1=<alwaysmatcher>,
-    m2=<includematcher includes='(?:mammals/[^/]+$)'>>
+    m2=<includematcher includes="rootfilesin: ['mammals']">>
   f  beans/black                     ../beans/black
   f  beans/borlotti                  ../beans/borlotti
   f  beans/kidney                    ../beans/kidney
@@ -603,13 +603,13 @@ Test patterns:
 
 Test listfile and listfile0
 
-  $ $PYTHON -c "open('listfile0', 'wb').write(b'fenugreek\0new\0')"
+  $ "$PYTHON" -c "open('listfile0', 'wb').write(b'fenugreek\0new\0')"
   $ hg debugwalk -v -I 'listfile0:listfile0'
   * matcher:
   <includematcher includes='(?:fenugreek(?:/|$)|new(?:/|$))'>
   f  fenugreek  fenugreek
   f  new        new
-  $ $PYTHON -c "open('listfile', 'wb').write(b'fenugreek\nnew\r\nmammals/skunk\n')"
+  $ "$PYTHON" -c "open('listfile', 'wb').write(b'fenugreek\nnew\r\nmammals/skunk\n')"
   $ hg debugwalk -v -I 'listfile:listfile'
   * matcher:
   <includematcher includes='(?:fenugreek(?:/|$)|new(?:/|$)|mammals/skunk(?:/|$))'>
@@ -644,7 +644,7 @@ Test split patterns on overflow
   > for i in range(20000 // 100):
   >   print('x' * 100)
   > EOF
-  $ $PYTHON printnum.py >> overflow.list
+  $ "$PYTHON" printnum.py >> overflow.list
   $ echo fenugreek >> overflow.list
   $ hg debugwalk 'listfile:overflow.list' 2>&1 | egrep -v '^xxx'
   f  fennel     fennel     exact

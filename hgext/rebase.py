@@ -177,6 +177,7 @@ class rebaseruntime(object):
         if e:
             self.extrafns = [e]
 
+        self.backupf = ui.configbool('ui', 'history-editing-backup')
         self.keepf = opts.get('keep', False)
         self.keepbranchesf = opts.get('keepbranches', False)
         self.obsoletenotrebased = {}
@@ -343,7 +344,9 @@ class rebaseruntime(object):
                 msg = _('cannot continue inconsistent rebase')
                 hint = _('use "hg rebase --abort" to clear broken state')
                 raise error.Abort(msg, hint=hint)
+
         if isabort:
+            backup = backup and self.backupf
             return abort(self.repo, self.originalwd, self.destmap, self.state,
                          activebookmark=self.activebookmark, backup=backup,
                          suppwarns=suppwarns)
@@ -632,7 +635,7 @@ class rebaseruntime(object):
         if self.collapsef and not self.keepf:
             collapsedas = newnode
         clearrebased(ui, repo, self.destmap, self.state, self.skipped,
-                     collapsedas, self.keepf, fm=fm)
+                     collapsedas, self.keepf, fm=fm, backup=self.backupf)
 
         clearstatus(repo)
         clearcollapsemsg(repo)
@@ -670,12 +673,14 @@ class rebaseruntime(object):
     ('D', 'detach', False, _('(DEPRECATED)')),
     ('i', 'interactive', False, _('(DEPRECATED)')),
     ('t', 'tool', '', _('specify merge tool')),
+    ('', 'stop', False, _('stop interrupted rebase')),
     ('c', 'continue', False, _('continue an interrupted rebase')),
     ('a', 'abort', False, _('abort an interrupted rebase')),
     ('', 'auto-orphans', '', _('automatically rebase orphan revisions '
                                'in the specified revset (EXPERIMENTAL)')),
      ] + cmdutil.dryrunopts + cmdutil.formatteropts + cmdutil.confirmopts,
-    _('[-s REV | -b REV] [-d REV] [OPTION]'))
+    _('[-s REV | -b REV] [-d REV] [OPTION]'),
+    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
 def rebase(ui, repo, **opts):
     """move changeset (and descendants) to a different branch
 
@@ -729,7 +734,8 @@ def rebase(ui, repo, **opts):
     deleted, there is no hook presently available for this.
 
     If a rebase is interrupted to manually resolve a conflict, it can be
-    continued with --continue/-c or aborted with --abort/-a.
+    continued with --continue/-c, aborted with --abort/-a, or stopped with
+    --stop.
 
     .. container:: verbose
 
@@ -800,22 +806,20 @@ def rebase(ui, repo, **opts):
     opts = pycompat.byteskwargs(opts)
     inmemory = ui.configbool('rebase', 'experimental.inmemory')
     dryrun = opts.get('dry_run')
-    if dryrun:
-        if opts.get('abort'):
-            raise error.Abort(_('cannot specify both --dry-run and --abort'))
-        if opts.get('continue'):
-            raise error.Abort(_('cannot specify both --dry-run and --continue'))
-    if opts.get('confirm'):
-        dryrun = True
-        if opts.get('dry_run'):
-            raise error.Abort(_('cannot specify both --confirm and --dry-run'))
-        if opts.get('abort'):
-            raise error.Abort(_('cannot specify both --confirm and --abort'))
-        if opts.get('continue'):
-            raise error.Abort(_('cannot specify both --confirm and --continue'))
+    confirm = opts.get('confirm')
+    selactions = [k for k in ['abort', 'stop', 'continue'] if opts.get(k)]
+    if len(selactions) > 1:
+        raise error.Abort(_('cannot use --%s with --%s')
+                          % tuple(selactions[:2]))
+    action = selactions[0] if selactions else None
+    if dryrun and action:
+        raise error.Abort(_('cannot specify both --dry-run and --%s') % action)
+    if confirm and action:
+        raise error.Abort(_('cannot specify both --confirm and --%s') % action)
+    if dryrun and confirm:
+        raise error.Abort(_('cannot specify both --confirm and --dry-run'))
 
-    if (opts.get('continue') or opts.get('abort') or
-        repo.currenttransaction() is not None):
+    if action or repo.currenttransaction() is not None:
         # in-memory rebase is not compatible with resuming rebases.
         # (Or if it is run within a transaction, since the restart logic can
         # fail the entire transaction.)
@@ -830,24 +834,43 @@ def rebase(ui, repo, **opts):
         opts['rev'] = [revsetlang.formatspec('%ld and orphan()', userrevs)]
         opts['dest'] = '_destautoorphanrebase(SRC)'
 
-    if dryrun:
-        return _dryrunrebase(ui, repo, opts)
+    if dryrun or confirm:
+        return _dryrunrebase(ui, repo, action, opts)
+    elif action == 'stop':
+        rbsrt = rebaseruntime(repo, ui)
+        with repo.wlock(), repo.lock():
+            rbsrt.restorestatus()
+            if rbsrt.collapsef:
+                raise error.Abort(_("cannot stop in --collapse session"))
+            allowunstable = obsolete.isenabled(repo, obsolete.allowunstableopt)
+            if not (rbsrt.keepf or allowunstable):
+                raise error.Abort(_("cannot remove original changesets with"
+                                    " unrebased descendants"),
+                    hint=_('either enable obsmarkers to allow unstable '
+                           'revisions or use --keep to keep original '
+                           'changesets'))
+            if needupdate(repo, rbsrt.state):
+                # update to the current working revision
+                # to clear interrupted merge
+                hg.updaterepo(repo, rbsrt.originalwd, overwrite=True)
+            rbsrt._finishrebase()
+            return 0
     elif inmemory:
         try:
             # in-memory merge doesn't support conflicts, so if we hit any, abort
             # and re-run as an on-disk merge.
             overrides = {('rebase', 'singletransaction'): True}
             with ui.configoverride(overrides, 'rebase'):
-                return _dorebase(ui, repo, opts, inmemory=inmemory)
+                return _dorebase(ui, repo, action, opts, inmemory=inmemory)
         except error.InMemoryMergeConflictsError:
             ui.warn(_('hit merge conflicts; re-running rebase without in-memory'
                       ' merge\n'))
-            _dorebase(ui, repo, {'abort': True})
-            return _dorebase(ui, repo, opts, inmemory=False)
+            _dorebase(ui, repo, action='abort', opts={})
+            return _dorebase(ui, repo, action, opts, inmemory=False)
     else:
-        return _dorebase(ui, repo, opts)
+        return _dorebase(ui, repo, action, opts)
 
-def _dryrunrebase(ui, repo, opts):
+def _dryrunrebase(ui, repo, action, opts):
     rbsrt = rebaseruntime(repo, ui, inmemory=True, opts=opts)
     confirm = opts.get('confirm')
     if confirm:
@@ -860,7 +883,7 @@ def _dryrunrebase(ui, repo, opts):
         try:
             overrides = {('rebase', 'singletransaction'): True}
             with ui.configoverride(overrides, 'rebase'):
-                _origrebase(ui, repo, opts, rbsrt, inmemory=True,
+                _origrebase(ui, repo, action, opts, rbsrt, inmemory=True,
                             leaveunfinished=True)
         except error.InMemoryMergeConflictsError:
             ui.status(_('hit a merge conflict\n'))
@@ -886,11 +909,13 @@ def _dryrunrebase(ui, repo, opts):
                 rbsrt._prepareabortorcontinue(isabort=True, backup=False,
                                               suppwarns=True)
 
-def _dorebase(ui, repo, opts, inmemory=False):
+def _dorebase(ui, repo, action, opts, inmemory=False):
     rbsrt = rebaseruntime(repo, ui, inmemory, opts)
-    return _origrebase(ui, repo, opts, rbsrt, inmemory=inmemory)
+    return _origrebase(ui, repo, action, opts, rbsrt, inmemory=inmemory)
 
-def _origrebase(ui, repo, opts, rbsrt, inmemory=False, leaveunfinished=False):
+def _origrebase(ui, repo, action, opts, rbsrt, inmemory=False,
+                leaveunfinished=False):
+    assert action != 'stop'
     with repo.wlock(), repo.lock():
         # Validate input and define rebasing points
         destf = opts.get('dest', None)
@@ -900,8 +925,6 @@ def _origrebase(ui, repo, opts, rbsrt, inmemory=False, leaveunfinished=False):
         # search default destination in this space
         # used in the 'hg pull --rebase' case, see issue 5214.
         destspace = opts.get('_destspace')
-        contf = opts.get('continue')
-        abortf = opts.get('abort')
         if opts.get('interactive'):
             try:
                 if extensions.find('histedit'):
@@ -917,22 +940,20 @@ def _origrebase(ui, repo, opts, rbsrt, inmemory=False, leaveunfinished=False):
             raise error.Abort(
                 _('message can only be specified with collapse'))
 
-        if contf or abortf:
-            if contf and abortf:
-                raise error.Abort(_('cannot use both abort and continue'))
+        if action:
             if rbsrt.collapsef:
                 raise error.Abort(
                     _('cannot use collapse with continue or abort'))
             if srcf or basef or destf:
                 raise error.Abort(
                     _('abort and continue do not allow specifying revisions'))
-            if abortf and opts.get('tool', False):
+            if action == 'abort' and opts.get('tool', False):
                 ui.warn(_('tool option will be ignored\n'))
-            if contf:
+            if action == 'continue':
                 ms = mergemod.mergestate.read(repo)
                 mergeutil.checkunresolved(ms)
 
-            retcode = rbsrt._prepareabortorcontinue(abortf)
+            retcode = rbsrt._prepareabortorcontinue(isabort=(action == 'abort'))
             if retcode is not None:
                 return retcode
         else:
@@ -1167,7 +1188,7 @@ def rebasenode(repo, rev, p1, base, collapse, dest, wctx):
     else:
         if repo['.'].rev() != p1:
             repo.ui.debug(" update to %d:%s\n" % (p1, repo[p1]))
-            mergemod.update(repo, p1, False, True)
+            mergemod.update(repo, p1, branchmerge=False, force=True)
         else:
             repo.ui.debug(" already in destination\n")
         # This is, alas, necessary to invalidate workingctx's manifest cache,
@@ -1179,7 +1200,8 @@ def rebasenode(repo, rev, p1, base, collapse, dest, wctx):
         repo.ui.debug("   detach base %d:%s\n" % (base, repo[base]))
     # When collapsing in-place, the parent is the common ancestor, we
     # have to allow merging with it.
-    stats = mergemod.update(repo, rev, True, True, base, collapse,
+    stats = mergemod.update(repo, rev, branchmerge=True, force=True,
+                            ancestor=base, mergeancestor=collapse,
                             labels=['dest', 'source'], wc=wctx)
     if collapse:
         copies.duplicatecopies(repo, wctx, rev, dest)
@@ -1622,7 +1644,7 @@ def abort(repo, originalwd, destmap, state, activebookmark=None, backup=True,
 
             # Update away from the rebase if necessary
             if shouldupdate or needupdate(repo, state):
-                mergemod.update(repo, originalwd, False, True)
+                mergemod.update(repo, originalwd, branchmerge=False, force=True)
 
             # Strip from the first rebased revision
             if rebased:
@@ -1728,7 +1750,7 @@ def buildstate(repo, destmap, collapse):
     return originalwd, destmap, state
 
 def clearrebased(ui, repo, destmap, state, skipped, collapsedas=None,
-                 keepf=False, fm=None):
+                 keepf=False, fm=None, backup=True):
     """dispose of rebased revision at the end of the rebase
 
     If `collapsedas` is not None, the rebase was a collapse whose result if the
@@ -1736,29 +1758,44 @@ def clearrebased(ui, repo, destmap, state, skipped, collapsedas=None,
 
     If `keepf` is not True, the rebase has --keep set and no nodes should be
     removed (but bookmarks still need to be moved).
+
+    If `backup` is False, no backup will be stored when stripping rebased
+    revisions.
     """
     tonode = repo.changelog.node
     replacements = {}
     moves = {}
+    stripcleanup = not obsolete.isenabled(repo, obsolete.createmarkersopt)
+
+    collapsednodes = []
     for rev, newrev in sorted(state.items()):
         if newrev >= 0 and newrev != rev:
             oldnode = tonode(rev)
             newnode = collapsedas or tonode(newrev)
             moves[oldnode] = newnode
             if not keepf:
+                succs = None
                 if rev in skipped:
-                    succs = ()
+                    if stripcleanup or not repo[rev].obsolete():
+                        succs = ()
+                elif collapsedas:
+                    collapsednodes.append(oldnode)
                 else:
                     succs = (newnode,)
-                replacements[oldnode] = succs
-    scmutil.cleanupnodes(repo, replacements, 'rebase', moves)
+                if succs is not None:
+                    replacements[(oldnode,)] = succs
+    if collapsednodes:
+        replacements[tuple(collapsednodes)] = (collapsedas,)
+    scmutil.cleanupnodes(repo, replacements, 'rebase', moves, backup=backup)
     if fm:
         hf = fm.hexfunc
         fl = fm.formatlist
         fd = fm.formatdict
-        nodechanges = fd({hf(oldn): fl([hf(n) for n in newn], name='node')
-                          for oldn, newn in replacements.iteritems()},
-                         key="oldnode", value="newnodes")
+        changes = {}
+        for oldns, newn in replacements.iteritems():
+            for oldn in oldns:
+                changes[hf(oldn)] = fl([hf(n) for n in newn], name='node')
+        nodechanges = fd(changes, key="oldnode", value="newnodes")
         fm.data(nodechanges=nodechanges)
 
 def pullrebase(orig, ui, repo, *args, **opts):
@@ -1868,7 +1905,7 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
                 # If 'srcrev' has a successor in rebase set but none in
                 # destination (which would be catched above), we shall skip it
                 # and its descendants to avoid divergence.
-                if any(s in destmap for s in succrevs):
+                if srcrev in extinctrevs or any(s in destmap for s in succrevs):
                     obsoletewithoutsuccessorindestination.add(srcrev)
 
     return (

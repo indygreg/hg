@@ -11,7 +11,7 @@ Testing of the '--rev' flag
   adding manifests
   adding file changes
   added 9 changesets with 7 changes to 4 files (+1 heads)
-  new changesets bfaf4b5cbf01:916f1afdef90
+  new changesets bfaf4b5cbf01:916f1afdef90 (9 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
   $ for i in 0 1 2 3 4 5 6 7 8; do
@@ -31,7 +31,7 @@ Testing of the '--rev' flag
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
   
   pushing to test-revflag-1
   searching for changes
@@ -43,7 +43,7 @@ Testing of the '--rev' flag
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 1 files
   
   pushing to test-revflag-2
   searching for changes
@@ -55,7 +55,7 @@ Testing of the '--rev' flag
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 1 files
   
   pushing to test-revflag-3
   searching for changes
@@ -67,7 +67,7 @@ Testing of the '--rev' flag
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 4 changesets, 4 total revisions
+  checked 4 changesets with 4 changes to 1 files
   
   pushing to test-revflag-4
   searching for changes
@@ -79,7 +79,7 @@ Testing of the '--rev' flag
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 1 files
   
   pushing to test-revflag-5
   searching for changes
@@ -91,7 +91,7 @@ Testing of the '--rev' flag
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 1 files
   
   pushing to test-revflag-6
   searching for changes
@@ -103,7 +103,7 @@ Testing of the '--rev' flag
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 4 changesets, 5 total revisions
+  checked 4 changesets with 5 changes to 2 files
   
   pushing to test-revflag-7
   searching for changes
@@ -115,7 +115,7 @@ Testing of the '--rev' flag
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 5 changesets, 6 total revisions
+  checked 5 changesets with 6 changes to 3 files
   
   pushing to test-revflag-8
   searching for changes
@@ -127,7 +127,7 @@ Testing of the '--rev' flag
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 5 changesets, 5 total revisions
+  checked 5 changesets with 5 changes to 2 files
 
   $ cd test-revflag-8
 
@@ -146,7 +146,7 @@ Testing of the '--rev' flag
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 9 changesets, 7 total revisions
+  checked 9 changesets with 7 changes to 4 files
 
   $ cd ..
 
@@ -195,7 +195,7 @@ Expected to fail:
   crosschecking files in changesets and manifests
   checking files
    beta@1: dddc47b3ba30 not in manifests
-  2 files, 2 changesets, 4 total revisions
+  checked 2 changesets with 4 changes to 2 files
   1 integrity errors encountered!
   (first damaged changeset appears to be 1)
   [1]
@@ -230,7 +230,7 @@ Expected to fail:
   crosschecking files in changesets and manifests
   checking files
    beta@1: manifest refers to unknown revision dddc47b3ba30
-  2 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 2 files
   1 integrity errors encountered!
   (first damaged changeset appears to be 1)
   [1]

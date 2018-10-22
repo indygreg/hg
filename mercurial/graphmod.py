@@ -22,6 +22,7 @@ from __future__ import absolute_import
 from .node import nullrev
 from . import (
     dagop,
+    pycompat,
     smartset,
     util,
 )
@@ -280,7 +281,7 @@ def _getpaddingline(echars, idx, ncols, edges):
         line.extend(echars[-(remainder * 2):])
     return line
 
-def _drawendinglines(lines, extra, edgemap, seen):
+def _drawendinglines(lines, extra, edgemap, seen, state):
     """Draw ending lines for missing parent edges
 
     None indicates an edge that ends at between this node and the next
@@ -297,7 +298,8 @@ def _drawendinglines(lines, extra, edgemap, seen):
     while edgechars and edgechars[-1] is None:
         edgechars.pop()
     shift_size = max((edgechars.count(None) * 2) - 1, 0)
-    while len(lines) < 3 + shift_size:
+    minlines = 3 if not state['graphshorten'] else 2
+    while len(lines) < minlines + shift_size:
         lines.append(extra[:])
 
     if shift_size:
@@ -318,7 +320,7 @@ def _drawendinglines(lines, extra, edgemap, seen):
                 positions[i] = max(pos, targets[i])
                 line[pos] = '/' if pos > targets[i] else extra[toshift[i]]
 
-    map = {1: '|', 2: '~'}
+    map = {1: '|', 2: '~'} if not state['graphshorten'] else {1: '~'}
     for i, line in enumerate(lines):
         if None not in line:
             continue
@@ -426,16 +428,16 @@ def ascii(ui, state, type, char, text, coldata):
     # shift_interline is the line containing the non-vertical
     # edges between this entry and the next
     shift_interline = echars[:idx * 2]
-    for i in xrange(2 + coldiff):
+    for i in pycompat.xrange(2 + coldiff):
         shift_interline.append(' ')
     count = ncols - idx - 1
     if coldiff == -1:
-        for i in xrange(count):
+        for i in pycompat.xrange(count):
             shift_interline.extend(['/', ' '])
     elif coldiff == 0:
         shift_interline.extend(echars[(idx + 1) * 2:ncols * 2])
     else:
-        for i in xrange(count):
+        for i in pycompat.xrange(count):
             shift_interline.extend(['\\', ' '])
 
     # draw edges from the current node to its parents
@@ -462,7 +464,7 @@ def ascii(ui, state, type, char, text, coldata):
         while len(lines) < len(text):
             lines.append(extra_interline[:])
 
-    _drawendinglines(lines, extra_interline, edgemap, seen)
+    _drawendinglines(lines, extra_interline, edgemap, seen, state)
 
     while len(text) < len(lines):
         text.append("")

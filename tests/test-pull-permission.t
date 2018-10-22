@@ -28,6 +28,6 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
 
   $ cd ..

@@ -13,16 +13,16 @@
   >         return super(testenvhgweb, self).__call__(env, respond)
   > hgweb_mod.hgweb = testenvhgweb
   > 
-  > @wireprotov1server.wireprotocommand('customreadnoperm')
+  > @wireprotov1server.wireprotocommand(b'customreadnoperm')
   > def customread(repo, proto):
   >     return b'read-only command no defined permissions\n'
-  > @wireprotov1server.wireprotocommand('customwritenoperm')
+  > @wireprotov1server.wireprotocommand(b'customwritenoperm')
   > def customwritenoperm(repo, proto):
   >     return b'write command no defined permissions\n'
-  > @wireprotov1server.wireprotocommand('customreadwithperm', permission='pull')
+  > @wireprotov1server.wireprotocommand(b'customreadwithperm', permission=b'pull')
   > def customreadwithperm(repo, proto):
   >     return b'read-only command w/ defined permissions\n'
-  > @wireprotov1server.wireprotocommand('customwritewithperm', permission='push')
+  > @wireprotov1server.wireprotocommand(b'customwritewithperm', permission=b'push')
   > def customwritewithperm(repo, proto):
   >     return b'write command w/ defined permissions\n'
   > EOF

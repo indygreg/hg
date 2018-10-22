@@ -265,7 +265,7 @@ and start tool
 
 #if windows
   $ cat > 'diff tool.bat' << EOF
-  > @$PYTHON "`pwd`/diff tool.py"
+  > @"$PYTHON" "`pwd`/diff tool.py"
   > EOF
   $ hg extdiff -p "`pwd`/diff tool.bat"
   [1]

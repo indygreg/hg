@@ -51,30 +51,25 @@ from .node import (
     nullrev,
 )
 from . import (
-    dagutil,
     error,
     util,
 )
 
-def _updatesample(dag, nodes, sample, quicksamplesize=0):
+def _updatesample(revs, heads, sample, parentfn, quicksamplesize=0):
     """update an existing sample to match the expected size
 
-    The sample is updated with nodes exponentially distant from each head of the
-    <nodes> set. (H~1, H~2, H~4, H~8, etc).
+    The sample is updated with revs exponentially distant from each head of the
+    <revs> set. (H~1, H~2, H~4, H~8, etc).
 
     If a target size is specified, the sampling will stop once this size is
-    reached. Otherwise sampling will happen until roots of the <nodes> set are
+    reached. Otherwise sampling will happen until roots of the <revs> set are
     reached.
 
-    :dag: a dag object from dagutil
-    :nodes:  set of nodes we want to discover (if None, assume the whole dag)
+    :revs:  set of revs we want to discover (if None, assume the whole dag)
+    :heads: set of DAG head revs
     :sample: a sample to update
+    :parentfn: a callable to resolve parents for a revision
     :quicksamplesize: optional target size of the sample"""
-    # if nodes is empty we scan the entire graph
-    if nodes:
-        heads = dag.headsetofconnecteds(nodes)
-    else:
-        heads = dag.heads()
     dist = {}
     visit = collections.deque(heads)
     seen = set()
@@ -91,37 +86,69 @@ def _updatesample(dag, nodes, sample, quicksamplesize=0):
             if quicksamplesize and (len(sample) >= quicksamplesize):
                 return
         seen.add(curr)
-        for p in dag.parents(curr):
-            if not nodes or p in nodes:
+
+        for p in parentfn(curr):
+            if p != nullrev and (not revs or p in revs):
                 dist.setdefault(p, d + 1)
                 visit.append(p)
 
-def _takequicksample(dag, nodes, size):
+def _takequicksample(repo, headrevs, revs, size):
     """takes a quick sample of size <size>
 
     It is meant for initial sampling and focuses on querying heads and close
     ancestors of heads.
 
     :dag: a dag object
-    :nodes: set of nodes to discover
+    :headrevs: set of head revisions in local DAG to consider
+    :revs: set of revs to discover
     :size: the maximum size of the sample"""
-    sample = dag.headsetofconnecteds(nodes)
+    sample = set(repo.revs('heads(%ld)', revs))
+
     if len(sample) >= size:
         return _limitsample(sample, size)
-    _updatesample(dag, None, sample, quicksamplesize=size)
+
+    _updatesample(None, headrevs, sample, repo.changelog.parentrevs,
+                  quicksamplesize=size)
     return sample
 
-def _takefullsample(dag, nodes, size):
-    sample = dag.headsetofconnecteds(nodes)
+def _takefullsample(repo, headrevs, revs, size):
+    sample = set(repo.revs('heads(%ld)', revs))
+
     # update from heads
-    _updatesample(dag, nodes, sample)
+    revsheads = set(repo.revs('heads(%ld)', revs))
+    _updatesample(revs, revsheads, sample, repo.changelog.parentrevs)
+
     # update from roots
-    _updatesample(dag.inverse(), nodes, sample)
+    revsroots = set(repo.revs('roots(%ld)', revs))
+
+    # _updatesample() essentially does interaction over revisions to look up
+    # their children. This lookup is expensive and doing it in a loop is
+    # quadratic. We precompute the children for all relevant revisions and
+    # make the lookup in _updatesample() a simple dict lookup.
+    #
+    # Because this function can be called multiple times during discovery, we
+    # may still perform redundant work and there is room to optimize this by
+    # keeping a persistent cache of children across invocations.
+    children = {}
+
+    parentrevs = repo.changelog.parentrevs
+    for rev in repo.changelog.revs(start=min(revsroots)):
+        # Always ensure revision has an entry so we don't need to worry about
+        # missing keys.
+        children.setdefault(rev, [])
+
+        for prev in parentrevs(rev):
+            if prev == nullrev:
+                continue
+
+            children.setdefault(prev, []).append(rev)
+
+    _updatesample(revs, revsroots, sample, children.__getitem__)
     assert sample
     sample = _limitsample(sample, size)
     if len(sample) < size:
         more = size - len(sample)
-        sample.update(random.sample(list(nodes - sample), more))
+        sample.update(random.sample(list(revs - sample), more))
     return sample
 
 def _limitsample(sample, desiredlen):
@@ -142,16 +169,17 @@ def findcommonheads(ui, local, remote,
 
     roundtrips = 0
     cl = local.changelog
-    localsubset = None
+    clnode = cl.node
+    clrev = cl.rev
+
     if ancestorsof is not None:
-        rev = local.changelog.rev
-        localsubset = [rev(n) for n in ancestorsof]
-    dag = dagutil.revlogdag(cl, localsubset=localsubset)
+        ownheads = [clrev(n) for n in ancestorsof]
+    else:
+        ownheads = [rev for rev in cl.headrevs() if rev != nullrev]
 
     # early exit if we know all the specified remote heads already
     ui.debug("query 1; heads\n")
     roundtrips += 1
-    ownheads = dag.heads()
     sample = _limitsample(ownheads, initialsamplesize)
     # indices between sample and externalized version must match
     sample = list(sample)
@@ -159,7 +187,7 @@ def findcommonheads(ui, local, remote,
     with remote.commandexecutor() as e:
         fheads = e.callcommand('heads', {})
         fknown = e.callcommand('known', {
-            'nodes': dag.externalizeall(sample),
+            'nodes': [clnode(r) for r in sample],
         })
 
     srvheadhashes, yesno = fheads.result(), fknown.result()
@@ -173,15 +201,25 @@ def findcommonheads(ui, local, remote,
     # compatibility reasons)
     ui.status(_("searching for changes\n"))
 
-    srvheads = dag.internalizeall(srvheadhashes, filterunknown=True)
+    srvheads = []
+    for node in srvheadhashes:
+        if node == nullid:
+            continue
+
+        try:
+            srvheads.append(clrev(node))
+        # Catches unknown and filtered nodes.
+        except error.LookupError:
+            continue
+
     if len(srvheads) == len(srvheadhashes):
         ui.debug("all remote heads known locally\n")
-        return (srvheadhashes, False, srvheadhashes,)
+        return srvheadhashes, False, srvheadhashes
 
     if len(sample) == len(ownheads) and all(yesno):
         ui.note(_("all local heads known remotely\n"))
-        ownheadhashes = dag.externalizeall(ownheads)
-        return (ownheadhashes, True, srvheadhashes,)
+        ownheadhashes = [clnode(r) for r in ownheads]
+        return ownheadhashes, True, srvheadhashes
 
     # full blown discovery
 
@@ -202,7 +240,12 @@ def findcommonheads(ui, local, remote,
 
         if sample:
             missinginsample = [n for i, n in enumerate(sample) if not yesno[i]]
-            missing.update(dag.descendantset(missinginsample, missing))
+
+            if missing:
+                missing.update(local.revs('descendants(%ld) - descendants(%ld)',
+                                          missinginsample, missing))
+            else:
+                missing.update(local.revs('descendants(%ld)', missinginsample))
 
             undecided.difference_update(missing)
 
@@ -224,7 +267,7 @@ def findcommonheads(ui, local, remote,
         if len(undecided) < targetsize:
             sample = list(undecided)
         else:
-            sample = samplefunc(dag, undecided, targetsize)
+            sample = samplefunc(local, ownheads, undecided, targetsize)
 
         roundtrips += 1
         progress.update(roundtrips)
@@ -235,7 +278,7 @@ def findcommonheads(ui, local, remote,
 
         with remote.commandexecutor() as e:
             yesno = e.callcommand('known', {
-                'nodes': dag.externalizeall(sample),
+                'nodes': [clnode(r) for r in sample],
             }).result()
 
         full = True
@@ -247,10 +290,8 @@ def findcommonheads(ui, local, remote,
 
     # heads(common) == heads(common.bases) since common represents common.bases
     # and all its ancestors
-    result = dag.headsetofconnecteds(common.bases)
-    # common.bases can include nullrev, but our contract requires us to not
-    # return any heads in that case, so discard that
-    result.discard(nullrev)
+    # The presence of nullrev will confuse heads(). So filter it out.
+    result = set(local.revs('heads(%ld)', common.bases - {nullrev}))
     elapsed = util.timer() - start
     progress.complete()
     ui.debug("%d total queries in %.4fs\n" % (roundtrips, elapsed))
@@ -268,4 +309,5 @@ def findcommonheads(ui, local, remote,
         return ({nullid}, True, srvheadhashes,)
 
     anyincoming = (srvheadhashes != [nullid])
-    return dag.externalizeall(result), anyincoming, srvheadhashes
+    result = {clnode(r) for r in result}
+    return result, anyincoming, srvheadhashes

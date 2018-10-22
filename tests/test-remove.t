@@ -520,6 +520,14 @@ test dry-run for remove
   deleting [===========================================>] 1/1\r (no-eol) (esc)
                                                               \r (no-eol) (esc)
   removing a
+  $ hg remove a -nv --color debug
+  \r (no-eol) (esc)
+  deleting [===========================================>] 1/1\r (no-eol) (esc)
+                                                              \r (no-eol) (esc)
+  \r (no-eol) (esc)
+  deleting [===========================================>] 1/1\r (no-eol) (esc)
+                                                              \r (no-eol) (esc)
+  [ui.addremove.removed ui.status|removing a]
   $ hg diff
 
   $ cat >> .hg/hgrc <<EOF

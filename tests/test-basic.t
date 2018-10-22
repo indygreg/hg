@@ -61,14 +61,14 @@ This command is ancient:
 Verify that updating to revision 0 via commands.update() works properly
 
   $ cat <<EOF > update_to_rev0.py
-  > from mercurial import ui, hg, commands
-  > myui = ui.ui.load()
+  > from mercurial import commands, hg, ui as uimod
+  > myui = uimod.ui.load()
   > repo = hg.repository(myui, path=b'.')
   > commands.update(myui, repo, rev=b"0")
   > EOF
   $ hg up null
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  $ $PYTHON ./update_to_rev0.py
+  $ "$PYTHON" ./update_to_rev0.py
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg identify -n
   0
@@ -89,7 +89,7 @@ Verify should succeed:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
 
 Repository root:
 

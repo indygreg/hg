@@ -45,6 +45,7 @@ from mercurial.node import hex
 
 from mercurial import (
     encoding,
+    pycompat,
     registrar,
     ui as uimod,
     util,
@@ -111,7 +112,7 @@ def _openlogfile(ui, vfs):
             if st.st_size >= maxsize:
                 path = vfs.join(name)
                 maxfiles = ui.configint('blackbox', 'maxfiles')
-                for i in xrange(maxfiles - 1, 1, -1):
+                for i in pycompat.xrange(maxfiles - 1, 1, -1):
                     rotate(oldpath='%s.%d' % (path, i - 1),
                            newpath='%s.%d' % (path, i))
                 rotate(oldpath=path,
@@ -225,10 +226,12 @@ def reposetup(ui, repo):
 
     repo._wlockfreeprefix.add('blackbox.log')
 
-@command('^blackbox',
+@command('blackbox',
     [('l', 'limit', 10, _('the number of events to show')),
     ],
-    _('hg blackbox [OPTION]...'))
+    _('hg blackbox [OPTION]...'),
+    helpcategory=command.CATEGORY_MAINTENANCE,
+    helpbasic=True)
 def blackbox(ui, repo, *revs, **opts):
     '''view the recent repository events
     '''

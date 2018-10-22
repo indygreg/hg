@@ -588,6 +588,187 @@ shortlog/ shows information about a set of changesets
     "node": "cc725e08502a79dd1eda913760fbe06ed7a9abc7"
   }
 
+shortlog is displayed by default (issue5978)
+
+  $ request '?style=json'
+  200 Script output follows
+  
+  {
+    "changeset_count": 10,
+    "changesets": [
+      {
+        "bookmarks": [],
+        "branch": "default",
+        "date": [
+          0.0,
+          0
+        ],
+        "desc": "merge test-branch into default",
+        "node": "cc725e08502a79dd1eda913760fbe06ed7a9abc7",
+        "parents": [
+          "ceed296fe500c3fac9541e31dad860cb49c89e45",
+          "ed66c30e87eb65337c05a4229efaa5f1d5285a90"
+        ],
+        "phase": "draft",
+        "tags": [
+          "tip"
+        ],
+        "user": "test"
+      },
+      {
+        "bookmarks": [],
+        "branch": "test-branch",
+        "date": [
+          0.0,
+          0
+        ],
+        "desc": "another commit in test-branch",
+        "node": "ed66c30e87eb65337c05a4229efaa5f1d5285a90",
+        "parents": [
+          "6ab967a8ab3489227a83f80e920faa039a71819f"
+        ],
+        "phase": "draft",
+        "tags": [],
+        "user": "test"
+      },
+      {
+        "bookmarks": [],
+        "branch": "test-branch",
+        "date": [
+          0.0,
+          0
+        ],
+        "desc": "create test branch",
+        "node": "6ab967a8ab3489227a83f80e920faa039a71819f",
+        "parents": [
+          "06e557f3edf66faa1ccaba5dd8c203c21cc79f1e"
+        ],
+        "phase": "draft",
+        "tags": [],
+        "user": "test"
+      },
+      {
+        "bookmarks": [
+          "bookmark2"
+        ],
+        "branch": "default",
+        "date": [
+          0.0,
+          0
+        ],
+        "desc": "create tag2",
+        "node": "ceed296fe500c3fac9541e31dad860cb49c89e45",
+        "parents": [
+          "f2890a05fea49bfaf9fb27ed5490894eba32da78"
+        ],
+        "phase": "draft",
+        "tags": [],
+        "user": "test"
+      },
+      {
+        "bookmarks": [],
+        "branch": "default",
+        "date": [
+          0.0,
+          0
+        ],
+        "desc": "another commit to da/foo",
+        "node": "f2890a05fea49bfaf9fb27ed5490894eba32da78",
+        "parents": [
+          "93a8ce14f89156426b7fa981af8042da53f03aa0"
+        ],
+        "phase": "draft",
+        "tags": [
+          "tag2"
+        ],
+        "user": "test"
+      },
+      {
+        "bookmarks": [],
+        "branch": "default",
+        "date": [
+          0.0,
+          0
+        ],
+        "desc": "create tag",
+        "node": "93a8ce14f89156426b7fa981af8042da53f03aa0",
+        "parents": [
+          "78896eb0e102174ce9278438a95e12543e4367a7"
+        ],
+        "phase": "public",
+        "tags": [],
+        "user": "test"
+      },
+      {
+        "bookmarks": [],
+        "branch": "default",
+        "date": [
+          0.0,
+          0
+        ],
+        "desc": "move foo",
+        "node": "78896eb0e102174ce9278438a95e12543e4367a7",
+        "parents": [
+          "8d7c456572acf3557e8ed8a07286b10c408bcec5"
+        ],
+        "phase": "public",
+        "tags": [
+          "tag1"
+        ],
+        "user": "test"
+      },
+      {
+        "bookmarks": [
+          "bookmark1"
+        ],
+        "branch": "default",
+        "date": [
+          0.0,
+          0
+        ],
+        "desc": "modify da/foo",
+        "node": "8d7c456572acf3557e8ed8a07286b10c408bcec5",
+        "parents": [
+          "f8bbb9024b10f93cdbb8d940337398291d40dea8"
+        ],
+        "phase": "public",
+        "tags": [],
+        "user": "test"
+      },
+      {
+        "bookmarks": [],
+        "branch": "default",
+        "date": [
+          0.0,
+          0
+        ],
+        "desc": "modify foo",
+        "node": "f8bbb9024b10f93cdbb8d940337398291d40dea8",
+        "parents": [
+          "06e557f3edf66faa1ccaba5dd8c203c21cc79f1e"
+        ],
+        "phase": "public",
+        "tags": [],
+        "user": "test"
+      },
+      {
+        "bookmarks": [],
+        "branch": "default",
+        "date": [
+          0.0,
+          0
+        ],
+        "desc": "initial",
+        "node": "06e557f3edf66faa1ccaba5dd8c203c21cc79f1e",
+        "parents": [],
+        "phase": "public",
+        "tags": [],
+        "user": "test"
+      }
+    ],
+    "node": "cc725e08502a79dd1eda913760fbe06ed7a9abc7"
+  }
+
 changeset/ renders the tip changeset
 
   $ request json-rev
@@ -2002,15 +2183,25 @@ help/{topic} shows an individual help topic
     "topic": "phases"
   }
 
+Error page shouldn't crash
+
+  $ request json-changeset/deadbeef
+  404 Not Found
+  
+  {
+    "error": "unknown revision 'deadbeef'"
+  }
+  [1]
+
 Commit message with Japanese Kanji 'Noh', which ends with '\x5c'
 
   $ echo foo >> da/foo
-  $ HGENCODING=cp932 hg ci -m `$PYTHON -c 'print("\x94\x5c")'`
+  $ HGENCODING=cp932 hg ci -m `"$PYTHON" -c 'print("\x94\x5c")'`
 
 Commit message with null character
 
   $ echo foo >> da/foo
-  >>> open('msg', 'wb').write('commit with null character: \0\n')
+  >>> open('msg', 'wb').write(b'commit with null character: \0\n') and None
   $ hg ci -l msg
   $ rm msg
 

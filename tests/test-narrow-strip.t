@@ -1,4 +1,12 @@
 #testcases flat tree
+#testcases lfs-on lfs-off
+
+#if lfs-on
+  $ cat >> $HGRCPATH <<EOF
+  > [extensions]
+  > lfs =
+  > EOF
+#endif
 
   $ . "$TESTDIR/narrow-library.sh"
 

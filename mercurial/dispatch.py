@@ -21,6 +21,8 @@ import traceback
 
 from .i18n import _
 
+from hgdemandimport import tracing
+
 from . import (
     cmdutil,
     color,
@@ -64,6 +66,9 @@ class request(object):
         # low-level repo state (for example, changelog) before extensions.
         self.prereposetups = prereposetups or []
 
+        # store the parsed and canonical command
+        self.canonical_command = None
+
     def _runexithandlers(self):
         exc = None
         handlers = self.ui._exithandlers
@@ -84,7 +89,8 @@ class request(object):
 def run():
     "run the command in sys.argv"
     initstdio()
-    req = request(pycompat.sysargv[1:])
+    with tracing.log('parse args into request'):
+        req = request(pycompat.sysargv[1:])
     err = None
     try:
         status = dispatch(req)
@@ -176,182 +182,185 @@ def _formatargs(args):
 
 def dispatch(req):
     """run the command specified in req.args; returns an integer status code"""
-    if req.ferr:
-        ferr = req.ferr
-    elif req.ui:
-        ferr = req.ui.ferr
-    else:
-        ferr = procutil.stderr
-
-    try:
-        if not req.ui:
-            req.ui = uimod.ui.load()
-        req.earlyoptions.update(_earlyparseopts(req.ui, req.args))
-        if req.earlyoptions['traceback']:
-            req.ui.setconfig('ui', 'traceback', 'on', '--traceback')
-
-        # set ui streams from the request
-        if req.fin:
-            req.ui.fin = req.fin
-        if req.fout:
-            req.ui.fout = req.fout
+    with tracing.log('dispatch.dispatch'):
         if req.ferr:
-            req.ui.ferr = req.ferr
-    except error.Abort as inst:
-        ferr.write(_("abort: %s\n") % inst)
-        if inst.hint:
-            ferr.write(_("(%s)\n") % inst.hint)
-        return -1
-    except error.ParseError as inst:
-        _formatparse(ferr.write, inst)
-        return -1
+            ferr = req.ferr
+        elif req.ui:
+            ferr = req.ui.ferr
+        else:
+            ferr = procutil.stderr
 
-    msg = _formatargs(req.args)
-    starttime = util.timer()
-    ret = 1  # default of Python exit code on unhandled exception
-    try:
-        ret = _runcatch(req) or 0
-    except error.ProgrammingError as inst:
-        req.ui.warn(_('** ProgrammingError: %s\n') % inst)
-        if inst.hint:
-            req.ui.warn(_('** (%s)\n') % inst.hint)
-        raise
-    except KeyboardInterrupt as inst:
         try:
-            if isinstance(inst, error.SignalInterrupt):
-                msg = _("killed!\n")
-            else:
-                msg = _("interrupted!\n")
-            req.ui.warn(msg)
-        except error.SignalInterrupt:
-            # maybe pager would quit without consuming all the output, and
-            # SIGPIPE was raised. we cannot print anything in this case.
-            pass
-        except IOError as inst:
-            if inst.errno != errno.EPIPE:
-                raise
-        ret = -1
-    finally:
-        duration = util.timer() - starttime
-        req.ui.flush()
-        if req.ui.logblockedtimes:
-            req.ui._blockedtimes['command_duration'] = duration * 1000
-            req.ui.log('uiblocked', 'ui blocked ms',
-                       **pycompat.strkwargs(req.ui._blockedtimes))
-        req.ui.log("commandfinish", "%s exited %d after %0.2f seconds\n",
-                   msg, ret & 255, duration)
+            if not req.ui:
+                req.ui = uimod.ui.load()
+            req.earlyoptions.update(_earlyparseopts(req.ui, req.args))
+            if req.earlyoptions['traceback']:
+                req.ui.setconfig('ui', 'traceback', 'on', '--traceback')
+
+            # set ui streams from the request
+            if req.fin:
+                req.ui.fin = req.fin
+            if req.fout:
+                req.ui.fout = req.fout
+            if req.ferr:
+                req.ui.ferr = req.ferr
+        except error.Abort as inst:
+            ferr.write(_("abort: %s\n") % inst)
+            if inst.hint:
+                ferr.write(_("(%s)\n") % inst.hint)
+            return -1
+        except error.ParseError as inst:
+            _formatparse(ferr.write, inst)
+            return -1
+
+        msg = _formatargs(req.args)
+        starttime = util.timer()
+        ret = 1  # default of Python exit code on unhandled exception
         try:
-            req._runexithandlers()
-        except: # exiting, so no re-raises
-            ret = ret or -1
-    return ret
+            ret = _runcatch(req) or 0
+        except error.ProgrammingError as inst:
+            req.ui.error(_('** ProgrammingError: %s\n') % inst)
+            if inst.hint:
+                req.ui.error(_('** (%s)\n') % inst.hint)
+            raise
+        except KeyboardInterrupt as inst:
+            try:
+                if isinstance(inst, error.SignalInterrupt):
+                    msg = _("killed!\n")
+                else:
+                    msg = _("interrupted!\n")
+                req.ui.error(msg)
+            except error.SignalInterrupt:
+                # maybe pager would quit without consuming all the output, and
+                # SIGPIPE was raised. we cannot print anything in this case.
+                pass
+            except IOError as inst:
+                if inst.errno != errno.EPIPE:
+                    raise
+            ret = -1
+        finally:
+            duration = util.timer() - starttime
+            req.ui.flush()
+            if req.ui.logblockedtimes:
+                req.ui._blockedtimes['command_duration'] = duration * 1000
+                req.ui.log('uiblocked', 'ui blocked ms',
+                           **pycompat.strkwargs(req.ui._blockedtimes))
+            req.ui.log("commandfinish", "%s exited %d after %0.2f seconds\n",
+                       msg, ret & 255, duration,
+                       canonical_command=req.canonical_command)
+            try:
+                req._runexithandlers()
+            except: # exiting, so no re-raises
+                ret = ret or -1
+        return ret
 
 def _runcatch(req):
-    def catchterm(*args):
-        raise error.SignalInterrupt
+    with tracing.log('dispatch._runcatch'):
+        def catchterm(*args):
+            raise error.SignalInterrupt
 
-    ui = req.ui
-    try:
-        for name in 'SIGBREAK', 'SIGHUP', 'SIGTERM':
-            num = getattr(signal, name, None)
-            if num:
-                signal.signal(num, catchterm)
-    except ValueError:
-        pass # happens if called in a thread
-
-    def _runcatchfunc():
-        realcmd = None
+        ui = req.ui
         try:
-            cmdargs = fancyopts.fancyopts(req.args[:], commands.globalopts, {})
-            cmd = cmdargs[0]
-            aliases, entry = cmdutil.findcmd(cmd, commands.table, False)
-            realcmd = aliases[0]
-        except (error.UnknownCommand, error.AmbiguousCommand,
-                IndexError, getopt.GetoptError):
-            # Don't handle this here. We know the command is
-            # invalid, but all we're worried about for now is that
-            # it's not a command that server operators expect to
-            # be safe to offer to users in a sandbox.
-            pass
-        if realcmd == 'serve' and '--stdio' in cmdargs:
-            # We want to constrain 'hg serve --stdio' instances pretty
-            # closely, as many shared-ssh access tools want to grant
-            # access to run *only* 'hg -R $repo serve --stdio'. We
-            # restrict to exactly that set of arguments, and prohibit
-            # any repo name that starts with '--' to prevent
-            # shenanigans wherein a user does something like pass
-            # --debugger or --config=ui.debugger=1 as a repo
-            # name. This used to actually run the debugger.
-            if (len(req.args) != 4 or
-                req.args[0] != '-R' or
-                req.args[1].startswith('--') or
-                req.args[2] != 'serve' or
-                req.args[3] != '--stdio'):
-                raise error.Abort(
-                    _('potentially unsafe serve --stdio invocation: %s') %
-                    (stringutil.pprint(req.args),))
+            for name in 'SIGBREAK', 'SIGHUP', 'SIGTERM':
+                num = getattr(signal, name, None)
+                if num:
+                    signal.signal(num, catchterm)
+        except ValueError:
+            pass # happens if called in a thread
 
-        try:
-            debugger = 'pdb'
-            debugtrace = {
-                'pdb': pdb.set_trace
-            }
-            debugmortem = {
-                'pdb': pdb.post_mortem
-            }
-
-            # read --config before doing anything else
-            # (e.g. to change trust settings for reading .hg/hgrc)
-            cfgs = _parseconfig(req.ui, req.earlyoptions['config'])
-
-            if req.repo:
-                # copy configs that were passed on the cmdline (--config) to
-                # the repo ui
-                for sec, name, val in cfgs:
-                    req.repo.ui.setconfig(sec, name, val, source='--config')
-
-            # developer config: ui.debugger
-            debugger = ui.config("ui", "debugger")
-            debugmod = pdb
-            if not debugger or ui.plain():
-                # if we are in HGPLAIN mode, then disable custom debugging
-                debugger = 'pdb'
-            elif req.earlyoptions['debugger']:
-                # This import can be slow for fancy debuggers, so only
-                # do it when absolutely necessary, i.e. when actual
-                # debugging has been requested
-                with demandimport.deactivated():
-                    try:
-                        debugmod = __import__(debugger)
-                    except ImportError:
-                        pass # Leave debugmod = pdb
-
-            debugtrace[debugger] = debugmod.set_trace
-            debugmortem[debugger] = debugmod.post_mortem
-
-            # enter the debugger before command execution
-            if req.earlyoptions['debugger']:
-                ui.warn(_("entering debugger - "
-                        "type c to continue starting hg or h for help\n"))
-
-                if (debugger != 'pdb' and
-                    debugtrace[debugger] == debugtrace['pdb']):
-                    ui.warn(_("%s debugger specified "
-                              "but its module was not found\n") % debugger)
-                with demandimport.deactivated():
-                    debugtrace[debugger]()
+        def _runcatchfunc():
+            realcmd = None
             try:
-                return _dispatch(req)
-            finally:
-                ui.flush()
-        except: # re-raises
-            # enter the debugger when we hit an exception
-            if req.earlyoptions['debugger']:
-                traceback.print_exc()
-                debugmortem[debugger](sys.exc_info()[2])
-            raise
+                cmdargs = fancyopts.fancyopts(
+                    req.args[:], commands.globalopts, {})
+                cmd = cmdargs[0]
+                aliases, entry = cmdutil.findcmd(cmd, commands.table, False)
+                realcmd = aliases[0]
+            except (error.UnknownCommand, error.AmbiguousCommand,
+                    IndexError, getopt.GetoptError):
+                # Don't handle this here. We know the command is
+                # invalid, but all we're worried about for now is that
+                # it's not a command that server operators expect to
+                # be safe to offer to users in a sandbox.
+                pass
+            if realcmd == 'serve' and '--stdio' in cmdargs:
+                # We want to constrain 'hg serve --stdio' instances pretty
+                # closely, as many shared-ssh access tools want to grant
+                # access to run *only* 'hg -R $repo serve --stdio'. We
+                # restrict to exactly that set of arguments, and prohibit
+                # any repo name that starts with '--' to prevent
+                # shenanigans wherein a user does something like pass
+                # --debugger or --config=ui.debugger=1 as a repo
+                # name. This used to actually run the debugger.
+                if (len(req.args) != 4 or
+                    req.args[0] != '-R' or
+                    req.args[1].startswith('--') or
+                    req.args[2] != 'serve' or
+                    req.args[3] != '--stdio'):
+                    raise error.Abort(
+                        _('potentially unsafe serve --stdio invocation: %s') %
+                        (stringutil.pprint(req.args),))
 
-    return _callcatch(ui, _runcatchfunc)
+            try:
+                debugger = 'pdb'
+                debugtrace = {
+                    'pdb': pdb.set_trace
+                }
+                debugmortem = {
+                    'pdb': pdb.post_mortem
+                }
+
+                # read --config before doing anything else
+                # (e.g. to change trust settings for reading .hg/hgrc)
+                cfgs = _parseconfig(req.ui, req.earlyoptions['config'])
+
+                if req.repo:
+                    # copy configs that were passed on the cmdline (--config) to
+                    # the repo ui
+                    for sec, name, val in cfgs:
+                        req.repo.ui.setconfig(sec, name, val, source='--config')
+
+                # developer config: ui.debugger
+                debugger = ui.config("ui", "debugger")
+                debugmod = pdb
+                if not debugger or ui.plain():
+                    # if we are in HGPLAIN mode, then disable custom debugging
+                    debugger = 'pdb'
+                elif req.earlyoptions['debugger']:
+                    # This import can be slow for fancy debuggers, so only
+                    # do it when absolutely necessary, i.e. when actual
+                    # debugging has been requested
+                    with demandimport.deactivated():
+                        try:
+                            debugmod = __import__(debugger)
+                        except ImportError:
+                            pass # Leave debugmod = pdb
+
+                debugtrace[debugger] = debugmod.set_trace
+                debugmortem[debugger] = debugmod.post_mortem
+
+                # enter the debugger before command execution
+                if req.earlyoptions['debugger']:
+                    ui.warn(_("entering debugger - "
+                            "type c to continue starting hg or h for help\n"))
+
+                    if (debugger != 'pdb' and
+                        debugtrace[debugger] == debugtrace['pdb']):
+                        ui.warn(_("%s debugger specified "
+                                  "but its module was not found\n") % debugger)
+                    with demandimport.deactivated():
+                        debugtrace[debugger]()
+                try:
+                    return _dispatch(req)
+                finally:
+                    ui.flush()
+            except: # re-raises
+                # enter the debugger when we hit an exception
+                if req.earlyoptions['debugger']:
+                    traceback.print_exc()
+                    debugmortem[debugger](sys.exc_info()[2])
+                raise
+        return _callcatch(ui, _runcatchfunc)
 
 def _callcatch(ui, func):
     """like scmutil.callcatch but handles more high-level exceptions about
@@ -370,9 +379,8 @@ def _callcatch(ui, func):
             ui.warn(_("hg %s: %s\n") % (inst.args[0], msgbytes))
             commands.help_(ui, inst.args[0], full=False, command=True)
         else:
-            ui.pager('help')
             ui.warn(_("hg: %s\n") % inst.args[1])
-            commands.help_(ui, 'shortlist')
+            ui.warn(_("(use 'hg help -v' for a list of global options)\n"))
     except error.ParseError as inst:
         _formatparse(ui.warn, inst)
         return -1
@@ -394,9 +402,8 @@ def _callcatch(ui, func):
                     _reportsimilar(ui.warn, sim)
                     suggested = True
             if not suggested:
-                ui.pager('help')
                 ui.warn(nocmdmsg)
-                commands.help_(ui, 'shortlist')
+                ui.warn(_("(use 'hg help' for a list of commands)\n"))
     except IOError:
         raise
     except KeyboardInterrupt:
@@ -745,7 +752,7 @@ def _getlocal(ui, rpath, wd=None):
     """
     if wd is None:
         try:
-            wd = pycompat.getcwd()
+            wd = encoding.getcwd()
         except OSError as e:
             raise error.Abort(_("error getting current working directory: %s") %
                               encoding.strtolocal(e.strerror))
@@ -849,6 +856,9 @@ def _dispatch(req):
 
         fullargs = args
         cmd, func, args, options, cmdoptions = _parse(lui, args)
+
+        # store the canonical command name in request object for later access
+        req.canonical_command = cmd
 
         if options["config"] != req.earlyoptions["config"]:
             raise error.Abort(_("option --config may not be abbreviated!"))
@@ -965,7 +975,7 @@ def _dispatch(req):
                         if not path:
                             raise error.RepoError(_("no repository found in"
                                                     " '%s' (.hg not found)")
-                                                  % pycompat.getcwd())
+                                                  % encoding.getcwd())
                         raise
             if repo:
                 ui = repo.ui
@@ -989,7 +999,8 @@ def _dispatch(req):
 def _runcommand(ui, options, cmd, cmdfunc):
     """Run a command function, possibly with profiling enabled."""
     try:
-        return cmdfunc()
+        with tracing.log("Running %s command" % cmd):
+            return cmdfunc()
     except error.SignatureError:
         raise error.CommandError(cmd, _('invalid arguments'))
 

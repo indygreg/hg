@@ -227,7 +227,7 @@ def revtree(ui, args, repo, full="tree", maxnr=0, parents=False):
             else:
                 i -= chunk
 
-            for x in xrange(chunk):
+            for x in pycompat.xrange(chunk):
                 if i + x >= count:
                     l[chunk - x:] = [0] * (chunk - x)
                     break
@@ -238,7 +238,7 @@ def revtree(ui, args, repo, full="tree", maxnr=0, parents=False):
                 else:
                     if (i + x) in repo:
                         l[x] = 1
-            for x in xrange(chunk - 1, -1, -1):
+            for x in pycompat.xrange(chunk - 1, -1, -1):
                 if l[x] != 0:
                     yield (i + x, full is not None and l[x] or None)
             if i == 0:
@@ -249,7 +249,7 @@ def revtree(ui, args, repo, full="tree", maxnr=0, parents=False):
         if len(ar) == 0:
             return 1
         mask = 0
-        for i in xrange(len(ar)):
+        for i in pycompat.xrange(len(ar)):
             if sha in reachable[i]:
                 mask |= 1 << i
 
@@ -345,7 +345,8 @@ def revlist(ui, repo, *revs, **opts):
 @command('view',
     [('l', 'limit', '',
      _('limit number of changes displayed'), _('NUM'))],
-    _('[-l LIMIT] [REVRANGE]'))
+    _('[-l LIMIT] [REVRANGE]'),
+    helpcategory=command.CATEGORY_CHANGE_NAVIGATION)
 def view(ui, repo, *etc, **opts):
     "start interactive history viewer"
     opts = pycompat.byteskwargs(opts)

@@ -73,14 +73,23 @@ class SMTPS(smtplib.SMTP):
 
     def _get_socket(self, host, port, timeout):
         if self.debuglevel > 0:
-            self._ui.debug('connect: %r\n' % (host, port))
+            self._ui.debug('connect: %r\n' % ((host, port),))
         new_socket = socket.create_connection((host, port), timeout)
         new_socket = sslutil.wrapsocket(new_socket,
                                         self.keyfile, self.certfile,
                                         ui=self._ui,
                                         serverhostname=self._host)
-        self.file = smtplib.SSLFakeFile(new_socket)
+        self.file = new_socket.makefile(r'rb')
         return new_socket
+
+def _pyhastls():
+    """Returns true iff Python has TLS support, false otherwise."""
+    try:
+        import ssl
+        getattr(ssl, 'HAS_TLS', False)
+        return True
+    except ImportError:
+        return False
 
 def _smtp(ui):
     '''build an smtp connection and return a function to send mail'''
@@ -89,7 +98,7 @@ def _smtp(ui):
     # backward compatible: when tls = true, we use starttls.
     starttls = tls == 'starttls' or stringutil.parsebool(tls)
     smtps = tls == 'smtps'
-    if (starttls or smtps) and not util.safehasattr(socket, 'ssl'):
+    if (starttls or smtps) and not _pyhastls():
         raise error.Abort(_("can't use TLS: Python SSL support not installed"))
     mailhost = ui.config('smtp', 'host')
     if not mailhost:
@@ -143,8 +152,9 @@ def _smtp(ui):
 def _sendmail(ui, sender, recipients, msg):
     '''send mail using sendmail.'''
     program = ui.config('email', 'method')
-    cmdline = '%s -f %s %s' % (program, stringutil.email(sender),
-                               ' '.join(map(stringutil.email, recipients)))
+    stremail = lambda x: stringutil.email(encoding.strtolocal(x))
+    cmdline = '%s -f %s %s' % (program, stremail(sender),
+                               ' '.join(map(stremail, recipients)))
     ui.note(_('sending mail: %s\n') % cmdline)
     fp = procutil.popen(cmdline, 'wb')
     fp.write(util.tonativeeol(msg))
@@ -160,7 +170,8 @@ def _mbox(mbox, sender, recipients, msg):
     # Should be time.asctime(), but Windows prints 2-characters day
     # of month instead of one. Make them print the same thing.
     date = time.strftime(r'%a %b %d %H:%M:%S %Y', time.localtime())
-    fp.write('From %s %s\n' % (sender, date))
+    fp.write('From %s %s\n' % (encoding.strtolocal(sender),
+                               encoding.strtolocal(date)))
     fp.write(msg)
     fp.write('\n\n')
     fp.close()
@@ -209,7 +220,7 @@ def mimetextpatch(s, subtype='plain', display=False):
 
     cs = ['us-ascii', 'utf-8', encoding.encoding, encoding.fallbackencoding]
     if display:
-        return mimetextqp(s, subtype, 'us-ascii')
+        cs = ['us-ascii']
     for charset in cs:
         try:
             s.decode(pycompat.sysstr(charset))
@@ -252,10 +263,27 @@ def _encode(ui, s, charsets):
     order. Tries both encoding and fallbackencoding for input. Only as
     last resort send as is in fake ascii.
     Caveat: Do not use for mail parts containing patches!'''
+    sendcharsets = charsets or _charsets(ui)
+    if not isinstance(s, bytes):
+        # We have unicode data, which we need to try and encode to
+        # some reasonable-ish encoding. Try the encodings the user
+        # wants, and fall back to garbage-in-ascii.
+        for ocs in sendcharsets:
+            try:
+                return s.encode(pycompat.sysstr(ocs)), ocs
+            except UnicodeEncodeError:
+                pass
+            except LookupError:
+                ui.warn(_('ignoring invalid sendcharset: %s\n') % ocs)
+        else:
+            # Everything failed, ascii-armor what we've got and send it.
+            return s.encode('ascii', 'backslashreplace')
+    # We have a bytes of unknown encoding. We'll try and guess a valid
+    # encoding, falling back to pretending we had ascii even though we
+    # know that's wrong.
     try:
         s.decode('ascii')
     except UnicodeDecodeError:
-        sendcharsets = charsets or _charsets(ui)
         for ics in (encoding.encoding, encoding.fallbackencoding):
             try:
                 u = s.decode(ics)
@@ -263,7 +291,7 @@ def _encode(ui, s, charsets):
                 continue
             for ocs in sendcharsets:
                 try:
-                    return u.encode(ocs), ocs
+                    return u.encode(pycompat.sysstr(ocs)), ocs
                 except UnicodeEncodeError:
                     pass
                 except LookupError:
@@ -280,40 +308,46 @@ def headencode(ui, s, charsets=None, display=False):
     return s
 
 def _addressencode(ui, name, addr, charsets=None):
+    assert isinstance(addr, bytes)
     name = headencode(ui, name, charsets)
     try:
         acc, dom = addr.split('@')
-        acc = acc.encode('ascii')
-        dom = dom.decode(encoding.encoding).encode('idna')
+        acc.decode('ascii')
+        dom = dom.decode(pycompat.sysstr(encoding.encoding)).encode('idna')
         addr = '%s@%s' % (acc, dom)
     except UnicodeDecodeError:
         raise error.Abort(_('invalid email address: %s') % addr)
     except ValueError:
         try:
             # too strict?
-            addr = addr.encode('ascii')
+            addr.decode('ascii')
         except UnicodeDecodeError:
             raise error.Abort(_('invalid local address: %s') % addr)
-    return email.utils.formataddr((name, addr))
+    return pycompat.bytesurl(
+        email.utils.formataddr((name, encoding.strfromlocal(addr))))
 
 def addressencode(ui, address, charsets=None, display=False):
     '''Turns address into RFC-2047 compliant header.'''
     if display or not address:
         return address or ''
-    name, addr = email.utils.parseaddr(address)
-    return _addressencode(ui, name, addr, charsets)
+    name, addr = email.utils.parseaddr(encoding.strfromlocal(address))
+    return _addressencode(ui, name, encoding.strtolocal(addr), charsets)
 
 def addrlistencode(ui, addrs, charsets=None, display=False):
     '''Turns a list of addresses into a list of RFC-2047 compliant headers.
     A single element of input list may contain multiple addresses, but output
     always has one address per item'''
+    for a in addrs:
+        assert isinstance(a, bytes), (r'%r unexpectedly not a bytestr' % a)
     if display:
         return [a.strip() for a in addrs if a.strip()]
 
     result = []
-    for name, addr in email.utils.getaddresses(addrs):
+    for name, addr in email.utils.getaddresses(
+            [encoding.strfromlocal(a) for a in addrs]):
         if name or addr:
-            result.append(_addressencode(ui, name, addr, charsets))
+            r = _addressencode(ui, name, encoding.strtolocal(addr), charsets)
+            result.append(r)
     return result
 
 def mimeencode(ui, s, charsets=None, display=False):

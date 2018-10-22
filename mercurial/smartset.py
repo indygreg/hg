@@ -137,7 +137,7 @@ class abstractsmartset(object):
 
         This is part of the mandatory API for smartset."""
         # builtin cannot be cached. but do not needs to
-        if cache and util.safehasattr(condition, 'func_code'):
+        if cache and util.safehasattr(condition, '__code__'):
             condition = util.cachefunc(condition)
         return filteredset(self, condition, condrepr)
 
@@ -152,11 +152,11 @@ class abstractsmartset(object):
         # but start > stop is allowed, which should be an empty set.
         ys = []
         it = iter(self)
-        for x in xrange(start):
+        for x in pycompat.xrange(start):
             y = next(it, None)
             if y is None:
                 break
-        for x in xrange(stop - start):
+        for x in pycompat.xrange(stop - start):
             y = next(it, None)
             if y is None:
                 break
@@ -1005,13 +1005,13 @@ class _spanset(abstractsmartset):
             return self.fastdesc()
 
     def fastasc(self):
-        iterrange = xrange(self._start, self._end)
+        iterrange = pycompat.xrange(self._start, self._end)
         if self._hiddenrevs:
             return self._iterfilter(iterrange)
         return iter(iterrange)
 
     def fastdesc(self):
-        iterrange = xrange(self._end - 1, self._start - 1, -1)
+        iterrange = pycompat.xrange(self._end - 1, self._start - 1, -1)
         if self._hiddenrevs:
             return self._iterfilter(iterrange)
         return iter(iterrange)

@@ -53,162 +53,254 @@ the extension is unknown.
   
   list of commands:
   
-   add           add the specified files on the next commit
-   addremove     add all new files, delete all missing files
-   annotate      show changeset information by line for each file
-   archive       create an unversioned archive of a repository revision
+  Repository creation:
+  
+   clone         make a copy of an existing repository
+   init          create a new repository in the given directory
+  
+  Remote repository management:
+  
+   incoming      show new changesets found in source
+   outgoing      show changesets not found in the destination
+   paths         show aliases for remote repositories
+   pull          pull changes from the specified source
+   push          push changes to the specified destination
+   serve         start stand-alone webserver
+  
+  Change creation:
+  
+   commit        commit the specified files or all outstanding changes
+  
+  Change manipulation:
+  
    backout       reverse effect of earlier changeset
-   bisect        subdivision search of changesets
+   graft         copy changes from other branches onto the current branch
+   merge         merge another revision into working directory
+  
+  Change organization:
+  
    bookmarks     create a new bookmark or list existing bookmarks
    branch        set or show the current branch name
    branches      list repository named branches
-   bundle        create a bundle file
+   phase         set or show the current phase name
+   tag           add one or more tags for the current or given revision
+   tags          list repository tags
+  
+  File content management:
+  
+   annotate      show changeset information by line for each file
    cat           output the current or given revision of files
-   clone         make a copy of an existing repository
-   commit        commit the specified files or all outstanding changes
-   config        show combined config settings from all hgrc files
    copy          mark files as copied for the next commit
    diff          diff repository (or selected files)
-   export        dump the header and diffs for one or more changesets
+   grep          search revision history for a pattern in specified files
+  
+  Change navigation:
+  
+   bisect        subdivision search of changesets
+   heads         show branch heads
+   identify      identify the working directory or specified revision
+   log           show revision history of entire repository or files
+  
+  Working directory management:
+  
+   add           add the specified files on the next commit
+   addremove     add all new files, delete all missing files
    files         list tracked files
    forget        forget the specified files on the next commit
-   graft         copy changes from other branches onto the current branch
-   grep          search revision history for a pattern in specified files
-   heads         show branch heads
-   help          show help for a given topic or a help overview
-   identify      identify the working directory or specified revision
-   import        import an ordered set of patches
-   incoming      show new changesets found in source
-   init          create a new repository in the given directory
-   log           show revision history of entire repository or files
-   manifest      output the current or given revision of the project manifest
-   merge         merge another revision into working directory
-   outgoing      show changesets not found in the destination
-   paths         show aliases for remote repositories
-   phase         set or show the current phase name
-   pull          pull changes from the specified source
-   push          push changes to the specified destination
-   recover       roll back an interrupted transaction
    remove        remove the specified files on the next commit
    rename        rename files; equivalent of copy + remove
    resolve       redo merges or set/view the merge status of files
    revert        restore files to their checkout state
    root          print the root (top) of the current working directory
-   serve         start stand-alone webserver
    status        show changed files in the working directory
    summary       summarize working directory state
-   tag           add one or more tags for the current or given revision
-   tags          list repository tags
-   unbundle      apply one or more bundle files
    update        update working directory (or switch revisions)
+  
+  Change import/export:
+  
+   archive       create an unversioned archive of a repository revision
+   bundle        create a bundle file
+   export        dump the header and diffs for one or more changesets
+   import        import an ordered set of patches
+   unbundle      apply one or more bundle files
+  
+  Repository maintenance:
+  
+   manifest      output the current or given revision of the project manifest
+   recover       roll back an interrupted transaction
    verify        verify the integrity of the repository
+  
+  Help:
+  
+   config        show combined config settings from all hgrc files
+   help          show help for a given topic or a help overview
    version       output version and copyright information
   
   additional help topics:
   
-   bundlespec    Bundle File Formats
+  Mercurial identifiers:
+  
+   filesets      Specifying File Sets
+   hgignore      Syntax for Mercurial Ignore Files
+   patterns      File Name Patterns
+   revisions     Specifying Revisions
+   urls          URL Paths
+  
+  Mercurial output:
+  
    color         Colorizing Outputs
-   config        Configuration Files
    dates         Date Formats
-   deprecated    Deprecated Features
    diffs         Diff Formats
+   templating    Template Usage
+  
+  Mercurial configuration:
+  
+   config        Configuration Files
    environment   Environment Variables
    extensions    Using Additional Features
-   filesets      Specifying File Sets
    flags         Command-line flags
-   glossary      Glossary
-   hgignore      Syntax for Mercurial Ignore Files
    hgweb         Configuring hgweb
-   internals     Technical implementation topics
    merge-tools   Merge Tools
    pager         Pager Support
-   patterns      File Name Patterns
+  
+  Concepts:
+  
+   bundlespec    Bundle File Formats
+   glossary      Glossary
    phases        Working with Phases
-   revisions     Specifying Revisions
-   scripting     Using Mercurial from scripts and automation
    subrepos      Subrepositories
-   templating    Template Usage
-   urls          URL Paths
+  
+  Miscellaneous:
+  
+   deprecated    Deprecated Features
+   internals     Technical implementation topics
+   scripting     Using Mercurial from scripts and automation
   
   (use 'hg help -v' to show built-in aliases and global options)
 
   $ hg -q help
-   add           add the specified files on the next commit
-   addremove     add all new files, delete all missing files
-   annotate      show changeset information by line for each file
-   archive       create an unversioned archive of a repository revision
+  Repository creation:
+  
+   clone         make a copy of an existing repository
+   init          create a new repository in the given directory
+  
+  Remote repository management:
+  
+   incoming      show new changesets found in source
+   outgoing      show changesets not found in the destination
+   paths         show aliases for remote repositories
+   pull          pull changes from the specified source
+   push          push changes to the specified destination
+   serve         start stand-alone webserver
+  
+  Change creation:
+  
+   commit        commit the specified files or all outstanding changes
+  
+  Change manipulation:
+  
    backout       reverse effect of earlier changeset
-   bisect        subdivision search of changesets
+   graft         copy changes from other branches onto the current branch
+   merge         merge another revision into working directory
+  
+  Change organization:
+  
    bookmarks     create a new bookmark or list existing bookmarks
    branch        set or show the current branch name
    branches      list repository named branches
-   bundle        create a bundle file
+   phase         set or show the current phase name
+   tag           add one or more tags for the current or given revision
+   tags          list repository tags
+  
+  File content management:
+  
+   annotate      show changeset information by line for each file
    cat           output the current or given revision of files
-   clone         make a copy of an existing repository
-   commit        commit the specified files or all outstanding changes
-   config        show combined config settings from all hgrc files
    copy          mark files as copied for the next commit
    diff          diff repository (or selected files)
-   export        dump the header and diffs for one or more changesets
+   grep          search revision history for a pattern in specified files
+  
+  Change navigation:
+  
+   bisect        subdivision search of changesets
+   heads         show branch heads
+   identify      identify the working directory or specified revision
+   log           show revision history of entire repository or files
+  
+  Working directory management:
+  
+   add           add the specified files on the next commit
+   addremove     add all new files, delete all missing files
    files         list tracked files
    forget        forget the specified files on the next commit
-   graft         copy changes from other branches onto the current branch
-   grep          search revision history for a pattern in specified files
-   heads         show branch heads
-   help          show help for a given topic or a help overview
-   identify      identify the working directory or specified revision
-   import        import an ordered set of patches
-   incoming      show new changesets found in source
-   init          create a new repository in the given directory
-   log           show revision history of entire repository or files
-   manifest      output the current or given revision of the project manifest
-   merge         merge another revision into working directory
-   outgoing      show changesets not found in the destination
-   paths         show aliases for remote repositories
-   phase         set or show the current phase name
-   pull          pull changes from the specified source
-   push          push changes to the specified destination
-   recover       roll back an interrupted transaction
    remove        remove the specified files on the next commit
    rename        rename files; equivalent of copy + remove
    resolve       redo merges or set/view the merge status of files
    revert        restore files to their checkout state
    root          print the root (top) of the current working directory
-   serve         start stand-alone webserver
    status        show changed files in the working directory
    summary       summarize working directory state
-   tag           add one or more tags for the current or given revision
-   tags          list repository tags
-   unbundle      apply one or more bundle files
    update        update working directory (or switch revisions)
+  
+  Change import/export:
+  
+   archive       create an unversioned archive of a repository revision
+   bundle        create a bundle file
+   export        dump the header and diffs for one or more changesets
+   import        import an ordered set of patches
+   unbundle      apply one or more bundle files
+  
+  Repository maintenance:
+  
+   manifest      output the current or given revision of the project manifest
+   recover       roll back an interrupted transaction
    verify        verify the integrity of the repository
+  
+  Help:
+  
+   config        show combined config settings from all hgrc files
+   help          show help for a given topic or a help overview
    version       output version and copyright information
   
   additional help topics:
   
-   bundlespec    Bundle File Formats
+  Mercurial identifiers:
+  
+   filesets      Specifying File Sets
+   hgignore      Syntax for Mercurial Ignore Files
+   patterns      File Name Patterns
+   revisions     Specifying Revisions
+   urls          URL Paths
+  
+  Mercurial output:
+  
    color         Colorizing Outputs
-   config        Configuration Files
    dates         Date Formats
-   deprecated    Deprecated Features
    diffs         Diff Formats
+   templating    Template Usage
+  
+  Mercurial configuration:
+  
+   config        Configuration Files
    environment   Environment Variables
    extensions    Using Additional Features
-   filesets      Specifying File Sets
    flags         Command-line flags
-   glossary      Glossary
-   hgignore      Syntax for Mercurial Ignore Files
    hgweb         Configuring hgweb
-   internals     Technical implementation topics
    merge-tools   Merge Tools
    pager         Pager Support
-   patterns      File Name Patterns
+  
+  Concepts:
+  
+   bundlespec    Bundle File Formats
+   glossary      Glossary
    phases        Working with Phases
-   revisions     Specifying Revisions
-   scripting     Using Mercurial from scripts and automation
    subrepos      Subrepositories
-   templating    Template Usage
-   urls          URL Paths
+  
+  Miscellaneous:
+  
+   deprecated    Deprecated Features
+   internals     Technical implementation topics
+   scripting     Using Mercurial from scripts and automation
 
 Test extension help:
   $ hg help extensions --config extensions.rebase= --config extensions.children=
@@ -262,6 +354,7 @@ Test extension help:
        censor        erase file content at a given revision
        churn         command to display statistics about repository history
        clonebundles  advertise pre-generated bundles to seed clones
+       closehead     close arbitrary heads without checking them out first
        convert       import revisions from foreign VCS repositories into
                      Mercurial
        eol           automatically manage newlines in repository files
@@ -637,6 +730,7 @@ Test command without options
    -I --include PATTERN [+] include names matching the given patterns
    -X --exclude PATTERN [+] exclude names matching the given patterns
    -S --subrepos            recurse into subrepositories
+   -T --template TEMPLATE   display with template
   
   (some details hidden, use --verbose to show complete help)
 
@@ -652,29 +746,7 @@ Test command without options
 
   $ hg skjdfks
   hg: unknown command 'skjdfks'
-  Mercurial Distributed SCM
-  
-  basic commands:
-  
-   add           add the specified files on the next commit
-   annotate      show changeset information by line for each file
-   clone         make a copy of an existing repository
-   commit        commit the specified files or all outstanding changes
-   diff          diff repository (or selected files)
-   export        dump the header and diffs for one or more changesets
-   forget        forget the specified files on the next commit
-   init          create a new repository in the given directory
-   log           show revision history of entire repository or files
-   merge         merge another revision into working directory
-   pull          pull changes from the specified source
-   push          push changes to the specified destination
-   remove        remove the specified files on the next commit
-   serve         start stand-alone webserver
-   status        show changed files in the working directory
-   summary       summarize working directory state
-   update        update working directory (or switch revisions)
-  
-  (use 'hg help' for the full list of commands or 'hg -v' for details)
+  (use 'hg help' for a list of commands)
   [255]
 
 Typoed command gives suggestion
@@ -830,55 +902,87 @@ Test that default list of commands omits extension commands
   
   list of commands:
   
-   add           add the specified files on the next commit
-   addremove     add all new files, delete all missing files
-   annotate      show changeset information by line for each file
-   archive       create an unversioned archive of a repository revision
+  Repository creation:
+  
+   clone         make a copy of an existing repository
+   init          create a new repository in the given directory
+  
+  Remote repository management:
+  
+   incoming      show new changesets found in source
+   outgoing      show changesets not found in the destination
+   paths         show aliases for remote repositories
+   pull          pull changes from the specified source
+   push          push changes to the specified destination
+   serve         start stand-alone webserver
+  
+  Change creation:
+  
+   commit        commit the specified files or all outstanding changes
+  
+  Change manipulation:
+  
    backout       reverse effect of earlier changeset
-   bisect        subdivision search of changesets
+   graft         copy changes from other branches onto the current branch
+   merge         merge another revision into working directory
+  
+  Change organization:
+  
    bookmarks     create a new bookmark or list existing bookmarks
    branch        set or show the current branch name
    branches      list repository named branches
-   bundle        create a bundle file
+   phase         set or show the current phase name
+   tag           add one or more tags for the current or given revision
+   tags          list repository tags
+  
+  File content management:
+  
+   annotate      show changeset information by line for each file
    cat           output the current or given revision of files
-   clone         make a copy of an existing repository
-   commit        commit the specified files or all outstanding changes
-   config        show combined config settings from all hgrc files
    copy          mark files as copied for the next commit
    diff          diff repository (or selected files)
-   export        dump the header and diffs for one or more changesets
+   grep          search revision history for a pattern in specified files
+  
+  Change navigation:
+  
+   bisect        subdivision search of changesets
+   heads         show branch heads
+   identify      identify the working directory or specified revision
+   log           show revision history of entire repository or files
+  
+  Working directory management:
+  
+   add           add the specified files on the next commit
+   addremove     add all new files, delete all missing files
    files         list tracked files
    forget        forget the specified files on the next commit
-   graft         copy changes from other branches onto the current branch
-   grep          search revision history for a pattern in specified files
-   heads         show branch heads
-   help          show help for a given topic or a help overview
-   identify      identify the working directory or specified revision
-   import        import an ordered set of patches
-   incoming      show new changesets found in source
-   init          create a new repository in the given directory
-   log           show revision history of entire repository or files
-   manifest      output the current or given revision of the project manifest
-   merge         merge another revision into working directory
-   outgoing      show changesets not found in the destination
-   paths         show aliases for remote repositories
-   phase         set or show the current phase name
-   pull          pull changes from the specified source
-   push          push changes to the specified destination
-   recover       roll back an interrupted transaction
    remove        remove the specified files on the next commit
    rename        rename files; equivalent of copy + remove
    resolve       redo merges or set/view the merge status of files
    revert        restore files to their checkout state
    root          print the root (top) of the current working directory
-   serve         start stand-alone webserver
    status        show changed files in the working directory
    summary       summarize working directory state
-   tag           add one or more tags for the current or given revision
-   tags          list repository tags
-   unbundle      apply one or more bundle files
    update        update working directory (or switch revisions)
+  
+  Change import/export:
+  
+   archive       create an unversioned archive of a repository revision
+   bundle        create a bundle file
+   export        dump the header and diffs for one or more changesets
+   import        import an ordered set of patches
+   unbundle      apply one or more bundle files
+  
+  Repository maintenance:
+  
+   manifest      output the current or given revision of the project manifest
+   recover       roll back an interrupted transaction
    verify        verify the integrity of the repository
+  
+  Help:
+  
+   config        show combined config settings from all hgrc files
+   help          show help for a given topic or a help overview
    version       output version and copyright information
   
   enabled extensions:
@@ -887,29 +991,43 @@ Test that default list of commands omits extension commands
   
   additional help topics:
   
-   bundlespec    Bundle File Formats
+  Mercurial identifiers:
+  
+   filesets      Specifying File Sets
+   hgignore      Syntax for Mercurial Ignore Files
+   patterns      File Name Patterns
+   revisions     Specifying Revisions
+   urls          URL Paths
+  
+  Mercurial output:
+  
    color         Colorizing Outputs
-   config        Configuration Files
    dates         Date Formats
-   deprecated    Deprecated Features
    diffs         Diff Formats
+   templating    Template Usage
+  
+  Mercurial configuration:
+  
+   config        Configuration Files
    environment   Environment Variables
    extensions    Using Additional Features
-   filesets      Specifying File Sets
    flags         Command-line flags
-   glossary      Glossary
-   hgignore      Syntax for Mercurial Ignore Files
    hgweb         Configuring hgweb
-   internals     Technical implementation topics
    merge-tools   Merge Tools
    pager         Pager Support
-   patterns      File Name Patterns
+  
+  Concepts:
+  
+   bundlespec    Bundle File Formats
+   glossary      Glossary
    phases        Working with Phases
-   revisions     Specifying Revisions
-   scripting     Using Mercurial from scripts and automation
    subrepos      Subrepositories
-   templating    Template Usage
-   urls          URL Paths
+  
+  Miscellaneous:
+  
+   deprecated    Deprecated Features
+   internals     Technical implementation topics
+   scripting     Using Mercurial from scripts and automation
   
   (use 'hg help -v' to show built-in aliases and global options)
 
@@ -960,12 +1078,17 @@ Test list of internal help commands
                  retrieves a bundle from a repo
    debugignore   display the combined ignore pattern and information about
                  ignored files
-   debugindex    dump the contents of an index file
+   debugindex    dump index data for a storage primitive
    debugindexdot
                  dump an index DAG as a graphviz dot file
+   debugindexstats
+                 show stats related to the changelog index
    debuginstall  test Mercurial installation
    debugknown    test whether node ids are known to a repo
    debuglocks    show or modify state of locks
+   debugmanifestfulltextcache
+                 show, clear or amend the contents of the manifest fulltext
+                 cache
    debugmergestate
                  print merge state
    debugnamecomplete
@@ -989,6 +1112,8 @@ Test list of internal help commands
                  rebuild the fncache file
    debugrename   dump rename information
    debugrevlog   show data and statistics about a revlog
+   debugrevlogindex
+                 dump the contents of a revlog index
    debugrevspec  parse and apply a revision specification
    debugserve    run a server with advanced settings
    debugsetparents
@@ -1027,12 +1152,17 @@ internals topic renders index of available sub-topics
   
        bundle2       Bundle2
        bundles       Bundles
+       cbor          CBOR
        censor        Censor
        changegroups  Changegroups
        config        Config Registrar
        requirements  Repository Requirements
        revlogs       Revision Logs
        wireprotocol  Wire Protocol
+       wireprotocolrpc
+                     Wire Protocol RPC
+       wireprotocolv2
+                     Wire Protocol Version 2
 
 sub-topics can be accessed
 
@@ -1046,8 +1176,8 @@ sub-topics can be accessed
   
       There are 3 versions of changegroups: "1", "2", and "3". From a high-
       level, versions "1" and "2" are almost exactly the same, with the only
-      difference being an additional item in the *delta header*.  Version "3"
-      adds support for revlog flags in the *delta header* and optionally
+      difference being an additional item in the *delta header*. Version "3"
+      adds support for storage flags in the *delta header* and optionally
       exchanging treemanifests (enabled by setting an option on the
       "changegroup" part in the bundle2).
   
@@ -1169,6 +1299,27 @@ sub-topics can be accessed
       In version 2 and up, the delta base node is encoded in the entry in the
       changegroup. This allows the delta to be expressed against any parent,
       which can result in smaller deltas and more efficient encoding of data.
+  
+      The *flags* field holds bitwise flags affecting the processing of revision
+      data. The following flags are defined:
+  
+      32768
+         Censored revision. The revision's fulltext has been replaced by censor
+         metadata. May only occur on file revisions.
+  
+      16384
+         Ellipsis revision. Revision hash does not match data (likely due to
+         rewritten parents).
+  
+      8192
+         Externally stored. The revision fulltext contains "key:value" "\n"
+         delimited metadata defining an object stored elsewhere. Used by the LFS
+         extension.
+  
+      For historical reasons, the integer values are identical to revlog version
+      1 per-revision storage flags and correspond to bits being set in this
+      2-byte field. Bits were allocated starting from the most-significant bit,
+      hence the reverse ordering and allocation of these flags.
   
       Changeset Segment
       =================
@@ -1357,6 +1508,55 @@ Test repeated config section name
       "smtp.host"
           Host name of mail server, e.g. "mail.example.com".
   
+
+Test section name with dot
+
+  $ hg help config.ui.username
+      "ui.username"
+          The committer of a changeset created when running "commit". Typically
+          a person's name and email address, e.g. "Fred Widget
+          <fred@example.com>". Environment variables in the username are
+          expanded.
+  
+          (default: "$EMAIL" or "username@hostname". If the username in hgrc is
+          empty, e.g. if the system admin set "username =" in the system hgrc,
+          it has to be specified manually or in a different hgrc file)
+  
+
+  $ hg help config.annotate.git
+  abort: help section not found: config.annotate.git
+  [255]
+
+  $ hg help config.update.check
+      "commands.update.check"
+          Determines what level of checking 'hg update' will perform before
+          moving to a destination revision. Valid values are "abort", "none",
+          "linear", and "noconflict". "abort" always fails if the working
+          directory has uncommitted changes. "none" performs no checking, and
+          may result in a merge with uncommitted changes. "linear" allows any
+          update as long as it follows a straight line in the revision history,
+          and may trigger a merge with uncommitted changes. "noconflict" will
+          allow any update which would not trigger a merge with uncommitted
+          changes, if any are present. (default: "linear")
+  
+
+  $ hg help config.commands.update.check
+      "commands.update.check"
+          Determines what level of checking 'hg update' will perform before
+          moving to a destination revision. Valid values are "abort", "none",
+          "linear", and "noconflict". "abort" always fails if the working
+          directory has uncommitted changes. "none" performs no checking, and
+          may result in a merge with uncommitted changes. "linear" allows any
+          update as long as it follows a straight line in the revision history,
+          and may trigger a merge with uncommitted changes. "noconflict" will
+          allow any update which would not trigger a merge with uncommitted
+          changes, if any are present. (default: "linear")
+  
+
+  $ hg help config.ommands.update.check
+  abort: help section not found: config.ommands.update.check
+  [255]
+
 Unrelated trailing paragraphs shouldn't be included
 
   $ hg help config.extramsg | grep '^$'
@@ -1376,6 +1576,14 @@ Show nested definitions
 
   $ hg help config.type | egrep '^$'|wc -l
   \s*3 (re)
+
+  $ hg help config.profiling.type.ls
+          "profiling.type.ls"
+            Use Python's built-in instrumenting profiler. This profiler works on
+            all platforms, but each line number it reports is the first line of
+            a function. This restriction makes it difficult to identify the
+            expensive parts of a non-trivial function.
+  
 
 Separate sections from subsections
 
@@ -1433,19 +1641,19 @@ Test help hooks
   > from mercurial import help
   > 
   > def rewrite(ui, topic, doc):
-  >     return doc + '\nhelphook1\n'
+  >     return doc + b'\nhelphook1\n'
   > 
   > def extsetup(ui):
-  >     help.addtopichook('revisions', rewrite)
+  >     help.addtopichook(b'revisions', rewrite)
   > EOF
   $ cat > helphook2.py <<EOF
   > from mercurial import help
   > 
   > def rewrite(ui, topic, doc):
-  >     return doc + '\nhelphook2\n'
+  >     return doc + b'\nhelphook2\n'
   > 
   > def extsetup(ui):
-  >     help.addtopichook('revisions', rewrite)
+  >     help.addtopichook(b'revisions', rewrite)
   > EOF
   $ echo '[extensions]' >> $HGRCPATH
   $ echo "helphook1 = `pwd`/helphook1.py" >> $HGRCPATH
@@ -1499,7 +1707,7 @@ Test -e / -c / -k combinations
   Commands:
   $ hg help -c commit > /dev/null
   $ hg help -e -c commit > /dev/null
-  $ hg help -e commit > /dev/null
+  $ hg help -e commit
   abort: no such help topic: commit
   (try 'hg help --keyword commit')
   [255]
@@ -1572,7 +1780,7 @@ Test omit indicating for help
   > '''
   > from __future__ import absolute_import
   > from mercurial import commands, help
-  > testtopic = """This paragraph is never omitted (for topic).
+  > testtopic = b"""This paragraph is never omitted (for topic).
   > 
   > .. container:: verbose
   > 
@@ -1582,8 +1790,8 @@ Test omit indicating for help
   > This paragraph is never omitted, too (for topic)
   > """
   > def extsetup(ui):
-  >     help.helptable.append((["topic-containing-verbose"],
-  >                            "This is the topic to test omit indicating.",
+  >     help.helptable.append(([b"topic-containing-verbose"],
+  >                            b"This is the topic to test omit indicating.",
   >                            lambda ui: testtopic))
   > EOF
   $ echo '[extensions]' >> $HGRCPATH
@@ -1727,15 +1935,15 @@ replacement makes message meaningless.
 This tests that section lookup by translated string isn't broken by
 such str.lower().
 
-  $ $PYTHON <<EOF
+  $ "$PYTHON" <<EOF
   > def escape(s):
-  >     return ''.join('\u%x' % ord(uc) for uc in s.decode('cp932'))
+  >     return b''.join(b'\\u%x' % ord(uc) for uc in s.decode('cp932'))
   > # translation of "record" in ja_JP.cp932
-  > upper = "\x8bL\x98^"
+  > upper = b"\x8bL\x98^"
   > # str.lower()-ed section name should be treated as different one
-  > lower = "\x8bl\x98^"
-  > with open('ambiguous.py', 'w') as fp:
-  >     fp.write("""# ambiguous section names in ja_JP.cp932
+  > lower = b"\x8bl\x98^"
+  > with open('ambiguous.py', 'wb') as fp:
+  >     fp.write(b"""# ambiguous section names in ja_JP.cp932
   > u'''summary of extension
   > 
   > %s
@@ -1761,9 +1969,10 @@ such str.lower().
   > ambiguous = ./ambiguous.py
   > EOF
 
-  $ $PYTHON <<EOF | sh
-  > upper = "\x8bL\x98^"
-  > print("hg --encoding cp932 help -e ambiguous.%s" % upper)
+  $ "$PYTHON" <<EOF | sh
+  > from mercurial import pycompat
+  > upper = b"\x8bL\x98^"
+  > pycompat.stdout.write(b"hg --encoding cp932 help -e ambiguous.%s\n" % upper)
   > EOF
   \x8bL\x98^ (esc)
   ----
@@ -1771,9 +1980,10 @@ such str.lower().
   Upper name should show only this message
   
 
-  $ $PYTHON <<EOF | sh
-  > lower = "\x8bl\x98^"
-  > print("hg --encoding cp932 help -e ambiguous.%s" % lower)
+  $ "$PYTHON" <<EOF | sh
+  > from mercurial import pycompat
+  > lower = b"\x8bl\x98^"
+  > pycompat.stdout.write(b"hg --encoding cp932 help -e ambiguous.%s\n" % lower)
   > EOF
   \x8bl\x98^ (esc)
   ----
@@ -1848,17 +2058,25 @@ Test dynamic list of merge tools only shows up once
         This implies premerge. Therefore, files aren't dumped, if premerge runs
         successfully. Use :forcedump to forcibly write files out.
   
+        (actual capabilities: binary, symlink)
+  
       ":fail"
         Rather than attempting to merge files that were modified on both
         branches, it marks them as unresolved. The resolve command must be used
         to resolve these conflicts.
   
+        (actual capabilities: binary, symlink)
+  
       ":forcedump"
         Creates three versions of the files as same as :dump, but omits
         premerge.
   
+        (actual capabilities: binary, symlink)
+  
       ":local"
         Uses the local 'p1()' version of files as the merged version.
+  
+        (actual capabilities: binary, symlink)
   
       ":merge"
         Uses the internal non-interactive simple merge algorithm for merging
@@ -1883,9 +2101,13 @@ Test dynamic list of merge tools only shows up once
       ":other"
         Uses the other 'p2()' version of files as the merged version.
   
+        (actual capabilities: binary, symlink)
+  
       ":prompt"
         Asks the user which of the local 'p1()' or the other 'p2()' version to
         keep as the merged version.
+  
+        (actual capabilities: binary, symlink)
   
       ":tagmerge"
         Uses the internal tag merge algorithm (experimental).
@@ -1896,7 +2118,8 @@ Test dynamic list of merge tools only shows up once
         markers are inserted.
   
       Internal tools are always available and do not require a GUI but will by
-      default not handle symlinks or binary files.
+      default not handle symlinks or binary files. See next section for detail
+      about "actual capabilities" described above.
   
       Choosing a merge tool
       =====================
@@ -1911,8 +2134,7 @@ Test dynamic list of merge tools only shows up once
          must be executable by the shell.
       3. If the filename of the file to be merged matches any of the patterns in
          the merge-patterns configuration section, the first usable merge tool
-         corresponding to a matching pattern is used. Here, binary capabilities
-         of the merge tool are not considered.
+         corresponding to a matching pattern is used.
       4. If ui.merge is set it will be considered next. If the value is not the
          name of a configured tool, the specified value is used and must be
          executable by the shell. Otherwise the named tool is used if it is
@@ -1924,6 +2146,27 @@ Test dynamic list of merge tools only shows up once
       7. If the file to be merged is not binary and is not a symlink, then
          internal ":merge" is used.
       8. Otherwise, ":prompt" is used.
+  
+      For historical reason, Mercurial treats merge tools as below while
+      examining rules above.
+  
+      step specified via  binary symlink
+      ----------------------------------
+      1.   --tool         o/o    o/o
+      2.   HGMERGE        o/o    o/o
+      3.   merge-patterns o/o(*) x/?(*)
+      4.   ui.merge       x/?(*) x/?(*)
+  
+      Each capability column indicates Mercurial behavior for internal/external
+      merge tools at examining each rule.
+  
+      - "o": "assume that a tool has capability"
+      - "x": "assume that a tool does not have capability"
+      - "?": "check actual capability of a tool"
+  
+      If "merge.strict-capability-check" configuration is true, Mercurial checks
+      capabilities of merge tools strictly in (*) cases above (= each capability
+      column becomes "?/?"). It is false by default for backward compatibility.
   
       Note:
          After selecting a merge program, Mercurial will by default attempt to
@@ -1948,7 +2191,7 @@ Compression engines listed in `hg help bundlespec`
 Test usage of section marks in help documents
 
   $ cd "$TESTDIR"/../doc
-  $ $PYTHON check-seclevel.py
+  $ "$PYTHON" check-seclevel.py
   $ cd $TESTTMP
 
 #if serve
@@ -3221,6 +3464,13 @@ Sub-topic indexes rendered properly
   Bundles
   </td></tr>
   <tr><td>
+  <a href="/help/internals.cbor">
+  cbor
+  </a>
+  </td><td>
+  CBOR
+  </td></tr>
+  <tr><td>
   <a href="/help/internals.censor">
   censor
   </a>
@@ -3261,6 +3511,20 @@ Sub-topic indexes rendered properly
   </a>
   </td><td>
   Wire Protocol
+  </td></tr>
+  <tr><td>
+  <a href="/help/internals.wireprotocolrpc">
+  wireprotocolrpc
+  </a>
+  </td><td>
+  Wire Protocol RPC
+  </td></tr>
+  <tr><td>
+  <a href="/help/internals.wireprotocolv2">
+  wireprotocolv2
+  </a>
+  </td><td>
+  Wire Protocol Version 2
   </td></tr>
   
   
@@ -3332,8 +3596,8 @@ Sub-topic topics rendered properly
   <p>
   There are 3 versions of changegroups: &quot;1&quot;, &quot;2&quot;, and &quot;3&quot;. From a
   high-level, versions &quot;1&quot; and &quot;2&quot; are almost exactly the same, with the
-  only difference being an additional item in the *delta header*.  Version
-  &quot;3&quot; adds support for revlog flags in the *delta header* and optionally
+  only difference being an additional item in the *delta header*. Version
+  &quot;3&quot; adds support for storage flags in the *delta header* and optionally
   exchanging treemanifests (enabled by setting an option on the
   &quot;changegroup&quot; part in the bundle2).
   </p>
@@ -3478,6 +3742,24 @@ Sub-topic topics rendered properly
   In version 2 and up, the delta base node is encoded in the entry in the
   changegroup. This allows the delta to be expressed against any parent,
   which can result in smaller deltas and more efficient encoding of data.
+  </p>
+  <p>
+  The *flags* field holds bitwise flags affecting the processing of revision
+  data. The following flags are defined:
+  </p>
+  <dl>
+   <dt>32768
+   <dd>Censored revision. The revision's fulltext has been replaced by censor metadata. May only occur on file revisions.
+   <dt>16384
+   <dd>Ellipsis revision. Revision hash does not match data (likely due to rewritten parents).
+   <dt>8192
+   <dd>Externally stored. The revision fulltext contains &quot;key:value&quot; &quot;\n&quot; delimited metadata defining an object stored elsewhere. Used by the LFS extension.
+  </dl>
+  <p>
+  For historical reasons, the integer values are identical to revlog version 1
+  per-revision storage flags and correspond to bits being set in this 2-byte
+  field. Bits were allocated starting from the most-significant bit, hence the
+  reverse ordering and allocation of these flags.
   </p>
   <h2>Changeset Segment</h2>
   <p>

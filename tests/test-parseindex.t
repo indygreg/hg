@@ -27,8 +27,7 @@ We approximate that by reducing the read buffer to 1 byte.
   
   $ cat >> test.py << EOF
   > from __future__ import print_function
-  > from mercurial import changelog, vfs
-  > from mercurial.node import *
+  > from mercurial import changelog, node, vfs
   > 
   > class singlebyteread(object):
   >     def __init__(self, real):
@@ -59,9 +58,9 @@ We approximate that by reducing the read buffer to 1 byte.
   > cl = changelog.changelog(opener('.hg/store'))
   > print(len(cl), 'revisions:')
   > for r in cl:
-  >     print(short(cl.node(r)))
+  >     print(node.short(cl.node(r)))
   > EOF
-  $ $PYTHON test.py
+  $ "$PYTHON" test.py
   2 revisions:
   7c31755bf9b5
   26333235a41c
@@ -74,7 +73,7 @@ Test SEGV caused by bad revision passed to reachableroots() (issue4775):
 
   $ cd a
 
-  $ $PYTHON <<EOF
+  $ "$PYTHON" <<EOF
   > from __future__ import print_function
   > from mercurial import changelog, vfs
   > cl = changelog.changelog(vfs.vfs('.hg/store'))
@@ -137,7 +136,7 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
   $ hg clone --pull -q --config phases.publish=False ../a segv
   $ rm -R limit/.hg/cache segv/.hg/cache
 
-  $ $PYTHON <<EOF
+  $ "$PYTHON" <<EOF
   > data = open("limit/.hg/store/00changelog.i", "rb").read()
   > for n, p in [(b'limit', b'\0\0\0\x02'), (b'segv', b'\0\x01\0\0')]:
   >     # corrupt p1 at rev0 and p2 at rev1
@@ -145,7 +144,7 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
   >     open(n + b"/.hg/store/00changelog.i", "wb").write(d)
   > EOF
 
-  $ hg -R limit debugindex -f1 -c
+  $ hg -R limit debugrevlogindex -f1 -c
      rev flag     size   link     p1     p2       nodeid
        0 0000       62      0      2     -1 7c31755bf9b5
        1 0000       65      1      0      2 26333235a41c
@@ -155,7 +154,7 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
         0       1        1       -1    base         63         62         63   1.01613        63         0    0.00000
         1       2        1       -1    base         66         65         66   1.01538        66         0    0.00000
 
-  $ hg -R segv debugindex -f1 -c
+  $ hg -R segv debugrevlogindex -f1 -c
      rev flag     size   link     p1     p2       nodeid
        0 0000       62      0  65536     -1 7c31755bf9b5
        1 0000       65      1      0  65536 26333235a41c
@@ -188,13 +187,13 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
   >         print(inst)
   > EOF
 
-  $ $PYTHON test.py limit/.hg/store
+  $ "$PYTHON" test.py limit/.hg/store
   reachableroots: parent out of range
   compute_phases_map_sets: parent out of range
   index_headrevs: parent out of range
   find_gca_candidates: parent out of range
   find_deepest: parent out of range
-  $ $PYTHON test.py segv/.hg/store
+  $ "$PYTHON" test.py segv/.hg/store
   reachableroots: parent out of range
   compute_phases_map_sets: parent out of range
   index_headrevs: parent out of range

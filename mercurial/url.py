@@ -317,8 +317,8 @@ class logginghttpconnection(keepalive.HTTPConnection):
 
 class logginghttphandler(httphandler):
     """HTTP handler that logs socket I/O."""
-    def __init__(self, logfh, name, observeropts):
-        super(logginghttphandler, self).__init__()
+    def __init__(self, logfh, name, observeropts, timeout=None):
+        super(logginghttphandler, self).__init__(timeout=timeout)
 
         self._logfh = logfh
         self._logname = name
@@ -339,7 +339,7 @@ class logginghttphandler(httphandler):
         return logginghttpconnection(createconnection, *args, **kwargs)
 
 if has_https:
-    class httpsconnection(httplib.HTTPConnection):
+    class httpsconnection(keepalive.HTTPConnection):
         response_class = keepalive.HTTPResponse
         default_port = httplib.HTTPS_PORT
         # must be able to send big bundle as stream.
@@ -348,7 +348,7 @@ if has_https:
 
         def __init__(self, host, port=None, key_file=None, cert_file=None,
                      *args, **kwargs):
-            httplib.HTTPConnection.__init__(self, host, port, *args, **kwargs)
+            keepalive.HTTPConnection.__init__(self, host, port, *args, **kwargs)
             self.key_file = key_file
             self.cert_file = cert_file
 
@@ -365,8 +365,8 @@ if has_https:
             sslutil.validatesocket(self.sock)
 
     class httpshandler(keepalive.KeepAliveHandler, urlreq.httpshandler):
-        def __init__(self, ui):
-            keepalive.KeepAliveHandler.__init__(self)
+        def __init__(self, ui, timeout=None):
+            keepalive.KeepAliveHandler.__init__(self, timeout=timeout)
             urlreq.httpshandler.__init__(self)
             self.ui = ui
             self.pwmgr = passwordmgr(self.ui,
@@ -525,18 +525,19 @@ def opener(ui, authinfo=None, useragent=None, loggingfh=None,
     ``sendaccept`` allows controlling whether the ``Accept`` request header
     is sent. The header is sent by default.
     '''
+    timeout = ui.configwith(float, 'http', 'timeout')
     handlers = []
 
     if loggingfh:
         handlers.append(logginghttphandler(loggingfh, loggingname,
-                                           loggingopts or {}))
+                                           loggingopts or {}, timeout=timeout))
         # We don't yet support HTTPS when logging I/O. If we attempt to open
         # an HTTPS URL, we'll likely fail due to unknown protocol.
 
     else:
-        handlers.append(httphandler())
+        handlers.append(httphandler(timeout=timeout))
         if has_https:
-            handlers.append(httpshandler(ui))
+            handlers.append(httpshandler(ui, timeout=timeout))
 
     handlers.append(proxyhandler(ui))
 
@@ -554,6 +555,11 @@ def opener(ui, authinfo=None, useragent=None, loggingfh=None,
     handlers.extend([h(ui, passmgr) for h in handlerfuncs])
     handlers.append(cookiehandler(ui))
     opener = urlreq.buildopener(*handlers)
+
+    # keepalive.py's handlers will populate these attributes if they exist.
+    opener.requestscount = 0
+    opener.sentbytescount = 0
+    opener.receivedbytescount = 0
 
     # The user agent should should *NOT* be used by servers for e.g.
     # protocol detection or feature negotiation: there are other
@@ -595,3 +601,39 @@ def open(ui, url_, data=None):
         url_ = 'file://' + pycompat.bytesurl(urlreq.pathname2url(path))
         authinfo = None
     return opener(ui, authinfo).open(pycompat.strurl(url_), data)
+
+def wrapresponse(resp):
+    """Wrap a response object with common error handlers.
+
+    This ensures that any I/O from any consumer raises the appropriate
+    error and messaging.
+    """
+    origread = resp.read
+
+    class readerproxy(resp.__class__):
+        def read(self, size=None):
+            try:
+                return origread(size)
+            except httplib.IncompleteRead as e:
+                # e.expected is an integer if length known or None otherwise.
+                if e.expected:
+                    got = len(e.partial)
+                    total = e.expected + got
+                    msg = _('HTTP request error (incomplete response; '
+                            'expected %d bytes got %d)') % (total, got)
+                else:
+                    msg = _('HTTP request error (incomplete response)')
+
+                raise error.PeerTransportError(
+                    msg,
+                    hint=_('this may be an intermittent network failure; '
+                           'if the error persists, consider contacting the '
+                           'network or server operator'))
+            except httplib.HTTPException as e:
+                raise error.PeerTransportError(
+                    _('HTTP request error (%s)') % e,
+                    hint=_('this may be an intermittent network failure; '
+                           'if the error persists, consider contacting the '
+                           'network or server operator'))
+
+    resp.__class__ = readerproxy

@@ -327,30 +327,12 @@ reflect this edition.
   hello world
   lower
 
-Check spacemovesdown
-
-  $ cat <<EOF >> $HGRCPATH
-  > [experimental]
-  > spacemovesdown = true
-  > EOF
-  $ cat <<EOF >testModeCommands
-  > TOGGLE
-  > TOGGLE
-  > X
-  > EOF
-  $ hg status -q
-  M b
-  M x
-  $ hg commit -i -m "nothing to commit?" -d "0 0"
-  no changes to record
-  [1]
-
 Check ui.interface logic for the chunkselector
 
 The default interface is text
   $ cp $HGRCPATH.pretest $HGRCPATH
   $ chunkselectorinterface() {
-  > $PYTHON <<EOF
+  > "$PYTHON" <<EOF
   > from mercurial import hg, ui;\
   > repo = hg.repository(ui.ui.load(), ".");\
   > print(repo.ui.interface("chunkselector"))

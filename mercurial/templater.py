@@ -548,7 +548,7 @@ class resourcemapper(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def availablekeys(self, context, mapping):
+    def availablekeys(self, mapping):
         """Return a set of available resource keys based on the given mapping"""
 
     @abc.abstractmethod
@@ -556,7 +556,7 @@ class resourcemapper(object):
         """Return a set of supported resource keys"""
 
     @abc.abstractmethod
-    def lookup(self, context, mapping, key):
+    def lookup(self, mapping, key):
         """Return a resource for the key if available; otherwise None"""
 
     @abc.abstractmethod
@@ -565,13 +565,13 @@ class resourcemapper(object):
         with the given new mapping"""
 
 class nullresourcemapper(resourcemapper):
-    def availablekeys(self, context, mapping):
+    def availablekeys(self, mapping):
         return set()
 
     def knownkeys(self):
         return set()
 
-    def lookup(self, context, mapping, key):
+    def lookup(self, mapping, key):
         return None
 
     def populatemap(self, context, origmapping, newmapping):
@@ -618,7 +618,7 @@ class engine(object):
         # do not copy symbols which overrides the defaults depending on
         # new resources, so the defaults will be re-evaluated (issue5612)
         knownres = self._resources.knownkeys()
-        newres = self._resources.availablekeys(self, newmapping)
+        newres = self._resources.availablekeys(newmapping)
         mapping = {k: v for k, v in origmapping.iteritems()
                    if (k in knownres  # not a symbol per self.symbol()
                        or newres.isdisjoint(self._defaultrequires(k)))}
@@ -645,7 +645,7 @@ class engine(object):
 
     def availableresourcekeys(self, mapping):
         """Return a set of available resource keys based on the given mapping"""
-        return self._resources.availablekeys(self, mapping)
+        return self._resources.availablekeys(mapping)
 
     def knownresourcekeys(self):
         """Return a set of supported resource keys"""
@@ -654,7 +654,7 @@ class engine(object):
     def resource(self, mapping, key):
         """Return internal data (e.g. cache) used for keyword/function
         evaluation"""
-        v = self._resources.lookup(self, mapping, key)
+        v = self._resources.lookup(mapping, key)
         if v is None:
             raise templateutil.ResourceUnavailable(
                 _('template resource not available: %s') % key)

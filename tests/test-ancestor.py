@@ -178,9 +178,9 @@ def test_missingancestors(seed, rng):
 # |
 # o  0
 
-graph = {0: [-1], 1: [0], 2: [1], 3: [1], 4: [2], 5: [4], 6: [4],
-         7: [4], 8: [-1], 9: [6, 7], 10: [5], 11: [3, 7], 12: [9],
-         13: [8]}
+graph = {0: [-1, -1], 1: [0, -1], 2: [1, -1], 3: [1, -1], 4: [2, -1],
+         5: [4, -1], 6: [4, -1], 7: [4, -1], 8: [-1, -1], 9: [6, 7],
+         10: [5, -1], 11: [3, 7], 12: [9, -1], 13: [8, -1]}
 
 def genlazyancestors(revs, stoprev=0, inclusive=False):
     print(("%% lazy ancestor set for %s, stoprev = %s, inclusive = %s" %
@@ -215,6 +215,15 @@ def test_lazyancestors():
     s = genlazyancestors([11, 13], stoprev=6, inclusive=True)
     printlazyancestors(s, [11, 13, 7, 9, 8, 3, 6, 4, 1, -1, 0])
 
+    # Test with stoprev >= min(initrevs)
+    s = genlazyancestors([11, 13], stoprev=11, inclusive=True)
+    printlazyancestors(s, [11, 13, 7, 9, 8, 3, 6, 4, 1, -1, 0])
+    s = genlazyancestors([11, 13], stoprev=12, inclusive=True)
+    printlazyancestors(s, [11, 13, 7, 9, 8, 3, 6, 4, 1, -1, 0])
+
+    # Contiguous chains: 5->4, 2->1 (where 1 is in seen set), 1->0
+    s = genlazyancestors([10, 1], inclusive=True)
+    printlazyancestors(s, [2, 10, 4, 5, -1, 0, 1])
 
 # The C gca algorithm requires a real repo. These are textual descriptions of
 # DAGs that have been known to be problematic, and, optionally, known pairs

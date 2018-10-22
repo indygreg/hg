@@ -14,11 +14,13 @@ from mercurial.node import bin, hex, nullid, short
 
 from mercurial import (
     error,
+    repository,
     revlog,
     util,
 )
 
 from mercurial.utils import (
+    storageutil,
     stringutil,
 )
 
@@ -29,6 +31,12 @@ from . import (
     pointer,
 )
 
+def localrepomakefilestorage(orig, requirements, features, **kwargs):
+    if b'lfs' in requirements:
+        features.add(repository.REPO_FEATURE_LFS)
+
+    return orig(requirements=requirements, features=features, **kwargs)
+
 def allsupportedversions(orig, ui):
     versions = orig(ui)
     versions.add('03')
@@ -38,7 +46,13 @@ def _capabilities(orig, repo, proto):
     '''Wrap server command to announce lfs server capability'''
     caps = orig(repo, proto)
     if util.safehasattr(repo.svfs, 'lfslocalblobstore'):
-        # XXX: change to 'lfs=serve' when separate git server isn't required?
+        # Advertise a slightly different capability when lfs is *required*, so
+        # that the client knows it MUST load the extension.  If lfs is not
+        # required on the server, there's no reason to autoload the extension
+        # on the client.
+        if b'lfs' in repo.requirements:
+            caps.append('lfs-serve')
+
         caps.append('lfs')
     return caps
 
@@ -69,13 +83,13 @@ def readfromstore(self, text):
             name = k[len('x-hg-'):]
             hgmeta[name] = p[k]
     if hgmeta or text.startswith('\1\n'):
-        text = revlog.packmeta(hgmeta, text)
+        text = storageutil.packmeta(hgmeta, text)
 
     return (text, True)
 
 def writetostore(self, text):
     # hg filelog metadata (includes rename, etc)
-    hgmeta, offset = revlog.parsemeta(text)
+    hgmeta, offset = storageutil.parsemeta(text)
     if offset and offset > 0:
         # lfs blob does not contain hg filelog metadata
         text = text[offset:]
@@ -108,28 +122,28 @@ def _islfs(rlog, node=None, rev=None):
         if node is None:
             # both None - likely working copy content where node is not ready
             return False
-        rev = rlog.rev(node)
+        rev = rlog._revlog.rev(node)
     else:
-        node = rlog.node(rev)
+        node = rlog._revlog.node(rev)
     if node == nullid:
         return False
-    flags = rlog.flags(rev)
+    flags = rlog._revlog.flags(rev)
     return bool(flags & revlog.REVIDX_EXTSTORED)
 
 def filelogaddrevision(orig, self, text, transaction, link, p1, p2,
                        cachedelta=None, node=None,
                        flags=revlog.REVIDX_DEFAULT_FLAGS, **kwds):
     # The matcher isn't available if reposetup() wasn't called.
-    lfstrack = self.opener.options.get('lfstrack')
+    lfstrack = self._revlog.opener.options.get('lfstrack')
 
     if lfstrack:
         textlen = len(text)
         # exclude hg rename meta from file size
-        meta, offset = revlog.parsemeta(text)
+        meta, offset = storageutil.parsemeta(text)
         if offset:
             textlen -= offset
 
-        if lfstrack(self.filename, textlen):
+        if lfstrack(self._revlog.filename, textlen):
             flags |= revlog.REVIDX_EXTSTORED
 
     return orig(self, text, transaction, link, p1, p2, cachedelta=cachedelta,
@@ -137,7 +151,7 @@ def filelogaddrevision(orig, self, text, transaction, link, p1, p2,
 
 def filelogrenamed(orig, self, node):
     if _islfs(self, node):
-        rawtext = self.revision(node, raw=True)
+        rawtext = self._revlog.revision(node, raw=True)
         if not rawtext:
             return False
         metadata = pointer.deserialize(rawtext)
@@ -150,7 +164,7 @@ def filelogrenamed(orig, self, node):
 def filelogsize(orig, self, rev):
     if _islfs(self, rev=rev):
         # fast path: use lfs metadata to answer size
-        rawtext = self.revision(rev, raw=True)
+        rawtext = self._revlog.revision(rev, raw=True)
         metadata = pointer.deserialize(rawtext)
         return int(metadata['size'])
     return orig(self, rev)
@@ -199,10 +213,6 @@ def convertsink(orig, sink):
                         self.repo.requirements.add('lfs')
                         self.repo._writerequirements()
 
-                        # Permanently enable lfs locally
-                        self.repo.vfs.append(
-                            'hgrc', util.tonativeeol('\n[extensions]\nlfs=\n'))
-
                 return node
 
         sink.__class__ = lfssink
@@ -220,32 +230,6 @@ def vfsinit(orig, self, othervfs):
     for name in ['lfslocalblobstore', 'lfsremoteblobstore']:
         if util.safehasattr(othervfs, name):
             setattr(self, name, getattr(othervfs, name))
-
-def hgclone(orig, ui, opts, *args, **kwargs):
-    result = orig(ui, opts, *args, **kwargs)
-
-    if result is not None:
-        sourcerepo, destrepo = result
-        repo = destrepo.local()
-
-        # When cloning to a remote repo (like through SSH), no repo is available
-        # from the peer.  Therefore the hgrc can't be updated.
-        if not repo:
-            return result
-
-        # If lfs is required for this repo, permanently enable it locally
-        if 'lfs' in repo.requirements:
-            repo.vfs.append('hgrc',
-                            util.tonativeeol('\n[extensions]\nlfs=\n'))
-
-    return result
-
-def hgpostshare(orig, sourcerepo, destrepo, bookmarks=True, defaultpath=None):
-    orig(sourcerepo, destrepo, bookmarks, defaultpath)
-
-    # If lfs is required for this repo, permanently enable it locally
-    if 'lfs' in destrepo.requirements:
-        destrepo.vfs.append('hgrc', util.tonativeeol('\n[extensions]\nlfs=\n'))
 
 def _prefetchfiles(repo, revs, match):
     """Ensure that required LFS blobs are present, fetching them as a group if
@@ -343,11 +327,15 @@ def extractpointers(repo, revs):
     """return a list of lfs pointers added by given revs"""
     repo.ui.debug('lfs: computing set of blobs to upload\n')
     pointers = {}
-    for r in revs:
-        ctx = repo[r]
-        for p in pointersfromctx(ctx).values():
-            pointers[p.oid()] = p
-    return sorted(pointers.values())
+
+    makeprogress = repo.ui.makeprogress
+    with makeprogress(_('lfs search'), _('changesets'), len(revs)) as progress:
+        for r in revs:
+            ctx = repo[r]
+            for p in pointersfromctx(ctx).values():
+                pointers[p.oid()] = p
+            progress.increment()
+        return sorted(pointers.values(), key=lambda p: p.oid())
 
 def pointerfromctx(ctx, f, removed=False):
     """return a pointer for the named file from the given changectx, or None if
@@ -386,7 +374,12 @@ def pointersfromctx(ctx, removed=False):
     stored for the path is an empty dict.
     """
     result = {}
+    m = ctx.repo().narrowmatch()
+
+    # TODO: consider manifest.fastread() instead
     for f in ctx.files():
+        if not m(f):
+            continue
         p = pointerfromctx(ctx, f, removed=removed)
         if p is not None:
             result[f] = p

@@ -41,7 +41,7 @@ Testing verify:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 3 files
 
   $ rm .hg/store/fncache
 
@@ -53,7 +53,7 @@ Testing verify:
    warning: revlog 'data/a.i' not in fncache!
    warning: revlog 'data/a.i.hg/c.i' not in fncache!
    warning: revlog 'data/a.i/b.i' not in fncache!
-  3 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 3 files
   3 warnings encountered!
   hint: run "hg debugrebuildfncache" to recover from corrupt fncache
 
@@ -70,7 +70,7 @@ Follow the hint to make sure it works
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 3 files
 
   $ cd ..
 
@@ -88,6 +88,7 @@ Non store repo:
   .hg/00manifest.i
   .hg/cache
   .hg/cache/branch2-served
+  .hg/cache/manifestfulltextcache (reporevlogstore !)
   .hg/cache/rbc-names-v1
   .hg/cache/rbc-revs-v1
   .hg/data
@@ -121,6 +122,7 @@ Non fncache repo:
   .hg/00changelog.i
   .hg/cache
   .hg/cache/branch2-served
+  .hg/cache/manifestfulltextcache (reporevlogstore !)
   .hg/cache/rbc-names-v1
   .hg/cache/rbc-revs-v1
   .hg/dirstate
@@ -303,13 +305,13 @@ Aborted transactions can be recovered later
   > def trwrapper(orig, self, *args, **kwargs):
   >     tr = orig(self, *args, **kwargs)
   >     def fail(tr):
-  >         raise error.Abort("forced transaction failure")
+  >         raise error.Abort(b"forced transaction failure")
   >     # zzz prefix to ensure it sorted after store.write
-  >     tr.addfinalize('zzz-forcefails', fail)
+  >     tr.addfinalize(b'zzz-forcefails', fail)
   >     return tr
   > 
   > def abortwrapper(orig, self, *args, **kwargs):
-  >     raise error.Abort("forced transaction failure")
+  >     raise error.Abort(b"forced transaction failure")
   > 
   > def uisetup(ui):
   >     extensions.wrapfunction(localrepo.localrepository, 'transaction',
@@ -338,7 +340,7 @@ Clean cached versions
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
   $ cat .hg/store/fncache
   data/y.i
 
@@ -446,20 +448,20 @@ changesets that only contain changes to existing files:
 
   $ cat > fncacheloadwarn.py << EOF
   > from __future__ import absolute_import
-  > from mercurial import extensions, store
+  > from mercurial import extensions, localrepo
   > 
   > def extsetup(ui):
   >     def wrapstore(orig, requirements, *args):
   >         store = orig(requirements, *args)
-  >         if 'store' in requirements and 'fncache' in requirements:
+  >         if b'store' in requirements and b'fncache' in requirements:
   >             instrumentfncachestore(store, ui)
   >         return store
-  >     extensions.wrapfunction(store, 'store', wrapstore)
+  >     extensions.wrapfunction(localrepo, 'makestore', wrapstore)
   > 
   > def instrumentfncachestore(fncachestore, ui):
   >     class instrumentedfncache(type(fncachestore.fncache)):
   >         def _load(self):
-  >             ui.warn('fncache load triggered!\n')
+  >             ui.warn(b'fncache load triggered!\n')
   >             super(instrumentedfncache, self)._load()
   >     fncachestore.fncache.__class__ = instrumentedfncache
   > EOF

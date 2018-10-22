@@ -20,7 +20,6 @@ from __future__ import absolute_import, print_function
 
 from .i18n import _
 from . import (
-    encoding,
     error,
     pycompat,
     util,
@@ -198,16 +197,11 @@ def unescapestr(s):
         # mangle Python's exception into our format
         raise error.ParseError(pycompat.bytestr(e).lower())
 
-def _brepr(obj):
-    if isinstance(obj, bytes):
-        return b"'%s'" % stringutil.escapestr(obj)
-    return encoding.strtolocal(repr(obj))
-
 def _prettyformat(tree, leafnodes, level, lines):
     if not isinstance(tree, tuple):
-        lines.append((level, _brepr(tree)))
+        lines.append((level, stringutil.pprint(tree)))
     elif tree[0] in leafnodes:
-        rs = map(_brepr, tree[1:])
+        rs = map(stringutil.pprint, tree[1:])
         lines.append((level, '(%s %s)' % (tree[0], ' '.join(rs))))
     else:
         lines.append((level, '(%s' % tree[0]))

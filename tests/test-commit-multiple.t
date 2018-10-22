@@ -80,8 +80,8 @@ transplant bug fixes onto release branch
 
 now test that we fixed the bug for all scripts/extensions
   $ cat > $TESTTMP/committwice.py <<__EOF__
-  > from mercurial import ui, hg, match, node
-  > from time import sleep
+  > import time
+  > from mercurial import hg, match, node, ui as uimod
   > 
   > def replacebyte(fn, b):
   >     f = open(fn, "rb+")
@@ -94,12 +94,12 @@ now test that we fixed the bug for all scripts/extensions
   >                    % (rev, b', '.join(b"'%s'" % f
   >                                       for f in repo[rev].files())))
   > 
-  > repo = hg.repository(ui.ui.load(), b'.')
+  > repo = hg.repository(uimod.ui.load(), b'.')
   > assert len(repo) == 6, \
   >        "initial: len(repo): %d, expected: 6" % len(repo)
   > 
   > replacebyte(b"bugfix", b"u")
-  > sleep(2)
+  > time.sleep(2)
   > try:
   >     repo.ui.status(b"PRE: len(repo): %d\n" % len(repo))
   >     wlock = repo.wlock()
@@ -115,7 +115,7 @@ now test that we fixed the bug for all scripts/extensions
   > printfiles(repo, 6)
   > printfiles(repo, 7)
   > __EOF__
-  $ $PYTHON $TESTTMP/committwice.py
+  $ "$PYTHON" $TESTTMP/committwice.py
   PRE: len(repo): 6
   POST: len(repo): 8
   revision 6 files: ['bugfix', 'file1']

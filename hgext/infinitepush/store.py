@@ -11,6 +11,14 @@ import os
 import subprocess
 import tempfile
 
+from mercurial import (
+    node,
+    pycompat,
+)
+from mercurial.utils import (
+    procutil,
+)
+
 NamedTemporaryFile = tempfile.NamedTemporaryFile
 
 class BundleWriteException(Exception):
@@ -73,7 +81,7 @@ class filebundlestore(object):
         return os.path.join(self._dirpath(filename), filename)
 
     def write(self, data):
-        filename = hashlib.sha1(data).hexdigest()
+        filename = node.hex(hashlib.sha1(data).digest())
         dirpath = self._dirpath(filename)
 
         if not os.path.exists(dirpath):
@@ -111,7 +119,8 @@ class externalbundlestore(abstractbundlestore):
 
     def _call_binary(self, args):
         p = subprocess.Popen(
-            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            pycompat.rapply(procutil.tonativestr, args),
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             close_fds=True)
         stdout, stderr = p.communicate()
         returncode = p.returncode

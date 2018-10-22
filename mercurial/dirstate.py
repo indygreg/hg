@@ -210,7 +210,7 @@ class dirstate(object):
         forcecwd = self._ui.config('ui', 'forcecwd')
         if forcecwd:
             return forcecwd
-        return pycompat.getcwd()
+        return encoding.getcwd()
 
     def getcwd(self):
         '''Return the path from which a canonical path is calculated.
@@ -893,8 +893,11 @@ class dirstate(object):
             wadd = work.append
             while work:
                 nd = work.pop()
-                if not match.visitdir(nd):
+                visitentries = match.visitchildrenset(nd)
+                if not visitentries:
                     continue
+                if visitentries == 'this' or visitentries == 'all':
+                    visitentries = None
                 skip = None
                 if nd == '.':
                     nd = ''
@@ -909,6 +912,16 @@ class dirstate(object):
                         continue
                     raise
                 for f, kind, st in entries:
+                    # Some matchers may return files in the visitentries set,
+                    # instead of 'this', if the matcher explicitly mentions them
+                    # and is not an exactmatcher. This is acceptable; we do not
+                    # make any hard assumptions about file-or-directory below
+                    # based on the presence of `f` in visitentries. If
+                    # visitchildrenset returned a set, we can always skip the
+                    # entries *not* in the set it provided regardless of whether
+                    # they're actually a file or a directory.
+                    if visitentries and f not in visitentries:
+                        continue
                     if normalizefile:
                         # even though f might be a directory, we're only
                         # interested in comparing it to files currently in the

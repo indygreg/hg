@@ -63,7 +63,7 @@ def poentry(path, lineno, s):
 
 doctestre = re.compile(r'^ +>>> ', re.MULTILINE)
 
-def offset(src, doc, name, default):
+def offset(src, doc, name, lineno, default):
     """Compute offset or issue a warning on stdout."""
     # remove doctest part, in order to avoid backslash mismatching
     m = doctestre.search(doc)
@@ -76,8 +76,9 @@ def offset(src, doc, name, default):
         # This can happen if the docstring contains unnecessary escape
         # sequences such as \" in a triple-quoted string. The problem
         # is that \" is turned into " and so doc wont appear in src.
-        sys.stderr.write("warning: unknown offset in %s, assuming %d lines\n"
-                         % (name, default))
+        sys.stderr.write("%s:%d:warning:"
+                         " unknown docstr offset, assuming %d lines\n"
+                         % (name, lineno, default))
         return default
     else:
         return src.count('\n', 0, end)
@@ -106,7 +107,7 @@ def docstrings(path):
     if not path.startswith('mercurial/') and mod.__doc__:
         with open(path) as fobj:
             src = fobj.read()
-        lineno = 1 + offset(src, mod.__doc__, path, 7)
+        lineno = 1 + offset(src, mod.__doc__, path, 1, 7)
         print(poentry(path, lineno, mod.__doc__))
 
     functions = list(getattr(mod, 'i18nfunctions', []))
@@ -129,7 +130,6 @@ def docstrings(path):
             actualpath = '%s%s.py' % (funcmod.__name__.replace('.', '/'), extra)
 
             src = inspect.getsource(func)
-            name = "%s.%s" % (actualpath, func.__name__)
             lineno = inspect.getsourcelines(func)[1]
             doc = docobj.__doc__
             origdoc = getattr(docobj, '_origdoc', '')
@@ -137,9 +137,9 @@ def docstrings(path):
                 doc = doc.rstrip()
                 origdoc = origdoc.rstrip()
             if origdoc:
-                lineno += offset(src, origdoc, name, 1)
+                lineno += offset(src, origdoc, actualpath, lineno, 1)
             else:
-                lineno += offset(src, doc, name, 1)
+                lineno += offset(src, doc, actualpath, lineno, 1)
             print(poentry(actualpath, lineno, doc))
 
 

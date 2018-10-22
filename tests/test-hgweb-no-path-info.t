@@ -18,11 +18,8 @@ should be used from d74fc8dec2b4 onward to route the request.
   > from __future__ import absolute_import
   > import os
   > import sys
-  > from mercurial.hgweb import (
-  >     hgweb,
-  >     hgwebdir,
-  > )
   > from mercurial import (
+  >     hgweb,
   >     util,
   > )
   > stringio = util.stringio
@@ -36,6 +33,7 @@ should be used from d74fc8dec2b4 onward to route the request.
   >     print('---- HEADERS')
   >     print([i for i in headers if i[0] != 'ETag'])
   >     print('---- DATA')
+  >     sys.stdout.flush()
   >     return output.write
   > 
   > env = {
@@ -55,22 +53,29 @@ should be used from d74fc8dec2b4 onward to route the request.
   > }
   > 
   > def process(app):
+  >     try:
+  >         stdout = sys.stdout.buffer
+  >     except AttributeError:
+  >         stdout = sys.stdout
   >     content = app(env, startrsp)
-  >     sys.stdout.write(output.getvalue())
-  >     sys.stdout.write(''.join(content))
+  >     stdout.write(output.getvalue())
+  >     stdout.write(b''.join(content))
+  >     stdout.flush()
   >     getattr(content, 'close', lambda : None)()
-  >     print('---- ERRORS')
-  >     print(errors.getvalue())
+  >     if errors.getvalue():
+  >         print('---- ERRORS')
+  >         print(errors.getvalue())
+  >     sys.stdout.flush()
   > 
   > output = stringio()
   > env['QUERY_STRING'] = 'style=atom'
-  > process(hgweb('.', name='repo'))
+  > process(hgweb.hgweb(b'.', name=b'repo'))
   > 
   > output = stringio()
   > env['QUERY_STRING'] = 'style=raw'
-  > process(hgwebdir({'repo': '.'}))
+  > process(hgweb.hgwebdir({b'repo': b'.'}))
   > EOF
-  $ $PYTHON request.py
+  $ "$PYTHON" request.py
   ---- STATUS
   200 Script output follows
   ---- HEADERS
@@ -130,8 +135,6 @@ should be used from d74fc8dec2b4 onward to route the request.
    </entry>
   
   </feed>
-  ---- ERRORS
-  
   ---- STATUS
   200 Script output follows
   ---- HEADERS
@@ -139,8 +142,6 @@ should be used from d74fc8dec2b4 onward to route the request.
   ---- DATA
   
   /repo/
-  
-  ---- ERRORS
   
 
   $ cd ..

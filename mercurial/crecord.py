@@ -713,6 +713,24 @@ class curseschunkselector(object):
         self.currentselecteditem = nextitem
         self.recenterdisplayedarea()
 
+    def nextsametype(self):
+        currentitem = self.currentselecteditem
+        sametype = lambda item: isinstance(item, type(currentitem))
+        nextitem = currentitem.nextitem()
+
+        while nextitem is not None and not sametype(nextitem):
+            nextitem = nextitem.nextitem()
+
+        if nextitem is None:
+            nextitem = currentitem
+        else:
+            parent = nextitem.parentitem()
+            if parent.folded:
+                self.togglefolded(parent)
+
+        self.currentselecteditem = nextitem
+        self.recenterdisplayedarea()
+
     def rightarrowevent(self):
         """
         select (if possible) the first of this item's child-items.
@@ -1027,8 +1045,8 @@ class curseschunkselector(object):
     def _getstatuslinesegments(self):
         """-> [str]. return segments"""
         selected = self.currentselecteditem.applied
-        spaceselect = _('space: select')
-        spacedeselect = _('space: deselect')
+        spaceselect = _('space/enter: select')
+        spacedeselect = _('space/enter: deselect')
         # Format the selected label into a place as long as the longer of the
         # two possible labels.  This may vary by language.
         spacelen = max(len(spaceselect), len(spacedeselect))
@@ -1433,6 +1451,7 @@ can use crecord multiple times to split large changes into smaller changesets.
 the following are valid keystrokes:
 
                 [space] : (un-)select item ([~]/[x] = partly/fully applied)
+                [enter] : (un-)select item and go to next item of same type
                       A : (un-)select all items
     up/down-arrow [k/j] : go to previous/next unfolded item
         pgup/pgdn [K/J] : go to previous/next item of same type
@@ -1686,8 +1705,9 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
             return True
         elif keypressed in [' '] or (test and keypressed in ["TOGGLE"]):
             self.toggleapply()
-            if self.ui.configbool('experimental', 'spacemovesdown'):
-                self.downarrowevent()
+        elif keypressed in ['\n', 'KEY_ENTER']:
+            self.toggleapply()
+            self.nextsametype()
         elif keypressed in ['A']:
             self.toggleall()
         elif keypressed in ['e']:

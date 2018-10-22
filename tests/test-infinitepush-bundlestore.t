@@ -77,7 +77,7 @@ From another client we can get the scratchbranch if we ask for it explicitely
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 20759b6926ce
+  new changesets 20759b6926ce (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg log -G
   o  changeset:   1:20759b6926ce
@@ -170,7 +170,7 @@ Pull scratch and non-scratch bookmark at the same time
   adding file changes
   added 1 changesets with 1 changes to 2 files
   adding remote bookmark newbook
-  new changesets 1de1d7d92f89
+  new changesets 1de1d7d92f89 (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg log -G -T '{desc} {phase} {bookmarks}'
   o  new scratch commit draft scratch/mybranch

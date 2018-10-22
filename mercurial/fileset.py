@@ -13,9 +13,9 @@ import re
 from .i18n import _
 from . import (
     error,
+    filesetlang,
     match as matchmod,
     merge,
-    parser,
     pycompat,
     registrar,
     scmutil,
@@ -25,125 +25,27 @@ from .utils import (
     stringutil,
 )
 
-elements = {
-    # token-type: binding-strength, primary, prefix, infix, suffix
-    "(": (20, None, ("group", 1, ")"), ("func", 1, ")"), None),
-    ":": (15, None, None, ("kindpat", 15), None),
-    "-": (5, None, ("negate", 19), ("minus", 5), None),
-    "not": (10, None, ("not", 10), None, None),
-    "!": (10, None, ("not", 10), None, None),
-    "and": (5, None, None, ("and", 5), None),
-    "&": (5, None, None, ("and", 5), None),
-    "or": (4, None, None, ("or", 4), None),
-    "|": (4, None, None, ("or", 4), None),
-    "+": (4, None, None, ("or", 4), None),
-    ",": (2, None, None, ("list", 2), None),
-    ")": (0, None, None, None, None),
-    "symbol": (0, "symbol", None, None, None),
-    "string": (0, "string", None, None, None),
-    "end": (0, None, None, None, None),
-}
+# common weight constants
+_WEIGHT_CHECK_FILENAME = filesetlang.WEIGHT_CHECK_FILENAME
+_WEIGHT_READ_CONTENTS = filesetlang.WEIGHT_READ_CONTENTS
+_WEIGHT_STATUS = filesetlang.WEIGHT_STATUS
+_WEIGHT_STATUS_THOROUGH = filesetlang.WEIGHT_STATUS_THOROUGH
 
-keywords = {'and', 'or', 'not'}
-
-globchars = ".*{}[]?/\\_"
-
-def tokenize(program):
-    pos, l = 0, len(program)
-    program = pycompat.bytestr(program)
-    while pos < l:
-        c = program[pos]
-        if c.isspace(): # skip inter-token whitespace
-            pass
-        elif c in "(),-:|&+!": # handle simple operators
-            yield (c, None, pos)
-        elif (c in '"\'' or c == 'r' and
-              program[pos:pos + 2] in ("r'", 'r"')): # handle quoted strings
-            if c == 'r':
-                pos += 1
-                c = program[pos]
-                decode = lambda x: x
-            else:
-                decode = parser.unescapestr
-            pos += 1
-            s = pos
-            while pos < l: # find closing quote
-                d = program[pos]
-                if d == '\\': # skip over escaped characters
-                    pos += 2
-                    continue
-                if d == c:
-                    yield ('string', decode(program[s:pos]), s)
-                    break
-                pos += 1
-            else:
-                raise error.ParseError(_("unterminated string"), s)
-        elif c.isalnum() or c in globchars or ord(c) > 127:
-            # gather up a symbol/keyword
-            s = pos
-            pos += 1
-            while pos < l: # find end of symbol
-                d = program[pos]
-                if not (d.isalnum() or d in globchars or ord(d) > 127):
-                    break
-                pos += 1
-            sym = program[s:pos]
-            if sym in keywords: # operator keywords
-                yield (sym, None, s)
-            else:
-                yield ('symbol', sym, s)
-            pos -= 1
-        else:
-            raise error.ParseError(_("syntax error"), pos)
-        pos += 1
-    yield ('end', None, pos)
-
-def parse(expr):
-    p = parser.parser(elements)
-    tree, pos = p.parse(tokenize(expr))
-    if pos != len(expr):
-        raise error.ParseError(_("invalid token"), pos)
-    return tree
-
-def getsymbol(x):
-    if x and x[0] == 'symbol':
-        return x[1]
-    raise error.ParseError(_('not a symbol'))
-
-def getstring(x, err):
-    if x and (x[0] == 'string' or x[0] == 'symbol'):
-        return x[1]
-    raise error.ParseError(err)
-
-def _getkindpat(x, y, allkinds, err):
-    kind = getsymbol(x)
-    pat = getstring(y, err)
-    if kind not in allkinds:
-        raise error.ParseError(_("invalid pattern kind: %s") % kind)
-    return '%s:%s' % (kind, pat)
-
-def getpattern(x, allkinds, err):
-    if x and x[0] == 'kindpat':
-        return _getkindpat(x[1], x[2], allkinds, err)
-    return getstring(x, err)
-
-def getlist(x):
-    if not x:
-        return []
-    if x[0] == 'list':
-        return getlist(x[1]) + [x[2]]
-    return [x]
-
-def getargs(x, min, max, err):
-    l = getlist(x)
-    if len(l) < min or len(l) > max:
-        raise error.ParseError(err)
-    return l
+# helpers for processing parsed tree
+getsymbol = filesetlang.getsymbol
+getstring = filesetlang.getstring
+_getkindpat = filesetlang.getkindpat
+getpattern = filesetlang.getpattern
+getargs = filesetlang.getargs
 
 def getmatch(mctx, x):
     if not x:
         raise error.ParseError(_("missing argument"))
     return methods[x[0]](mctx, *x[1:])
+
+def getmatchwithstatus(mctx, x, hint):
+    keys = set(getstring(hint, 'status hint must be a string').split())
+    return getmatch(mctx.withstatus(keys), x)
 
 def stringmatch(mctx, x):
     return mctx.matcher([x])
@@ -152,15 +54,20 @@ def kindpatmatch(mctx, x, y):
     return stringmatch(mctx, _getkindpat(x, y, matchmod.allpatternkinds,
                                          _("pattern must be a string")))
 
+def patternsmatch(mctx, *xs):
+    allkinds = matchmod.allpatternkinds
+    patterns = [getpattern(x, allkinds, _("pattern must be a string"))
+                for x in xs]
+    return mctx.matcher(patterns)
+
 def andmatch(mctx, x, y):
     xm = getmatch(mctx, x)
-    ym = getmatch(mctx, y)
+    ym = getmatch(mctx.narrowed(xm), y)
     return matchmod.intersectmatchers(xm, ym)
 
-def ormatch(mctx, x, y):
-    xm = getmatch(mctx, x)
-    ym = getmatch(mctx, y)
-    return matchmod.unionmatcher([xm, ym])
+def ormatch(mctx, *xs):
+    ms = [getmatch(mctx, x) for x in xs]
+    return matchmod.unionmatcher(ms)
 
 def notmatch(mctx, x):
     m = getmatch(mctx, x)
@@ -168,15 +75,12 @@ def notmatch(mctx, x):
 
 def minusmatch(mctx, x, y):
     xm = getmatch(mctx, x)
-    ym = getmatch(mctx, y)
+    ym = getmatch(mctx.narrowed(xm), y)
     return matchmod.differencematcher(xm, ym)
 
-def negatematch(mctx, x):
-    raise error.ParseError(_("can't use negate operator in this context"))
-
-def listmatch(mctx, x, y):
+def listmatch(mctx, *xs):
     raise error.ParseError(_("can't use a list in this context"),
-                           hint=_('see hg help "filesets.x or y"'))
+                           hint=_('see \'hg help "filesets.x or y"\''))
 
 def func(mctx, a, b):
     funcname = getsymbol(a)
@@ -193,14 +97,11 @@ def func(mctx, a, b):
 # with:
 #  mctx - current matchctx instance
 #  x - argument in tree form
-symbols = {}
+symbols = filesetlang.symbols
 
-# filesets using matchctx.status()
-_statuscallers = set()
+predicate = registrar.filesetpredicate(symbols)
 
-predicate = registrar.filesetpredicate()
-
-@predicate('modified()', callstatus=True)
+@predicate('modified()', callstatus=True, weight=_WEIGHT_STATUS)
 def modified(mctx, x):
     """File that is modified according to :hg:`status`.
     """
@@ -209,7 +110,7 @@ def modified(mctx, x):
     s = set(mctx.status().modified)
     return mctx.predicate(s.__contains__, predrepr='modified')
 
-@predicate('added()', callstatus=True)
+@predicate('added()', callstatus=True, weight=_WEIGHT_STATUS)
 def added(mctx, x):
     """File that is added according to :hg:`status`.
     """
@@ -218,7 +119,7 @@ def added(mctx, x):
     s = set(mctx.status().added)
     return mctx.predicate(s.__contains__, predrepr='added')
 
-@predicate('removed()', callstatus=True)
+@predicate('removed()', callstatus=True, weight=_WEIGHT_STATUS)
 def removed(mctx, x):
     """File that is removed according to :hg:`status`.
     """
@@ -227,7 +128,7 @@ def removed(mctx, x):
     s = set(mctx.status().removed)
     return mctx.predicate(s.__contains__, predrepr='removed')
 
-@predicate('deleted()', callstatus=True)
+@predicate('deleted()', callstatus=True, weight=_WEIGHT_STATUS)
 def deleted(mctx, x):
     """Alias for ``missing()``.
     """
@@ -236,7 +137,7 @@ def deleted(mctx, x):
     s = set(mctx.status().deleted)
     return mctx.predicate(s.__contains__, predrepr='deleted')
 
-@predicate('missing()', callstatus=True)
+@predicate('missing()', callstatus=True, weight=_WEIGHT_STATUS)
 def missing(mctx, x):
     """File that is missing according to :hg:`status`.
     """
@@ -245,7 +146,7 @@ def missing(mctx, x):
     s = set(mctx.status().deleted)
     return mctx.predicate(s.__contains__, predrepr='deleted')
 
-@predicate('unknown()', callstatus=True)
+@predicate('unknown()', callstatus=True, weight=_WEIGHT_STATUS_THOROUGH)
 def unknown(mctx, x):
     """File that is unknown according to :hg:`status`."""
     # i18n: "unknown" is a keyword
@@ -253,7 +154,7 @@ def unknown(mctx, x):
     s = set(mctx.status().unknown)
     return mctx.predicate(s.__contains__, predrepr='unknown')
 
-@predicate('ignored()', callstatus=True)
+@predicate('ignored()', callstatus=True, weight=_WEIGHT_STATUS_THOROUGH)
 def ignored(mctx, x):
     """File that is ignored according to :hg:`status`."""
     # i18n: "ignored" is a keyword
@@ -261,7 +162,7 @@ def ignored(mctx, x):
     s = set(mctx.status().ignored)
     return mctx.predicate(s.__contains__, predrepr='ignored')
 
-@predicate('clean()', callstatus=True)
+@predicate('clean()', callstatus=True, weight=_WEIGHT_STATUS)
 def clean(mctx, x):
     """File that is clean according to :hg:`status`.
     """
@@ -277,7 +178,7 @@ def tracked(mctx, x):
     getargs(x, 0, 0, _("tracked takes no arguments"))
     return mctx.predicate(mctx.ctx.__contains__, predrepr='tracked')
 
-@predicate('binary()')
+@predicate('binary()', weight=_WEIGHT_READ_CONTENTS)
 def binary(mctx, x):
     """File that appears to be binary (contains NUL bytes).
     """
@@ -304,7 +205,7 @@ def symlink(mctx, x):
     ctx = mctx.ctx
     return mctx.predicate(lambda f: ctx.flags(f) == 'l', predrepr='symlink')
 
-@predicate('resolved()')
+@predicate('resolved()', weight=_WEIGHT_STATUS)
 def resolved(mctx, x):
     """File that is marked resolved according to :hg:`resolve -l`.
     """
@@ -316,7 +217,7 @@ def resolved(mctx, x):
     return mctx.predicate(lambda f: f in ms and ms[f] == 'r',
                           predrepr='resolved')
 
-@predicate('unresolved()')
+@predicate('unresolved()', weight=_WEIGHT_STATUS)
 def unresolved(mctx, x):
     """File that is marked unresolved according to :hg:`resolve -l`.
     """
@@ -328,7 +229,7 @@ def unresolved(mctx, x):
     return mctx.predicate(lambda f: f in ms and ms[f] == 'u',
                           predrepr='unresolved')
 
-@predicate('hgignore()')
+@predicate('hgignore()', weight=_WEIGHT_STATUS)
 def hgignore(mctx, x):
     """File that matches the active .hgignore pattern.
     """
@@ -336,7 +237,7 @@ def hgignore(mctx, x):
     getargs(x, 0, 0, _("hgignore takes no arguments"))
     return mctx.ctx.repo().dirstate._ignore
 
-@predicate('portable()')
+@predicate('portable()', weight=_WEIGHT_CHECK_FILENAME)
 def portable(mctx, x):
     """File that has a portable name. (This doesn't include filenames with case
     collisions.)
@@ -346,7 +247,7 @@ def portable(mctx, x):
     return mctx.predicate(lambda f: util.checkwinfilename(f) is None,
                           predrepr='portable')
 
-@predicate('grep(regex)')
+@predicate('grep(regex)', weight=_WEIGHT_READ_CONTENTS)
 def grep(mctx, x):
     """File contains the given regular expression.
     """
@@ -400,7 +301,7 @@ def sizematcher(expr):
         b = _sizetomax(expr)
         return lambda x: x >= a and x <= b
 
-@predicate('size(expression)')
+@predicate('size(expression)', weight=_WEIGHT_STATUS)
 def size(mctx, x):
     """File size matches the given expression. Examples:
 
@@ -415,7 +316,7 @@ def size(mctx, x):
     return mctx.fpredicate(lambda fctx: m(fctx.size()),
                            predrepr=('size(%r)', expr), cache=True)
 
-@predicate('encoding(name)')
+@predicate('encoding(name)', weight=_WEIGHT_READ_CONTENTS)
 def encoding(mctx, x):
     """File can be successfully decoded with the given character
     encoding. May not be useful for encodings other than ASCII and
@@ -437,7 +338,7 @@ def encoding(mctx, x):
 
     return mctx.fpredicate(encp, predrepr=('encoding(%r)', enc), cache=True)
 
-@predicate('eol(style)')
+@predicate('eol(style)', weight=_WEIGHT_READ_CONTENTS)
 def eol(mctx, x):
     """File contains newlines of the given style (dos, unix, mac). Binary
     files are excluded, files with mixed line endings match multiple
@@ -471,7 +372,7 @@ def copied(mctx, x):
         return p and p[0].path() != fctx.path()
     return mctx.fpredicate(copiedp, predrepr='copied', cache=True)
 
-@predicate('revs(revs, pattern)')
+@predicate('revs(revs, pattern)', weight=_WEIGHT_STATUS)
 def revs(mctx, x):
     """Evaluate set in the specified revisions. If the revset match multiple
     revs, this will return file matching pattern in any of the revision.
@@ -486,14 +387,15 @@ def revs(mctx, x):
     matchers = []
     for r in revs:
         ctx = repo[r]
-        matchers.append(getmatch(mctx.switch(ctx, _buildstatus(ctx, x)), x))
+        mc = mctx.switch(ctx.p1(), ctx)
+        matchers.append(getmatch(mc, x))
     if not matchers:
         return mctx.never()
     if len(matchers) == 1:
         return matchers[0]
     return matchmod.unionmatcher(matchers)
 
-@predicate('status(base, rev, pattern)')
+@predicate('status(base, rev, pattern)', weight=_WEIGHT_STATUS)
 def status(mctx, x):
     """Evaluate predicate using status change between ``base`` and
     ``rev``. Examples:
@@ -513,7 +415,8 @@ def status(mctx, x):
     if not revspec:
         raise error.ParseError(reverr)
     basectx, ctx = scmutil.revpair(repo, [baserevspec, revspec])
-    return getmatch(mctx.switch(ctx, _buildstatus(ctx, x, basectx=basectx)), x)
+    mc = mctx.switch(basectx, ctx)
+    return getmatch(mc, x)
 
 @predicate('subrepo([pattern])')
 def subrepo(mctx, x):
@@ -539,24 +442,52 @@ def subrepo(mctx, x):
         return mctx.predicate(sstate.__contains__, predrepr='subrepo')
 
 methods = {
+    'withstatus': getmatchwithstatus,
     'string': stringmatch,
     'symbol': stringmatch,
     'kindpat': kindpatmatch,
+    'patterns': patternsmatch,
     'and': andmatch,
     'or': ormatch,
     'minus': minusmatch,
-    'negate': negatematch,
     'list': listmatch,
-    'group': getmatch,
     'not': notmatch,
     'func': func,
 }
 
 class matchctx(object):
-    def __init__(self, ctx, status=None, badfn=None):
+    def __init__(self, basectx, ctx, badfn=None):
+        self._basectx = basectx
         self.ctx = ctx
-        self._status = status
         self._badfn = badfn
+        self._match = None
+        self._status = None
+
+    def narrowed(self, match):
+        """Create matchctx for a sub-tree narrowed by the given matcher"""
+        mctx = matchctx(self._basectx, self.ctx, self._badfn)
+        mctx._match = match
+        # leave wider status which we don't have to care
+        mctx._status = self._status
+        return mctx
+
+    def switch(self, basectx, ctx):
+        mctx = matchctx(basectx, ctx, self._badfn)
+        mctx._match = self._match
+        return mctx
+
+    def withstatus(self, keys):
+        """Create matchctx which has precomputed status specified by the keys"""
+        mctx = matchctx(self._basectx, self.ctx, self._badfn)
+        mctx._match = self._match
+        mctx._buildstatus(keys)
+        return mctx
+
+    def _buildstatus(self, keys):
+        self._status = self._basectx.status(self.ctx, self._match,
+                                            listignored='ignored' in keys,
+                                            listclean='clean' in keys,
+                                            listunknown='unknown' in keys)
 
     def status(self):
         return self._status
@@ -612,62 +543,20 @@ class matchctx(object):
         return matchmod.nevermatcher(repo.root, repo.getcwd(),
                                      badfn=self._badfn)
 
-    def switch(self, ctx, status=None):
-        return matchctx(ctx, status, self._badfn)
-
-# filesets using matchctx.switch()
-_switchcallers = [
-    'revs',
-    'status',
-]
-
-def _intree(funcs, tree):
-    if isinstance(tree, tuple):
-        if tree[0] == 'func' and tree[1][0] == 'symbol':
-            if tree[1][1] in funcs:
-                return True
-            if tree[1][1] in _switchcallers:
-                # arguments won't be evaluated in the current context
-                return False
-        for s in tree[1:]:
-            if _intree(funcs, s):
-                return True
-    return False
-
 def match(ctx, expr, badfn=None):
     """Create a matcher for a single fileset expression"""
-    tree = parse(expr)
-    mctx = matchctx(ctx, _buildstatus(ctx, tree), badfn=badfn)
+    tree = filesetlang.parse(expr)
+    tree = filesetlang.analyze(tree)
+    tree = filesetlang.optimize(tree)
+    mctx = matchctx(ctx.p1(), ctx, badfn=badfn)
     return getmatch(mctx, tree)
 
-def _buildstatus(ctx, tree, basectx=None):
-    # do we need status info?
-
-    if _intree(_statuscallers, tree):
-        unknown = _intree(['unknown'], tree)
-        ignored = _intree(['ignored'], tree)
-
-        r = ctx.repo()
-        if basectx is None:
-            basectx = ctx.p1()
-        return r.status(basectx, ctx,
-                        unknown=unknown, ignored=ignored, clean=True)
-    else:
-        return None
-
-def prettyformat(tree):
-    return parser.prettyformat(tree, ('string', 'symbol'))
 
 def loadpredicate(ui, extname, registrarobj):
     """Load fileset predicates from specified registrarobj
     """
     for name, func in registrarobj._table.iteritems():
         symbols[name] = func
-        if func._callstatus:
-            _statuscallers.add(name)
-
-# load built-in predicates explicitly to setup _statuscallers
-loadpredicate(None, None, predicate)
 
 # tell hggettext to extract docstrings from these functions:
 i18nfunctions = symbols.values()

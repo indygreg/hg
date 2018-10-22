@@ -17,8 +17,10 @@ import weakref
 
 from .i18n import _
 from .node import (
+    bin,
     hex,
     nullid,
+    nullrev,
     short,
 )
 from . import (
@@ -56,7 +58,7 @@ from . import (
     revsetlang,
     scmutil,
     sparse,
-    store,
+    store as storemod,
     subrepoutil,
     tags as tagsmod,
     transaction,
@@ -68,6 +70,10 @@ from .utils import (
     interfaceutil,
     procutil,
     stringutil,
+)
+
+from .revlogutils import (
+    constants as revlogconst,
 )
 
 release = lockmod.release
@@ -372,8 +378,456 @@ SPARSEREVLOG_REQUIREMENT = 'sparserevlog'
 # set to reflect that the extension knows how to handle that requirements.
 featuresetupfuncs = set()
 
-@interfaceutil.implementer(repository.completelocalrepository)
+def makelocalrepository(baseui, path, intents=None):
+    """Create a local repository object.
+
+    Given arguments needed to construct a local repository, this function
+    performs various early repository loading functionality (such as
+    reading the ``.hg/requires`` and ``.hg/hgrc`` files), validates that
+    the repository can be opened, derives a type suitable for representing
+    that repository, and returns an instance of it.
+
+    The returned object conforms to the ``repository.completelocalrepository``
+    interface.
+
+    The repository type is derived by calling a series of factory functions
+    for each aspect/interface of the final repository. These are defined by
+    ``REPO_INTERFACES``.
+
+    Each factory function is called to produce a type implementing a specific
+    interface. The cumulative list of returned types will be combined into a
+    new type and that type will be instantiated to represent the local
+    repository.
+
+    The factory functions each receive various state that may be consulted
+    as part of deriving a type.
+
+    Extensions should wrap these factory functions to customize repository type
+    creation. Note that an extension's wrapped function may be called even if
+    that extension is not loaded for the repo being constructed. Extensions
+    should check if their ``__name__`` appears in the
+    ``extensionmodulenames`` set passed to the factory function and no-op if
+    not.
+    """
+    ui = baseui.copy()
+    # Prevent copying repo configuration.
+    ui.copy = baseui.copy
+
+    # Working directory VFS rooted at repository root.
+    wdirvfs = vfsmod.vfs(path, expandpath=True, realpath=True)
+
+    # Main VFS for .hg/ directory.
+    hgpath = wdirvfs.join(b'.hg')
+    hgvfs = vfsmod.vfs(hgpath, cacheaudited=True)
+
+    # The .hg/ path should exist and should be a directory. All other
+    # cases are errors.
+    if not hgvfs.isdir():
+        try:
+            hgvfs.stat()
+        except OSError as e:
+            if e.errno != errno.ENOENT:
+                raise
+
+        raise error.RepoError(_(b'repository %s not found') % path)
+
+    # .hg/requires file contains a newline-delimited list of
+    # features/capabilities the opener (us) must have in order to use
+    # the repository. This file was introduced in Mercurial 0.9.2,
+    # which means very old repositories may not have one. We assume
+    # a missing file translates to no requirements.
+    try:
+        requirements = set(hgvfs.read(b'requires').splitlines())
+    except IOError as e:
+        if e.errno != errno.ENOENT:
+            raise
+        requirements = set()
+
+    # The .hg/hgrc file may load extensions or contain config options
+    # that influence repository construction. Attempt to load it and
+    # process any new extensions that it may have pulled in.
+    try:
+        ui.readconfig(hgvfs.join(b'hgrc'), root=wdirvfs.base)
+        # Run this before extensions.loadall() so extensions can be
+        # automatically enabled.
+        afterhgrcload(ui, wdirvfs, hgvfs, requirements)
+    except IOError:
+        pass
+    else:
+        extensions.loadall(ui)
+
+    # Set of module names of extensions loaded for this repository.
+    extensionmodulenames = {m.__name__ for n, m in extensions.extensions(ui)}
+
+    supportedrequirements = gathersupportedrequirements(ui)
+
+    # We first validate the requirements are known.
+    ensurerequirementsrecognized(requirements, supportedrequirements)
+
+    # Then we validate that the known set is reasonable to use together.
+    ensurerequirementscompatible(ui, requirements)
+
+    # TODO there are unhandled edge cases related to opening repositories with
+    # shared storage. If storage is shared, we should also test for requirements
+    # compatibility in the pointed-to repo. This entails loading the .hg/hgrc in
+    # that repo, as that repo may load extensions needed to open it. This is a
+    # bit complicated because we don't want the other hgrc to overwrite settings
+    # in this hgrc.
+    #
+    # This bug is somewhat mitigated by the fact that we copy the .hg/requires
+    # file when sharing repos. But if a requirement is added after the share is
+    # performed, thereby introducing a new requirement for the opener, we may
+    # will not see that and could encounter a run-time error interacting with
+    # that shared store since it has an unknown-to-us requirement.
+
+    # At this point, we know we should be capable of opening the repository.
+    # Now get on with doing that.
+
+    features = set()
+
+    # The "store" part of the repository holds versioned data. How it is
+    # accessed is determined by various requirements. The ``shared`` or
+    # ``relshared`` requirements indicate the store lives in the path contained
+    # in the ``.hg/sharedpath`` file. This is an absolute path for
+    # ``shared`` and relative to ``.hg/`` for ``relshared``.
+    if b'shared' in requirements or b'relshared' in requirements:
+        sharedpath = hgvfs.read(b'sharedpath').rstrip(b'\n')
+        if b'relshared' in requirements:
+            sharedpath = hgvfs.join(sharedpath)
+
+        sharedvfs = vfsmod.vfs(sharedpath, realpath=True)
+
+        if not sharedvfs.exists():
+            raise error.RepoError(_(b'.hg/sharedpath points to nonexistent '
+                                    b'directory %s') % sharedvfs.base)
+
+        features.add(repository.REPO_FEATURE_SHARED_STORAGE)
+
+        storebasepath = sharedvfs.base
+        cachepath = sharedvfs.join(b'cache')
+    else:
+        storebasepath = hgvfs.base
+        cachepath = hgvfs.join(b'cache')
+
+    # The store has changed over time and the exact layout is dictated by
+    # requirements. The store interface abstracts differences across all
+    # of them.
+    store = makestore(requirements, storebasepath,
+                      lambda base: vfsmod.vfs(base, cacheaudited=True))
+    hgvfs.createmode = store.createmode
+
+    storevfs = store.vfs
+    storevfs.options = resolvestorevfsoptions(ui, requirements, features)
+
+    # The cache vfs is used to manage cache files.
+    cachevfs = vfsmod.vfs(cachepath, cacheaudited=True)
+    cachevfs.createmode = store.createmode
+
+    # Now resolve the type for the repository object. We do this by repeatedly
+    # calling a factory function to produces types for specific aspects of the
+    # repo's operation. The aggregate returned types are used as base classes
+    # for a dynamically-derived type, which will represent our new repository.
+
+    bases = []
+    extrastate = {}
+
+    for iface, fn in REPO_INTERFACES:
+        # We pass all potentially useful state to give extensions tons of
+        # flexibility.
+        typ = fn()(ui=ui,
+                 intents=intents,
+                 requirements=requirements,
+                 features=features,
+                 wdirvfs=wdirvfs,
+                 hgvfs=hgvfs,
+                 store=store,
+                 storevfs=storevfs,
+                 storeoptions=storevfs.options,
+                 cachevfs=cachevfs,
+                 extensionmodulenames=extensionmodulenames,
+                 extrastate=extrastate,
+                 baseclasses=bases)
+
+        if not isinstance(typ, type):
+            raise error.ProgrammingError('unable to construct type for %s' %
+                                         iface)
+
+        bases.append(typ)
+
+    # type() allows you to use characters in type names that wouldn't be
+    # recognized as Python symbols in source code. We abuse that to add
+    # rich information about our constructed repo.
+    name = pycompat.sysstr(b'derivedrepo:%s<%s>' % (
+        wdirvfs.base,
+        b','.join(sorted(requirements))))
+
+    cls = type(name, tuple(bases), {})
+
+    return cls(
+        baseui=baseui,
+        ui=ui,
+        origroot=path,
+        wdirvfs=wdirvfs,
+        hgvfs=hgvfs,
+        requirements=requirements,
+        supportedrequirements=supportedrequirements,
+        sharedpath=storebasepath,
+        store=store,
+        cachevfs=cachevfs,
+        features=features,
+        intents=intents)
+
+def afterhgrcload(ui, wdirvfs, hgvfs, requirements):
+    """Perform additional actions after .hg/hgrc is loaded.
+
+    This function is called during repository loading immediately after
+    the .hg/hgrc file is loaded and before per-repo extensions are loaded.
+
+    The function can be used to validate configs, automatically add
+    options (including extensions) based on requirements, etc.
+    """
+
+    # Map of requirements to list of extensions to load automatically when
+    # requirement is present.
+    autoextensions = {
+        b'largefiles': [b'largefiles'],
+        b'lfs': [b'lfs'],
+    }
+
+    for requirement, names in sorted(autoextensions.items()):
+        if requirement not in requirements:
+            continue
+
+        for name in names:
+            if not ui.hasconfig(b'extensions', name):
+                ui.setconfig(b'extensions', name, b'', source='autoload')
+
+def gathersupportedrequirements(ui):
+    """Determine the complete set of recognized requirements."""
+    # Start with all requirements supported by this file.
+    supported = set(localrepository._basesupported)
+
+    # Execute ``featuresetupfuncs`` entries if they belong to an extension
+    # relevant to this ui instance.
+    modules = {m.__name__ for n, m in extensions.extensions(ui)}
+
+    for fn in featuresetupfuncs:
+        if fn.__module__ in modules:
+            fn(ui, supported)
+
+    # Add derived requirements from registered compression engines.
+    for name in util.compengines:
+        engine = util.compengines[name]
+        if engine.revlogheader():
+            supported.add(b'exp-compression-%s' % name)
+
+    return supported
+
+def ensurerequirementsrecognized(requirements, supported):
+    """Validate that a set of local requirements is recognized.
+
+    Receives a set of requirements. Raises an ``error.RepoError`` if there
+    exists any requirement in that set that currently loaded code doesn't
+    recognize.
+
+    Returns a set of supported requirements.
+    """
+    missing = set()
+
+    for requirement in requirements:
+        if requirement in supported:
+            continue
+
+        if not requirement or not requirement[0:1].isalnum():
+            raise error.RequirementError(_(b'.hg/requires file is corrupt'))
+
+        missing.add(requirement)
+
+    if missing:
+        raise error.RequirementError(
+            _(b'repository requires features unknown to this Mercurial: %s') %
+            b' '.join(sorted(missing)),
+            hint=_(b'see https://mercurial-scm.org/wiki/MissingRequirement '
+                   b'for more information'))
+
+def ensurerequirementscompatible(ui, requirements):
+    """Validates that a set of recognized requirements is mutually compatible.
+
+    Some requirements may not be compatible with others or require
+    config options that aren't enabled. This function is called during
+    repository opening to ensure that the set of requirements needed
+    to open a repository is sane and compatible with config options.
+
+    Extensions can monkeypatch this function to perform additional
+    checking.
+
+    ``error.RepoError`` should be raised on failure.
+    """
+    if b'exp-sparse' in requirements and not sparse.enabled:
+        raise error.RepoError(_(b'repository is using sparse feature but '
+                                b'sparse is not enabled; enable the '
+                                b'"sparse" extensions to access'))
+
+def makestore(requirements, path, vfstype):
+    """Construct a storage object for a repository."""
+    if b'store' in requirements:
+        if b'fncache' in requirements:
+            return storemod.fncachestore(path, vfstype,
+                                         b'dotencode' in requirements)
+
+        return storemod.encodedstore(path, vfstype)
+
+    return storemod.basicstore(path, vfstype)
+
+def resolvestorevfsoptions(ui, requirements, features):
+    """Resolve the options to pass to the store vfs opener.
+
+    The returned dict is used to influence behavior of the storage layer.
+    """
+    options = {}
+
+    if b'treemanifest' in requirements:
+        options[b'treemanifest'] = True
+
+    # experimental config: format.manifestcachesize
+    manifestcachesize = ui.configint(b'format', b'manifestcachesize')
+    if manifestcachesize is not None:
+        options[b'manifestcachesize'] = manifestcachesize
+
+    # In the absence of another requirement superseding a revlog-related
+    # requirement, we have to assume the repo is using revlog version 0.
+    # This revlog format is super old and we don't bother trying to parse
+    # opener options for it because those options wouldn't do anything
+    # meaningful on such old repos.
+    if b'revlogv1' in requirements or REVLOGV2_REQUIREMENT in requirements:
+        options.update(resolverevlogstorevfsoptions(ui, requirements, features))
+
+    return options
+
+def resolverevlogstorevfsoptions(ui, requirements, features):
+    """Resolve opener options specific to revlogs."""
+
+    options = {}
+    options[b'flagprocessors'] = {}
+
+    if b'revlogv1' in requirements:
+        options[b'revlogv1'] = True
+    if REVLOGV2_REQUIREMENT in requirements:
+        options[b'revlogv2'] = True
+
+    if b'generaldelta' in requirements:
+        options[b'generaldelta'] = True
+
+    # experimental config: format.chunkcachesize
+    chunkcachesize = ui.configint(b'format', b'chunkcachesize')
+    if chunkcachesize is not None:
+        options[b'chunkcachesize'] = chunkcachesize
+
+    deltabothparents = ui.configbool(b'storage',
+                                     b'revlog.optimize-delta-parent-choice')
+    options[b'deltabothparents'] = deltabothparents
+
+    options[b'lazydeltabase'] = not scmutil.gddeltaconfig(ui)
+
+    chainspan = ui.configbytes(b'experimental', b'maxdeltachainspan')
+    if 0 <= chainspan:
+        options[b'maxdeltachainspan'] = chainspan
+
+    mmapindexthreshold = ui.configbytes(b'experimental',
+                                        b'mmapindexthreshold')
+    if mmapindexthreshold is not None:
+        options[b'mmapindexthreshold'] = mmapindexthreshold
+
+    withsparseread = ui.configbool(b'experimental', b'sparse-read')
+    srdensitythres = float(ui.config(b'experimental',
+                                     b'sparse-read.density-threshold'))
+    srmingapsize = ui.configbytes(b'experimental',
+                                  b'sparse-read.min-gap-size')
+    options[b'with-sparse-read'] = withsparseread
+    options[b'sparse-read-density-threshold'] = srdensitythres
+    options[b'sparse-read-min-gap-size'] = srmingapsize
+
+    sparserevlog = SPARSEREVLOG_REQUIREMENT in requirements
+    options[b'sparse-revlog'] = sparserevlog
+    if sparserevlog:
+        options[b'generaldelta'] = True
+
+    maxchainlen = None
+    if sparserevlog:
+        maxchainlen = revlogconst.SPARSE_REVLOG_MAX_CHAIN_LENGTH
+    # experimental config: format.maxchainlen
+    maxchainlen = ui.configint(b'format', b'maxchainlen', maxchainlen)
+    if maxchainlen is not None:
+        options[b'maxchainlen'] = maxchainlen
+
+    for r in requirements:
+        if r.startswith(b'exp-compression-'):
+            options[b'compengine'] = r[len(b'exp-compression-'):]
+
+    if repository.NARROW_REQUIREMENT in requirements:
+        options[b'enableellipsis'] = True
+
+    return options
+
+def makemain(**kwargs):
+    """Produce a type conforming to ``ilocalrepositorymain``."""
+    return localrepository
+
+@interfaceutil.implementer(repository.ilocalrepositoryfilestorage)
+class revlogfilestorage(object):
+    """File storage when using revlogs."""
+
+    def file(self, path):
+        if path[0] == b'/':
+            path = path[1:]
+
+        return filelog.filelog(self.svfs, path)
+
+@interfaceutil.implementer(repository.ilocalrepositoryfilestorage)
+class revlognarrowfilestorage(object):
+    """File storage when using revlogs and narrow files."""
+
+    def file(self, path):
+        if path[0] == b'/':
+            path = path[1:]
+
+        return filelog.narrowfilelog(self.svfs, path, self.narrowmatch())
+
+def makefilestorage(requirements, features, **kwargs):
+    """Produce a type conforming to ``ilocalrepositoryfilestorage``."""
+    features.add(repository.REPO_FEATURE_REVLOG_FILE_STORAGE)
+    features.add(repository.REPO_FEATURE_STREAM_CLONE)
+
+    if repository.NARROW_REQUIREMENT in requirements:
+        return revlognarrowfilestorage
+    else:
+        return revlogfilestorage
+
+# List of repository interfaces and factory functions for them. Each
+# will be called in order during ``makelocalrepository()`` to iteratively
+# derive the final type for a local repository instance. We capture the
+# function as a lambda so we don't hold a reference and the module-level
+# functions can be wrapped.
+REPO_INTERFACES = [
+    (repository.ilocalrepositorymain, lambda: makemain),
+    (repository.ilocalrepositoryfilestorage, lambda: makefilestorage),
+]
+
+@interfaceutil.implementer(repository.ilocalrepositorymain)
 class localrepository(object):
+    """Main class for representing local repositories.
+
+    All local repositories are instances of this class.
+
+    Constructed on its own, instances of this class are not usable as
+    repository objects. To obtain a usable repository object, call
+    ``hg.repository()``, ``localrepo.instance()``, or
+    ``localrepo.makelocalrepository()``. The latter is the lowest-level.
+    ``instance()`` adds support for creating new repositories.
+    ``hg.repository()`` adds more extension integration, including calling
+    ``reposetup()``. Generally speaking, ``hg.repository()`` should be
+    used.
+    """
 
     # obsolete experimental requirements:
     #  - manifestv2: An experimental new manifest format that allowed
@@ -394,11 +848,7 @@ class localrepository(object):
         'relshared',
         'dotencode',
         'exp-sparse',
-    }
-    openerreqs = {
-        'revlogv1',
-        'generaldelta',
-        'treemanifest',
+        'internal-phase'
     }
 
     # list of prefix for file which can be written without 'wlock'
@@ -421,32 +871,76 @@ class localrepository(object):
         'bisect.state',
     }
 
-    def __init__(self, baseui, path, create=False, intents=None):
-        self.requirements = set()
-        self.filtername = None
-        # wvfs: rooted at the repository root, used to access the working copy
-        self.wvfs = vfsmod.vfs(path, expandpath=True, realpath=True)
-        # vfs: rooted at .hg, used to access repo files outside of .hg/store
-        self.vfs = None
-        # svfs: usually rooted at .hg/store, used to access repository history
-        # If this is a shared repository, this vfs may point to another
-        # repository's .hg/store directory.
-        self.svfs = None
-        self.root = self.wvfs.base
-        self.path = self.wvfs.join(".hg")
-        self.origroot = path
-        # This is only used by context.workingctx.match in order to
-        # detect files in subrepos.
-        self.auditor = pathutil.pathauditor(
-            self.root, callback=self._checknested)
-        # This is only used by context.basectx.match in order to detect
-        # files in subrepos.
-        self.nofsauditor = pathutil.pathauditor(
-            self.root, callback=self._checknested, realfs=False, cached=True)
+    def __init__(self, baseui, ui, origroot, wdirvfs, hgvfs, requirements,
+                 supportedrequirements, sharedpath, store, cachevfs,
+                 features, intents=None):
+        """Create a new local repository instance.
+
+        Most callers should use ``hg.repository()``, ``localrepo.instance()``,
+        or ``localrepo.makelocalrepository()`` for obtaining a new repository
+        object.
+
+        Arguments:
+
+        baseui
+           ``ui.ui`` instance that ``ui`` argument was based off of.
+
+        ui
+           ``ui.ui`` instance for use by the repository.
+
+        origroot
+           ``bytes`` path to working directory root of this repository.
+
+        wdirvfs
+           ``vfs.vfs`` rooted at the working directory.
+
+        hgvfs
+           ``vfs.vfs`` rooted at .hg/
+
+        requirements
+           ``set`` of bytestrings representing repository opening requirements.
+
+        supportedrequirements
+           ``set`` of bytestrings representing repository requirements that we
+           know how to open. May be a supetset of ``requirements``.
+
+        sharedpath
+           ``bytes`` Defining path to storage base directory. Points to a
+           ``.hg/`` directory somewhere.
+
+        store
+           ``store.basicstore`` (or derived) instance providing access to
+           versioned storage.
+
+        cachevfs
+           ``vfs.vfs`` used for cache files.
+
+        features
+           ``set`` of bytestrings defining features/capabilities of this
+           instance.
+
+        intents
+           ``set`` of system strings indicating what this repo will be used
+           for.
+        """
         self.baseui = baseui
-        self.ui = baseui.copy()
-        self.ui.copy = baseui.copy # prevent copying repo configuration
-        self.vfs = vfsmod.vfs(self.path, cacheaudited=True)
+        self.ui = ui
+        self.origroot = origroot
+        # vfs rooted at working directory.
+        self.wvfs = wdirvfs
+        self.root = wdirvfs.base
+        # vfs rooted at .hg/. Used to access most non-store paths.
+        self.vfs = hgvfs
+        self.path = hgvfs.base
+        self.requirements = requirements
+        self.supported = supportedrequirements
+        self.sharedpath = sharedpath
+        self.store = store
+        self.cachevfs = cachevfs
+        self.features = features
+
+        self.filtername = None
+
         if (self.ui.configbool('devel', 'all-warnings') or
             self.ui.configbool('devel', 'check-locks')):
             self.vfs.audit = self._getvfsward(self.vfs.audit)
@@ -454,98 +948,18 @@ class localrepository(object):
         # Callback are in the form: func(repo, roots) --> processed root.
         # This list it to be filled by extension during repo setup
         self._phasedefaults = []
-        try:
-            self.ui.readconfig(self.vfs.join("hgrc"), self.root)
-            self._loadextensions()
-        except IOError:
-            pass
 
-        if featuresetupfuncs:
-            self.supported = set(self._basesupported) # use private copy
-            extmods = set(m.__name__ for n, m
-                          in extensions.extensions(self.ui))
-            for setupfunc in featuresetupfuncs:
-                if setupfunc.__module__ in extmods:
-                    setupfunc(self.ui, self.supported)
-        else:
-            self.supported = self._basesupported
         color.setup(self.ui)
 
-        # Add compression engines.
-        for name in util.compengines:
-            engine = util.compengines[name]
-            if engine.revlogheader():
-                self.supported.add('exp-compression-%s' % name)
-
-        if not self.vfs.isdir():
-            if create:
-                self.requirements = newreporequirements(self)
-
-                if not self.wvfs.exists():
-                    self.wvfs.makedirs()
-                self.vfs.makedir(notindexed=True)
-
-                if 'store' in self.requirements:
-                    self.vfs.mkdir("store")
-
-                    # create an invalid changelog
-                    self.vfs.append(
-                        "00changelog.i",
-                        '\0\0\0\2' # represents revlogv2
-                        ' dummy changelog to prevent using the old repo layout'
-                    )
-            else:
-                raise error.RepoError(_("repository %s not found") % path)
-        elif create:
-            raise error.RepoError(_("repository %s already exists") % path)
-        else:
-            try:
-                self.requirements = scmutil.readrequires(
-                        self.vfs, self.supported)
-            except IOError as inst:
-                if inst.errno != errno.ENOENT:
-                    raise
-
-        cachepath = self.vfs.join('cache')
-        self.sharedpath = self.path
-        try:
-            sharedpath = self.vfs.read("sharedpath").rstrip('\n')
-            if 'relshared' in self.requirements:
-                sharedpath = self.vfs.join(sharedpath)
-            vfs = vfsmod.vfs(sharedpath, realpath=True)
-            cachepath = vfs.join('cache')
-            s = vfs.base
-            if not vfs.exists():
-                raise error.RepoError(
-                    _('.hg/sharedpath points to nonexistent directory %s') % s)
-            self.sharedpath = s
-        except IOError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
-
-        if 'exp-sparse' in self.requirements and not sparse.enabled:
-            raise error.RepoError(_('repository is using sparse feature but '
-                                    'sparse is not enabled; enable the '
-                                    '"sparse" extensions to access'))
-
-        self.store = store.store(
-            self.requirements, self.sharedpath,
-            lambda base: vfsmod.vfs(base, cacheaudited=True))
         self.spath = self.store.path
         self.svfs = self.store.vfs
         self.sjoin = self.store.join
-        self.vfs.createmode = self.store.createmode
-        self.cachevfs = vfsmod.vfs(cachepath, cacheaudited=True)
-        self.cachevfs.createmode = self.store.createmode
         if (self.ui.configbool('devel', 'all-warnings') or
             self.ui.configbool('devel', 'check-locks')):
             if util.safehasattr(self.svfs, 'vfs'): # this is filtervfs
                 self.svfs.vfs.audit = self._getsvfsward(self.svfs.vfs.audit)
             else: # standard vfs
                 self.svfs.audit = self._getsvfsward(self.svfs.audit)
-        self._applyopenerreqs()
-        if create:
-            self._writerequirements()
 
         self._dirstatevalidatewarned = False
 
@@ -638,9 +1052,6 @@ class localrepository(object):
     def close(self):
         self._writecaches()
 
-    def _loadextensions(self):
-        extensions.loadall(self.ui)
-
     def _writecaches(self):
         if self._revbranchcache:
             self._revbranchcache.write()
@@ -653,55 +1064,24 @@ class localrepository(object):
             caps.add('bundle2=' + urlreq.quote(capsblob))
         return caps
 
-    def _applyopenerreqs(self):
-        self.svfs.options = dict((r, 1) for r in self.requirements
-                                           if r in self.openerreqs)
-        # experimental config: format.chunkcachesize
-        chunkcachesize = self.ui.configint('format', 'chunkcachesize')
-        if chunkcachesize is not None:
-            self.svfs.options['chunkcachesize'] = chunkcachesize
-        # experimental config: format.maxchainlen
-        maxchainlen = self.ui.configint('format', 'maxchainlen')
-        if maxchainlen is not None:
-            self.svfs.options['maxchainlen'] = maxchainlen
-        # experimental config: format.manifestcachesize
-        manifestcachesize = self.ui.configint('format', 'manifestcachesize')
-        if manifestcachesize is not None:
-            self.svfs.options['manifestcachesize'] = manifestcachesize
-        deltabothparents = self.ui.configbool('storage',
-            'revlog.optimize-delta-parent-choice')
-        self.svfs.options['deltabothparents'] = deltabothparents
-        self.svfs.options['lazydeltabase'] = not scmutil.gddeltaconfig(self.ui)
-        chainspan = self.ui.configbytes('experimental', 'maxdeltachainspan')
-        if 0 <= chainspan:
-            self.svfs.options['maxdeltachainspan'] = chainspan
-        mmapindexthreshold = self.ui.configbytes('experimental',
-                                                 'mmapindexthreshold')
-        if mmapindexthreshold is not None:
-            self.svfs.options['mmapindexthreshold'] = mmapindexthreshold
-        withsparseread = self.ui.configbool('experimental', 'sparse-read')
-        srdensitythres = float(self.ui.config('experimental',
-                                              'sparse-read.density-threshold'))
-        srmingapsize = self.ui.configbytes('experimental',
-                                           'sparse-read.min-gap-size')
-        self.svfs.options['with-sparse-read'] = withsparseread
-        self.svfs.options['sparse-read-density-threshold'] = srdensitythres
-        self.svfs.options['sparse-read-min-gap-size'] = srmingapsize
-        sparserevlog = SPARSEREVLOG_REQUIREMENT in self.requirements
-        self.svfs.options['sparse-revlog'] = sparserevlog
-        if sparserevlog:
-            self.svfs.options['generaldelta'] = True
-
-        for r in self.requirements:
-            if r.startswith('exp-compression-'):
-                self.svfs.options['compengine'] = r[len('exp-compression-'):]
-
-        # TODO move "revlogv2" to openerreqs once finalized.
-        if REVLOGV2_REQUIREMENT in self.requirements:
-            self.svfs.options['revlogv2'] = True
-
     def _writerequirements(self):
         scmutil.writerequires(self.vfs, self.requirements)
+
+    # Don't cache auditor/nofsauditor, or you'll end up with reference cycle:
+    # self -> auditor -> self._checknested -> self
+
+    @property
+    def auditor(self):
+        # This is only used by context.workingctx.match in order to
+        # detect files in subrepos.
+        return pathutil.pathauditor(self.root, callback=self._checknested)
+
+    @property
+    def nofsauditor(self):
+        # This is only used by context.basectx.match in order to detect
+        # files in subrepos.
+        return pathutil.pathauditor(self.root, callback=self._checknested,
+                                    realfs=False, cached=True)
 
     def _checknested(self, path):
         """Determine if path is a legal nested repository."""
@@ -779,15 +1159,10 @@ class localrepository(object):
         return changelog.changelog(self.svfs,
                                    trypending=txnutil.mayhavepending(self.root))
 
-    def _constructmanifest(self):
-        # This is a temporary function while we migrate from manifest to
-        # manifestlog. It allows bundlerepo and unionrepo to intercept the
-        # manifest creation.
-        return manifest.manifestrevlog(self.svfs)
-
     @storecache('00manifest.i')
     def manifestlog(self):
-        return manifest.manifestlog(self.svfs, self)
+        rootstore = manifest.manifestrevlog(self.svfs)
+        return manifest.manifestlog(self.svfs, self, rootstore)
 
     @repofilecache('dirstate')
     def dirstate(self):
@@ -811,35 +1186,42 @@ class localrepository(object):
                                " working parent %s!\n") % short(node))
             return nullid
 
-    @repofilecache(narrowspec.FILENAME)
+    @storecache(narrowspec.FILENAME)
     def narrowpats(self):
         """matcher patterns for this repository's narrowspec
 
         A tuple of (includes, excludes).
         """
-        source = self
-        if self.shared():
-            from . import hg
-            source = hg.sharedreposource(self)
-        return narrowspec.load(source)
+        return narrowspec.load(self)
 
-    @repofilecache(narrowspec.FILENAME)
+    @storecache(narrowspec.FILENAME)
     def _narrowmatch(self):
-        if changegroup.NARROW_REQUIREMENT not in self.requirements:
+        if repository.NARROW_REQUIREMENT not in self.requirements:
             return matchmod.always(self.root, '')
         include, exclude = self.narrowpats
         return narrowspec.match(self.root, include=include, exclude=exclude)
 
-    # TODO(martinvonz): make this property-like instead?
-    def narrowmatch(self):
+    def narrowmatch(self, match=None, includeexact=False):
+        """matcher corresponding the the repo's narrowspec
+
+        If `match` is given, then that will be intersected with the narrow
+        matcher.
+
+        If `includeexact` is True, then any exact matches from `match` will
+        be included even if they're outside the narrowspec.
+        """
+        if match:
+            if includeexact and not self._narrowmatch.always():
+                # do not exclude explicitly-specified paths so that they can
+                # be warned later on
+                em = matchmod.exact(match._root, match._cwd, match.files())
+                nm = matchmod.unionmatcher([self._narrowmatch, em])
+                return matchmod.intersectmatchers(match, nm)
+            return matchmod.intersectmatchers(match, self._narrowmatch)
         return self._narrowmatch
 
     def setnarrowpats(self, newincludes, newexcludes):
-        target = self
-        if self.shared():
-            from . import hg
-            target = hg.sharedreposource(self)
-        narrowspec.save(target, newincludes, newexcludes)
+        narrowspec.save(self, newincludes, newexcludes)
         self.invalidate(clearfilecache=True)
 
     def __getitem__(self, changeid):
@@ -849,18 +1231,67 @@ class localrepository(object):
             return changeid
         if isinstance(changeid, slice):
             # wdirrev isn't contiguous so the slice shouldn't include it
-            return [context.changectx(self, i)
-                    for i in xrange(*changeid.indices(len(self)))
+            return [self[i]
+                    for i in pycompat.xrange(*changeid.indices(len(self)))
                     if i not in self.changelog.filteredrevs]
         try:
-            return context.changectx(self, changeid)
+            if isinstance(changeid, int):
+                node = self.changelog.node(changeid)
+                rev = changeid
+            elif changeid == 'null':
+                node = nullid
+                rev = nullrev
+            elif changeid == 'tip':
+                node = self.changelog.tip()
+                rev = self.changelog.rev(node)
+            elif changeid == '.':
+                # this is a hack to delay/avoid loading obsmarkers
+                # when we know that '.' won't be hidden
+                node = self.dirstate.p1()
+                rev = self.unfiltered().changelog.rev(node)
+            elif len(changeid) == 20:
+                try:
+                    node = changeid
+                    rev = self.changelog.rev(changeid)
+                except error.FilteredLookupError:
+                    changeid = hex(changeid) # for the error message
+                    raise
+                except LookupError:
+                    # check if it might have come from damaged dirstate
+                    #
+                    # XXX we could avoid the unfiltered if we had a recognizable
+                    # exception for filtered changeset access
+                    if (self.local()
+                        and changeid in self.unfiltered().dirstate.parents()):
+                        msg = _("working directory has unknown parent '%s'!")
+                        raise error.Abort(msg % short(changeid))
+                    changeid = hex(changeid) # for the error message
+                    raise
+
+            elif len(changeid) == 40:
+                node = bin(changeid)
+                rev = self.changelog.rev(node)
+            else:
+                raise error.ProgrammingError(
+                        "unsupported changeid '%s' of type %s" %
+                        (changeid, type(changeid)))
+
+            return context.changectx(self, rev, node)
+
+        except (error.FilteredIndexError, error.FilteredLookupError):
+            raise error.FilteredRepoLookupError(_("filtered revision '%s'")
+                                                % pycompat.bytestr(changeid))
+        except (IndexError, LookupError):
+            raise error.RepoLookupError(
+                _("unknown revision '%s'") % pycompat.bytestr(changeid))
         except error.WdirUnsupported:
             return context.workingctx(self)
 
     def __contains__(self, changeid):
         """True if the given changeid exists
 
-        error.LookupError is raised if an ambiguous node specified.
+        error.AmbiguousPrefixLookupError is raised if an ambiguous node
+        specified.
         """
         try:
             self[changeid]
@@ -1122,11 +1553,6 @@ class localrepository(object):
     def wjoin(self, f, *insidef):
         return self.vfs.reljoin(self.root, f, *insidef)
 
-    def file(self, f):
-        if f[0] == '/':
-            f = f[1:]
-        return filelog.filelog(self.svfs, f)
-
     def setparents(self, p1, p2=nullid):
         with self.dirstate.parentchange():
             copies = self.dirstate.setparents(p1, p2)
@@ -1263,7 +1689,7 @@ class localrepository(object):
             rp = report
         else:
             rp = self.ui.warn
-        vfsmap = {'plain': self.vfs} # root of .hg/
+        vfsmap = {'plain': self.vfs, 'store': self.svfs} # root of .hg/
         # we must avoid cyclic reference between repo and transaction.
         reporef = weakref.ref(self)
         # Code to track tag movement
@@ -1372,6 +1798,7 @@ class localrepository(object):
             else:
                 # discard all changes (including ones already written
                 # out) in this transaction
+                narrowspec.restorebackup(self, 'journal.narrowspec')
                 repo.dirstate.restorebackup(None, 'journal.dirstate')
 
                 repo.invalidate(clearfilecache=True)
@@ -1385,7 +1812,7 @@ class localrepository(object):
                                      releasefn=releasefn,
                                      checkambigfiles=_cachedfiles,
                                      name=desc)
-        tr.changes['revs'] = xrange(0, 0)
+        tr.changes['origrepolen'] = len(self)
         tr.changes['obsmarkers'] = set()
         tr.changes['phases'] = {}
         tr.changes['bookmarks'] = {}
@@ -1460,6 +1887,7 @@ class localrepository(object):
     @unfilteredmethod
     def _writejournal(self, desc):
         self.dirstate.savebackup(None, 'journal.dirstate')
+        narrowspec.savebackup(self, 'journal.narrowspec')
         self.vfs.write("journal.branch",
                           encoding.fromlocal(self.dirstate.branch()))
         self.vfs.write("journal.desc",
@@ -1547,6 +1975,7 @@ class localrepository(object):
             # prevent dirstateguard from overwriting already restored one
             dsguard.close()
 
+            narrowspec.restorebackup(self, 'undo.narrowspec')
             self.dirstate.restorebackup(None, 'undo.dirstate')
             try:
                 branch = self.vfs.read('undo.branch')
@@ -1601,7 +2030,7 @@ class localrepository(object):
             # later call to `destroyed` will refresh them.
             return
 
-        if tr is None or tr.changes['revs']:
+        if tr is None or tr.changes['origrepolen'] < len(self):
             # updating the unfiltered branchmap should refresh all the others,
             self.ui.debug('updating the branch cache\n')
             branchmap.updatecache(self.filtered('served'))
@@ -1612,11 +2041,15 @@ class localrepository(object):
                 rbc.branchinfo(r)
             rbc.write()
 
+            # ensure the working copy parents are in the manifestfulltextcache
+            for ctx in self['.'].parents():
+                ctx.manifest()  # accessing the manifest is enough
+
     def invalidatecaches(self):
 
-        if '_tagscache' in vars(self):
+        if r'_tagscache' in vars(self):
             # can't use delattr on proxy
-            del self.__dict__['_tagscache']
+            del self.__dict__[r'_tagscache']
 
         self.unfiltered()._branchcaches.clear()
         self.invalidatevolatilesets()
@@ -1635,13 +2068,13 @@ class localrepository(object):
         rereads the dirstate. Use dirstate.invalidate() if you want to
         explicitly read the dirstate again (i.e. restoring it to a previous
         known good state).'''
-        if hasunfilteredcache(self, 'dirstate'):
+        if hasunfilteredcache(self, r'dirstate'):
             for k in self.dirstate._filecache:
                 try:
                     delattr(self.dirstate, k)
                 except AttributeError:
                     pass
-            delattr(self.unfiltered(), 'dirstate')
+            delattr(self.unfiltered(), r'dirstate')
 
     def invalidate(self, clearfilecache=False):
         '''Invalidates both store and non-store parts other than dirstate
@@ -2026,6 +2459,11 @@ class localrepository(object):
     def commitctx(self, ctx, error=False):
         """Add a new revision to current repository.
         Revision information is passed via the context argument.
+
+        ctx.files() should list all files involved in this commit, i.e.
+        modified/added/removed files. On merge, it may be wider than the
+        ctx.files() to be committed, since any file nodes derived directly
+        from p1 or p2 are excluded from the committed ctx.files().
         """
 
         tr = None
@@ -2039,6 +2477,7 @@ class localrepository(object):
 
             if ctx.manifestnode():
                 # reuse an existing manifest revision
+                self.ui.debug('reusing known manifest\n')
                 mn = ctx.manifestnode()
                 files = ctx.files()
             elif ctx.files():
@@ -2077,16 +2516,38 @@ class localrepository(object):
                         raise
 
                 # update manifest
-                self.ui.note(_("committing manifest\n"))
                 removed = [f for f in sorted(removed) if f in m1 or f in m2]
                 drop = [f for f in removed if f in m]
                 for f in drop:
                     del m[f]
-                mn = mctx.write(trp, linkrev,
-                                p1.manifestnode(), p2.manifestnode(),
-                                added, drop)
                 files = changed + removed
+                md = None
+                if not files:
+                    # if no "files" actually changed in terms of the changelog,
+                    # try hard to detect unmodified manifest entry so that the
+                    # exact same commit can be reproduced later on convert.
+                    md = m1.diff(m, scmutil.matchfiles(self, ctx.files()))
+                if not files and md:
+                    self.ui.debug('not reusing manifest (no file change in '
+                                  'changelog, but manifest differs)\n')
+                if files or md:
+                    self.ui.note(_("committing manifest\n"))
+                    # we're using narrowmatch here since it's already applied at
+                    # other stages (such as dirstate.walk), so we're already
+                    # ignoring things outside of narrowspec in most cases. The
+                    # one case where we might have files outside the narrowspec
+                    # at this point is merges, and we already error out in the
+                    # case where the merge has files outside of the narrowspec,
+                    # so this is safe.
+                    mn = mctx.write(trp, linkrev,
+                                    p1.manifestnode(), p2.manifestnode(),
+                                    added, drop, match=self.narrowmatch())
+                else:
+                    self.ui.debug('reusing manifest form p1 (listed files '
+                                  'actually unchanged)\n')
+                    mn = p1.manifestnode()
             else:
+                self.ui.debug('reusing manifest from p1 (no file change)\n')
                 mn = p1.manifestnode()
                 files = []
 
@@ -2345,20 +2806,55 @@ def undoname(fn):
     assert name.startswith('journal')
     return os.path.join(base, name.replace('journal', 'undo', 1))
 
-def instance(ui, path, create, intents=None):
-    return localrepository(ui, util.urllocalpath(path), create,
-                           intents=intents)
+def instance(ui, path, create, intents=None, createopts=None):
+    localpath = util.urllocalpath(path)
+    if create:
+        createrepository(ui, localpath, createopts=createopts)
+
+    return makelocalrepository(ui, localpath, intents=intents)
 
 def islocal(path):
     return True
 
-def newreporequirements(repo):
+def defaultcreateopts(ui, createopts=None):
+    """Populate the default creation options for a repository.
+
+    A dictionary of explicitly requested creation options can be passed
+    in. Missing keys will be populated.
+    """
+    createopts = dict(createopts or {})
+
+    if 'backend' not in createopts:
+        # experimental config: storage.new-repo-backend
+        createopts['backend'] = ui.config('storage', 'new-repo-backend')
+
+    return createopts
+
+def newreporequirements(ui, createopts):
     """Determine the set of requirements for a new local repository.
 
     Extensions can wrap this function to specify custom requirements for
     new repositories.
     """
-    ui = repo.ui
+    # If the repo is being created from a shared repository, we copy
+    # its requirements.
+    if 'sharedrepo' in createopts:
+        requirements = set(createopts['sharedrepo'].requirements)
+        if createopts.get('sharedrelative'):
+            requirements.add('relshared')
+        else:
+            requirements.add('shared')
+
+        return requirements
+
+    if 'backend' not in createopts:
+        raise error.ProgrammingError('backend key not present in createopts; '
+                                     'was defaultcreateopts() called?')
+
+    if createopts['backend'] != 'revlogv1':
+        raise error.Abort(_('unable to determine repository requirements for '
+                            'storage backend: %s') % createopts['backend'])
+
     requirements = {'revlogv1'}
     if ui.configbool('format', 'usestore'):
         requirements.add('store')
@@ -2393,5 +2889,156 @@ def newreporequirements(repo):
         # generaldelta is implied by revlogv2.
         requirements.discard('generaldelta')
         requirements.add(REVLOGV2_REQUIREMENT)
+    # experimental config: format.internal-phase
+    if ui.configbool('format', 'internal-phase'):
+        requirements.add('internal-phase')
+
+    if createopts.get('narrowfiles'):
+        requirements.add(repository.NARROW_REQUIREMENT)
+
+    if createopts.get('lfs'):
+        requirements.add('lfs')
 
     return requirements
+
+def filterknowncreateopts(ui, createopts):
+    """Filters a dict of repo creation options against options that are known.
+
+    Receives a dict of repo creation options and returns a dict of those
+    options that we don't know how to handle.
+
+    This function is called as part of repository creation. If the
+    returned dict contains any items, repository creation will not
+    be allowed, as it means there was a request to create a repository
+    with options not recognized by loaded code.
+
+    Extensions can wrap this function to filter out creation options
+    they know how to handle.
+    """
+    known = {
+        'backend',
+        'lfs',
+        'narrowfiles',
+        'sharedrepo',
+        'sharedrelative',
+        'shareditems',
+        'shallowfilestore',
+    }
+
+    return {k: v for k, v in createopts.items() if k not in known}
+
+def createrepository(ui, path, createopts=None):
+    """Create a new repository in a vfs.
+
+    ``path`` path to the new repo's working directory.
+    ``createopts`` options for the new repository.
+
+    The following keys for ``createopts`` are recognized:
+
+    backend
+       The storage backend to use.
+    lfs
+       Repository will be created with ``lfs`` requirement. The lfs extension
+       will automatically be loaded when the repository is accessed.
+    narrowfiles
+       Set up repository to support narrow file storage.
+    sharedrepo
+       Repository object from which storage should be shared.
+    sharedrelative
+       Boolean indicating if the path to the shared repo should be
+       stored as relative. By default, the pointer to the "parent" repo
+       is stored as an absolute path.
+    shareditems
+       Set of items to share to the new repository (in addition to storage).
+    shallowfilestore
+       Indicates that storage for files should be shallow (not all ancestor
+       revisions are known).
+    """
+    createopts = defaultcreateopts(ui, createopts=createopts)
+
+    unknownopts = filterknowncreateopts(ui, createopts)
+
+    if not isinstance(unknownopts, dict):
+        raise error.ProgrammingError('filterknowncreateopts() did not return '
+                                     'a dict')
+
+    if unknownopts:
+        raise error.Abort(_('unable to create repository because of unknown '
+                            'creation option: %s') %
+                          ', '.join(sorted(unknownopts)),
+                          hint=_('is a required extension not loaded?'))
+
+    requirements = newreporequirements(ui, createopts=createopts)
+
+    wdirvfs = vfsmod.vfs(path, expandpath=True, realpath=True)
+
+    hgvfs = vfsmod.vfs(wdirvfs.join(b'.hg'))
+    if hgvfs.exists():
+        raise error.RepoError(_('repository %s already exists') % path)
+
+    if 'sharedrepo' in createopts:
+        sharedpath = createopts['sharedrepo'].sharedpath
+
+        if createopts.get('sharedrelative'):
+            try:
+                sharedpath = os.path.relpath(sharedpath, hgvfs.base)
+            except (IOError, ValueError) as e:
+                # ValueError is raised on Windows if the drive letters differ
+                # on each path.
+                raise error.Abort(_('cannot calculate relative path'),
+                                  hint=stringutil.forcebytestr(e))
+
+    if not wdirvfs.exists():
+        wdirvfs.makedirs()
+
+    hgvfs.makedir(notindexed=True)
+
+    if b'store' in requirements and 'sharedrepo' not in createopts:
+        hgvfs.mkdir(b'store')
+
+        # We create an invalid changelog outside the store so very old
+        # Mercurial versions (which didn't know about the requirements
+        # file) encounter an error on reading the changelog. This
+        # effectively locks out old clients and prevents them from
+        # mucking with a repo in an unknown format.
+        #
+        # The revlog header has version 2, which won't be recognized by
+        # such old clients.
+        hgvfs.append(b'00changelog.i',
+                     b'\0\0\0\2 dummy changelog to prevent using the old repo '
+                     b'layout')
+
+    scmutil.writerequires(hgvfs, requirements)
+
+    # Write out file telling readers where to find the shared store.
+    if 'sharedrepo' in createopts:
+        hgvfs.write(b'sharedpath', sharedpath)
+
+    if createopts.get('shareditems'):
+        shared = b'\n'.join(sorted(createopts['shareditems'])) + b'\n'
+        hgvfs.write(b'shared', shared)
+
+def poisonrepository(repo):
+    """Poison a repository instance so it can no longer be used."""
+    # Perform any cleanup on the instance.
+    repo.close()
+
+    # Our strategy is to replace the type of the object with one that
+    # has all attribute lookups result in error.
+    #
+    # But we have to allow the close() method because some constructors
+    # of repos call close() on repo references.
+    class poisonedrepository(object):
+        def __getattribute__(self, item):
+            if item == r'close':
+                return object.__getattribute__(self, item)
+
+            raise error.ProgrammingError('repo instances should not be used '
+                                         'after unshare')
+
+        def close(self):
+            pass
+
+    # We may have a repoview, which intercepts __setattr__. So be sure
+    # we operate at the lowest level possible.
+    object.__setattr__(repo, r'__class__', poisonedrepository)

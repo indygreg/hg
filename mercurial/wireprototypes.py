@@ -10,6 +10,9 @@ from .node import (
     hex,
 )
 from .i18n import _
+from .thirdparty import (
+    attr,
+)
 from . import (
     error,
     util,
@@ -22,8 +25,11 @@ from .utils import (
 SSHV1 = 'ssh-v1'
 # These are advertised over the wire. Increment the counters at the end
 # to reflect BC breakages.
-SSHV2 = 'exp-ssh-v2-0001'
-HTTP_WIREPROTO_V2 = 'exp-http-v2-0001'
+SSHV2 = 'exp-ssh-v2-0003'
+HTTP_WIREPROTO_V2 = 'exp-http-v2-0003'
+
+NARROWCAP = 'exp-narrow-1'
+ELLIPSESCAP = 'exp-ellipses-1'
 
 # All available wire protocol transports.
 TRANSPORTS = {
@@ -105,27 +111,6 @@ class streamreslegacy(object):
     """
     def __init__(self, gen=None):
         self.gen = gen
-
-class cborresponse(object):
-    """Encode the response value as CBOR."""
-    def __init__(self, v):
-        self.value = v
-
-class v2errorresponse(object):
-    """Represents a command error for version 2 transports."""
-    def __init__(self, message, args=None):
-        self.message = message
-        self.args = args
-
-class v2streamingresponse(object):
-    """A response whose data is supplied by a generator.
-
-    The generator can either consist of data structures to CBOR
-    encode or a stream of already-encoded bytes.
-    """
-    def __init__(self, gen, compressible=True):
-        self.gen = gen
-        self.compressible = compressible
 
 # list of nodes encoding / decoding
 def decodelist(l, sep=' '):
@@ -250,11 +235,13 @@ class baseprotocolhandler(interfaceutil.Interface):
 class commandentry(object):
     """Represents a declared wire protocol command."""
     def __init__(self, func, args='', transports=None,
-                 permission='push'):
+                 permission='push', cachekeyfn=None, extracapabilitiesfn=None):
         self.func = func
         self.args = args
         self.transports = transports or set()
         self.permission = permission
+        self.cachekeyfn = cachekeyfn
+        self.extracapabilitiesfn = extracapabilitiesfn
 
     def _merge(self, func, args):
         """Merge this instance with an incoming 2-tuple.
@@ -373,3 +360,41 @@ def supportedcompengines(ui, role):
                           ', '.sorted(validnames))
 
     return compengines
+
+@attr.s
+class encodedresponse(object):
+    """Represents response data that is already content encoded.
+
+    Wire protocol version 2 only.
+
+    Commands typically emit Python objects that are encoded and sent over the
+    wire. If commands emit an object of this type, the encoding step is bypassed
+    and the content from this object is used instead.
+    """
+    data = attr.ib()
+
+@attr.s
+class alternatelocationresponse(object):
+    """Represents a response available at an alternate location.
+
+    Instances are sent in place of actual response objects when the server
+    is sending a "content redirect" response.
+
+    Only compatible with wire protocol version 2.
+    """
+    url = attr.ib()
+    mediatype = attr.ib()
+    size = attr.ib(default=None)
+    fullhashes = attr.ib(default=None)
+    fullhashseed = attr.ib(default=None)
+    serverdercerts = attr.ib(default=None)
+    servercadercerts = attr.ib(default=None)
+
+@attr.s
+class indefinitebytestringresponse(object):
+    """Represents an object to be encoded to an indefinite length bytestring.
+
+    Instances are initialized from an iterable of chunks, with each chunk being
+    a bytes instance.
+    """
+    chunks = attr.ib()

@@ -18,13 +18,19 @@ Test operators and basic patterns
 
   $ fileset -v a1
   (symbol 'a1')
+  * matcher:
+  <patternmatcher patterns='(?:a1$)'>
   a1
   $ fileset -v 'a*'
   (symbol 'a*')
+  * matcher:
+  <patternmatcher patterns='(?:a[^/]*$)'>
   a1
   a2
   $ fileset -v '"re:a\d"'
   (string 're:a\\d')
+  * matcher:
+  <patternmatcher patterns='(?:a\\d)'>
   a1
   a2
   $ fileset -v '!re:"a\d"'
@@ -32,6 +38,10 @@ Test operators and basic patterns
     (kindpat
       (symbol 're')
       (string 'a\\d')))
+  * matcher:
+  <predicatenmatcher
+    pred=<not
+      <patternmatcher patterns='(?:a\\d)'>>>
   b1
   b2
   $ fileset -v 'path:a1 or glob:b?'
@@ -42,10 +52,12 @@ Test operators and basic patterns
     (kindpat
       (symbol 'glob')
       (symbol 'b?')))
+  * matcher:
+  <patternmatcher patterns='(?:a1(?:/|$)|b.$)'>
   a1
   b1
   b2
-  $ fileset -v 'a1 or a2'
+  $ fileset -v --no-show-matcher 'a1 or a2'
   (or
     (symbol 'a1')
     (symbol 'a2'))
@@ -97,6 +109,15 @@ Test invalid syntax
       None))
   hg: parse error: can't use negate operator in this context
   [255]
+  $ fileset -p parsed 'a, b, c'
+  * parsed:
+  (list
+    (symbol 'a')
+    (symbol 'b')
+    (symbol 'c'))
+  hg: parse error: can't use a list in this context
+  (see 'hg help "filesets.x or y"')
+  [255]
 
   $ fileset '"path":.'
   hg: parse error: not a symbol
@@ -113,6 +134,183 @@ Test invalid syntax
   $ fileset 'foo:bar'
   hg: parse error: invalid pattern kind: foo
   [255]
+
+Show parsed tree at stages:
+
+  $ fileset -p unknown a
+  abort: invalid stage name: unknown
+  [255]
+
+  $ fileset -p parsed 'path:a1 or glob:b?'
+  * parsed:
+  (or
+    (kindpat
+      (symbol 'path')
+      (symbol 'a1'))
+    (kindpat
+      (symbol 'glob')
+      (symbol 'b?')))
+  a1
+  b1
+  b2
+
+  $ fileset -p all -s 'a1 or a2 or (grep("b") & clean())'
+  * parsed:
+  (or
+    (symbol 'a1')
+    (symbol 'a2')
+    (group
+      (and
+        (func
+          (symbol 'grep')
+          (string 'b'))
+        (func
+          (symbol 'clean')
+          None))))
+  * analyzed:
+  (or
+    (symbol 'a1')
+    (symbol 'a2')
+    (and
+      (func
+        (symbol 'grep')
+        (string 'b'))
+      (withstatus
+        (func
+          (symbol 'clean')
+          None)
+        (string 'clean'))))
+  * optimized:
+  (or
+    (patterns
+      (symbol 'a1')
+      (symbol 'a2'))
+    (and
+      (withstatus
+        (func
+          (symbol 'clean')
+          None)
+        (string 'clean'))
+      (func
+        (symbol 'grep')
+        (string 'b'))))
+  * matcher:
+  <unionmatcher matchers=[
+    <patternmatcher patterns='(?:a1$|a2$)'>,
+    <intersectionmatcher
+      m1=<predicatenmatcher pred=clean>,
+      m2=<predicatenmatcher pred=grep('b')>>]>
+  a1
+  a2
+  b1
+  b2
+
+Union of basic patterns:
+
+  $ fileset -p optimized -s -r. 'a1 or a2 or path:b1'
+  * optimized:
+  (patterns
+    (symbol 'a1')
+    (symbol 'a2')
+    (kindpat
+      (symbol 'path')
+      (symbol 'b1')))
+  * matcher:
+  <patternmatcher patterns='(?:a1$|a2$|b1(?:/|$))'>
+  a1
+  a2
+  b1
+
+OR expression should be reordered by weight:
+
+  $ fileset -p optimized -s -r. 'grep("a") or a1 or grep("b") or b2'
+  * optimized:
+  (or
+    (patterns
+      (symbol 'a1')
+      (symbol 'b2'))
+    (func
+      (symbol 'grep')
+      (string 'a'))
+    (func
+      (symbol 'grep')
+      (string 'b')))
+  * matcher:
+  <unionmatcher matchers=[
+    <patternmatcher patterns='(?:a1$|b2$)'>,
+    <predicatenmatcher pred=grep('a')>,
+    <predicatenmatcher pred=grep('b')>]>
+  a1
+  a2
+  b1
+  b2
+
+Use differencematcher for 'x and not y':
+
+  $ fileset -p optimized -s 'a* and not a1'
+  * optimized:
+  (minus
+    (symbol 'a*')
+    (symbol 'a1'))
+  * matcher:
+  <differencematcher
+    m1=<patternmatcher patterns='(?:a[^/]*$)'>,
+    m2=<patternmatcher patterns='(?:a1$)'>>
+  a2
+
+  $ fileset -p optimized -s '!binary() and a*'
+  * optimized:
+  (minus
+    (symbol 'a*')
+    (func
+      (symbol 'binary')
+      None))
+  * matcher:
+  <differencematcher
+    m1=<patternmatcher patterns='(?:a[^/]*$)'>,
+    m2=<predicatenmatcher pred=binary>>
+  a1
+  a2
+
+'x - y' is rewritten to 'x and not y' first so the operands can be reordered:
+
+  $ fileset -p analyzed -p optimized -s 'a* - a1'
+  * analyzed:
+  (and
+    (symbol 'a*')
+    (not
+      (symbol 'a1')))
+  * optimized:
+  (minus
+    (symbol 'a*')
+    (symbol 'a1'))
+  * matcher:
+  <differencematcher
+    m1=<patternmatcher patterns='(?:a[^/]*$)'>,
+    m2=<patternmatcher patterns='(?:a1$)'>>
+  a2
+
+  $ fileset -p analyzed -p optimized -s 'binary() - a*'
+  * analyzed:
+  (and
+    (func
+      (symbol 'binary')
+      None)
+    (not
+      (symbol 'a*')))
+  * optimized:
+  (and
+    (not
+      (symbol 'a*'))
+    (func
+      (symbol 'binary')
+      None))
+  * matcher:
+  <intersectionmatcher
+    m1=<predicatenmatcher
+      pred=<not
+        <patternmatcher patterns='(?:a[^/]*$)'>>>,
+    m2=<predicatenmatcher pred=binary>>
 
 Test files status
 
@@ -180,6 +378,156 @@ Test files status in different revisions
   b2
   c1
 
+Test insertion of status hints
+
+  $ fileset -p optimized 'added()'
+  * optimized:
+  (withstatus
+    (func
+      (symbol 'added')
+      None)
+    (string 'added'))
+  c1
+
+  $ fileset -p optimized 'a* & removed()'
+  * optimized:
+  (and
+    (symbol 'a*')
+    (withstatus
+      (func
+        (symbol 'removed')
+        None)
+      (string 'removed')))
+  a2
+
+  $ fileset -p optimized 'a* - removed()'
+  * optimized:
+  (minus
+    (symbol 'a*')
+    (withstatus
+      (func
+        (symbol 'removed')
+        None)
+      (string 'removed')))
+  a1
+
+  $ fileset -p analyzed -p optimized '(added() + removed()) - a*'
+  * analyzed:
+  (and
+    (withstatus
+      (or
+        (func
+          (symbol 'added')
+          None)
+        (func
+          (symbol 'removed')
+          None))
+      (string 'added removed'))
+    (not
+      (symbol 'a*')))
+  * optimized:
+  (and
+    (not
+      (symbol 'a*'))
+    (withstatus
+      (or
+        (func
+          (symbol 'added')
+          None)
+        (func
+          (symbol 'removed')
+          None))
+      (string 'added removed')))
+  c1
+
+  $ fileset -p optimized 'a* + b* + added() + unknown()'
+  * optimized:
+  (withstatus
+    (or
+      (patterns
+        (symbol 'a*')
+        (symbol 'b*'))
+      (func
+        (symbol 'added')
+        None)
+      (func
+        (symbol 'unknown')
+        None))
+    (string 'added unknown'))
+  a1
+  a2
+  b1
+  b2
+  c1
+  c3
+
+  $ fileset -p analyzed -p optimized 'removed() & missing() & a*'
+  * analyzed:
+  (and
+    (withstatus
+      (and
+        (func
+          (symbol 'removed')
+          None)
+        (func
+          (symbol 'missing')
+          None))
+      (string 'removed missing'))
+    (symbol 'a*'))
+  * optimized:
+  (and
+    (symbol 'a*')
+    (withstatus
+      (and
+        (func
+          (symbol 'removed')
+          None)
+        (func
+          (symbol 'missing')
+          None))
+      (string 'removed missing')))
+
+  $ fileset -p optimized 'clean() & revs(0, added())'
+  * optimized:
+  (and
+    (withstatus
+      (func
+        (symbol 'clean')
+        None)
+      (string 'clean'))
+    (func
+      (symbol 'revs')
+      (list
+        (symbol '0')
+        (withstatus
+          (func
+            (symbol 'added')
+            None)
+          (string 'added')))))
+  b1
+
+  $ fileset -p optimized 'clean() & status(null, 0, b* & added())'
+  * optimized:
+  (and
+    (withstatus
+      (func
+        (symbol 'clean')
+        None)
+      (string 'clean'))
+    (func
+      (symbol 'status')
+      (list
+        (symbol 'null')
+        (symbol '0')
+        (and
+          (symbol 'b*')
+          (withstatus
+            (func
+              (symbol 'added')
+              None)
+            (string 'added'))))))
+  b1
+
 Test files properties
 
   >>> open('bin', 'wb').write(b'\0a') and None
@@ -192,6 +540,19 @@ Test files properties
   bin
   $ hg add bin
   $ fileset 'binary()'
+  bin
+
+  $ fileset -p optimized -s 'binary() and b*'
+  * optimized:
+  (and
+    (symbol 'b*')
+    (func
+      (symbol 'binary')
+      None))
+  * matcher:
+  <intersectionmatcher
+    m1=<patternmatcher patterns='(?:b[^/]*$)'>,
+    m2=<predicatenmatcher pred=binary>>
   bin
 
   $ fileset 'grep("b{1}")'
@@ -231,7 +592,7 @@ Test files properties
   [255]
   $ fileset '(1k, 2k)'
   hg: parse error: can't use a list in this context
-  (see hg help "filesets.x or y")
+  (see 'hg help "filesets.x or y"')
   [255]
   $ fileset 'size(1k)'
   1k

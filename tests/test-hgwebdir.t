@@ -66,6 +66,20 @@ create a subdirectory containing repositories and subrepositories
   > EOF
   $ cd ..
 
+add file under the directory which could be shadowed by another repository
+
+  $ mkdir notrepo/f/f3
+  $ echo f3/file > notrepo/f/f3/file
+  $ hg -R notrepo/f ci -Am 'f3/file'
+  adding f3/file
+  $ hg -R notrepo/f update null
+  0 files updated, 0 files merged, 4 files removed, 0 files unresolved
+  $ hg init notrepo/f/f3
+  $ cat <<'EOF' > notrepo/f/f3/.hg/hgrc
+  > [web]
+  > hidden = true
+  > EOF
+
 create repository without .hg/store
 
   $ hg init nostore
@@ -1216,6 +1230,39 @@ Test subrepositories inside intermediate directories
   200 Script output follows
   
   f2
+
+Test accessing file that could be shadowed by another repository if the URL
+path were audited as a working-directory path:
+
+  $ get-with-headers.py localhost:$HGPORT1 'rcoll/notrepo/f/file/tip/f3/file?style=raw'
+  200 Script output follows
+  
+  f3/file
+
+Test accessing working-directory file that is shadowed by another repository
+
+  $ get-with-headers.py localhost:$HGPORT1 'rcoll/notrepo/f/file/ffffffffffff/f3/file?style=raw'
+  403 Forbidden
+  
+  
+  error: path 'f3/file' is inside nested repo 'f3'
+  [1]
+
+Test accessing invalid paths:
+
+  $ get-with-headers.py localhost:$HGPORT1 'rcoll/notrepo/f/file/tip/..?style=raw'
+  403 Forbidden
+  
+  
+  error: .. not under root '$TESTTMP/dir/webdir/notrepo/f'
+  [1]
+
+  $ get-with-headers.py localhost:$HGPORT1 'rcoll/notrepo/f/file/tip/.hg/hgrc?style=raw'
+  403 Forbidden
+  
+  
+  error: path contains illegal component: .hg/hgrc
+  [1]
 
 Test descend = False
 

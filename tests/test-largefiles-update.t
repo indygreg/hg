@@ -412,7 +412,7 @@ Test a linear merge to a revision containing same-name normal file
   $ hg update -q 5
   remote turned local largefile large2 into a normal file
   keep (l)argefile or use (n)ormal file? l
-  $ hg debugdirstate --nodates | grep large2
+  $ hg debugdirstate --no-dates | grep large2
   a   0         -1 unset               .hglf/large2
   r   0          0 set                 large2
   $ hg status -A large2
@@ -428,7 +428,7 @@ Test a linear merge to a revision containing same-name normal file
   $ hg update -q 5
   remote turned local largefile large3 into a normal file
   keep (l)argefile or use (n)ormal file? l
-  $ hg debugdirstate --nodates | grep large3
+  $ hg debugdirstate --no-dates | grep large3
   a   0         -1 unset               .hglf/large3
   r   0          0 set                 large3
   $ hg status -A large3
@@ -456,7 +456,7 @@ Test that the internal linear merging works correctly
   adding manifests
   adding file changes
   added 3 changesets with 5 changes to 5 files
-  new changesets 9530e27857f7:d65e59e952a9
+  new changesets 9530e27857f7:d65e59e952a9 (3 drafts)
   remote turned local largefile large2 into a normal file
   keep (l)argefile or use (n)ormal file? l
   largefile large1 has a merge conflict
@@ -492,7 +492,7 @@ Test that the internal linear merging works correctly
   adding manifests
   adding file changes
   added 3 changesets with 5 changes to 5 files
-  new changesets 9530e27857f7:d65e59e952a9
+  new changesets 9530e27857f7:d65e59e952a9 (3 drafts)
   remote turned local largefile large2 into a normal file
   keep (l)argefile or use (n)ormal file? l
   largefile large1 has a merge conflict
@@ -611,7 +611,8 @@ the 1st commit of resuming.
   > EOF
   rebasing 1:72518492caa6 "#1"
   rebasing 4:07d6153b5c04 "#4"
-  local [dest] changed .hglf/large1 which other [source] deleted
+  file '.hglf/large1' was deleted in other [source] but was modified in local [dest].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? c
 
   $ hg diff -c "tip~1" --nodates .hglf/large1 | grep '^[+-][0-9a-z]'

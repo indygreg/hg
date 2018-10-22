@@ -156,7 +156,92 @@ Rebase the working copy parent
   |/
   o  0: b173517d0057 'a'
   
+
+Test reporting of path conflicts
+
+  $ hg rm a
+  $ mkdir a
+  $ touch a/a
+  $ hg ci -Am "a/a"
+  adding a/a
+  $ hg tglog
+  @  4: daf7dfc139cb 'a/a'
+  |
+  o  3: 844a7de3e617 'c'
+  |
+  | o  2: 09c044d2cb43 'd'
+  | |
+  | o  1: fc055c3b4d33 'b'
+  |/
+  o  0: b173517d0057 'a'
+  
+  $ hg rebase -r . -d 2
+  rebasing 4:daf7dfc139cb "a/a" (tip)
+  saved backup bundle to $TESTTMP/repo1/repo2/.hg/strip-backup/daf7dfc139cb-fdbfcf4f-rebase.hg
+
+  $ hg tglog
+  @  4: c6ad37a4f250 'a/a'
+  |
+  | o  3: 844a7de3e617 'c'
+  | |
+  o |  2: 09c044d2cb43 'd'
+  | |
+  o |  1: fc055c3b4d33 'b'
+  |/
+  o  0: b173517d0057 'a'
+  
+  $ echo foo > foo
+  $ hg ci -Aqm "added foo"
+  $ hg up '.^'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ echo bar > bar
+  $ hg ci -Aqm "added bar"
+  $ hg rm a/a
+  $ echo a > a
+  $ hg ci -Aqm "added a back!"
+  $ hg tglog
+  @  7: 855e9797387e 'added a back!'
+  |
+  o  6: d14530e5e3e6 'added bar'
+  |
+  | o  5: 9b94b9373deb 'added foo'
+  |/
+  o  4: c6ad37a4f250 'a/a'
+  |
+  | o  3: 844a7de3e617 'c'
+  | |
+  o |  2: 09c044d2cb43 'd'
+  | |
+  o |  1: fc055c3b4d33 'b'
+  |/
+  o  0: b173517d0057 'a'
+  
+  $ hg rebase -r . -d 5
+  rebasing 7:855e9797387e "added a back!" (tip)
+  saved backup bundle to $TESTTMP/repo1/repo2/.hg/strip-backup/855e9797387e-81ee4c5d-rebase.hg
+
+  $ hg tglog
+  @  7: bb3f02be2688 'added a back!'
+  |
+  | o  6: d14530e5e3e6 'added bar'
+  | |
+  o |  5: 9b94b9373deb 'added foo'
+  |/
+  o  4: c6ad37a4f250 'a/a'
+  |
+  | o  3: 844a7de3e617 'c'
+  | |
+  o |  2: 09c044d2cb43 'd'
+  | |
+  o |  1: fc055c3b4d33 'b'
+  |/
+  o  0: b173517d0057 'a'
+  
+
+  $ cd ..
+
 Test dry-run rebasing
+
   $ hg init repo3
   $ cd repo3
   $ echo a>a
@@ -323,6 +408,25 @@ Check dryrun working with --collapse when there is conflicts
   rebasing 4:e860deea161a "e"
   merging e
   hit a merge conflict
+  [1]
+
+In-memory rebase that fails due to merge conflicts
+
+  $ hg rebase -s 2 -d 7
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  rebasing 4:e860deea161a "e"
+  merging e
+  transaction abort!
+  rollback completed
+  hit merge conflicts; re-running rebase without in-memory merge
+  rebase aborted
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  rebasing 4:e860deea161a "e"
+  merging e
+  warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
 
 ==========================
@@ -509,3 +613,31 @@ Test --confirm option when there is a conflict
   o  0:cb9a9f314b8b test
      a
   
+#if execbit
+
+Test a metadata-only in-memory merge
+  $ cd $TESTTMP
+  $ hg init no_exception
+  $ cd no_exception
+# Produce the following graph:
+#   o  'add +x to foo.txt'
+#   | o  r1  (adds bar.txt, just for something to rebase to)
+#   |/
+#   o  r0   (adds foo.txt, no +x)
+  $ echo hi > foo.txt
+  $ hg ci -qAm r0
+  $ echo hi > bar.txt
+  $ hg ci -qAm r1
+  $ hg co -qr ".^"
+  $ chmod +x foo.txt
+  $ hg ci -qAm 'add +x to foo.txt'
+issue5960: this was raising an AttributeError exception
+  $ hg rebase -r . -d 1
+  rebasing 2:539b93e77479 "add +x to foo.txt" (tip)
+  saved backup bundle to $TESTTMP/no_exception/.hg/strip-backup/*.hg (glob)
+  $ hg diff -c tip
+  diff --git a/foo.txt b/foo.txt
+  old mode 100644
+  new mode 100755
+
+#endif

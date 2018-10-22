@@ -239,8 +239,8 @@ hg status -A:
     "status": "A"
    },
    {
-    "copy": "modified",
     "path": "copied",
+    "source": "modified",
     "status": "A"
    },
    {
@@ -272,8 +272,17 @@ hg status -A:
   $ hg status -A -Tpickle > pickle
   >>> from __future__ import print_function
   >>> import pickle
-  >>> print(sorted((x['status'], x['path']) for x in pickle.load(open("pickle"))))
-  [('!', 'deleted'), ('?', 'pickle'), ('?', 'unknown'), ('A', 'added'), ('A', 'copied'), ('C', '.hgignore'), ('C', 'modified'), ('I', 'ignored'), ('R', 'removed')]
+  >>> data = sorted((x[b'status'].decode(), x[b'path'].decode()) for x in pickle.load(open("pickle", r"rb")))
+  >>> for s, p in data: print("%s %s" % (s, p))
+  ! deleted
+  ? pickle
+  ? unknown
+  A added
+  A copied
+  C .hgignore
+  C modified
+  I ignored
+  R removed
   $ rm pickle
 
   $ echo "^ignoreddir$" > .hgignore
@@ -282,7 +291,7 @@ hg status -A:
 
 Test templater support:
 
-  $ hg status -AT "[{status}]\t{if(copy, '{copy} -> ')}{path}\n"
+  $ hg status -AT "[{status}]\t{if(source, '{source} -> ')}{path}\n"
   [M]	.hgignore
   [A]	added
   [A]	modified -> copied
@@ -528,7 +537,10 @@ warning message about such pattern.
 
   $ hg status --config ui.formatdebug=True --rev 1 1
   status = [
-      {*'path': '1/2/3/4/5/b.txt'*}, (glob)
+      {
+          'path': '1/2/3/4/5/b.txt',
+          'status': 'R'
+      },
   ]
 
 #if windows

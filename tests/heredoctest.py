@@ -2,6 +2,10 @@ from __future__ import absolute_import, print_function
 
 import sys
 
+def flush():
+    sys.stdout.flush()
+    sys.stderr.flush()
+
 globalvars = {}
 lines = sys.stdin.readlines()
 while lines:
@@ -15,6 +19,9 @@ while lines:
             snippet += l[4:]
         c = compile(snippet, '<heredoc>', 'single')
         try:
+            flush()
             exec(c, globalvars)
+            flush()
         except Exception as inst:
+            flush()
             print(repr(inst))

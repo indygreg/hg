@@ -3,7 +3,7 @@
   $ cd t
   $ cat <<EOF > merge
   > import sys, os
-  > f = open(sys.argv[1], "wb")
+  > f = open(sys.argv[1], "w")
   > f.write("merge %s %s %s" % (sys.argv[1], sys.argv[2], sys.argv[3]))
   > f.close()
   > EOF
@@ -47,7 +47,7 @@ $4 = expected result
   >     echo "--------------"
   >     echo "test L:$1 R:$2 W:$3 - $4"
   >     echo "--------------"
-  >     hg merge -y --debug --traceback --tool="$PYTHON ../merge"
+  >     hg merge -y --debug --traceback --tool="\"$PYTHON\" ../merge"
   > 
   >     echo "--------------"
   >     hg status -camC -X rev
@@ -692,7 +692,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   starting 4 threads for background file closing (?)
    a: prompt deleted/changed -> m (premerge)
   picked tool ':prompt' for a (binary False symlink False changedelete True)
-  other [merge rev] changed a which local [working copy] deleted
+  file 'a' was deleted in local [working copy] but was modified in other [merge rev].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
    b: both created -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
@@ -737,7 +738,8 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   starting 4 threads for background file closing (?)
    a: prompt changed/deleted -> m (premerge)
   picked tool ':prompt' for a (binary False symlink False changedelete True)
-  local [working copy] changed a which other [merge rev] deleted
+  file 'a' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? u
    b: both created -> m (premerge)
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)

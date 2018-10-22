@@ -338,7 +338,7 @@ Modify end of plain file, no EOL
 
 Record showfunc should preserve function across sections
 
-  $ cat > f1.py <<EOF
+  $ cat > f1.py <<NO_CHECK_EOF
   > def annotate(ui, repo, *pats, **opts):
   >     """show changeset information by line for each file
   > 
@@ -372,10 +372,10 @@ Record showfunc should preserve function across sections
   >     .. container:: verbose
   > 
   >     Valid types are:
-  > EOF
+  > NO_CHECK_EOF
   $ hg add f1.py
   $ hg commit -m funcs
-  $ cat > f1.py <<EOF
+  $ cat > f1.py <<NO_CHECK_EOF
   > def annotate(ui, repo, *pats, **opts):
   >     """show changeset information by line for each file
   > 
@@ -405,7 +405,7 @@ Record showfunc should preserve function across sections
   >     .. container:: verbose
   > 
   >     Valid types are:
-  > EOF
+  > NO_CHECK_EOF
   $ hg commit -i -m interactive <<EOF
   > y
   > y
@@ -915,7 +915,7 @@ This tests that translated help message is lower()-ed correctly.
   >         b''.join(escape(c) for c in pycompat.iterbytestr(l)))
   > EOF
 
-  $ hg commit -i --encoding cp932 2>&1 <<EOF | $PYTHON $TESTTMP/escape.py | grep '^y - '
+  $ hg commit -i --encoding cp932 2>&1 <<EOF | "$PYTHON" $TESTTMP/escape.py | grep '^y - '
   > ?
   > q
   > EOF

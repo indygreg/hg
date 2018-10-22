@@ -7,6 +7,7 @@ from mercurial.utils import (
 )
 
 def debugformat(text, form, **kwargs):
+    blocks, pruned = minirst.parse(text, **kwargs)
     if form == b'html':
         print("html format:")
         out = minirst.format(text, style=form, **kwargs)
@@ -15,12 +16,10 @@ def debugformat(text, form, **kwargs):
         out = minirst.format(text, width=form, **kwargs)
 
     print("-" * 70)
-    if type(out) == tuple:
-        print(out[0][:-1].decode('utf8'))
+    print(out[:-1].decode('utf8'))
+    if kwargs.get('keep'):
         print("-" * 70)
-        print(stringutil.pprint(out[1]).decode('utf8'))
-    else:
-        print(out[:-1].decode('utf8'))
+        print(stringutil.pprint(pruned).decode('utf8'))
     print("-" * 70)
     print()
 

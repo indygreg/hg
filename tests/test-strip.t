@@ -220,7 +220,7 @@
   adding manifests
   adding file changes
   added 1 changesets with 0 changes to 1 files (+1 heads)
-  new changesets 264128213d29
+  new changesets 264128213d29 (1 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ rm .hg/strip-backup/*
   $ hg log --graph
@@ -715,14 +715,14 @@ Make sure no one adds back a -b option:
   
   options ([+] can be repeated):
   
-   -r --rev REV [+]        strip specified revision (optional, can specify
-                           revisions without this option)
-   -f --force              force removal of changesets, discard uncommitted
-                           changes (no backup)
-      --no-backup          do not save backup bundle
-   -k --keep               do not modify working directory during strip
-   -B --bookmark VALUE [+] remove revs only reachable from given bookmark
-      --mq                 operate on patch repository
+   -r --rev REV [+]           strip specified revision (optional, can specify
+                              revisions without this option)
+   -f --force                 force removal of changesets, discard uncommitted
+                              changes (no backup)
+      --no-backup             do not save backup bundle
+   -k --keep                  do not modify working directory during strip
+   -B --bookmark BOOKMARK [+] remove revs only reachable from given bookmark
+      --mq                    operate on patch repository
   
   (use 'hg strip -h' to show more help)
   [255]
@@ -1123,7 +1123,7 @@ test stripping a working directory parent doesn't switch named branches
   adding manifests
   adding file changes
   added 2 changesets with 1 changes to 1 files
-  new changesets 35358f982181:4cf5e92caec2
+  new changesets 35358f982181:4cf5e92caec2 (2 drafts)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ hg strip -k -r 35358f982181
@@ -1246,7 +1246,7 @@ Test high-level scmutil.cleanupnodes API
   >                            node(b'D'): [node(b'D2')],
   >                            node(b'G'): [node(b'G2')]}
   >                 scmutil.cleanupnodes(repo, mapping, b'replace')
-  >                 scmutil.cleanupnodes(repo, nodes(b'((B::)+I+Z)-D2'),
+  >                 scmutil.cleanupnodes(repo, nodes(b'((B::)+I+Z)-D2-obsolete()'),
   >                                      b'replace')
   > EOF
   $ hg testnodescleanup --config extensions.t=$TESTTMP/scmutilcleanup.py

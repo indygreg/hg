@@ -19,13 +19,13 @@ from .node import nullid
 from . import (
     changelog,
     cmdutil,
+    encoding,
     error,
     filelog,
     localrepo,
     manifest,
     mdiff,
     pathutil,
-    pycompat,
     revlog,
     util,
     vfs as vfsmod,
@@ -73,7 +73,7 @@ class unionrevlog(revlog.revlog):
             # I have no idea if csize is valid in the base revlog context.
             e = (flags, None, rsize, base,
                  link, self.rev(p1node), self.rev(p2node), node)
-            self.index.insert(-1, e)
+            self.index.append(e)
             self.nodemap[node] = n
             self.bundlerevs.add(n)
             n += 1
@@ -110,7 +110,7 @@ class unionrevlog(revlog.revlog):
 
         if rev > self.repotiprev:
             text = self.revlog2.revision(node)
-            self._cache = (node, rev, text)
+            self._revisioncache = (node, rev, text)
         else:
             text = self.baserevision(rev)
             # already cached
@@ -192,27 +192,32 @@ class unionpeer(localrepo.localpeer):
     def canpush(self):
         return False
 
-class unionrepository(localrepo.localrepository):
-    def __init__(self, ui, path, path2):
-        localrepo.localrepository.__init__(self, ui, path)
-        self.ui.setconfig('phases', 'publish', False, 'unionrepo')
+class unionrepository(object):
+    """Represents the union of data in 2 repositories.
 
-        self._url = 'union:%s+%s' % (util.expandpath(path),
-                                     util.expandpath(path2))
-        self.repo2 = localrepo.localrepository(ui, path2)
+    Instances are not usable if constructed directly. Use ``instance()``
+    or ``makeunionrepository()`` to create a usable instance.
+    """
+    def __init__(self, repo2, url):
+        self.repo2 = repo2
+        self._url = url
+
+        self.ui.setconfig('phases', 'publish', False, 'unionrepo')
 
     @localrepo.unfilteredpropertycache
     def changelog(self):
         return unionchangelog(self.svfs, self.repo2.svfs)
 
+    @localrepo.unfilteredpropertycache
+    def manifestlog(self):
+        rootstore = unionmanifest(self.svfs, self.repo2.svfs,
+                                  self.unfiltered()._clrev)
+        return manifest.manifestlog(self.svfs, self, rootstore)
+
     def _clrev(self, rev2):
         """map from repo2 changelog rev to temporary rev in self.changelog"""
         node = self.repo2.changelog.node(rev2)
         return self.changelog.rev(node)
-
-    def _constructmanifest(self):
-        return unionmanifest(self.svfs, self.repo2.svfs,
-                             self.unfiltered()._clrev)
 
     def url(self):
         return self._url
@@ -231,21 +236,21 @@ class unionrepository(localrepo.localrepository):
         return unionpeer(self)
 
     def getcwd(self):
-        return pycompat.getcwd() # always outside the repo
+        return encoding.getcwd() # always outside the repo
 
-def instance(ui, path, create, intents=None):
+def instance(ui, path, create, intents=None, createopts=None):
     if create:
         raise error.Abort(_('cannot create new union repository'))
     parentpath = ui.config("bundle", "mainreporoot")
     if not parentpath:
         # try to find the correct path to the working directory repo
-        parentpath = cmdutil.findrepo(pycompat.getcwd())
+        parentpath = cmdutil.findrepo(encoding.getcwd())
         if parentpath is None:
             parentpath = ''
     if parentpath:
         # Try to make the full path relative so we get a nice, short URL.
         # In particular, we don't want temp dir names in test outputs.
-        cwd = pycompat.getcwd()
+        cwd = encoding.getcwd()
         if parentpath == cwd:
             parentpath = ''
         else:
@@ -260,4 +265,22 @@ def instance(ui, path, create, intents=None):
             repopath, repopath2 = s
     else:
         repopath, repopath2 = parentpath, path
-    return unionrepository(ui, repopath, repopath2)
+
+    return makeunionrepository(ui, repopath, repopath2)
+
+def makeunionrepository(ui, repopath1, repopath2):
+    """Make a union repository object from 2 local repo paths."""
+    repo1 = localrepo.instance(ui, repopath1, create=False)
+    repo2 = localrepo.instance(ui, repopath2, create=False)
+
+    url = 'union:%s+%s' % (util.expandpath(repopath1),
+                           util.expandpath(repopath2))
+
+    class derivedunionrepository(unionrepository, repo1.__class__):
+        pass
+
+    repo = repo1
+    repo.__class__ = derivedunionrepository
+    unionrepository.__init__(repo1, repo2, url)
+
+    return repo

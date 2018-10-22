@@ -123,6 +123,12 @@ def run():
         runtestsargv.extend([
             '--extra-config',
             'extensions.fsmonitor=',
+            # specify fsmonitor.mode=paranoid always in order to force
+            # fsmonitor extension execute "paranoid" code path
+            #
+            # TODO: make fsmonitor-run-tests.py accept specific options
+            '--extra-config',
+            'fsmonitor.mode=paranoid',
             '--blacklist',
             blacklist,
         ])

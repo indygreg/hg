@@ -14,6 +14,7 @@ import socket
 import stat as statmod
 
 from .. import (
+    encoding,
     pycompat,
 )
 
@@ -150,7 +151,7 @@ if not pycompat.iswindows:
         rfds = ctypes.cast(cmsg.cmsg_data, ctypes.POINTER(ctypes.c_int))
         rfdscount = ((cmsg.cmsg_len - _cmsghdr.cmsg_data.offset) /
                      ctypes.sizeof(ctypes.c_int))
-        return [rfds[i] for i in xrange(rfdscount)]
+        return [rfds[i] for i in pycompat.xrange(rfdscount)]
 
 else:
     import msvcrt
@@ -193,7 +194,8 @@ else:
 
     def _raiseioerror(name):
         err = ctypes.WinError()
-        raise IOError(err.errno, '%s: %s' % (name, err.strerror))
+        raise IOError(err.errno, r'%s: %s' % (encoding.strfromlocal(name),
+                                              err.strerror))
 
     class posixfile(object):
         '''a file object aiming for POSIX-like semantics
@@ -207,14 +209,14 @@ else:
         remains but cannot be opened again or be recreated under the same name,
         until all reading processes have closed the file.'''
 
-        def __init__(self, name, mode='r', bufsize=-1):
-            if 'b' in mode:
+        def __init__(self, name, mode=b'r', bufsize=-1):
+            if b'b' in mode:
                 flags = _O_BINARY
             else:
                 flags = _O_TEXT
 
-            m0 = mode[0]
-            if m0 == 'r' and '+' not in mode:
+            m0 = mode[0:1]
+            if m0 == b'r' and b'+' not in mode:
                 flags |= _O_RDONLY
                 access = _GENERIC_READ
             else:
@@ -223,15 +225,15 @@ else:
                 flags |= _O_RDWR
                 access = _GENERIC_READ | _GENERIC_WRITE
 
-            if m0 == 'r':
+            if m0 == b'r':
                 creation = _OPEN_EXISTING
-            elif m0 == 'w':
+            elif m0 == b'w':
                 creation = _CREATE_ALWAYS
-            elif m0 == 'a':
+            elif m0 == b'a':
                 creation = _OPEN_ALWAYS
                 flags |= _O_APPEND
             else:
-                raise ValueError("invalid mode: %s" % mode)
+                raise ValueError(r"invalid mode: %s" % pycompat.sysstr(mode))
 
             fh = _kernel32.CreateFileA(name, access,
                     _FILE_SHARE_READ | _FILE_SHARE_WRITE | _FILE_SHARE_DELETE,

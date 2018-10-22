@@ -11,6 +11,8 @@ from .i18n import _
 from .node import (
     hex,
     nullid,
+    wdirid,
+    wdirrev,
 )
 
 from . import (
@@ -168,9 +170,8 @@ templatekeyword = registrar.templatekeyword(keywords)
 
 @templatekeyword('author', requires={'ctx'})
 def showauthor(context, mapping):
-    """String. The unmodified author of the changeset."""
-    ctx = context.resource(mapping, 'ctx')
-    return ctx.user()
+    """Alias for ``{user}``"""
+    return showuser(context, mapping)
 
 @templatekeyword('bisect', requires={'repo', 'ctx'})
 def showbisect(context, mapping):
@@ -292,16 +293,31 @@ def showextras(context, mapping):
     return _hybrid(f, extras, makemap,
                    lambda k: '%s=%s' % (k, stringutil.escapestr(extras[k])))
 
-def _showfilesbystat(context, mapping, name, index):
-    repo = context.resource(mapping, 'repo')
+def _getfilestatus(context, mapping, listall=False):
     ctx = context.resource(mapping, 'ctx')
     revcache = context.resource(mapping, 'revcache')
-    if 'files' not in revcache:
-        revcache['files'] = repo.status(ctx.p1(), ctx)[:3]
-    files = revcache['files'][index]
-    return compatlist(context, mapping, name, files, element='file')
+    if 'filestatus' not in revcache or revcache['filestatusall'] < listall:
+        stat = ctx.p1().status(ctx, listignored=listall, listclean=listall,
+                               listunknown=listall)
+        revcache['filestatus'] = stat
+        revcache['filestatusall'] = listall
+    return revcache['filestatus']
 
-@templatekeyword('file_adds', requires={'repo', 'ctx', 'revcache'})
+def _getfilestatusmap(context, mapping, listall=False):
+    revcache = context.resource(mapping, 'revcache')
+    if 'filestatusmap' not in revcache or revcache['filestatusall'] < listall:
+        stat = _getfilestatus(context, mapping, listall=listall)
+        revcache['filestatusmap'] = statmap = {}
+        for char, files in zip(pycompat.iterbytestr('MAR!?IC'), stat):
+            statmap.update((f, char) for f in files)
+    return revcache['filestatusmap']  # {path: statchar}
+
+def _showfilesbystat(context, mapping, name, index):
+    stat = _getfilestatus(context, mapping)
+    files = stat[index]
+    return templateutil.compatfileslist(context, mapping, name, files)
+
+@templatekeyword('file_adds', requires={'ctx', 'revcache'})
 def showfileadds(context, mapping):
     """List of strings. Files added by this changeset."""
     return _showfilesbystat(context, mapping, 'file_add', 1)
@@ -325,11 +341,8 @@ def showfilecopies(context, mapping):
             rename = getrenamed(fn, ctx.rev())
             if rename:
                 copies.append((fn, rename))
-
-    copies = util.sortdict(copies)
-    return compatdict(context, mapping, 'file_copy', copies,
-                      key='name', value='source', fmt='%s (%s)',
-                      plural='file_copies')
+    return templateutil.compatfilecopiesdict(context, mapping, 'file_copy',
+                                             copies)
 
 # showfilecopiesswitch() displays file copies only if copy records are
 # provided before calling the templater, usually with a --copies
@@ -340,17 +353,15 @@ def showfilecopiesswitch(context, mapping):
     only if the --copied switch is set.
     """
     copies = context.resource(mapping, 'revcache').get('copies') or []
-    copies = util.sortdict(copies)
-    return compatdict(context, mapping, 'file_copy', copies,
-                      key='name', value='source', fmt='%s (%s)',
-                      plural='file_copies')
+    return templateutil.compatfilecopiesdict(context, mapping, 'file_copy',
+                                             copies)
 
-@templatekeyword('file_dels', requires={'repo', 'ctx', 'revcache'})
+@templatekeyword('file_dels', requires={'ctx', 'revcache'})
 def showfiledels(context, mapping):
     """List of strings. Files removed by this changeset."""
     return _showfilesbystat(context, mapping, 'file_del', 2)
 
-@templatekeyword('file_mods', requires={'repo', 'ctx', 'revcache'})
+@templatekeyword('file_mods', requires={'ctx', 'revcache'})
 def showfilemods(context, mapping):
     """List of strings. Files modified by this changeset."""
     return _showfilesbystat(context, mapping, 'file_mod', 0)
@@ -361,7 +372,7 @@ def showfiles(context, mapping):
     changeset.
     """
     ctx = context.resource(mapping, 'ctx')
-    return compatlist(context, mapping, 'file', ctx.files())
+    return templateutil.compatfileslist(context, mapping, 'file', ctx.files())
 
 @templatekeyword('graphnode', requires={'repo', 'ctx'})
 def showgraphnode(context, mapping):
@@ -466,14 +477,13 @@ def showmanifest(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     mnode = ctx.manifestnode()
     if mnode is None:
-        # just avoid crash, we might want to use the 'ff...' hash in future
-        return
-    mrev = repo.manifestlog.rev(mnode)
+        mnode = wdirid
+        mrev = wdirrev
+    else:
+        mrev = repo.manifestlog.rev(mnode)
     mhex = hex(mnode)
     mapping = context.overlaymap(mapping, {'rev': mrev, 'node': mhex})
     f = context.process('manifest', mapping)
-    # TODO: perhaps 'ctx' should be dropped from mapping because manifest
-    # rev and node are completely different from changeset's.
     return templateutil.hybriditem(f, None, f,
                                    lambda x: {'rev': mrev, 'node': mhex})
 
@@ -550,6 +560,12 @@ def showobsolete(context, mapping):
         return 'obsolete'
     return ''
 
+@templatekeyword('path', requires={'fctx'})
+def showpath(context, mapping):
+    """String. Repository-absolute path of the current file. (EXPERIMENTAL)"""
+    fctx = context.resource(mapping, 'fctx')
+    return fctx.path()
+
 @templatekeyword('peerurls', requires={'repo'})
 def showpeerurls(context, mapping):
     """A dictionary of repository locations defined in the [paths] section
@@ -582,6 +598,25 @@ def showreporoot(context, mapping):
     """String. The root directory of the current repository."""
     repo = context.resource(mapping, 'repo')
     return repo.root
+
+@templatekeyword('size', requires={'fctx'})
+def showsize(context, mapping):
+    """Integer. Size of the current file in bytes. (EXPERIMENTAL)"""
+    fctx = context.resource(mapping, 'fctx')
+    return fctx.size()
+
+# requires 'fctx' to denote {status} depends on (ctx, path) pair
+@templatekeyword('status', requires={'ctx', 'fctx', 'revcache'})
+def showstatus(context, mapping):
+    """String. Status code of the current file. (EXPERIMENTAL)"""
+    path = templateutil.runsymbol(context, mapping, 'path')
+    path = templateutil.stringify(context, mapping, path)
+    if not path:
+        return
+    statmap = _getfilestatusmap(context, mapping)
+    if path not in statmap:
+        statmap = _getfilestatusmap(context, mapping, listall=True)
+    return statmap.get(path)
 
 @templatekeyword("successorssets", requires={'repo', 'ctx'})
 def showsuccessorssets(context, mapping):
@@ -757,6 +792,12 @@ def showtermwidth(context, mapping):
     """Integer. The width of the current terminal."""
     ui = context.resource(mapping, 'ui')
     return ui.termwidth()
+
+@templatekeyword('user', requires={'ctx'})
+def showuser(context, mapping):
+    """String. The unmodified author of the changeset."""
+    ctx = context.resource(mapping, 'ctx')
+    return ctx.user()
 
 @templatekeyword('instabilities', requires={'ctx'})
 def showinstabilities(context, mapping):

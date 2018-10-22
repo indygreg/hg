@@ -222,7 +222,7 @@ def parsedag(desc):
         elif c == '+':
             c, digs = nextrun(nextch(), pycompat.bytestr(string.digits))
             n = int(digs)
-            for i in xrange(0, n):
+            for i in pycompat.xrange(0, n):
                 yield 'n', (r, [p1])
                 p1 = r
                 r += 1

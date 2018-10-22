@@ -189,7 +189,7 @@ Verify rebase temporarily includes excluded files
 
   $ hg rebase -d 1 -r 2 --config extensions.rebase=
   rebasing 2:b91df4f39e75 "edit hide" (tip)
-  temporarily included 1 file(s) in the sparse checkout for merging
+  temporarily included 2 file(s) in the sparse checkout for merging
   merging hide
   warning: conflicts while merging hide! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see hg resolve, then hg rebase --continue)
@@ -224,7 +224,7 @@ Verify merge fails if merging excluded files
 
   $ hg up -q 1
   $ hg merge -r 2
-  temporarily included 1 file(s) in the sparse checkout for merging
+  temporarily included 2 file(s) in the sparse checkout for merging
   merging hide
   warning: conflicts while merging hide! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
@@ -294,7 +294,7 @@ Mix files and subdirectories, both "glob:" and unprefixed
   $ touch dir1/notshown
   $ hg commit -A dir1/notshown -m "notshown"
   $ hg debugsparse --include 'dir1/dir2'
-  $ $PYTHON $TESTDIR/list-tree.py . | egrep -v '\.[\/]\.hg'
+  $ "$PYTHON" $TESTDIR/list-tree.py . | egrep -v '\.[\/]\.hg'
   ./
   ./dir1/
   ./dir1/dir2/
@@ -302,7 +302,7 @@ Mix files and subdirectories, both "glob:" and unprefixed
   ./hide.orig
   $ hg debugsparse --delete 'dir1/dir2'
   $ hg debugsparse --include 'glob:dir1/dir2'
-  $ $PYTHON $TESTDIR/list-tree.py . | egrep -v '\.[\/]\.hg'
+  $ "$PYTHON" $TESTDIR/list-tree.py . | egrep -v '\.[\/]\.hg'
   ./
   ./dir1/
   ./dir1/dir2/
@@ -385,10 +385,10 @@ dirstate
   $ cp ../dirstateallexcluded .hg/dirstate
   $ touch includedadded
   $ hg add includedadded
-  $ hg debugdirstate --nodates
+  $ hg debugdirstate --no-dates
   a   0         -1 unset               includedadded
   $ hg debugrebuilddirstate --minimal
-  $ hg debugdirstate --nodates
+  $ hg debugdirstate --no-dates
   n   0         -1 unset               included
   a   0         -1 * includedadded (glob)
 
@@ -410,13 +410,13 @@ manifest
   included
 We have files in the dirstate that are included and excluded. Some are in the
 manifest and some are not.
-  $ hg debugdirstate --nodates
+  $ hg debugdirstate --no-dates
   n 644          0 * excluded (glob)
   a   0         -1 * excludednomanifest (glob)
   n 644          0 * included (glob)
   a   0         -1 * includedadded (glob)
   $ hg debugrebuilddirstate --minimal
-  $ hg debugdirstate --nodates
+  $ hg debugdirstate --no-dates
   n 644          0 * included (glob)
   a   0         -1 * includedadded (glob)
 

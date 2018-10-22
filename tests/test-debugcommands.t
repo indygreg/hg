@@ -15,6 +15,39 @@
   adding a
   $ hg ci -Am make-it-full
 #if reporevlogstore
+  $ hg debugrevlog -c
+  format : 1
+  flags  : inline
+  
+  revisions     :   3
+      merges    :   0 ( 0.00%)
+      normal    :   3 (100.00%)
+  revisions     :   3
+      empty     :   0 ( 0.00%)
+                     text  :   0 (100.00%)
+                     delta :   0 (100.00%)
+      snapshot  :   3 (100.00%)
+        lvl-0   :         3 (100.00%)
+      deltas    :   0 ( 0.00%)
+  revision size : 191
+      snapshot  : 191 (100.00%)
+        lvl-0   :       191 (100.00%)
+      deltas    :   0 ( 0.00%)
+  
+  chunks        :   3
+      0x75 (u)  :   3 (100.00%)
+  chunks size   : 191
+      0x75 (u)  : 191 (100.00%)
+  
+  avg chain length  :  0
+  max chain length  :  0
+  max chain reach   : 67
+  compression ratio :  0
+  
+  uncompressed data size (min/max/avg) : 57 / 66 / 62
+  full revision size (min/max/avg)     : 58 / 67 / 63
+  inter-snapshot size (min/max/avg)    : 0 / 0 / 0
+  delta size (min/max/avg)             : 0 / 0 / 0
   $ hg debugrevlog -m
   format : 1
   flags  : inline, generaldelta
@@ -23,10 +56,15 @@
       merges    :  0 ( 0.00%)
       normal    :  3 (100.00%)
   revisions     :  3
-      full      :  3 (100.00%)
+      empty     :  1 (33.33%)
+                     text  :  1 (100.00%)
+                     delta :  0 ( 0.00%)
+      snapshot  :  2 (66.67%)
+        lvl-0   :        2 (66.67%)
       deltas    :  0 ( 0.00%)
   revision size : 88
-      full      : 88 (100.00%)
+      snapshot  : 88 (100.00%)
+        lvl-0   :       88 (100.00%)
       deltas    :  0 ( 0.00%)
   
   chunks        :  3
@@ -42,42 +80,120 @@
   compression ratio :  0
   
   uncompressed data size (min/max/avg) : 0 / 43 / 28
-  full revision size (min/max/avg)     : 0 / 44 / 29
+  full revision size (min/max/avg)     : 44 / 44 / 44
+  inter-snapshot size (min/max/avg)    : 0 / 0 / 0
+  delta size (min/max/avg)             : 0 / 0 / 0
+  $ hg debugrevlog a
+  format : 1
+  flags  : inline, generaldelta
+  
+  revisions     : 1
+      merges    : 0 ( 0.00%)
+      normal    : 1 (100.00%)
+  revisions     : 1
+      empty     : 0 ( 0.00%)
+                     text  : 0 (100.00%)
+                     delta : 0 (100.00%)
+      snapshot  : 1 (100.00%)
+        lvl-0   :       1 (100.00%)
+      deltas    : 0 ( 0.00%)
+  revision size : 3
+      snapshot  : 3 (100.00%)
+        lvl-0   :       3 (100.00%)
+      deltas    : 0 ( 0.00%)
+  
+  chunks        : 1
+      0x75 (u)  : 1 (100.00%)
+  chunks size   : 3
+      0x75 (u)  : 3 (100.00%)
+  
+  avg chain length  : 0
+  max chain length  : 0
+  max chain reach   : 3
+  compression ratio : 0
+  
+  uncompressed data size (min/max/avg) : 2 / 2 / 2
+  full revision size (min/max/avg)     : 3 / 3 / 3
+  inter-snapshot size (min/max/avg)    : 0 / 0 / 0
   delta size (min/max/avg)             : 0 / 0 / 0
 #endif
 
 Test debugindex, with and without the --verbose/--debug flag
-  $ hg debugindex a
+  $ hg debugrevlogindex a
      rev linkrev nodeid       p1           p2
        0       0 b789fdd96dc2 000000000000 000000000000
 
 #if no-reposimplestore
-  $ hg --verbose debugindex a
+  $ hg --verbose debugrevlogindex a
      rev    offset  length linkrev nodeid       p1           p2
        0         0       3       0 b789fdd96dc2 000000000000 000000000000
 
-  $ hg --debug debugindex a
+  $ hg --debug debugrevlogindex a
      rev    offset  length linkrev nodeid                                   p1                                       p2
        0         0       3       0 b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000
 #endif
 
-  $ hg debugindex -f 1 a
+  $ hg debugrevlogindex -f 1 a
      rev flag     size   link     p1     p2       nodeid
        0 0000        2      0     -1     -1 b789fdd96dc2
 
 #if no-reposimplestore
-  $ hg --verbose debugindex -f 1 a
+  $ hg --verbose debugrevlogindex -f 1 a
      rev flag   offset   length     size   link     p1     p2       nodeid
        0 0000        0        3        2      0     -1     -1 b789fdd96dc2
 
-  $ hg --debug debugindex -f 1 a
+  $ hg --debug debugrevlogindex -f 1 a
      rev flag   offset   length     size   link     p1     p2                                   nodeid
        0 0000        0        3        2      0     -1     -1 b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3
 #endif
 
+  $ hg debugindex -c
+     rev linkrev nodeid       p1           p2
+       0       0 07f494440405 000000000000 000000000000
+       1       1 8cccb4b5fec2 07f494440405 000000000000
+       2       2 b1e228c512c5 8cccb4b5fec2 000000000000
+  $ hg debugindex -c --debug
+     rev linkrev nodeid                                   p1                                       p2
+       0       0 07f4944404050f47db2e5c5071e0e84e7a27bba9 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000
+       1       1 8cccb4b5fec20cafeb99dd01c26d4dee8ea4388a 07f4944404050f47db2e5c5071e0e84e7a27bba9 0000000000000000000000000000000000000000
+       2       2 b1e228c512c5d7066d70562ed839c3323a62d6d2 8cccb4b5fec20cafeb99dd01c26d4dee8ea4388a 0000000000000000000000000000000000000000
+  $ hg debugindex -m
+     rev linkrev nodeid       p1           p2
+       0       0 a0c8bcbbb45c 000000000000 000000000000
+       1       1 57faf8a737ae a0c8bcbbb45c 000000000000
+       2       2 a35b10320954 57faf8a737ae 000000000000
+  $ hg debugindex -m --debug
+     rev linkrev nodeid                                   p1                                       p2
+       0       0 a0c8bcbbb45c63b90b70ad007bf38961f64f2af0 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000
+       1       1 57faf8a737ae7faf490582941a82319ba6529dca a0c8bcbbb45c63b90b70ad007bf38961f64f2af0 0000000000000000000000000000000000000000
+       2       2 a35b103209548032201c16c7688cb2657f037a38 57faf8a737ae7faf490582941a82319ba6529dca 0000000000000000000000000000000000000000
+  $ hg debugindex a
+     rev linkrev nodeid       p1           p2
+       0       0 b789fdd96dc2 000000000000 000000000000
+  $ hg debugindex --debug a
+     rev linkrev nodeid                                   p1                                       p2
+       0       0 b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000
+
 debugdelta chain basic output
 
-#if reporevlogstore
+#if reporevlogstore pure
+  $ hg debugindexstats
+  abort: debugindexstats only works with native code
+  [255]
+#endif
+#if reporevlogstore no-pure
+  $ hg debugindexstats
+  node trie capacity: 4
+  node trie count: 2
+  node trie depth: 1
+  node trie last rev scanned: -1
+  node trie lookups: 4
+  node trie misses: 1
+  node trie splits: 1
+  revs in memory: 3
+#endif
+
+#if reporevlogstore no-pure
   $ hg debugdeltachain -m
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
         0       1        1       -1    base         44         43         44   1.02326        44         0    0.00000
@@ -94,7 +210,8 @@ debugdelta chain basic output
    {
     "chainid": 1,
     "chainlen": 1,
-    "chainratio": 1.02325581395,
+    "chainratio": 1.02325581395, (no-py3 !)
+    "chainratio": 1.0232558139534884, (py3 !)
     "chainsize": 44,
     "compsize": 44,
     "deltatype": "base",
@@ -122,7 +239,8 @@ debugdelta chain basic output
    {
     "chainid": 3,
     "chainlen": 1,
-    "chainratio": 1.02325581395,
+    "chainratio": 1.02325581395, (no-py3 !)
+    "chainratio": 1.0232558139534884, (py3 !)
     "chainsize": 44,
     "compsize": 44,
     "deltatype": "base",
@@ -157,7 +275,8 @@ debugdelta chain with sparse read enabled
    {
     "chainid": 1,
     "chainlen": 1,
-    "chainratio": 1.02325581395,
+    "chainratio": 1.02325581395, (no-py3 !)
+    "chainratio": 1.0232558139534884, (py3 !)
     "chainsize": 44,
     "compsize": 44,
     "deltatype": "base",
@@ -193,7 +312,8 @@ debugdelta chain with sparse read enabled
    {
     "chainid": 3,
     "chainlen": 1,
-    "chainratio": 1.02325581395,
+    "chainratio": 1.02325581395, (no-py3 !)
+    "chainratio": 1.0232558139534884, (py3 !)
     "chainsize": 44,
     "compsize": 44,
     "deltatype": "base",
@@ -411,6 +531,7 @@ Test cache warming command
   $ ls -r .hg/cache/*
   .hg/cache/rbc-revs-v1
   .hg/cache/rbc-names-v1
+  .hg/cache/manifestfulltextcache (reporevlogstore !)
   .hg/cache/branch2-served
 
 Test debugcolor
@@ -432,29 +553,31 @@ Test internal debugstacktrace command
 
   $ cat > debugstacktrace.py << EOF
   > from __future__ import absolute_import
-  > import sys
-  > from mercurial import util
+  > from mercurial import (
+  >     pycompat,
+  >     util,
+  > )
   > def f():
-  >     util.debugstacktrace(f=sys.stdout)
+  >     util.debugstacktrace(f=pycompat.stdout)
   >     g()
   > def g():
-  >     util.dst('hello from g\\n', skip=1)
+  >     util.dst(b'hello from g\\n', skip=1)
   >     h()
   > def h():
-  >     util.dst('hi ...\\nfrom h hidden in g', 1, depth=2)
+  >     util.dst(b'hi ...\\nfrom h hidden in g', 1, depth=2)
   > f()
   > EOF
-  $ $PYTHON debugstacktrace.py
+  $ "$PYTHON" debugstacktrace.py
   stacktrace at:
-   debugstacktrace.py:12 in * (glob)
-   debugstacktrace.py:5  in f
+   debugstacktrace.py:14 in * (glob)
+   debugstacktrace.py:7  in f
   hello from g at:
-   debugstacktrace.py:12 in * (glob)
-   debugstacktrace.py:6  in f
+   debugstacktrace.py:14 in * (glob)
+   debugstacktrace.py:8  in f
   hi ...
   from h hidden in g at:
-   debugstacktrace.py:6 in f
-   debugstacktrace.py:9 in g
+   debugstacktrace.py:8  in f
+   debugstacktrace.py:11 in g
 
 Test debugcapabilities command:
 
@@ -508,8 +631,8 @@ Test debugpeer
   devel-peer-request:   pairs: 81 bytes
   sending hello command
   sending between command
-  remote: 413
-  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  remote: 427
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   remote: 1
   devel-peer-request: protocaps
   devel-peer-request:   caps: * bytes (glob)

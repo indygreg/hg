@@ -67,6 +67,9 @@ tell users how they could have used resolve
   $ hg resolve -l
   R file1
   U file2
+  $ hg resolve --re-merge filez file2
+  arguments do not match paths that need resolving
+  (try: hg resolve --re-merge path:filez path:file2)
   $ hg resolve -m filez file2
   arguments do not match paths that need resolving
   (try: hg resolve -m path:filez path:file2)
@@ -153,18 +156,18 @@ resolve -l should show resolved file as resolved
   $ hg resolve -l -Tjson
   [
    {
-    "path": "file1",
-    "status": "R"
+    "mergestatus": "R",
+    "path": "file1"
    },
    {
-    "path": "file2",
-    "status": "U"
+    "mergestatus": "U",
+    "path": "file2"
    }
   ]
 
-  $ hg resolve -l -T '{path} {status} {p1rev} {p2rev}\n'
-  file1 R 2 1
-  file2 U 2 1
+  $ hg resolve -l -T '{path} {mergestatus} {status} {p1rev} {p2rev}\n'
+  file1 R M 2 1
+  file2 U M 2 1
 
 resolve -m without paths should mark all resolved
 
@@ -373,4 +376,241 @@ resolve -l should be empty
 
   $ hg resolve -l
 
+resolve -m can be configured to look for remaining conflict markers
+  $ hg up -qC 2
+  $ hg merge -q --tool=internal:merge 1
+  warning: conflicts while merging file1! (edit, then use 'hg resolve --mark')
+  warning: conflicts while merging file2! (edit, then use 'hg resolve --mark')
+  [1]
+  $ hg resolve -l
+  U file1
+  U file2
+  $ echo 'remove markers' > file1
+  $ hg --config commands.resolve.mark-check=abort resolve -m
+  warning: the following files still have conflict markers:
+    file2
+  abort: conflict markers detected
+  (use --all to mark anyway)
+  [255]
+  $ hg resolve -l
+  U file1
+  U file2
+Try with --all from the hint
+  $ hg --config commands.resolve.mark-check=abort resolve -m --all
+  warning: the following files still have conflict markers:
+    file2
+  (no more unresolved files)
+  $ hg resolve -l
+  R file1
+  R file2
+Test option value 'warn'
+  $ hg resolve --unmark
+  $ hg resolve -l
+  U file1
+  U file2
+  $ hg --config commands.resolve.mark-check=warn resolve -m
+  warning: the following files still have conflict markers:
+    file2
+  (no more unresolved files)
+  $ hg resolve -l
+  R file1
+  R file2
+If the file is already marked as resolved, we don't warn about it
+  $ hg resolve --unmark file1
+  $ hg resolve -l
+  U file1
+  R file2
+  $ hg --config commands.resolve.mark-check=warn resolve -m
+  (no more unresolved files)
+  $ hg resolve -l
+  R file1
+  R file2
+If the user passes an invalid value, we treat it as 'none'.
+  $ hg resolve --unmark
+  $ hg resolve -l
+  U file1
+  U file2
+  $ hg --config commands.resolve.mark-check=nope resolve -m
+  (no more unresolved files)
+  $ hg resolve -l
+  R file1
+  R file2
+Test explicitly setting the otion to 'none'
+  $ hg resolve --unmark
+  $ hg resolve -l
+  U file1
+  U file2
+  $ hg --config commands.resolve.mark-check=none resolve -m
+  (no more unresolved files)
+  $ hg resolve -l
+  R file1
+  R file2
+Testing the --re-merge flag
+  $ hg resolve --unmark file1
+  $ hg resolve -l
+  U file1
+  R file2
+  $ hg resolve --mark --re-merge
+  abort: too many actions specified
+  [255]
+  $ hg resolve --re-merge --all
+  merging file1
+  warning: conflicts while merging file1! (edit, then use 'hg resolve --mark')
+  [1]
+Explicit re-merge
+  $ hg resolve --unmark file1
+  $ hg resolve --config commands.resolve.explicit-re-merge=1 --all
+  abort: no action specified
+  (use --mark, --unmark, --list or --re-merge)
+  [255]
+  $ hg resolve --config commands.resolve.explicit-re-merge=1 --re-merge --all
+  merging file1
+  warning: conflicts while merging file1! (edit, then use 'hg resolve --mark')
+  [1]
+
+  $ cd ..
+
+======================================================
+Test 'hg resolve' confirm config option functionality |
+======================================================
+  $ cat >> $HGRCPATH << EOF
+  > [extensions]
+  > rebase=
+  > EOF
+
+  $ hg init repo2
+  $ cd repo2
+
+  $ echo boss > boss
+  $ hg ci -Am "add boss"
+  adding boss
+
+  $ for emp in emp1 emp2 emp3; do echo work > $emp; done;
+  $ hg ci -Aqm "added emp1 emp2 emp3"
+
+  $ hg up 0
+  0 files updated, 0 files merged, 3 files removed, 0 files unresolved
+
+  $ for emp in emp1 emp2 emp3; do echo nowork > $emp; done;
+  $ hg ci -Aqm "added lazy emp1 emp2 emp3"
+
+  $ hg log -GT "{rev} {node|short} {firstline(desc)}\n"
+  @  2 0acfd4a49af0 added lazy emp1 emp2 emp3
+  |
+  | o  1 f30f98a8181f added emp1 emp2 emp3
+  |/
+  o  0 88660038d466 add boss
+  
+  $ hg rebase -s 1 -d 2
+  rebasing 1:f30f98a8181f "added emp1 emp2 emp3"
+  merging emp1
+  merging emp2
+  merging emp3
+  warning: conflicts while merging emp1! (edit, then use 'hg resolve --mark')
+  warning: conflicts while merging emp2! (edit, then use 'hg resolve --mark')
+  warning: conflicts while merging emp3! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+
+Test when commands.resolve.confirm config option is not set:
+===========================================================
+  $ hg resolve --all
+  merging emp1
+  merging emp2
+  merging emp3
+  warning: conflicts while merging emp1! (edit, then use 'hg resolve --mark')
+  warning: conflicts while merging emp2! (edit, then use 'hg resolve --mark')
+  warning: conflicts while merging emp3! (edit, then use 'hg resolve --mark')
+  [1]
+
+Test when config option is set:
+==============================
+  $ cat >> $HGRCPATH << EOF
+  > [ui]
+  > interactive = True
+  > [commands]
+  > resolve.confirm = True
+  > EOF
+
+  $ hg resolve
+  abort: no files or directories specified
+  (use --all to re-merge all unresolved files)
+  [255]
+  $ hg resolve --all << EOF
+  > n
+  > EOF
+  re-merge all unresolved files (yn)? n
+  abort: user quit
+  [255]
+
+  $ hg resolve --all << EOF
+  > y
+  > EOF
+  re-merge all unresolved files (yn)? y
+  merging emp1
+  merging emp2
+  merging emp3
+  warning: conflicts while merging emp1! (edit, then use 'hg resolve --mark')
+  warning: conflicts while merging emp2! (edit, then use 'hg resolve --mark')
+  warning: conflicts while merging emp3! (edit, then use 'hg resolve --mark')
+  [1]
+
+Test that commands.resolve.confirm respect --mark option (only when no patterns args are given):
+===============================================================================================
+
+  $ hg resolve -m emp1
+  $ hg resolve -l
+  R emp1
+  U emp2
+  U emp3
+
+  $ hg resolve -m << EOF
+  > n
+  > EOF
+  mark all unresolved files as resolved (yn)? n
+  abort: user quit
+  [255]
+
+  $ hg resolve -m << EOF
+  > y
+  > EOF
+  mark all unresolved files as resolved (yn)? y
+  (no more unresolved files)
+  continue: hg rebase --continue
+  $ hg resolve -l
+  R emp1
+  R emp2
+  R emp3
+
+Test that commands.resolve.confirm respect --unmark option (only when no patterns args are given):
+===============================================================================================
+
+  $ hg resolve -u emp1
+
+  $ hg resolve -l
+  U emp1
+  R emp2
+  R emp3
+
+  $ hg resolve -u << EOF
+  > n
+  > EOF
+  mark all resolved files as unresolved (yn)? n
+  abort: user quit
+  [255]
+
+  $ hg resolve -m << EOF
+  > y
+  > EOF
+  mark all unresolved files as resolved (yn)? y
+  (no more unresolved files)
+  continue: hg rebase --continue
+
+  $ hg resolve -l
+  R emp1
+  R emp2
+  R emp3
+
+  $ hg rebase --abort
+  rebase aborted
   $ cd ..

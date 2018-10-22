@@ -52,7 +52,8 @@ test changing case of path components
   $ hg ci -Am addb D/b
   $ hg mv D/b d/b
   D/b: not overwriting - file already committed
-  (hg rename --force to replace the file by recording a rename)
+  ('hg rename --force' to replace the file by recording a rename)
+  [1]
   $ hg mv D/b d/c
   $ hg st
   A D/c
@@ -247,7 +248,7 @@ We assume anyone running the tests on a case-insensitive volume on OS
 X will be using HFS+. If that's not true, this test will fail.
 
   $ rm A
-  >>> open(u'a\u200c'.encode('utf-8'), 'w').write('unicode is fun')
+  >>> open(u'a\u200c'.encode('utf-8'), 'w').write('unicode is fun') and None
   $ hg status
   M A
 

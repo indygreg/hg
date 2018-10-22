@@ -13,6 +13,13 @@ CLEANUP=1
 DISTID=`(lsb_release -is 2> /dev/null | tr '[:upper:]' '[:lower:]') || echo debian`
 CODENAME=`lsb_release -cs 2> /dev/null || echo unknown`
 DEBFLAGS=-b
+
+cleanup() {
+    if [ "$CLEANUP" ]; then
+        rm -r "$ROOTDIR/debian";
+    fi
+}
+
 while [ "$1" ]; do
     case "$1" in
     --distid )
@@ -44,12 +51,14 @@ while [ "$1" ]; do
     esac
 done
 
-trap "if [ '$CLEANUP' ] ; then rm -r '$PWD/debian' ; fi" EXIT
+cd "$ROOTDIR"
+
+trap 'cleanup' EXIT
 
 set -u
 
 if [ ! -d .hg ]; then
-    echo 'You are not inside a Mercurial repository!' 1>&2
+    printf "You are inside %s, which is not the root of a Mercurial repository\n" $(pwd) 1>&2
     exit 1
 fi
 
@@ -71,7 +80,7 @@ changelog=debian/changelog
 
 if [ "$BUILD" ]; then
     if [ -d debian ] ; then
-        echo "Error! debian control directory already exists!"
+        printf "Error! debian control directory already exists at %s/debian\n" $(pwd)
         exit 1
     fi
 
@@ -102,5 +111,5 @@ if [ "$CLEANUP" ] ; then
           -type f -newer $control -print0 2>/dev/null | \
       xargs -Inarf -0 mv narf "$OUTPUTDIR"
     echo "Built packages for $debver:"
-    find "$OUTPUTDIR" -type f -newer $control -name '*.deb'
+    find "$PWD"/"$OUTPUTDIR" -type f -newer $control -name '*.deb'
 fi

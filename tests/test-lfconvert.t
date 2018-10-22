@@ -101,6 +101,7 @@ Test link+rename largefile codepath
   largefiles
   revlogv1
   store
+  testonly-simplestore (reposimplestore !)
 
 "lfconvert" includes a newline at the end of the standin files.
   $ cat .hglf/large .hglf/sub/maybelarge.dat
@@ -336,7 +337,7 @@ process.
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  9 files, 8 changesets, 13 total revisions
+  checked 8 changesets with 13 changes to 9 files
   searching 7 changesets for largefiles
   changeset 0:d4892ec57ce2: large references missing $TESTTMP/largefiles-repo-hg/.hg/largefiles/2e000fa7e85759c7f4c254d4d9c33ef481e459a7
   changeset 1:334e5237836d: sub/maybelarge.dat references missing $TESTTMP/largefiles-repo-hg/.hg/largefiles/34e163be8e43c5631d8b92e9c43ab0bf0fa62b9c

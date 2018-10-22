@@ -8,7 +8,7 @@ Run the doctests from the import checker, and make sure
 it's working correctly.
   $ TERM=dumb
   $ export TERM
-  $ $PYTHON -m doctest $import_checker
+  $ "$PYTHON" -m doctest $import_checker
 
 Run additional tests for the import checker
 
@@ -136,7 +136,7 @@ Run additional tests for the import checker
   > from . import errors
   > EOF
 
-  $ $PYTHON "$import_checker" testpackage*/*.py testpackage/subpackage/*.py \
+  $ "$PYTHON" "$import_checker" testpackage*/*.py testpackage/subpackage/*.py \
   >   email/*.py
   testpackage/importalias.py:2: ui module must be "as" aliased to uimod
   testpackage/importfromalias.py:2: ui from testpackage must be "as" aliased to uimod

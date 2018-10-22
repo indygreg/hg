@@ -30,7 +30,7 @@ Sanity check check-config.py
 
   $ cd "$TESTDIR"/..
 
-  $ $PYTHON contrib/check-config.py < $TESTTMP/files
+  $ "$PYTHON" contrib/check-config.py < $TESTTMP/files
   foo = ui.configint('ui', 'intdefault', default=42)
   conflict on ui.intdefault: ('int', '42') != ('int', '1')
   at $TESTTMP/testfile.py:12:
@@ -44,4 +44,4 @@ Sanity check check-config.py
 New errors are not allowed. Warnings are strongly discouraged.
 
   $ testrepohg files "set:(**.py or **.txt) - tests/**" | sed 's|\\|/|g' |
-  >   $PYTHON contrib/check-config.py
+  >   "$PYTHON" contrib/check-config.py

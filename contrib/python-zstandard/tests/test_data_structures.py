@@ -24,6 +24,7 @@ class TestCompressionParameters(unittest.TestCase):
                                        hash_log=zstd.HASHLOG_MAX,
                                        search_log=zstd.SEARCHLOG_MAX,
                                        min_match=zstd.SEARCHLENGTH_MAX - 1,
+                                       target_length=zstd.TARGETLENGTH_MAX,
                                        compression_strategy=zstd.STRATEGY_BTULTRA)
 
     def test_from_level(self):
@@ -34,7 +35,6 @@ class TestCompressionParameters(unittest.TestCase):
 
         p = zstd.ZstdCompressionParameters.from_level(-4)
         self.assertEqual(p.window_log, 19)
-        self.assertEqual(p.compress_literals, 0)
 
     def test_members(self):
         p = zstd.ZstdCompressionParameters(window_log=10,
@@ -64,19 +64,11 @@ class TestCompressionParameters(unittest.TestCase):
         self.assertEqual(p.job_size, 1048576)
         self.assertEqual(p.overlap_size_log, 6)
 
-        p = zstd.ZstdCompressionParameters(compression_level=2)
-        self.assertEqual(p.compress_literals, 1)
-
-        p = zstd.ZstdCompressionParameters(compress_literals=False)
-        self.assertEqual(p.compress_literals, 0)
-
         p = zstd.ZstdCompressionParameters(compression_level=-1)
         self.assertEqual(p.compression_level, -1)
-        self.assertEqual(p.compress_literals, 0)
 
-        p = zstd.ZstdCompressionParameters(compression_level=-2, compress_literals=True)
+        p = zstd.ZstdCompressionParameters(compression_level=-2)
         self.assertEqual(p.compression_level, -2)
-        self.assertEqual(p.compress_literals, 1)
 
         p = zstd.ZstdCompressionParameters(force_max_window=True)
         self.assertEqual(p.force_max_window, 1)

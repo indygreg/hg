@@ -16,11 +16,9 @@ url for proxy, stream
 
   $ http_proxy=http://localhost:$HGPORT1/ hg --config http_proxy.always=True clone --stream http://localhost:$HGPORT/ b
   streaming all changes
-  3 files to transfer, 303 bytes of data (reporevlogstore !)
+  6 files to transfer, 412 bytes of data (reporevlogstore !)
   4 files to transfer, 330 bytes of data (reposimplestore !)
   transferred * bytes in * seconds (*/sec) (glob)
-  searching for changes
-  no changes found
   updating to branch default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd b
@@ -29,7 +27,7 @@ url for proxy, stream
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
   $ cd ..
 
 url for proxy, pull
@@ -49,7 +47,7 @@ url for proxy, pull
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
   $ cd ..
 
 host:port for proxy
@@ -108,10 +106,8 @@ do not use the proxy if it is in the no list
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cat proxy.log
   * - - [*] "GET http://localhost:$HGPORT/?cmd=capabilities HTTP/1.1" - - (glob)
-  $LOCALIP - - [$LOGDATE$] "GET http://localhost:$HGPORT/?cmd=branchmap HTTP/1.1" - - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
-  $LOCALIP - - [$LOGDATE$] "GET http://localhost:$HGPORT/?cmd=stream_out HTTP/1.1" - - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
-  $LOCALIP - - [$LOGDATE$] "GET http://localhost:$HGPORT/?cmd=batch HTTP/1.1" - - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D83180e7845de420a1bb46896fd5fe05294f8d629 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
-  $LOCALIP - - [$LOGDATE$] "GET http://localhost:$HGPORT/?cmd=getbundle HTTP/1.1" - - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=0&common=83180e7845de420a1bb46896fd5fe05294f8d629&heads=83180e7845de420a1bb46896fd5fe05294f8d629&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET http://localhost:$HGPORT/?cmd=batch HTTP/1.1" - - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET http://localhost:$HGPORT/?cmd=getbundle HTTP/1.1" - - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=0&common=0000000000000000000000000000000000000000&heads=83180e7845de420a1bb46896fd5fe05294f8d629&listkeys=bookmarks&stream=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   * - - [*] "GET http://localhost:$HGPORT/?cmd=capabilities HTTP/1.1" - - (glob)
   $LOCALIP - - [$LOGDATE$] "GET http://localhost:$HGPORT/?cmd=batch HTTP/1.1" - - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   $LOCALIP - - [$LOGDATE$] "GET http://localhost:$HGPORT/?cmd=getbundle HTTP/1.1" - - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=1&common=0000000000000000000000000000000000000000&heads=83180e7845de420a1bb46896fd5fe05294f8d629&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)

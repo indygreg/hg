@@ -101,8 +101,8 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         try:
             self.do_write()
         except Exception:
-            self._start_response("500 Internal Server Error", [])
-            self._write("Internal Server Error")
+            self._start_response(r"500 Internal Server Error", [])
+            self._write(b"Internal Server Error")
             self._done()
             tb = r"".join(traceback.format_exception(*sys.exc_info()))
             # We need a native-string newline to poke in the log
@@ -174,8 +174,12 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         env[r'wsgi.errors'] = _error_logger(self)
         env[r'wsgi.multithread'] = isinstance(self.server,
                                              socketserver.ThreadingMixIn)
-        env[r'wsgi.multiprocess'] = isinstance(self.server,
-                                              socketserver.ForkingMixIn)
+        if util.safehasattr(socketserver, 'ForkingMixIn'):
+            env[r'wsgi.multiprocess'] = isinstance(self.server,
+                                                   socketserver.ForkingMixIn)
+        else:
+            env[r'wsgi.multiprocess'] = False
+
         env[r'wsgi.run_once'] = 0
 
         wsgiref.validate.check_environ(env)
@@ -201,12 +205,12 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         self._chunked = False
         for h in self.saved_headers:
             self.send_header(*h)
-            if h[0].lower() == 'content-length':
+            if h[0].lower() == r'content-length':
                 self.length = int(h[1])
         if (self.length is None and
             saved_status[0] != common.HTTP_NOT_MODIFIED):
             self._chunked = (not self.close_connection and
-                             self.request_version == "HTTP/1.1")
+                             self.request_version == r'HTTP/1.1')
             if self._chunked:
                 self.send_header(r'Transfer-Encoding', r'chunked')
             else:
@@ -219,7 +223,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         code, msg = http_status.split(None, 1)
         code = int(code)
         self.saved_status = http_status
-        bad_headers = ('connection', 'transfer-encoding')
+        bad_headers = (r'connection', r'transfer-encoding')
         self.saved_headers = [h for h in headers
                               if h[0].lower() not in bad_headers]
         return self._write

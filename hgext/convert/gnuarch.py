@@ -17,6 +17,8 @@ from mercurial.i18n import _
 from mercurial import (
     encoding,
     error,
+    pycompat,
+    util,
 )
 from mercurial.utils import (
     dateutil,
@@ -201,7 +203,7 @@ class gnuarch_source(common.converter_source, common.commandline):
         cmdline += ['>', os.devnull, '2>', os.devnull]
         cmdline = procutil.quotecommand(' '.join(cmdline))
         self.ui.debug(cmdline, '\n')
-        return os.system(cmdline)
+        return os.system(pycompat.rapply(procutil.tonativestr, cmdline))
 
     def _update(self, rev):
         self.ui.debug('applying revision %s...\n' % rev)
@@ -221,13 +223,13 @@ class gnuarch_source(common.converter_source, common.commandline):
     def _getfile(self, name, rev):
         mode = os.lstat(os.path.join(self.tmppath, name)).st_mode
         if stat.S_ISLNK(mode):
-            data = os.readlink(os.path.join(self.tmppath, name))
+            data = util.readlink(os.path.join(self.tmppath, name))
             if mode:
                 mode = 'l'
             else:
                 mode = ''
         else:
-            data = open(os.path.join(self.tmppath, name), 'rb').read()
+            data = util.readfile(os.path.join(self.tmppath, name))
             mode = (mode & 0o111) and 'x' or ''
         return data, mode
 

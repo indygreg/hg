@@ -124,7 +124,7 @@ def _reportimporterror(ui, err, failed, next):
     # note: this ui.debug happens before --debug is processed,
     #       Use --config ui.debug=1 to see them.
     if ui.configbool('devel', 'debug.extensions'):
-        ui.debug('could not import %s (%s): trying %s\n'
+        ui.debug('debug.extensions:     - could not import %s (%s): trying %s\n'
                  % (failed, stringutil.forcebytestr(err), next))
         if ui.debugflag:
             ui.traceback()
@@ -166,7 +166,7 @@ def _validatetables(ui, mod):
             _rejectunicode(t, o._table)
     _validatecmdtable(ui, getattr(mod, 'cmdtable', {}))
 
-def load(ui, name, path):
+def load(ui, name, path, log=lambda *a: None, loadingtime=None):
     if name.startswith('hgext.') or name.startswith('hgext/'):
         shortname = name[6:]
     else:
@@ -175,8 +175,13 @@ def load(ui, name, path):
         return None
     if shortname in _extensions:
         return _extensions[shortname]
+    log('  - loading extension: %r\n', shortname)
     _extensions[shortname] = None
-    mod = _importext(name, path, bind(_reportimporterror, ui))
+    with util.timedcm('load extension %r', shortname) as stats:
+        mod = _importext(name, path, bind(_reportimporterror, ui))
+    log('  > %r extension loaded in %s\n', shortname, stats)
+    if loadingtime is not None:
+        loadingtime[shortname] += stats.elapsed
 
     # Before we do anything with the extension, check against minimum stated
     # compatibility. This gives extension authors a mechanism to have their
@@ -187,12 +192,16 @@ def load(ui, name, path):
         ui.warn(_('(third party extension %s requires version %s or newer '
                   'of Mercurial; disabling)\n') % (shortname, minver))
         return
+    log('    - validating extension tables: %r\n', shortname)
     _validatetables(ui, mod)
 
     _extensions[shortname] = mod
     _order.append(shortname)
-    for fn in _aftercallbacks.get(shortname, []):
-        fn(loaded=True)
+    log('    - invoking registered callbacks: %r\n', shortname)
+    with util.timedcm('callbacks extension %r', shortname) as stats:
+        for fn in _aftercallbacks.get(shortname, []):
+            fn(loaded=True)
+    log('    > callbacks completed in %s\n', stats)
     return mod
 
 def _runuisetup(name, ui):
@@ -225,28 +234,42 @@ def _runextsetup(name, ui):
     return True
 
 def loadall(ui, whitelist=None):
+    if ui.configbool('devel', 'debug.extensions'):
+        log = lambda msg, *values: ui.debug('debug.extensions: ',
+            msg % values, label='debug.extensions')
+    else:
+        log = lambda *a, **kw: None
+    loadingtime = collections.defaultdict(int)
     result = ui.configitems("extensions")
     if whitelist is not None:
         result = [(k, v) for (k, v) in result if k in whitelist]
     newindex = len(_order)
-    for (name, path) in result:
-        if path:
-            if path[0:1] == '!':
-                _disabledextensions[name] = path[1:]
-                continue
-        try:
-            load(ui, name, path)
-        except Exception as inst:
-            msg = stringutil.forcebytestr(inst)
+    log('loading %sextensions\n', 'additional ' if newindex else '')
+    log('- processing %d entries\n', len(result))
+    with util.timedcm('load all extensions') as stats:
+        for (name, path) in result:
             if path:
-                ui.warn(_("*** failed to import extension %s from %s: %s\n")
-                        % (name, path, msg))
-            else:
-                ui.warn(_("*** failed to import extension %s: %s\n")
-                        % (name, msg))
-            if isinstance(inst, error.Hint) and inst.hint:
-                ui.warn(_("*** (%s)\n") % inst.hint)
-            ui.traceback()
+                if path[0:1] == '!':
+                    if name not in _disabledextensions:
+                        log('  - skipping disabled extension: %r\n', name)
+                    _disabledextensions[name] = path[1:]
+                    continue
+            try:
+                load(ui, name, path, log, loadingtime)
+            except Exception as inst:
+                msg = stringutil.forcebytestr(inst)
+                if path:
+                    ui.warn(_("*** failed to import extension %s from %s: %s\n")
+                            % (name, path, msg))
+                else:
+                    ui.warn(_("*** failed to import extension %s: %s\n")
+                            % (name, msg))
+                if isinstance(inst, error.Hint) and inst.hint:
+                    ui.warn(_("*** (%s)\n") % inst.hint)
+                ui.traceback()
+
+    log('> loaded %d extensions, total time %s\n',
+        len(_order) - newindex, stats)
     # list of (objname, loadermod, loadername) tuple:
     # - objname is the name of an object in extension module,
     #   from which extra information is loaded
@@ -258,29 +281,53 @@ def loadall(ui, whitelist=None):
     earlyextraloaders = [
         ('configtable', configitems, 'loadconfigtable'),
     ]
+
+    log('- loading configtable attributes\n')
     _loadextra(ui, newindex, earlyextraloaders)
 
     broken = set()
-    for name in _order[newindex:]:
-        if not _runuisetup(name, ui):
-            broken.add(name)
+    log('- executing uisetup hooks\n')
+    with util.timedcm('all uisetup') as alluisetupstats:
+        for name in _order[newindex:]:
+            log('  - running uisetup for %r\n', name)
+            with util.timedcm('uisetup %r', name) as stats:
+                if not _runuisetup(name, ui):
+                    log('    - the %r extension uisetup failed\n', name)
+                    broken.add(name)
+            log('  > uisetup for %r took %s\n', name, stats)
+            loadingtime[name] += stats.elapsed
+    log('> all uisetup took %s\n', alluisetupstats)
 
-    for name in _order[newindex:]:
-        if name in broken:
-            continue
-        if not _runextsetup(name, ui):
-            broken.add(name)
+    log('- executing extsetup hooks\n')
+    with util.timedcm('all extsetup') as allextetupstats:
+        for name in _order[newindex:]:
+            if name in broken:
+                continue
+            log('  - running extsetup for %r\n', name)
+            with util.timedcm('extsetup %r', name) as stats:
+                if not _runextsetup(name, ui):
+                    log('    - the %r extension extsetup failed\n', name)
+                    broken.add(name)
+            log('  > extsetup for %r took %s\n', name, stats)
+            loadingtime[name] += stats.elapsed
+    log('> all extsetup took %s\n', allextetupstats)
 
     for name in broken:
+        log('    - disabling broken %r extension\n', name)
         _extensions[name] = None
 
     # Call aftercallbacks that were never met.
-    for shortname in _aftercallbacks:
-        if shortname in _extensions:
-            continue
+    log('- executing remaining aftercallbacks\n')
+    with util.timedcm('aftercallbacks') as stats:
+        for shortname in _aftercallbacks:
+            if shortname in _extensions:
+                continue
 
-        for fn in _aftercallbacks[shortname]:
-            fn(loaded=False)
+            for fn in _aftercallbacks[shortname]:
+                log('  - extension %r not loaded, notify callbacks\n',
+                    shortname)
+                fn(loaded=False)
+    log('> remaining aftercallbacks completed in %s\n', stats)
 
     # loadall() is called multiple times and lingering _aftercallbacks
     # entries could result in double execution. See issue4646.
@@ -304,6 +351,7 @@ def loadall(ui, whitelist=None):
     # - loadermod is the module where loader is placed
     # - loadername is the name of the function,
     #   which takes (ui, extensionname, extraobj) arguments
+    log('- loading extension registration objects\n')
     extraloaders = [
         ('cmdtable', commands, 'loadcmdtable'),
         ('colortable', color, 'loadcolortable'),
@@ -314,7 +362,16 @@ def loadall(ui, whitelist=None):
         ('templatefunc', templatefuncs, 'loadfunction'),
         ('templatekeyword', templatekw, 'loadkeyword'),
     ]
-    _loadextra(ui, newindex, extraloaders)
+    with util.timedcm('load registration objects') as stats:
+        _loadextra(ui, newindex, extraloaders)
+    log('> extension registration object loading took %s\n', stats)
+
+    # Report per extension loading time (except reposetup)
+    for name in sorted(loadingtime):
+        extension_msg = '> extension %s take a total of %s to load\n'
+        log(extension_msg, name, util.timecount(loadingtime[name]))
+
+    log('extension loading complete\n')
 
 def _loadextra(ui, newindex, extraloaders):
     for name in _order[newindex:]:

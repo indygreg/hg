@@ -12,6 +12,7 @@ from mercurial import (
     context,
     error,
     fancyopts,
+    pycompat,
     simplemerge,
     ui as uimod,
 )
@@ -19,15 +20,15 @@ from mercurial.utils import (
     procutil,
 )
 
-options = [('L', 'label', [], _('labels to use on conflict markers')),
-           ('a', 'text', None, _('treat all files as text')),
-           ('p', 'print', None,
-            _('print results instead of overwriting LOCAL')),
-           ('', 'no-minimal', None, _('no effect (DEPRECATED)')),
-           ('h', 'help', None, _('display help and exit')),
-           ('q', 'quiet', None, _('suppress output'))]
+options = [(b'L', b'label', [], _(b'labels to use on conflict markers')),
+           (b'a', b'text', None, _(b'treat all files as text')),
+           (b'p', b'print', None,
+            _(b'print results instead of overwriting LOCAL')),
+           (b'', b'no-minimal', None, _(b'no effect (DEPRECATED)')),
+           (b'h', b'help', None, _(b'display help and exit')),
+           (b'q', b'quiet', None, _(b'suppress output'))]
 
-usage = _('''simplemerge [OPTS] LOCAL BASE OTHER
+usage = _(b'''simplemerge [OPTS] LOCAL BASE OTHER
 
     Simple three-way file merge utility with a minimal feature set.
 
@@ -40,44 +41,47 @@ class ParseError(Exception):
     """Exception raised on errors in parsing the command line."""
 
 def showhelp():
-    sys.stdout.write(usage)
-    sys.stdout.write('\noptions:\n')
+    pycompat.stdout.write(usage)
+    pycompat.stdout.write(b'\noptions:\n')
 
     out_opts = []
     for shortopt, longopt, default, desc in options:
-        out_opts.append(('%2s%s' % (shortopt and '-%s' % shortopt,
-                                    longopt and ' --%s' % longopt),
-                         '%s' % desc))
+        out_opts.append((b'%2s%s' % (shortopt and b'-%s' % shortopt,
+                                     longopt and b' --%s' % longopt),
+                         b'%s' % desc))
     opts_len = max([len(opt[0]) for opt in out_opts])
     for first, second in out_opts:
-        sys.stdout.write(' %-*s  %s\n' % (opts_len, first, second))
+        pycompat.stdout.write(b' %-*s  %s\n' % (opts_len, first, second))
 
 try:
-    for fp in (sys.stdin, sys.stdout, sys.stderr):
+    for fp in (sys.stdin, pycompat.stdout, sys.stderr):
         procutil.setbinary(fp)
 
     opts = {}
     try:
-        args = fancyopts.fancyopts(sys.argv[1:], options, opts)
+        bargv = [a.encode('utf8') for a in sys.argv[1:]]
+        args = fancyopts.fancyopts(bargv, options, opts)
     except getopt.GetoptError as e:
         raise ParseError(e)
-    if opts['help']:
+    if opts[b'help']:
         showhelp()
         sys.exit(0)
     if len(args) != 3:
-            raise ParseError(_('wrong number of arguments'))
+            raise ParseError(_(b'wrong number of arguments').decode('utf8'))
     local, base, other = args
     sys.exit(simplemerge.simplemerge(uimod.ui.load(),
                                      context.arbitraryfilectx(local),
                                      context.arbitraryfilectx(base),
                                      context.arbitraryfilectx(other),
-                                     **opts))
+                                     **pycompat.strkwargs(opts)))
 except ParseError as e:
-    sys.stdout.write("%s: %s\n" % (sys.argv[0], e))
+    if pycompat.ispy3:
+        e = str(e).encode('utf8')
+    pycompat.stdout.write(b"%s: %s\n" % (sys.argv[0].encode('utf8'), e))
     showhelp()
     sys.exit(1)
 except error.Abort as e:
-    sys.stderr.write("abort: %s\n" % e)
+    pycompat.stderr.write(b"abort: %s\n" % e)
     sys.exit(255)
 except KeyboardInterrupt:
     sys.exit(255)

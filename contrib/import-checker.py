@@ -5,7 +5,6 @@ from __future__ import absolute_import, print_function
 import ast
 import collections
 import os
-import re
 import sys
 
 # Import a minimal set of stdlib modules needed for list_stdlib_modules()
@@ -18,6 +17,8 @@ if True: # disable lexical sorting checks
         basehttpserver = None
     import zlib
 
+import testparseutil
+
 # Whitelist of modules that symbols can be directly imported from.
 allowsymbolimports = (
     '__future__',
@@ -28,6 +29,8 @@ allowsymbolimports = (
     'mercurial.hgweb.request',
     'mercurial.i18n',
     'mercurial.node',
+    # for revlog to re-export constant to extensions
+    'mercurial.revlogutils.constants',
     # for cffi modules to re-export pure functions
     'mercurial.pure.base85',
     'mercurial.pure.bdiff',
@@ -36,6 +39,7 @@ allowsymbolimports = (
     'mercurial.pure.parsers',
     # third-party imports should be directly imported
     'mercurial.thirdparty',
+    'mercurial.thirdparty.attr',
     'mercurial.thirdparty.cbor',
     'mercurial.thirdparty.cbor.cbor2',
     'mercurial.thirdparty.zope',
@@ -656,61 +660,21 @@ def embedded(f, modname, src):
     ...   b'  > EOF',
     ... ]
     >>> test(b"example.t", lines)
-    example[2] doctest.py 2
-    "from __future__ import print_function\\n' multiline\\nstring'\\n"
-    example[7] foo.py 7
+    example[2] doctest.py 1
+    "from __future__ import print_function\\n' multiline\\nstring'\\n\\n"
+    example[8] foo.py 7
     'from __future__ import print_function\\n'
     """
-    inlinepython = 0
-    shpython = 0
-    script = []
-    prefix = 6
-    t = ''
-    n = 0
-    for l in src:
-        n += 1
-        if not l.endswith(b'\n'):
-            l += b'\n'
-        if l.startswith(b'  >>> '): # python inlines
-            if shpython:
-                print("%s:%d: Parse Error" % (f, n))
-            if not inlinepython:
-                # We've just entered a Python block.
-                inlinepython = n
-                t = b'doctest.py'
-            script.append(l[prefix:])
-            continue
-        if l.startswith(b'  ... '): # python inlines
-            script.append(l[prefix:])
-            continue
-        cat = re.search(br"\$ \s*cat\s*>\s*(\S+\.py)\s*<<\s*EOF", l)
-        if cat:
-            if inlinepython:
-                yield b''.join(script), (b"%s[%d]" %
-                       (modname, inlinepython)), t, inlinepython
-                script = []
-                inlinepython = 0
-            shpython = n
-            t = cat.group(1)
-            continue
-        if shpython and l.startswith(b'  > '): # sh continuation
-            if l == b'  > EOF\n':
-                yield b''.join(script), (b"%s[%d]" %
-                       (modname, shpython)), t, shpython
-                script = []
-                shpython = 0
-            else:
-                script.append(l[4:])
-            continue
-        # If we have an empty line or a command for sh, we end the
-        # inline script.
-        if inlinepython and (l == b'  \n'
-                             or l.startswith(b'  $ ')):
-            yield b''.join(script), (b"%s[%d]" %
-                   (modname, inlinepython)), t, inlinepython
-            script = []
-            inlinepython = 0
-            continue
+    errors = []
+    for name, starts, ends, code in testparseutil.pyembedded(f, src, errors):
+        if not name:
+            # use 'doctest.py', in order to make already existing
+            # doctest above pass instantly
+            name = 'doctest.py'
+        # "starts" is "line number" (1-origin), but embedded() is
+        # expected to return "line offset" (0-origin). Therefore, this
+        # yields "starts - 1".
+        yield code, "%s[%d]" % (modname, starts), name, starts - 1
 
 def sources(f, modname):
     """Yields possibly multiple sources from a filepath

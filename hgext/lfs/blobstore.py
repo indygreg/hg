@@ -168,6 +168,20 @@ class local(object):
 
         self._linktousercache(oid)
 
+    def linkfromusercache(self, oid):
+        """Link blobs found in the user cache into this store.
+
+        The server module needs to do this when it lets the client know not to
+        upload the blob, to ensure it is always available in this store.
+        Normally this is done implicitly when the client reads or writes the
+        blob, but that doesn't happen when the server tells the client that it
+        already has the blob.
+        """
+        if (not isinstance(self.cachevfs, nullvfs)
+            and not self.vfs.exists(oid)):
+            self.ui.note(_('lfs: found %s in the usercache\n') % oid)
+            lfutil.link(self.cachevfs.join(oid), self.vfs.join(oid))
+
     def _linktousercache(self, oid):
         # XXX: should we verify the content of the cache, and hardlink back to
         # the local store on success, but truncate, write and link on failure?
@@ -405,8 +419,7 @@ class _gitlfsremote(object):
         if len(objects) > 1:
             self.ui.note(_('lfs: need to transfer %d objects (%s)\n')
                          % (len(objects), util.bytecount(total)))
-        progress = self.ui.makeprogress(topic, total=total)
-        progress.update(0)
+
         def transfer(chunk):
             for obj in chunk:
                 objsize = obj.get('size', 0)
@@ -439,14 +452,15 @@ class _gitlfsremote(object):
         else:
             oids = transfer(sorted(objects, key=lambda o: o.get('oid')))
 
-        processed = 0
-        blobs = 0
-        for _one, oid in oids:
-            processed += sizes[oid]
-            blobs += 1
-            progress.update(processed)
-            self.ui.note(_('lfs: processed: %s\n') % oid)
-        progress.complete()
+        with self.ui.makeprogress(topic, total=total) as progress:
+            progress.update(0)
+            processed = 0
+            blobs = 0
+            for _one, oid in oids:
+                processed += sizes[oid]
+                blobs += 1
+                progress.update(processed)
+                self.ui.note(_('lfs: processed: %s\n') % oid)
 
         if blobs > 0:
             if action == 'upload':
@@ -572,7 +586,7 @@ def remote(repo, remote=None):
         raise error.Abort(_('lfs: unknown url scheme: %s') % scheme)
     return _storemap[scheme](repo, url)
 
-class LfsRemoteError(error.RevlogError):
+class LfsRemoteError(error.StorageError):
     pass
 
 class LfsCorruptionError(error.Abort):

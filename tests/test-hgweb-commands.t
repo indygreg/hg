@@ -26,7 +26,7 @@ Set up the repo
   $ hg ci -Ambranch
   $ hg branch unstable
   marked working directory as branch unstable
-  >>> open('msg', 'wb').write('branch commit with null character: \0\n')
+  >>> open('msg', 'wb').write(b'branch commit with null character: \0\n') and None
   $ hg ci -l msg
   $ rm msg
 
@@ -36,7 +36,7 @@ Set up the repo
   > stable.width = 3
   > stable.color = FF0000
   > [websub]
-  > append = s|(.*)|\1(websub)|
+  > append = s|(.+)|\1(websub)|
   > EOF
 
   $ hg serve --config server.uncompressed=False -n test -p $HGPORT -d --pid-file=hg.pid -E errors.log
@@ -2183,7 +2183,7 @@ capabilities
   
   batch
   branchmap
-  $USUAL_BUNDLE2_CAPS_SERVER$
+  $USUAL_BUNDLE2_CAPS$
   changegroupsubset
   compression=$BUNDLE2_COMPRESSIONS$
   getbundle
@@ -2276,13 +2276,13 @@ bookmarks view doesn't choke on bookmarks on secret changesets (issue3774)
   > from mercurial import demandimport; demandimport.enable()
   > from mercurial.hgweb import hgweb
   > from mercurial.hgweb import wsgicgi
-  > app = hgweb('.', 'test')
+  > app = hgweb(b'.', b'test')
   > wsgicgi.launch(app)
   > HGWEB
   $ . "$TESTDIR/cgienv"
   $ PATH_INFO=/bookmarks; export PATH_INFO
   $ QUERY_STRING='style=raw'
-  $ $PYTHON hgweb.cgi | grep -v ETag:
+  $ "$PYTHON" hgweb.cgi | grep -v ETag:
   Status: 200 Script output follows\r (esc)
   Content-Type: text/plain; charset=ascii\r (esc)
   \r (esc)
@@ -2291,7 +2291,7 @@ listbookmarks hides secret bookmarks
 
   $ PATH_INFO=/; export PATH_INFO
   $ QUERY_STRING='cmd=listkeys&namespace=bookmarks'
-  $ $PYTHON hgweb.cgi
+  $ "$PYTHON" hgweb.cgi
   Status: 200 Script output follows\r (esc)
   Content-Type: application/mercurial-0.1\r (esc)
   Content-Length: 0\r (esc)
@@ -2301,7 +2301,7 @@ search works with filtering
 
   $ PATH_INFO=/log; export PATH_INFO
   $ QUERY_STRING='rev=babar'
-  $ $PYTHON hgweb.cgi > search
+  $ "$PYTHON" hgweb.cgi > search
   $ grep Status search
   Status: 200 Script output follows\r (esc)
 
@@ -2309,7 +2309,7 @@ summary works with filtering (issue3810)
 
   $ PATH_INFO=/summary; export PATH_INFO
   $ QUERY_STRING='style=monoblue'; export QUERY_STRING
-  $ $PYTHON hgweb.cgi > summary.out
+  $ "$PYTHON" hgweb.cgi > summary.out
   $ grep "^Status" summary.out
   Status: 200 Script output follows\r (esc)
 
@@ -2320,7 +2320,7 @@ proper status for filtered revision
 
   $ PATH_INFO=/rev/5; export PATH_INFO
   $ QUERY_STRING='style=raw'
-  $ $PYTHON hgweb.cgi #> search
+  $ "$PYTHON" hgweb.cgi #> search
   Status: 404 Not Found\r (esc)
   ETag: W/"*"\r (glob) (esc)
   Content-Type: text/plain; charset=ascii\r (esc)
@@ -2334,7 +2334,7 @@ proper status for filtered revision
 
   $ PATH_INFO=/rev/4; export PATH_INFO
   $ QUERY_STRING='style=raw'
-  $ $PYTHON hgweb.cgi #> search
+  $ "$PYTHON" hgweb.cgi #> search
   Status: 404 Not Found\r (esc)
   ETag: W/"*"\r (glob) (esc)
   Content-Type: text/plain; charset=ascii\r (esc)
@@ -2362,11 +2362,11 @@ filtered '0' changeset
   $ hg phase --force --secret 0
   $ PATH_INFO=/graph/; export PATH_INFO
   $ QUERY_STRING=''
-  $ $PYTHON hgweb.cgi | grep Status
+  $ "$PYTHON" hgweb.cgi | grep Status
   Status: 200 Script output follows\r (esc)
 (check rendered revision)
   $ QUERY_STRING='style=raw'
-  $ $PYTHON hgweb.cgi | grep -v ETag
+  $ "$PYTHON" hgweb.cgi | grep -v ETag
   Status: 200 Script output follows\r (esc)
   Content-Type: text/plain; charset=ascii\r (esc)
   \r (esc)

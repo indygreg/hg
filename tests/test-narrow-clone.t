@@ -16,6 +16,18 @@
   $ for x in `$TESTDIR/seq.py 20`; do echo $x > "t$x"; hg add "t$x"; hg commit -m "Commit test $x"; done
   $ cd ../../..
 
+Only path: and rootfilesin: pattern prefixes are allowed
+
+  $ hg clone --narrow ssh://user@dummy/master badnarrow --noupdate --include 'glob:**'
+  abort: invalid prefix on narrow pattern: glob:**
+  (narrow patterns must begin with one of the following: path:, rootfilesin:)
+  [255]
+
+  $ hg clone --narrow ssh://user@dummy/master badnarrow --noupdate --exclude 'set:ignored'
+  abort: invalid prefix on narrow pattern: set:ignored
+  (narrow patterns must begin with one of the following: path:, rootfilesin:)
+  [255]
+
 narrow clone a file, f10
 
   $ hg clone --narrow ssh://user@dummy/master narrow --noupdate --include "dir/src/f10"
@@ -34,10 +46,8 @@ narrow clone a file, f10
   store
   testonly-simplestore (reposimplestore !)
 
-  $ cat .hg/narrowspec
-  [includes]
-  path:dir/src/f10
-  [excludes]
+  $ hg tracked
+  I path:dir/src/f10
   $ hg tracked
   I path:dir/src/f10
   $ hg update
@@ -51,11 +61,21 @@ narrow clone a file, f10
 
   $ cd ..
 
+BUG: local-to-local narrow clones should work, but don't.
+
+  $ hg clone --narrow master narrow-via-localpeer --noupdate --include "dir/src/f10"
+  requesting all changes
+  abort: server does not support narrow clones
+  [255]
+  $ hg tracked -R narrow-via-localpeer
+  abort: repository narrow-via-localpeer not found!
+  [255]
+  $ rm -Rf narrow-via-localpeer
+
 narrow clone with a newline should fail
 
   $ hg clone --narrow ssh://user@dummy/master narrow_fail --noupdate --include 'dir/src/f10
   > '
-  requesting all changes
   abort: newlines are not allowed in narrowspec paths
   [255]
 
@@ -69,11 +89,9 @@ narrow clone a directory, tests/, except tests/t19
   added 21 changesets with 19 changes to 19 files
   new changesets *:* (glob)
   $ cd narrowdir
-  $ cat .hg/narrowspec
-  [includes]
-  path:dir/tests
-  [excludes]
-  path:dir/tests/t19
+  $ hg tracked
+  I path:dir/tests
+  X path:dir/tests/t19
   $ hg tracked
   I path:dir/tests
   X path:dir/tests/t19
@@ -114,11 +132,9 @@ narrow clone everything but a directory (tests/)
   added 21 changesets with 20 changes to 20 files
   new changesets *:* (glob)
   $ cd narrowroot
-  $ cat .hg/narrowspec
-  [includes]
-  path:.
-  [excludes]
-  path:dir/tests
+  $ hg tracked
+  I path:.
+  X path:dir/tests
   $ hg tracked
   I path:.
   X path:dir/tests
@@ -224,3 +240,52 @@ simple clone
   dir/tests/t9
 
   $ cd ..
+
+Testing the --narrowspec flag to clone
+
+  $ cat >> narrowspecs <<EOF
+  > %include foo
+  > [include]
+  > path:dir/tests/
+  > path:dir/src/f12
+  > EOF
+
+  $ hg clone ssh://user@dummy/master specfile --narrowspec narrowspecs
+  reading narrowspec from '$TESTTMP/narrowspecs'
+  abort: cannot specify other files using '%include' in narrowspec
+  [255]
+
+  $ cat > narrowspecs <<EOF
+  > [include]
+  > path:dir/tests/
+  > path:dir/src/f12
+  > EOF
+
+  $ hg clone ssh://user@dummy/master specfile --narrowspec narrowspecs
+  reading narrowspec from '$TESTTMP/narrowspecs'
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 23 changesets with 21 changes to 21 files
+  new changesets c13e3773edb4:26ce255d5b5d
+  updating to branch default
+  21 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd specfile
+  $ hg tracked
+  I path:dir/src/f12
+  I path:dir/tests
+  $ cd ..
+
+Narrow spec with invalid patterns is rejected
+
+  $ cat > narrowspecs <<EOF
+  > [include]
+  > glob:**
+  > EOF
+
+  $ hg clone ssh://user@dummy/master badspecfile --narrowspec narrowspecs
+  reading narrowspec from '$TESTTMP/narrowspecs'
+  abort: invalid prefix on narrow pattern: glob:**
+  (narrow patterns must begin with one of the following: path:, rootfilesin:)
+  [255]

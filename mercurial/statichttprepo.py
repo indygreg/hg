@@ -19,8 +19,6 @@ from . import (
     manifest,
     namespaces,
     pathutil,
-    scmutil,
-    store,
     url,
     util,
     vfs as vfsmod,
@@ -136,7 +134,8 @@ class statichttppeer(localrepo.localpeer):
     def canpush(self):
         return False
 
-class statichttprepository(localrepo.localrepository):
+class statichttprepository(localrepo.localrepository,
+                           localrepo.revlogfilestorage):
     supported = localrepo.localrepository._basesupported
 
     def __init__(self, ui, path):
@@ -156,7 +155,7 @@ class statichttprepository(localrepo.localrepository):
         self.filtername = None
 
         try:
-            requirements = scmutil.readrequires(self.vfs, self.supported)
+            requirements = set(self.vfs.read(b'requires').splitlines())
         except IOError as inst:
             if inst.errno != errno.ENOENT:
                 raise
@@ -174,15 +173,21 @@ class statichttprepository(localrepo.localrepository):
                 msg = _("'%s' does not appear to be an hg repository") % path
                 raise error.RepoError(msg)
 
+        supportedrequirements = localrepo.gathersupportedrequirements(ui)
+        localrepo.ensurerequirementsrecognized(requirements,
+                                               supportedrequirements)
+        localrepo.ensurerequirementscompatible(ui, requirements)
+
         # setup store
-        self.store = store.store(requirements, self.path, vfsclass)
+        self.store = localrepo.makestore(requirements, self.path, vfsclass)
         self.spath = self.store.path
         self.svfs = self.store.opener
         self.sjoin = self.store.join
         self._filecache = {}
         self.requirements = requirements
 
-        self.manifestlog = manifest.manifestlog(self.svfs, self)
+        rootmanifest = manifest.manifestrevlog(self.svfs)
+        self.manifestlog = manifest.manifestlog(self.svfs, self, rootmanifest)
         self.changelog = changelog.changelog(self.svfs)
         self._tags = None
         self.nodetagscache = None
@@ -215,7 +220,7 @@ class statichttprepository(localrepo.localrepository):
     def _writecaches(self):
         pass # statichttprepository are read only
 
-def instance(ui, path, create, intents=None):
+def instance(ui, path, create, intents=None, createopts=None):
     if create:
         raise error.Abort(_('cannot create new static-http repository'))
     return statichttprepository(ui, path[7:])

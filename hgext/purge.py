@@ -25,16 +25,13 @@
 '''command to delete untracked files from the working directory'''
 from __future__ import absolute_import
 
-import os
-
 from mercurial.i18n import _
 from mercurial import (
     cmdutil,
-    error,
+    merge as mergemod,
     pycompat,
     registrar,
     scmutil,
-    util,
 )
 
 cmdtable = {}
@@ -54,7 +51,8 @@ testedwith = 'ships-with-hg-core'
     ('0', 'print0', None, _('end filenames with NUL, for use with xargs'
                             ' (implies -p/--print)')),
     ] + cmdutil.walkopts,
-    _('hg purge [OPTION]... [DIR]...'))
+    _('hg purge [OPTION]... [DIR]...'),
+    helpcategory=command.CATEGORY_MAINTENANCE)
 def purge(ui, repo, *dirs, **opts):
     '''removes files not tracked by Mercurial
 
@@ -86,44 +84,28 @@ def purge(ui, repo, *dirs, **opts):
     option.
     '''
     opts = pycompat.byteskwargs(opts)
+
     act = not opts.get('print')
     eol = '\n'
     if opts.get('print0'):
         eol = '\0'
         act = False # --print0 implies --print
+
     removefiles = opts.get('files')
     removedirs = opts.get('dirs')
+
     if not removefiles and not removedirs:
         removefiles = True
         removedirs = True
 
-    def remove(remove_func, name):
-        if act:
-            try:
-                remove_func(repo.wjoin(name))
-            except OSError:
-                m = _('%s cannot be removed') % name
-                if opts.get('abort_on_err'):
-                    raise error.Abort(m)
-                ui.warn(_('warning: %s\n') % m)
-        else:
-            ui.write('%s%s' % (name, eol))
-
     match = scmutil.match(repo[None], dirs, opts)
-    if removedirs:
-        directories = []
-        match.explicitdir = match.traversedir = directories.append
-    status = repo.status(match=match, ignored=opts.get('all'), unknown=True)
 
-    if removefiles:
-        for f in sorted(status.unknown + status.ignored):
-            if act:
-                ui.note(_('removing file %s\n') % f)
-            remove(util.unlink, f)
+    paths = mergemod.purge(
+        repo, match, ignored=opts.get('all', False),
+        removeemptydirs=removedirs, removefiles=removefiles,
+        abortonerror=opts.get('abort_on_err'),
+        noop=not act)
 
-    if removedirs:
-        for f in sorted(directories, reverse=True):
-            if match(f) and not os.listdir(repo.wjoin(f)):
-                if act:
-                    ui.note(_('removing directory %s\n') % f)
-                remove(os.rmdir, f)
+    for path in paths:
+        if not act:
+            ui.write('%s%s' % (path, eol))

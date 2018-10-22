@@ -138,18 +138,20 @@ def showdoc(ui):
 
 def showtopic(ui, topic):
     extrahelptable = [
-        (["common"], '', loaddoc('common')),
-        (["hg.1"], '', loaddoc('hg.1')),
-        (["hg-ssh.8"], '', loaddoc('hg-ssh.8')),
-        (["hgignore.5"], '', loaddoc('hgignore.5')),
-        (["hgrc.5"], '', loaddoc('hgrc.5')),
-        (["hgignore.5.gendoc"], '', loaddoc('hgignore')),
-        (["hgrc.5.gendoc"], '', loaddoc('config')),
+        (["common"], '', loaddoc('common'), help.TOPIC_CATEGORY_MISC),
+        (["hg.1"], '', loaddoc('hg.1'), help.TOPIC_CATEGORY_CONFIG),
+        (["hg-ssh.8"], '', loaddoc('hg-ssh.8'), help.TOPIC_CATEGORY_CONFIG),
+        (["hgignore.5"], '', loaddoc('hgignore.5'), help.TOPIC_CATEGORY_CONFIG),
+        (["hgrc.5"], '', loaddoc('hgrc.5'), help.TOPIC_CATEGORY_CONFIG),
+        (["hgignore.5.gendoc"], '', loaddoc('hgignore'),
+         help.TOPIC_CATEGORY_CONFIG),
+        (["hgrc.5.gendoc"], '', loaddoc('config'), help.TOPIC_CATEGORY_CONFIG),
     ]
     helpprinter(ui, helptable + extrahelptable, None, include=[topic])
 
 def helpprinter(ui, helptable, sectionfunc, include=[], exclude=[]):
-    for names, sec, doc in helptable:
+    for h in helptable:
+        names, sec, doc = h[0:3]
         if exclude and names[0] in exclude:
             continue
         if include and names[0] not in include:

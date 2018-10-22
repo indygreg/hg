@@ -56,12 +56,14 @@ mergeonly = internaltool.mergeonly # just the full merge, no premerge
 fullmerge = internaltool.fullmerge # both premerge and merge
 
 _localchangedotherdeletedmsg = _(
-    "local%(l)s changed %(fd)s which other%(o)s deleted\n"
+    "file '%(fd)s' was deleted in other%(o)s but was modified in local%(l)s.\n"
+    "What do you want to do?\n"
     "use (c)hanged version, (d)elete, or leave (u)nresolved?"
     "$$ &Changed $$ &Delete $$ &Unresolved")
 
 _otherchangedlocaldeletedmsg = _(
-    "other%(o)s changed %(fd)s which local%(l)s deleted\n"
+    "file '%(fd)s' was deleted in local%(l)s but was modified in other%(o)s.\n"
+    "What do you want to do?\n"
     "use (c)hanged version, leave (d)eleted, or "
     "leave (u)nresolved?"
     "$$ &Changed $$ &Deleted $$ &Unresolved")
@@ -137,6 +139,13 @@ def findexternaltool(ui, tool):
     return procutil.findexe(util.expandpath(exe))
 
 def _picktool(repo, ui, path, binary, symlink, changedelete):
+    strictcheck = ui.configbool('merge', 'strict-capability-check')
+
+    def hascapability(tool, capability, strict=False):
+        if tool in internals:
+            return strict and internals[tool].capabilities.get(capability)
+        return _toolbool(ui, tool, capability)
+
     def supportscd(tool):
         return tool in internals and internals[tool].mergetype == nomerge
 
@@ -149,9 +158,9 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
                 ui.warn(_("couldn't find merge tool %s\n") % tmsg)
             else: # configured but non-existing tools are more silent
                 ui.note(_("couldn't find merge tool %s\n") % tmsg)
-        elif symlink and not _toolbool(ui, tool, "symlink"):
+        elif symlink and not hascapability(tool, "symlink", strictcheck):
             ui.warn(_("tool %s can't handle symlinks\n") % tmsg)
-        elif binary and not _toolbool(ui, tool, "binary"):
+        elif binary and not hascapability(tool, "binary", strictcheck):
             ui.warn(_("tool %s can't handle binary\n") % tmsg)
         elif changedelete and not supportscd(tool):
             # the nomerge tools are the only tools that support change/delete
@@ -186,9 +195,19 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
             return (hgmerge, hgmerge)
 
     # then patterns
+
+    # whether binary capability should be checked strictly
+    binarycap = binary and strictcheck
+
     for pat, tool in ui.configitems("merge-patterns"):
         mf = match.match(repo.root, '', [pat])
-        if mf(path) and check(tool, pat, symlink, False, changedelete):
+        if mf(path) and check(tool, pat, symlink, binarycap, changedelete):
+            if binary and not hascapability(tool, "binary", strict=True):
+                ui.warn(_("warning: check merge-patterns configurations,"
+                          " if %r for binary file %r is unintentional\n"
+                          "(see 'hg help merge-tools'"
+                          " for binary files capability)\n")
+                        % (pycompat.bytestr(tool), pycompat.bytestr(path)))
             toolpath = _findtool(ui, tool)
             return (tool, _quotetoolpath(toolpath))
 
@@ -208,9 +227,10 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
     if uimerge:
         # external tools defined in uimerge won't be able to handle
         # change/delete conflicts
-        if uimerge not in names and not changedelete:
-            return (uimerge, uimerge)
-        tools.insert(0, (None, uimerge)) # highest priority
+        if check(uimerge, path, symlink, binary, changedelete):
+            if uimerge not in names and not changedelete:
+                return (uimerge, uimerge)
+            tools.insert(0, (None, uimerge)) # highest priority
     tools.append((None, "hgmerge")) # the old default, if found
     for p, t in tools:
         if check(t, None, symlink, binary, changedelete):
@@ -469,7 +489,7 @@ def _itagmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
     success, status = tagmerge.merge(repo, fcd, fco, fca)
     return success, status, False
 
-@internaltool('dump', fullmerge)
+@internaltool('dump', fullmerge, binary=True, symlink=True)
 def _idump(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
     """
     Creates three versions of the files to merge, containing the
@@ -495,7 +515,7 @@ def _idump(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
     repo.wwrite(fd + ".base", fca.data(), fca.flags())
     return False, 1, False
 
-@internaltool('forcedump', mergeonly)
+@internaltool('forcedump', mergeonly, binary=True, symlink=True)
 def _forcedump(repo, mynode, orig, fcd, fco, fca, toolconf, files,
                 labels=None):
     """
@@ -916,14 +936,17 @@ def _onfilemergefailure(ui):
         _haltmerge()
     # default action is 'continue', in which case we neither prompt nor halt
 
+def hasconflictmarkers(data):
+    return bool(re.search("^(<<<<<<< .*|=======|>>>>>>> .*)$", data,
+                          re.MULTILINE))
+
 def _check(repo, r, ui, tool, fcd, files):
     fd = fcd.path()
     unused, unused, unused, back = files
 
     if not r and (_toolbool(ui, tool, "checkconflicts") or
                   'conflicts' in _toollist(ui, tool, "check")):
-        if re.search("^(<<<<<<< .*|=======|>>>>>>> .*)$", fcd.data(),
-                     re.MULTILINE):
+        if hasconflictmarkers(fcd.data()):
             r = 1
 
     checked = False
@@ -966,6 +989,24 @@ def loadinternalmerge(ui, extname, registrarobj):
         internals[fullname] = func
         internals['internal:' + name] = func
         internalsdoc[fullname] = func
+
+        capabilities = sorted([k for k, v in func.capabilities.items() if v])
+        if capabilities:
+            capdesc = "    (actual capabilities: %s)" % ', '.join(capabilities)
+            func.__doc__ = (func.__doc__ +
+                            pycompat.sysstr("\n\n%s" % capdesc))
+
+    # to put i18n comments into hg.pot for automatically generated texts
+
+    # i18n: "binary" and "symlink" are keywords
+    # i18n: this text is added automatically
+    _("    (actual capabilities: binary, symlink)")
+    # i18n: "binary" is keyword
+    # i18n: this text is added automatically
+    _("    (actual capabilities: binary)")
+    # i18n: "symlink" is keyword
+    # i18n: this text is added automatically
+    _("    (actual capabilities: symlink)")
 
 # load built-in merge tools explicitly to setup internalsdoc
 loadinternalmerge(None, None, internaltool)

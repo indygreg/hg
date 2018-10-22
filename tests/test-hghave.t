@@ -22,8 +22,10 @@ Testing hghave extensibility for third party tools
   > EOF
   $ ( \
   > testrepohgenv; \
-  > $PYTHON $TESTDIR/run-tests.py $HGTEST_RUN_TESTS_PURE test-hghaveaddon.t \
+  > "$PYTHON" $TESTDIR/run-tests.py -j 1 \
+  >    $HGTEST_RUN_TESTS_PURE test-hghaveaddon.t \
   > )
+  running 1 tests using 1 parallel processes 
   .
   # Ran 1 tests, 0 skipped, 0 failed.
 
@@ -35,9 +37,9 @@ Testing hghave extensibility for third party tools
 (terminate with exit code 2 at failure of importing hghaveaddon.py)
 
   $ rm hghaveaddon.*
-  $ cat > hghaveaddon.py <<EOF
+  $ cat > hghaveaddon.py <<NO_CHECK_EOF
   > importing this file should cause syntax error
-  > EOF
+  > NO_CHECK_EOF
 
   $ hghave custom
   failed to import hghaveaddon.py from '.': invalid syntax (hghaveaddon.py, line 1)

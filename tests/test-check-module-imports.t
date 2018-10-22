@@ -29,18 +29,7 @@ outputs, which should be fixed later.
   > -X mercurial/thirdparty \
   > -X tests/hypothesishelpers.py \
   > -X tests/test-check-interfaces.py \
-  > -X tests/test-commit-interactive.t \
-  > -X tests/test-contrib-check-code.t \
   > -X tests/test-demandimport.py \
-  > -X tests/test-extension.t \
-  > -X tests/test-hghave.t \
-  > -X tests/test-hgweb-auth.py \
-  > -X tests/test-hgweb-no-path-info.t \
-  > -X tests/test-hgweb-no-request-uri.t \
-  > -X tests/test-hgweb-non-interactive.t \
-  > -X tests/test-hook.t \
-  > -X tests/test-import.t \
   > -X tests/test-imports-checker.t \
-  > -X tests/test-lock.py \
   > -X tests/test-verify-repo-operations.py \
-  > | sed 's-\\-/-g' | $PYTHON "$import_checker" -
+  > | sed 's-\\-/-g' | "$PYTHON" "$import_checker" -

@@ -42,9 +42,9 @@ back to the rename stuff
   1 Initial add: a, c, e
   0 rename a into b, create a, rename c into d
   $ glog -R source-hg
-  o  1@source "rename a into b, create a, rename c into d" files: a b c d e f
+  o  1@source "rename a into b, create a, rename c into d" files+: [b d f], files-: [c e], files: [a]
   |
-  o  0@source "Initial add: a, c, e" files: a c e
+  o  0@source "Initial add: a, c, e" files+: [a c e], files-: [], files: []
   
 
 manifest
@@ -64,7 +64,7 @@ test --rev option
   converting...
   0 Initial add: a, c, e
   $ glog -R source-1-hg
-  o  0@source "Initial add: a, c, e" files: a c e
+  o  0@source "Initial add: a, c, e" files+: [a c e], files-: [], files: []
   
 
 test with filemap
@@ -129,10 +129,10 @@ merge
   $ bzr branch -q source source-improve
   $ cd source
   $ echo more >> a
-  $ $PYTHON ../helper.py 'Editing a' 100
+  $ "$PYTHON" ../helper.py 'Editing a' 100
   $ cd ../source-improve
   $ echo content3 >> b
-  $ $PYTHON ../helper.py 'Editing b' 200
+  $ "$PYTHON" ../helper.py 'Editing b' 200
   $ cd ../source
   $ bzr merge -q ../source-improve
   $ bzr commit -q -m 'Merged improve branch'
@@ -147,13 +147,13 @@ merge
   1 Editing b
   0 Merged improve branch
   $ glog -R source-hg
-  o    3@source "Merged improve branch" files:
+  o    3@source "Merged improve branch" files+: [], files-: [], files: [b]
   |\
-  | o  2@source-improve "Editing b" files: b
+  | o  2@source-improve "Editing b" files+: [], files-: [], files: [b]
   | |
-  o |  1@source "Editing a" files: a
+  o |  1@source "Editing a" files+: [], files-: [], files: [a]
   |/
-  o  0@source "Initial add" files: a b
+  o  0@source "Initial add" files+: [a b], files-: [], files: []
   
   $ cd ..
 
@@ -250,13 +250,13 @@ Multiple branches
   0 changea
   updating tags
   $ (cd repo-bzr; glog)
-  o  3@default "update tags" files: .hgtags
+  o  3@default "update tags" files+: [.hgtags], files-: [], files: []
   |
-  o  2@default "changea" files: a
+  o  2@default "changea" files+: [], files-: [], files: [a]
   |
-  | o  1@branch "addb" files: b
+  | o  1@branch "addb" files+: [b], files-: [], files: []
   |/
-  o  0@default "adda" files: a
+  o  0@default "adda" files+: [a], files-: [], files: []
   
 
 Test tags (converted identifiers are not stable because bzr ones are

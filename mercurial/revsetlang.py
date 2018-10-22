@@ -63,7 +63,7 @@ _simpleopletters = set(pycompat.iterbytestr("()[]#:=,-|&+!~^%"))
 _syminitletters = set(pycompat.iterbytestr(
     string.ascii_letters.encode('ascii') +
     string.digits.encode('ascii') +
-    '._@')) | set(map(pycompat.bytechr, xrange(128, 256)))
+    '._@')) | set(map(pycompat.bytechr, pycompat.xrange(128, 256)))
 
 # default set of valid characters for non-initial letters of symbols
 _symletters = _syminitletters | set(pycompat.iterbytestr('-/'))
@@ -177,7 +177,7 @@ def tokenize(program, lookup=None, syminitletters=None, symletters=None):
                         if p: # possible consecutive -
                             yield ('symbol', p, s)
                         s += len(p)
-                        yield ('-', None, pos)
+                        yield ('-', None, s)
                         s += 1
                     if parts[-1]: # possible trailing -
                         yield ('symbol', parts[-1], s)
@@ -355,9 +355,6 @@ def _analyze(x):
     elif op == 'keyvalue':
         return (op, x[1], _analyze(x[2]))
     elif op == 'func':
-        f = getsymbol(x[1])
-        if f == 'revset':
-            return _analyze(x[2])
         return (op, x[1], _analyze(x[2]))
     raise ValueError('invalid operator %r' % op)
 

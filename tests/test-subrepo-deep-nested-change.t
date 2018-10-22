@@ -203,21 +203,8 @@ Clone main
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Largefiles is NOT enabled in the clone if the source repo doesn't require it
-  $ cat cloned/.hg/hgrc
-  # example repository config (see 'hg help config' for more info)
-  [paths]
-  default = $TESTTMP/main
-  
-  # path aliases to other clones of this repo in URLs or filesystem paths
-  # (see 'hg help config.paths' for more info)
-  #
-  # default:pushurl = ssh://jdoe@example.net/hg/jdoes-fork
-  # my-fork         = ssh://jdoe@example.net/hg/jdoes-fork
-  # my-clone        = /home/jdoe/jdoes-clone
-  
-  [ui]
-  # name and email (local to this repository, optional), e.g.
-  # username = Jane Doe <jdoe@example.com>
+  $ grep largefiles cloned/.hg/hgrc
+  [1]
 
 Checking cloned repo ids
 
@@ -790,29 +777,13 @@ Find an exact largefile match in a largefiles subrepo
   $ rm -rf ../archive_lf
 
 The local repo enables largefiles if a largefiles repo is cloned
+
   $ hg showconfig extensions
-  abort: repository requires features unknown to this Mercurial: largefiles!
-  (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
-  [255]
+  extensions.largefiles=
+
   $ hg --config extensions.largefiles= clone -qU . ../lfclone
-  $ cat ../lfclone/.hg/hgrc
-  # example repository config (see 'hg help config' for more info)
-  [paths]
-  default = $TESTTMP/cloned
-  
-  # path aliases to other clones of this repo in URLs or filesystem paths
-  # (see 'hg help config.paths' for more info)
-  #
-  # default:pushurl = ssh://jdoe@example.net/hg/jdoes-fork
-  # my-fork         = ssh://jdoe@example.net/hg/jdoes-fork
-  # my-clone        = /home/jdoe/jdoes-clone
-  
-  [ui]
-  # name and email (local to this repository, optional), e.g.
-  # username = Jane Doe <jdoe@example.com>
-  
-  [extensions]
-  largefiles=
+  $ grep largefiles ../lfclone/.hg/requires
+  largefiles
 
 Find an exact match to a standin (should archive nothing)
   $ hg --config extensions.largefiles= archive -S -I 'sub/sub2/.hglf/large.bin' ../archive_lf

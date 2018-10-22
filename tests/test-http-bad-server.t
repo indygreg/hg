@@ -118,9 +118,9 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
   write(23) -> Server: badhttpserver\r\n
   write(37) -> Date: $HTTP_DATE$\r\n
   write(41) -> Content-Type: application/mercurial-0.1\r\n
-  write(21) -> Content-Length: 436\r\n
+  write(21) -> Content-Length: 450\r\n
   write(2) -> \r\n
-  write(436) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  write(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(4? from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
   readline(1? from -1) -> (1?) Accept-Encoding* (glob)
   read limit reached; closing socket
@@ -159,9 +159,9 @@ Failure to read getbundle HTTP request
   write(23) -> Server: badhttpserver\r\n
   write(37) -> Date: $HTTP_DATE$\r\n
   write(41) -> Content-Type: application/mercurial-0.1\r\n
-  write(21) -> Content-Length: 436\r\n
+  write(21) -> Content-Length: 450\r\n
   write(2) -> \r\n
-  write(436) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  write(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(13? from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
   readline(1?? from -1) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(8? from -1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
@@ -216,9 +216,9 @@ Now do a variation using POST to send arguments
   write(23) -> Server: badhttpserver\r\n
   write(37) -> Date: $HTTP_DATE$\r\n
   write(41) -> Content-Type: application/mercurial-0.1\r\n
-  write(21) -> Content-Length: 449\r\n
+  write(21) -> Content-Length: 463\r\n
   write(2) -> \r\n
-  write(449) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  write(463) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(1?? from 65537) -> (27) POST /?cmd=batch HTTP/1.1\r\n (glob)
   readline(1?? from -1) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(1?? from -1) -> (41) content-type: application/mercurial-0.1\r\n (glob)
@@ -275,7 +275,7 @@ Server sends an incomplete capabilities response body
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
-  abort: HTTP request error (incomplete response; expected 416 bytes got 20)
+  abort: HTTP request error (incomplete response; expected 450 bytes got 20)
   (this may be an intermittent network failure; if the error persists, consider contacting the network or server operator)
   [255]
 
@@ -292,16 +292,16 @@ Server sends an incomplete capabilities response body
   write(23 from 23) -> (121) Server: badhttpserver\r\n
   write(37 from 37) -> (84) Date: $HTTP_DATE$\r\n
   write(41 from 41) -> (43) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (22) Content-Length: 436\r\n
+  write(21 from 21) -> (22) Content-Length: 450\r\n
   write(2 from 2) -> (20) \r\n
-  write(20 from 436) -> (0) batch branchmap bund
+  write(20 from 450) -> (0) batch branchmap bund
   write limit reached; closing socket
 
   $ rm -f error.log
 
 Server sends incomplete headers for batch request
 
-  $ hg serve --config badserver.closeaftersendbytes=714 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=728 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
 TODO this output is horrible
@@ -323,13 +323,13 @@ TODO this output is horrible
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
   readline(-1) -> (2) \r\n
-  write(36 from 36) -> (678) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (655) Server: badhttpserver\r\n
-  write(37 from 37) -> (618) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (577) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (556) Content-Length: 436\r\n
-  write(2 from 2) -> (554) \r\n
-  write(436 from 436) -> (118) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  write(36 from 36) -> (692) HTTP/1.1 200 Script output follows\r\n
+  write(23 from 23) -> (669) Server: badhttpserver\r\n
+  write(37 from 37) -> (632) Date: $HTTP_DATE$\r\n
+  write(41 from 41) -> (591) Content-Type: application/mercurial-0.1\r\n
+  write(21 from 21) -> (570) Content-Length: 450\r\n
+  write(2 from 2) -> (568) \r\n
+  write(450 from 450) -> (118) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
@@ -350,7 +350,7 @@ TODO this output is horrible
 
 Server sends an incomplete HTTP response body to batch request
 
-  $ hg serve --config badserver.closeaftersendbytes=779 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=793 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
 TODO client spews a stack due to uncaught ValueError in batch.results()
@@ -371,13 +371,13 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
   readline(-1) -> (2) \r\n
-  write(36 from 36) -> (743) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (720) Server: badhttpserver\r\n
-  write(37 from 37) -> (683) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (642) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (621) Content-Length: 436\r\n
-  write(2 from 2) -> (619) \r\n
-  write(436 from 436) -> (183) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  write(36 from 36) -> (757) HTTP/1.1 200 Script output follows\r\n
+  write(23 from 23) -> (734) Server: badhttpserver\r\n
+  write(37 from 37) -> (697) Date: $HTTP_DATE$\r\n
+  write(41 from 41) -> (656) Content-Type: application/mercurial-0.1\r\n
+  write(21 from 21) -> (635) Content-Length: 450\r\n
+  write(2 from 2) -> (633) \r\n
+  write(450 from 450) -> (183) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
@@ -400,7 +400,7 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
 
 Server sends incomplete headers for getbundle response
 
-  $ hg serve --config badserver.closeaftersendbytes=926 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=940 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
 TODO this output is terrible
@@ -423,13 +423,13 @@ TODO this output is terrible
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
   readline(-1) -> (2) \r\n
-  write(36 from 36) -> (890) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (867) Server: badhttpserver\r\n
-  write(37 from 37) -> (830) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (789) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (768) Content-Length: 436\r\n
-  write(2 from 2) -> (766) \r\n
-  write(436 from 436) -> (330) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  write(36 from 36) -> (904) HTTP/1.1 200 Script output follows\r\n
+  write(23 from 23) -> (881) Server: badhttpserver\r\n
+  write(37 from 37) -> (844) Date: $HTTP_DATE$\r\n
+  write(41 from 41) -> (803) Content-Type: application/mercurial-0.1\r\n
+  write(21 from 21) -> (782) Content-Length: 450\r\n
+  write(2 from 2) -> (780) \r\n
+  write(450 from 450) -> (330) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
@@ -464,9 +464,29 @@ TODO this output is terrible
 
   $ rm -f error.log
 
+Server stops before it sends transfer encoding
+
+  $ hg serve --config badserver.closeaftersendbytes=973 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ cat hg.pid > $DAEMON_PIDS
+
+  $ hg clone http://localhost:$HGPORT/ clone
+  requesting all changes
+  abort: stream ended unexpectedly (got 0 bytes, expected 1)
+  [255]
+
+  $ killdaemons.py $DAEMON_PIDS
+
+  $ tail -4 error.log
+  write(41 from 41) -> (25) Content-Type: application/mercurial-0.2\r\n
+  write(25 from 28) -> (0) Transfer-Encoding: chunke
+  write limit reached; closing socket
+  write(36) -> HTTP/1.1 500 Internal Server Error\r\n
+
+  $ rm -f error.log
+
 Server sends empty HTTP body for getbundle
 
-  $ hg serve --config badserver.closeaftersendbytes=964 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=978 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -484,13 +504,13 @@ Server sends empty HTTP body for getbundle
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
   readline(-1) -> (2) \r\n
-  write(36 from 36) -> (928) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (905) Server: badhttpserver\r\n
-  write(37 from 37) -> (868) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (827) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (806) Content-Length: 436\r\n
-  write(2 from 2) -> (804) \r\n
-  write(436 from 436) -> (368) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  write(36 from 36) -> (942) HTTP/1.1 200 Script output follows\r\n
+  write(23 from 23) -> (919) Server: badhttpserver\r\n
+  write(37 from 37) -> (882) Date: $HTTP_DATE$\r\n
+  write(41 from 41) -> (841) Content-Type: application/mercurial-0.1\r\n
+  write(21 from 21) -> (820) Content-Length: 450\r\n
+  write(2 from 2) -> (818) \r\n
+  write(450 from 450) -> (368) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
@@ -529,7 +549,7 @@ Server sends empty HTTP body for getbundle
 
 Server sends partial compression string
 
-  $ hg serve --config badserver.closeaftersendbytes=988 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1002 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -547,13 +567,13 @@ Server sends partial compression string
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
   readline(-1) -> (2) \r\n
-  write(36 from 36) -> (952) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (929) Server: badhttpserver\r\n
-  write(37 from 37) -> (892) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (851) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (830) Content-Length: 436\r\n
-  write(2 from 2) -> (828) \r\n
-  write(436 from 436) -> (392) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  write(36 from 36) -> (966) HTTP/1.1 200 Script output follows\r\n
+  write(23 from 23) -> (943) Server: badhttpserver\r\n
+  write(37 from 37) -> (906) Date: $HTTP_DATE$\r\n
+  write(41 from 41) -> (865) Content-Type: application/mercurial-0.1\r\n
+  write(21 from 21) -> (844) Content-Length: 450\r\n
+  write(2 from 2) -> (842) \r\n
+  write(450 from 450) -> (392) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
@@ -595,12 +615,12 @@ Server sends partial compression string
 
 Server sends partial bundle2 header magic
 
-  $ hg serve --config badserver.closeaftersendbytes=985 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=999 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
   requesting all changes
-  abort: HTTP request error (incomplete response; expected 1 bytes got 3)
+  abort: HTTP request error (incomplete response; expected 4 bytes got 3)
   (this may be an intermittent network failure; if the error persists, consider contacting the network or server operator)
   [255]
 
@@ -619,12 +639,12 @@ Server sends partial bundle2 header magic
 
 Server sends incomplete bundle2 stream params length
 
-  $ hg serve --config badserver.closeaftersendbytes=994 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1008 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
   requesting all changes
-  abort: HTTP request error (incomplete response; expected 1 bytes got 3)
+  abort: HTTP request error (incomplete response; expected 4 bytes got 3)
   (this may be an intermittent network failure; if the error persists, consider contacting the network or server operator)
   [255]
 
@@ -644,7 +664,7 @@ Server sends incomplete bundle2 stream params length
 
 Servers stops after bundle2 stream params header
 
-  $ hg serve --config badserver.closeaftersendbytes=997 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1011 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -669,7 +689,7 @@ Servers stops after bundle2 stream params header
 
 Server stops sending after bundle2 part header length
 
-  $ hg serve --config badserver.closeaftersendbytes=1006 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1020 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -695,7 +715,7 @@ Server stops sending after bundle2 part header length
 
 Server stops sending after bundle2 part header
 
-  $ hg serve --config badserver.closeaftersendbytes=1053 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1067 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -725,7 +745,7 @@ Server stops sending after bundle2 part header
 
 Server stops after bundle2 part payload chunk size
 
-  $ hg serve --config badserver.closeaftersendbytes=1074 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1088 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -733,7 +753,7 @@ Server stops after bundle2 part payload chunk size
   adding changesets
   transaction abort!
   rollback completed
-  abort: HTTP request error (incomplete response; expected 459 bytes got 7)
+  abort: HTTP request error (incomplete response; expected 466 bytes got 7)
   (this may be an intermittent network failure; if the error persists, consider contacting the network or server operator)
   [255]
 
@@ -756,7 +776,7 @@ Server stops after bundle2 part payload chunk size
 
 Server stops sending in middle of bundle2 payload chunk
 
-  $ hg serve --config badserver.closeaftersendbytes=1535 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1549 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -788,7 +808,7 @@ Server stops sending in middle of bundle2 payload chunk
 
 Server stops sending after 0 length payload chunk size
 
-  $ hg serve --config badserver.closeaftersendbytes=1566 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1580 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -799,7 +819,7 @@ Server stops sending after 0 length payload chunk size
   added 1 changesets with 1 changes to 1 files
   transaction abort!
   rollback completed
-  abort: HTTP request error (incomplete response; expected 23 bytes got 9)
+  abort: HTTP request error (incomplete response; expected 32 bytes got 9)
   (this may be an intermittent network failure; if the error persists, consider contacting the network or server operator)
   [255]
 
@@ -825,8 +845,8 @@ Server stops sending after 0 length payload chunk size
 Server stops sending after 0 part bundle part header (indicating end of bundle2 payload)
 This is before the 0 size chunked transfer part that signals end of HTTP response.
 
-#  $ hg serve --config badserver.closeaftersendbytes=1741 -p $HGPORT -d --pid-file=hg.pid -E error.log
-  $ hg serve --config badserver.closeaftersendbytes=1848 -p $HGPORT -d --pid-file=hg.pid -E error.log
+#  $ hg serve --config badserver.closeaftersendbytes=1755 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1862 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -870,7 +890,7 @@ This is before the 0 size chunked transfer part that signals end of HTTP respons
 
 Server sends a size 0 chunked-transfer size without terminating \r\n
 
-  $ hg serve --config badserver.closeaftersendbytes=1851 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1865 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone

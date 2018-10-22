@@ -1,4 +1,15 @@
 Test basic extension support
+  $ cat > unflush.py <<EOF
+  > import sys
+  > from mercurial import pycompat
+  > if pycompat.ispy3:
+  >     # no changes required
+  >     sys.exit(0)
+  > with open(sys.argv[1], 'rb') as f:
+  >     data = f.read()
+  > with open(sys.argv[1], 'wb') as f:
+  >     f.write(data.replace(b', flush=True', b''))
+  > EOF
 
   $ cat > foobar.py <<EOF
   > import os
@@ -95,26 +106,29 @@ module/__init__.py-style
 Check that extensions are loaded in phases:
 
   $ cat > foo.py <<EOF
+  > from __future__ import print_function
   > import os
   > name = os.path.basename(__file__).rsplit('.', 1)[0]
-  > print("1) %s imported" % name)
+  > print("1) %s imported" % name, flush=True)
   > def uisetup(ui):
-  >     print("2) %s uisetup" % name)
+  >     print("2) %s uisetup" % name, flush=True)
   > def extsetup():
-  >     print("3) %s extsetup" % name)
+  >     print("3) %s extsetup" % name, flush=True)
   > def reposetup(ui, repo):
-  >    print("4) %s reposetup" % name)
+  >    print("4) %s reposetup" % name, flush=True)
   > 
+  > bytesname = name.encode('utf-8')
   > # custom predicate to check registration of functions at loading
   > from mercurial import (
   >     registrar,
   >     smartset,
   > )
   > revsetpredicate = registrar.revsetpredicate()
-  > @revsetpredicate(name, safe=True) # safe=True for query via hgweb
+  > @revsetpredicate(bytesname, safe=True) # safe=True for query via hgweb
   > def custompredicate(repo, subset, x):
   >     return smartset.baseset([r for r in subset if r in {0}])
   > EOF
+  $ $PYTHON $TESTTMP/unflush.py foo.py
 
   $ cp foo.py bar.py
   $ echo 'foo = foo.py' >> $HGRCPATH
@@ -140,12 +154,12 @@ Check hgweb's load order of extensions and registration of functions
   > from mercurial import demandimport; demandimport.enable()
   > from mercurial.hgweb import hgweb
   > from mercurial.hgweb import wsgicgi
-  > application = hgweb('.', 'test repo')
+  > application = hgweb(b'.', b'test repo')
   > wsgicgi.launch(application)
   > EOF
   $ . "$TESTDIR/cgienv"
 
-  $ PATH_INFO='/' SCRIPT_NAME='' $PYTHON hgweb.cgi \
+  $ PATH_INFO='/' SCRIPT_NAME='' "$PYTHON" hgweb.cgi \
   >    | grep '^[0-9]) ' # ignores HTML output
   1) foo imported
   1) bar imported
@@ -164,7 +178,7 @@ Check hgweb's load order of extensions and registration of functions
   $ PATH_INFO='/shortlog'
 #endif
   $ export PATH_INFO
-  $ SCRIPT_NAME='' QUERY_STRING='rev=foo() and bar()' $PYTHON hgweb.cgi \
+  $ SCRIPT_NAME='' QUERY_STRING='rev=foo() and bar()' "$PYTHON" hgweb.cgi \
   >     | grep '<a href="/rev/[0-9a-z]*">'
      <a href="/rev/c24b9ac61126">add file</a>
 
@@ -172,6 +186,13 @@ Check hgweb's load order of extensions and registration of functions
   $ echo 'bar = !' >> $HGRCPATH
 
 Check "from __future__ import absolute_import" support for external libraries
+
+(import-checker.py reports issues for some of heredoc python code
+fragments below, because import-checker.py does not know test specific
+package hierarchy. NO_CHECK_* should be used as a limit mark of
+heredoc, in order to make import-checker.py ignore them. For
+simplicity, all python code fragments below are generated with such
+limit mark, regardless of importing module or not.)
 
 #if windows
   $ PATHSEP=";"
@@ -186,30 +207,33 @@ Check "from __future__ import absolute_import" support for external libraries
   $ touch $TESTTMP/libroot/mod/__init__.py
   $ echo "s = 'libroot/mod/ambig.py'" > $TESTTMP/libroot/mod/ambig.py
 
-  $ cat > $TESTTMP/libroot/mod/ambigabs.py <<EOF
-  > from __future__ import absolute_import
+  $ cat > $TESTTMP/libroot/mod/ambigabs.py <<NO_CHECK_EOF
+  > from __future__ import absolute_import, print_function
   > import ambig # should load "libroot/ambig.py"
   > s = ambig.s
-  > EOF
-  $ cat > loadabs.py <<EOF
+  > NO_CHECK_EOF
+  $ cat > loadabs.py <<NO_CHECK_EOF
   > import mod.ambigabs as ambigabs
   > def extsetup():
-  >     print('ambigabs.s=%s' % ambigabs.s)
-  > EOF
+  >     print('ambigabs.s=%s' % ambigabs.s, flush=True)
+  > NO_CHECK_EOF
+  $ $PYTHON $TESTTMP/unflush.py loadabs.py
   $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}/libroot; hg --config extensions.loadabs=loadabs.py root)
   ambigabs.s=libroot/ambig.py
   $TESTTMP/a
 
-#if no-py3k
-  $ cat > $TESTTMP/libroot/mod/ambigrel.py <<EOF
+#if no-py3
+  $ cat > $TESTTMP/libroot/mod/ambigrel.py <<NO_CHECK_EOF
+  > from __future__ import print_function
   > import ambig # should load "libroot/mod/ambig.py"
   > s = ambig.s
-  > EOF
-  $ cat > loadrel.py <<EOF
+  > NO_CHECK_EOF
+  $ cat > loadrel.py <<NO_CHECK_EOF
   > import mod.ambigrel as ambigrel
   > def extsetup():
-  >     print('ambigrel.s=%s' % ambigrel.s)
-  > EOF
+  >     print('ambigrel.s=%s' % ambigrel.s, flush=True)
+  > NO_CHECK_EOF
+  $ $PYTHON $TESTTMP/unflush.py loadrel.py
   $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}/libroot; hg --config extensions.loadrel=loadrel.py root)
   ambigrel.s=libroot/mod/ambig.py
   $TESTTMP/a
@@ -218,45 +242,46 @@ Check "from __future__ import absolute_import" support for external libraries
 Check absolute/relative import of extension specific modules
 
   $ mkdir $TESTTMP/extroot
-  $ cat > $TESTTMP/extroot/bar.py <<EOF
-  > s = 'this is extroot.bar'
-  > EOF
+  $ cat > $TESTTMP/extroot/bar.py <<NO_CHECK_EOF
+  > s = b'this is extroot.bar'
+  > NO_CHECK_EOF
   $ mkdir $TESTTMP/extroot/sub1
-  $ cat > $TESTTMP/extroot/sub1/__init__.py <<EOF
-  > s = 'this is extroot.sub1.__init__'
-  > EOF
-  $ cat > $TESTTMP/extroot/sub1/baz.py <<EOF
-  > s = 'this is extroot.sub1.baz'
-  > EOF
-  $ cat > $TESTTMP/extroot/__init__.py <<EOF
-  > s = 'this is extroot.__init__'
-  > import foo
+  $ cat > $TESTTMP/extroot/sub1/__init__.py <<NO_CHECK_EOF
+  > s = b'this is extroot.sub1.__init__'
+  > NO_CHECK_EOF
+  $ cat > $TESTTMP/extroot/sub1/baz.py <<NO_CHECK_EOF
+  > s = b'this is extroot.sub1.baz'
+  > NO_CHECK_EOF
+  $ cat > $TESTTMP/extroot/__init__.py <<NO_CHECK_EOF
+  > from __future__ import absolute_import
+  > s = b'this is extroot.__init__'
+  > from . import foo
   > def extsetup(ui):
-  >     ui.write('(extroot) ', foo.func(), '\n')
+  >     ui.write(b'(extroot) ', foo.func(), b'\n')
   >     ui.flush()
-  > EOF
+  > NO_CHECK_EOF
 
-  $ cat > $TESTTMP/extroot/foo.py <<EOF
+  $ cat > $TESTTMP/extroot/foo.py <<NO_CHECK_EOF
   > # test absolute import
   > buf = []
   > def func():
   >     # "not locals" case
   >     import extroot.bar
-  >     buf.append('import extroot.bar in func(): %s' % extroot.bar.s)
-  >     return '\n(extroot) '.join(buf)
-  > # "fromlist == ('*',)" case
+  >     buf.append(b'import extroot.bar in func(): %s' % extroot.bar.s)
+  >     return b'\n(extroot) '.join(buf)
+  > # b"fromlist == ('*',)" case
   > from extroot.bar import *
-  > buf.append('from extroot.bar import *: %s' % s)
+  > buf.append(b'from extroot.bar import *: %s' % s)
   > # "not fromlist" and "if '.' in name" case
   > import extroot.sub1.baz
-  > buf.append('import extroot.sub1.baz: %s' % extroot.sub1.baz.s)
+  > buf.append(b'import extroot.sub1.baz: %s' % extroot.sub1.baz.s)
   > # "not fromlist" and NOT "if '.' in name" case
   > import extroot
-  > buf.append('import extroot: %s' % extroot.s)
+  > buf.append(b'import extroot: %s' % extroot.s)
   > # NOT "not fromlist" and NOT "level != -1" case
   > from extroot.bar import s
-  > buf.append('from extroot.bar import s: %s' % s)
-  > EOF
+  > buf.append(b'from extroot.bar import s: %s' % s)
+  > NO_CHECK_EOF
   $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}; hg --config extensions.extroot=$TESTTMP/extroot root)
   (extroot) from extroot.bar import *: this is extroot.bar
   (extroot) import extroot.sub1.baz: this is extroot.sub1.baz
@@ -265,10 +290,10 @@ Check absolute/relative import of extension specific modules
   (extroot) import extroot.bar in func(): this is extroot.bar
   $TESTTMP/a
 
-#if no-py3k
+#if no-py3
   $ rm "$TESTTMP"/extroot/foo.*
   $ rm -Rf "$TESTTMP/extroot/__pycache__"
-  $ cat > $TESTTMP/extroot/foo.py <<EOF
+  $ cat > $TESTTMP/extroot/foo.py <<NO_CHECK_EOF
   > # test relative import
   > buf = []
   > def func():
@@ -288,7 +313,7 @@ Check absolute/relative import of extension specific modules
   > # NOT "not fromlist" and NOT "level != -1" case
   > from bar import s
   > buf.append('from bar import s: %s' % s)
-  > EOF
+  > NO_CHECK_EOF
   $ hg --config extensions.extroot=$TESTTMP/extroot root
   (extroot) from bar import *: this is extroot.bar
   (extroot) import sub1.baz: this is extroot.sub1.baz
@@ -320,16 +345,16 @@ feature.
   $ touch $TESTTMP/extlibroot/lsub1/__init__.py
   $ touch $TESTTMP/extlibroot/lsub1/lsub2/__init__.py
 
-  $ cat > $TESTTMP/extlibroot/lsub1/lsub2/called.py <<EOF
+  $ cat > $TESTTMP/extlibroot/lsub1/lsub2/called.py <<NO_CHECK_EOF
   > def func():
-  >     return "this is extlibroot.lsub1.lsub2.called.func()"
-  > EOF
-  $ cat > $TESTTMP/extlibroot/lsub1/lsub2/unused.py <<EOF
+  >     return b"this is extlibroot.lsub1.lsub2.called.func()"
+  > NO_CHECK_EOF
+  $ cat > $TESTTMP/extlibroot/lsub1/lsub2/unused.py <<NO_CHECK_EOF
   > raise Exception("extlibroot.lsub1.lsub2.unused is loaded unintentionally")
-  > EOF
-  $ cat > $TESTTMP/extlibroot/lsub1/lsub2/used.py <<EOF
-  > detail = "this is extlibroot.lsub1.lsub2.used"
-  > EOF
+  > NO_CHECK_EOF
+  $ cat > $TESTTMP/extlibroot/lsub1/lsub2/used.py <<NO_CHECK_EOF
+  > detail = b"this is extlibroot.lsub1.lsub2.used"
+  > NO_CHECK_EOF
 
 Setup sub-package of "external library", which causes instantiation of
 demandmod in "recurse down the module chain" code path. Relative
@@ -337,45 +362,45 @@ importing with "absolute_import" feature isn't tested, because "level
 >=1 " doesn't cause instantiation of demandmod.
 
   $ mkdir -p $TESTTMP/extlibroot/recursedown/abs
-  $ cat > $TESTTMP/extlibroot/recursedown/abs/used.py <<EOF
-  > detail = "this is extlibroot.recursedown.abs.used"
-  > EOF
-  $ cat > $TESTTMP/extlibroot/recursedown/abs/__init__.py <<EOF
+  $ cat > $TESTTMP/extlibroot/recursedown/abs/used.py <<NO_CHECK_EOF
+  > detail = b"this is extlibroot.recursedown.abs.used"
+  > NO_CHECK_EOF
+  $ cat > $TESTTMP/extlibroot/recursedown/abs/__init__.py <<NO_CHECK_EOF
   > from __future__ import absolute_import
   > from extlibroot.recursedown.abs.used import detail
-  > EOF
+  > NO_CHECK_EOF
 
   $ mkdir -p $TESTTMP/extlibroot/recursedown/legacy
-  $ cat > $TESTTMP/extlibroot/recursedown/legacy/used.py <<EOF
-  > detail = "this is extlibroot.recursedown.legacy.used"
-  > EOF
-  $ cat > $TESTTMP/extlibroot/recursedown/legacy/__init__.py <<EOF
+  $ cat > $TESTTMP/extlibroot/recursedown/legacy/used.py <<NO_CHECK_EOF
+  > detail = b"this is extlibroot.recursedown.legacy.used"
+  > NO_CHECK_EOF
+  $ cat > $TESTTMP/extlibroot/recursedown/legacy/__init__.py <<NO_CHECK_EOF
   > # legacy style (level == -1) import
   > from extlibroot.recursedown.legacy.used import detail
-  > EOF
+  > NO_CHECK_EOF
 
-  $ cat > $TESTTMP/extlibroot/recursedown/__init__.py <<EOF
+  $ cat > $TESTTMP/extlibroot/recursedown/__init__.py <<NO_CHECK_EOF
   > from __future__ import absolute_import
   > from extlibroot.recursedown.abs import detail as absdetail
   > from .legacy import detail as legacydetail
-  > EOF
+  > NO_CHECK_EOF
 
 Setup package that re-exports an attribute of its submodule as the same
 name. This leaves 'shadowing.used' pointing to 'used.detail', but still
 the submodule 'used' should be somehow accessible. (issue5617)
 
   $ mkdir -p $TESTTMP/extlibroot/shadowing
-  $ cat > $TESTTMP/extlibroot/shadowing/used.py <<EOF
-  > detail = "this is extlibroot.shadowing.used"
-  > EOF
-  $ cat > $TESTTMP/extlibroot/shadowing/proxied.py <<EOF
+  $ cat > $TESTTMP/extlibroot/shadowing/used.py <<NO_CHECK_EOF
+  > detail = b"this is extlibroot.shadowing.used"
+  > NO_CHECK_EOF
+  $ cat > $TESTTMP/extlibroot/shadowing/proxied.py <<NO_CHECK_EOF
   > from __future__ import absolute_import
   > from extlibroot.shadowing.used import detail
-  > EOF
-  $ cat > $TESTTMP/extlibroot/shadowing/__init__.py <<EOF
+  > NO_CHECK_EOF
+  $ cat > $TESTTMP/extlibroot/shadowing/__init__.py <<NO_CHECK_EOF
   > from __future__ import absolute_import
   > from .used import detail as used
-  > EOF
+  > NO_CHECK_EOF
 
 Setup extension local modules to be imported with "absolute_import"
 feature.
@@ -384,33 +409,35 @@ feature.
   $ touch $TESTTMP/absextroot/xsub1/__init__.py
   $ touch $TESTTMP/absextroot/xsub1/xsub2/__init__.py
 
-  $ cat > $TESTTMP/absextroot/xsub1/xsub2/called.py <<EOF
+  $ cat > $TESTTMP/absextroot/xsub1/xsub2/called.py <<NO_CHECK_EOF
   > def func():
-  >     return "this is absextroot.xsub1.xsub2.called.func()"
-  > EOF
-  $ cat > $TESTTMP/absextroot/xsub1/xsub2/unused.py <<EOF
+  >     return b"this is absextroot.xsub1.xsub2.called.func()"
+  > NO_CHECK_EOF
+  $ cat > $TESTTMP/absextroot/xsub1/xsub2/unused.py <<NO_CHECK_EOF
   > raise Exception("absextroot.xsub1.xsub2.unused is loaded unintentionally")
-  > EOF
-  $ cat > $TESTTMP/absextroot/xsub1/xsub2/used.py <<EOF
-  > detail = "this is absextroot.xsub1.xsub2.used"
-  > EOF
+  > NO_CHECK_EOF
+  $ cat > $TESTTMP/absextroot/xsub1/xsub2/used.py <<NO_CHECK_EOF
+  > detail = b"this is absextroot.xsub1.xsub2.used"
+  > NO_CHECK_EOF
 
 Setup extension local modules to examine whether demand importing
 works as expected in "level > 1" case.
 
-  $ cat > $TESTTMP/absextroot/relimportee.py <<EOF
-  > detail = "this is absextroot.relimportee"
-  > EOF
-  $ cat > $TESTTMP/absextroot/xsub1/xsub2/relimporter.py <<EOF
+  $ cat > $TESTTMP/absextroot/relimportee.py <<NO_CHECK_EOF
+  > detail = b"this is absextroot.relimportee"
+  > NO_CHECK_EOF
+  $ cat > $TESTTMP/absextroot/xsub1/xsub2/relimporter.py <<NO_CHECK_EOF
   > from __future__ import absolute_import
+  > from mercurial import pycompat
   > from ... import relimportee
-  > detail = "this relimporter imports %r" % (relimportee.detail)
-  > EOF
+  > detail = b"this relimporter imports %r" % (
+  >     pycompat.bytestr(relimportee.detail))
+  > NO_CHECK_EOF
 
 Setup modules, which actually import extension local modules at
 runtime.
 
-  $ cat > $TESTTMP/absextroot/absolute.py << EOF
+  $ cat > $TESTTMP/absextroot/absolute.py << NO_CHECK_EOF
   > from __future__ import absolute_import
   > 
   > # import extension local modules absolutely (level = 0)
@@ -422,9 +449,9 @@ runtime.
   >     result.append(used.detail)
   >     result.append(func())
   >     return result
-  > EOF
+  > NO_CHECK_EOF
 
-  $ cat > $TESTTMP/absextroot/relative.py << EOF
+  $ cat > $TESTTMP/absextroot/relative.py << NO_CHECK_EOF
   > from __future__ import absolute_import
   > 
   > # import extension local modules relatively (level == 1)
@@ -440,11 +467,11 @@ runtime.
   >     result.append(func())
   >     result.append(relimporter.detail)
   >     return result
-  > EOF
+  > NO_CHECK_EOF
 
 Setup main procedure of extension.
 
-  $ cat > $TESTTMP/absextroot/__init__.py <<EOF
+  $ cat > $TESTTMP/absextroot/__init__.py <<NO_CHECK_EOF
   > from __future__ import absolute_import
   > from mercurial import registrar
   > cmdtable = {}
@@ -458,12 +485,12 @@ Setup main procedure of extension.
   > @command(b'showabsolute', [], norepo=True)
   > def showabsolute(ui, *args, **opts):
   >     from absextroot import absolute
-  >     ui.write(b'ABS: %s\n' % '\nABS: '.join(absolute.getresult()))
+  >     ui.write(b'ABS: %s\n' % b'\nABS: '.join(absolute.getresult()))
   > 
   > @command(b'showrelative', [], norepo=True)
   > def showrelative(ui, *args, **opts):
   >     from . import relative
-  >     ui.write(b'REL: %s\n' % '\nREL: '.join(relative.getresult()))
+  >     ui.write(b'REL: %s\n' % b'\nREL: '.join(relative.getresult()))
   > 
   > # import modules from external library
   > from extlibroot.lsub1.lsub2 import used as lused, unused as lunused
@@ -478,8 +505,8 @@ Setup main procedure of extension.
   >     result.append(absdetail)
   >     result.append(legacydetail)
   >     result.append(proxied.detail)
-  >     ui.write(b'LIB: %s\n' % '\nLIB: '.join(result))
-  > EOF
+  >     ui.write(b'LIB: %s\n' % b'\nLIB: '.join(result))
+  > NO_CHECK_EOF
 
 Examine module importing.
 
@@ -509,11 +536,11 @@ See also issue5208 for detail about example case on Python 3.x.
   $ f -q $TESTTMP/extlibroot/lsub1/lsub2/notexist.py
   $TESTTMP/extlibroot/lsub1/lsub2/notexist.py: file not found
 
-  $ cat > $TESTTMP/notexist.py <<EOF
+  $ cat > $TESTTMP/notexist.py <<NO_CHECK_EOF
   > text = 'notexist.py at root is loaded unintentionally\n'
-  > EOF
+  > NO_CHECK_EOF
 
-  $ cat > $TESTTMP/checkrelativity.py <<EOF
+  $ cat > $TESTTMP/checkrelativity.py <<NO_CHECK_EOF
   > from mercurial import registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
@@ -528,11 +555,15 @@ See also issue5208 for detail about example case on Python 3.x.
   >         return 1 # unintentional success
   >     except ImportError:
   >         pass # intentional failure
-  > EOF
+  > NO_CHECK_EOF
 
   $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}; hg --config extensions.checkrelativity=$TESTTMP/checkrelativity.py checkrelativity)
 
 #endif
+
+(Here, module importing tests are finished. Therefore, use other than
+NO_CHECK_* limit mark for heredoc python files, in order to apply
+import-checker.py or so on their contents)
 
 Make sure a broken uisetup doesn't globally break hg:
   $ cat > $TESTTMP/baduisetup.py <<EOF
@@ -547,8 +578,8 @@ Even though the extension fails during uisetup, hg is still basically usable:
       uisetup(ui)
     File "$TESTTMP/baduisetup.py", line 2, in uisetup
       1/0
-  ZeroDivisionError: integer division or modulo by zero
-  *** failed to set up extension baduisetup: integer division or modulo by zero
+  ZeroDivisionError: * by zero (glob)
+  *** failed to set up extension baduisetup: * by zero (glob)
   Mercurial Distributed SCM (version *) (glob)
   (see https://mercurial-scm.org for more information)
   
@@ -603,6 +634,8 @@ hide outer repo
   
   options:
   
+   -T --template TEMPLATE display with template
+  
   (some details hidden, use --verbose to show complete help)
 
 
@@ -613,7 +646,7 @@ hide outer repo
   
   options:
   
-   -T --template TEMPLATE display with template (EXPERIMENTAL)
+   -T --template TEMPLATE display with template
   
   global options ([+] can be repeated):
   
@@ -652,7 +685,7 @@ hide outer repo
   
   options:
   
-   -T --template TEMPLATE display with template (EXPERIMENTAL)
+   -T --template TEMPLATE display with template
   
   global options ([+] can be repeated):
   
@@ -1229,11 +1262,12 @@ Broken disabled extension and command:
 
   $ mkdir hgext
   $ echo > hgext/__init__.py
-  $ cat > hgext/broken.py <<EOF
+  $ cat > hgext/broken.py <<NO_CHECK_EOF
   > "broken extension'
-  > EOF
+  > NO_CHECK_EOF
   $ cat > path.py <<EOF
-  > import os, sys
+  > import os
+  > import sys
   > sys.path.insert(0, os.environ['HGEXTPATH'])
   > EOF
   $ HGEXTPATH=`pwd`
@@ -1254,7 +1288,7 @@ Broken disabled extension and command:
   > def g():
   >     pass
   > EOF
-  $ hg --config extensions.path=./path.py help foo > /dev/null
+  $ hg --config extensions.path=./path.py help foo
   abort: no such help topic: foo
   (try 'hg help --keyword foo')
   [255]
@@ -1540,6 +1574,7 @@ Commands handling multiple repositories at a time should invoke only
   reposetup() for $TESTTMP/reposetup-test/src
   reposetup() for $TESTTMP/reposetup-test/src (chg !)
 
+#if no-extraextensions
   $ hg --cwd src debugextensions
   reposetup() for $TESTTMP/reposetup-test/src
   dodo (untested!)
@@ -1547,6 +1582,7 @@ Commands handling multiple repositories at a time should invoke only
   mq
   reposetuptest (untested!)
   strip
+#endif
 
   $ hg clone -U src clone-dst1
   reposetup() for $TESTTMP/reposetup-test/src
@@ -1683,6 +1719,7 @@ Prohibit registration of commands that don't use @command (issue5137)
   *** failed to import extension deprecatedcmd from $TESTTMP/deprecated/deprecatedcmd.py: missing attributes: norepo, optionalrepo, inferrepo
   *** (use @command decorator to register 'deprecatedcmd')
   hg: unknown command 'deprecatedcmd'
+  (use 'hg help' for a list of commands)
   [255]
 
  the extension shouldn't be loaded at all so the mq works:
@@ -1733,19 +1770,21 @@ Prohibit the use of unicode strings as the default value of options
   $ hg init $TESTTMP/opt-unicode-default
 
   $ cat > $TESTTMP/test_unicode_default_value.py << EOF
+  > from __future__ import print_function
   > from mercurial import registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > @command(b'dummy', [(b'', b'opt', u'value', u'help')], 'ext [OPTIONS]')
   > def ext(*args, **opts):
-  >     print(opts[b'opt'])
+  >     print(opts[b'opt'], flush=True)
   > EOF
+  $ $PYTHON $TESTTMP/unflush.py $TESTTMP/test_unicode_default_value.py
   $ cat > $TESTTMP/opt-unicode-default/.hg/hgrc << EOF
   > [extensions]
   > test_unicode_default_value = $TESTTMP/test_unicode_default_value.py
   > EOF
   $ hg -R $TESTTMP/opt-unicode-default dummy
-  *** failed to import extension test_unicode_default_value from $TESTTMP/test_unicode_default_value.py: unicode u'value' found in cmdtable.dummy
+  *** failed to import extension test_unicode_default_value from $TESTTMP/test_unicode_default_value.py: unicode *'value' found in cmdtable.dummy (glob)
   *** (use b'' to make it byte string)
   hg: unknown command 'dummy'
   (did you mean summary?)

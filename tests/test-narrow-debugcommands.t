@@ -1,10 +1,10 @@
   $ . "$TESTDIR/narrow-library.sh"
   $ hg init repo
   $ cd repo
-  $ cat << EOF > .hg/narrowspec
-  > [includes]
+  $ cat << EOF > .hg/store/narrowspec
+  > [include]
   > path:foo
-  > [excludes]
+  > [exclude]
   > EOF
   $ echo treemanifest >> .hg/requires
   $ echo narrowhg-experimental >> .hg/requires

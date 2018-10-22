@@ -150,7 +150,7 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
     if repo:
         cwd = repo.root
     else:
-        cwd = pycompat.getcwd()
+        cwd = encoding.getcwd()
     r = ui.system(cmd, environ=env, cwd=cwd, blockedtag='exthook-%s' % (name,))
 
     duration = util.timer() - starttime

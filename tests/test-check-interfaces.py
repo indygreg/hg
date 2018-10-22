@@ -28,6 +28,7 @@ from mercurial import (
     manifest,
     pycompat,
     repository,
+    revlog,
     sshpeer,
     statichttprepo,
     ui as uimod,
@@ -98,17 +99,14 @@ class dummypipe(object):
 def main():
     ui = uimod.ui()
     # Needed so we can open a local repo with obsstore without a warning.
-    ui.setconfig('experimental', 'evolution.createmarkers', True)
+    ui.setconfig(b'experimental', b'evolution.createmarkers', True)
 
     checkzobject(badpeer())
 
     ziverify.verifyClass(repository.ipeerbase, httppeer.httppeer)
     checkzobject(httppeer.httppeer(None, None, None, dummyopener(), None, None))
 
-    ziverify.verifyClass(repository.ipeerconnection,
-                         httppeer.httpv2peer)
-    ziverify.verifyClass(repository.ipeercapabilities,
-                         httppeer.httpv2peer)
+    ziverify.verifyClass(repository.ipeerv2, httppeer.httpv2peer)
     checkzobject(httppeer.httpv2peer(None, b'', b'', None, None, None))
 
     ziverify.verifyClass(repository.ipeerbase,
@@ -140,9 +138,11 @@ def main():
     ziverify.verifyClass(repository.ipeerbase, unionrepo.unionpeer)
     checkzobject(unionrepo.unionpeer(dummyrepo()))
 
-    ziverify.verifyClass(repository.completelocalrepository,
+    ziverify.verifyClass(repository.ilocalrepositorymain,
                          localrepo.localrepository)
-    repo = localrepo.localrepository(ui, rootdir)
+    ziverify.verifyClass(repository.ilocalrepositoryfilestorage,
+                         localrepo.revlogfilestorage)
+    repo = localrepo.makelocalrepository(ui, rootdir)
     checkzobject(repo)
 
     ziverify.verifyClass(wireprototypes.baseprotocolhandler,
@@ -175,13 +175,14 @@ def main():
     ziverify.verifyClass(repository.imanifestrevisionwritable,
                          manifest.memtreemanifestctx)
     ziverify.verifyClass(repository.imanifestlog, manifest.manifestlog)
+    ziverify.verifyClass(repository.imanifeststorage, manifest.manifestrevlog)
 
     vfs = vfsmod.vfs(b'.')
     fl = filelog.filelog(vfs, b'dummy.i')
     checkzobject(fl, allowextra=True)
 
     # Conforms to imanifestlog.
-    ml = manifest.manifestlog(vfs, repo)
+    ml = manifest.manifestlog(vfs, repo, manifest.manifestrevlog(repo.svfs))
     checkzobject(ml)
     checkzobject(repo.manifestlog)
 
@@ -195,5 +196,27 @@ def main():
 
     # Conforms to imanifestdict.
     checkzobject(mctx.read())
+
+    mrl = manifest.manifestrevlog(vfs)
+    checkzobject(mrl)
+
+    ziverify.verifyClass(repository.irevisiondelta,
+                         revlog.revlogrevisiondelta)
+
+    rd = revlog.revlogrevisiondelta(
+        node=b'',
+        p1node=b'',
+        p2node=b'',
+        basenode=b'',
+        linknode=b'',
+        flags=b'',
+        baserevisionsize=None,
+        revision=b'',
+        delta=None)
+    checkzobject(rd)
+
+    ziverify.verifyClass(repository.iverifyproblem,
+                         revlog.revlogproblem)
+    checkzobject(revlog.revlogproblem())
 
 main()

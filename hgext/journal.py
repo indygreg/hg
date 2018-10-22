@@ -440,7 +440,8 @@ _ignoreopts = ('no-merges', 'graph')
         ('', 'all', None, 'show history for all names'),
         ('c', 'commits', None, 'show commit metadata'),
     ] + [opt for opt in cmdutil.logopts if opt[1] not in _ignoreopts],
-    '[OPTION]... [BOOKMARKNAME]')
+    '[OPTION]... [BOOKMARKNAME]',
+    helpcategory=command.CATEGORY_CHANGE_ORGANIZATION)
 def journal(ui, repo, *args, **opts):
     """show the previous position of bookmarks and the working copy
 
@@ -477,6 +478,8 @@ def journal(ui, repo, *args, **opts):
         name = args[0]
 
     fm = ui.formatter('journal', opts)
+    def formatnodes(nodes):
+        return fm.formatlist(map(fm.hexfunc, nodes), name='node', sep=',')
 
     if opts.get("template") != "json":
         if name is None:
@@ -491,31 +494,32 @@ def journal(ui, repo, *args, **opts):
     for count, entry in enumerate(repo.journal.filtered(name=name)):
         if count == limit:
             break
-        newhashesstr = fm.formatlist(map(fm.hexfunc, entry.newhashes),
-                                     name='node', sep=',')
-        oldhashesstr = fm.formatlist(map(fm.hexfunc, entry.oldhashes),
-                                     name='node', sep=',')
 
         fm.startitem()
-        fm.condwrite(ui.verbose, 'oldhashes', '%s -> ', oldhashesstr)
-        fm.write('newhashes', '%s', newhashesstr)
+        fm.condwrite(ui.verbose, 'oldnodes', '%s -> ',
+                     formatnodes(entry.oldhashes))
+        fm.write('newnodes', '%s', formatnodes(entry.newhashes))
         fm.condwrite(ui.verbose, 'user', ' %-8s', entry.user)
         fm.condwrite(
             opts.get('all') or name.startswith('re:'),
             'name', '  %-8s', entry.name)
 
-        timestring = fm.formatdate(entry.timestamp, '%Y-%m-%d %H:%M %1%2')
-        fm.condwrite(ui.verbose, 'date', ' %s', timestring)
+        fm.condwrite(ui.verbose, 'date', ' %s',
+                     fm.formatdate(entry.timestamp, '%Y-%m-%d %H:%M %1%2'))
         fm.write('command', '  %s\n', entry.command)
 
         if opts.get("commits"):
-            displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
+            if fm.isplain():
+                displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
+            else:
+                displayer = logcmdutil.changesetformatter(
+                    ui, repo, fm.nested('changesets'), diffopts=opts)
             for hash in entry.newhashes:
                 try:
                     ctx = repo[hash]
                     displayer.show(ctx)
                 except error.RepoLookupError as e:
-                    fm.write('repolookuperror', "%s\n\n", pycompat.bytestr(e))
+                    fm.plain("%s\n\n" % pycompat.bytestr(e))
             displayer.close()
 
     fm.end()

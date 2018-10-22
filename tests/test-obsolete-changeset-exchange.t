@@ -51,7 +51,7 @@ Push it. The bundle should not refer to the extinct changeset.
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 2 files
 
 Adding a changeset going extinct locally
 ------------------------------------------
@@ -85,6 +85,7 @@ check that bundle is not affected
   adding manifests
   adding file changes
   added 1 changesets with 0 changes to 1 files (+1 heads)
+  (1 other changesets obsolete on arrival)
   (run 'hg heads' to see heads)
 
 check-that bundle can contain markers:

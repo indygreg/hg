@@ -386,7 +386,7 @@ class histeditstate(object):
         rules = []
         rulelen = int(lines[index])
         index += 1
-        for i in xrange(rulelen):
+        for i in pycompat.xrange(rulelen):
             ruleaction = lines[index]
             index += 1
             rule = lines[index]
@@ -397,7 +397,7 @@ class histeditstate(object):
         replacements = []
         replacementlen = int(lines[index])
         index += 1
-        for i in xrange(replacementlen):
+        for i in pycompat.xrange(replacementlen):
             replacement = lines[index]
             original = node.bin(replacement[:40])
             succ = [node.bin(replacement[i:i + 40]) for i in
@@ -830,8 +830,7 @@ class base(histeditaction):
 
     def run(self):
         if self.repo['.'].node() != self.node:
-            mergemod.update(self.repo, self.node, False, True)
-            #                                     branchmerge, force)
+            mergemod.update(self.repo, self.node, branchmerge=False, force=True)
         return self.continueclean()
 
     def continuedirty(self):
@@ -910,7 +909,7 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
     if not outgoing.missing:
         raise error.Abort(_('no outgoing ancestors'))
     roots = list(repo.revs("roots(%ln)", outgoing.missing))
-    if 1 < len(roots):
+    if len(roots) > 1:
         msg = _('there are ambiguous outgoing revisions')
         hint = _("see 'hg help histedit' for more detail")
         raise error.Abort(msg, hint=hint)
@@ -929,7 +928,8 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
       _('force outgoing even for unrelated repositories')),
      ('r', 'rev', [], _('first revision to be edited'), _('REV'))] +
     cmdutil.formatteropts,
-     _("[OPTIONS] ([ANCESTOR] | --outgoing [URL])"))
+     _("[OPTIONS] ([ANCESTOR] | --outgoing [URL])"),
+    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT)
 def histedit(ui, repo, *freeargs, **opts):
     """interactively edit changeset history
 
@@ -1084,7 +1084,7 @@ def _validateargs(ui, repo, state, freeargs, opts, goal, rules, revs):
             raise error.Abort(_('only --commands argument allowed with '
                                '--edit-plan'))
     else:
-        if os.path.exists(os.path.join(repo.path, 'histedit-state')):
+        if state.inprogress():
             raise error.Abort(_('history edit already in progress, try '
                                '--continue or --abort'))
         if outg:
@@ -1202,7 +1202,8 @@ def _finishhistedit(ui, repo, state, fm):
         mapping = {}
 
     for n in tmpnodes:
-        mapping[n] = ()
+        if n in repo:
+            mapping[n] = ()
 
     # remove entries about unknown nodes
     nodemap = repo.unfiltered().changelog.nodemap
@@ -1624,8 +1625,8 @@ def cleanupnode(ui, repo, nodes, nobackup=False):
 def stripwrapper(orig, ui, repo, nodelist, *args, **kwargs):
     if isinstance(nodelist, str):
         nodelist = [nodelist]
-    if os.path.exists(os.path.join(repo.path, 'histedit-state')):
-        state = histeditstate(repo)
+    state = histeditstate(repo)
+    if state.inprogress():
         state.read()
         histedit_nodes = {action.node for action
                           in state.actions if action.node}
@@ -1638,9 +1639,9 @@ def stripwrapper(orig, ui, repo, nodelist, *args, **kwargs):
 extensions.wrapfunction(repair, 'strip', stripwrapper)
 
 def summaryhook(ui, repo):
-    if not os.path.exists(repo.vfs.join('histedit-state')):
-        return
     state = histeditstate(repo)
+    if not state.inprogress():
+        return
     state.read()
     if state.actions:
         # i18n: column positioning for "hg summary"

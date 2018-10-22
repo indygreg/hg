@@ -1,0 +1,20 @@
+[package]
+name = "chg"
+version = "0.1.0"
+authors = ["Yuya Nishihara <yuya@tcha.org>"]
+description = "Client for Mercurial command server with cHg extension"
+license = "GPL-2.0+"
+
+[dependencies]
+bytes = "0.4"
+futures = "0.1"
+libc = "0.2"
+log = { version = "0.4", features = ["std"] }
+tokio = "0.1"
+tokio-hglib = "0.2"
+# TODO: "^0.2.3" once released. we need AsRawFd support.
+tokio-process = { git = "https://github.com/alexcrichton/tokio-process" }
+tokio-timer = "0.2"
+
+[build-dependencies]
+cc = "1.0"

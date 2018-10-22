@@ -118,14 +118,13 @@ def lfconvert(ui, src, dest, *pats, **opts):
                 matcher = None
 
             lfiletohash = {}
-            progress = ui.makeprogress(_('converting revisions'),
-                                       unit=_('revisions'),
-                                       total=rsrc['tip'].rev())
-            for ctx in ctxs:
-                progress.update(ctx.rev())
-                _lfconvert_addchangeset(rsrc, rdst, ctx, revmap,
-                    lfiles, normalfiles, matcher, size, lfiletohash)
-            progress.complete()
+            with ui.makeprogress(_('converting revisions'),
+                                 unit=_('revisions'),
+                                 total=rsrc['tip'].rev()) as progress:
+                for ctx in ctxs:
+                    progress.update(ctx.rev())
+                    _lfconvert_addchangeset(rsrc, rdst, ctx, revmap,
+                        lfiles, normalfiles, matcher, size, lfiletohash)
 
             if rdst.wvfs.exists(lfutil.shortname):
                 rdst.wvfs.rmtree(lfutil.shortname)
@@ -210,6 +209,10 @@ def _lfconvert_addchangeset(rsrc, rdst, ctx, revmap, lfiles, normalfiles,
             if f in ctx.manifest():
                 fctx = ctx.filectx(f)
                 renamed = fctx.renamed()
+                if renamed is None:
+                    # the code below assumes renamed to be a boolean or a list
+                    # and won't quite work with the value None
+                    renamed = False
                 renamedlfile = renamed and renamed[0] in lfiles
                 islfile |= renamedlfile
                 if 'l' in fctx.flags():
@@ -370,18 +373,17 @@ def uploadlfiles(ui, rsrc, rdst, files):
     files = [h for h in files if not retval[h]]
     ui.debug("%d largefiles need to be uploaded\n" % len(files))
 
-    progress = ui.makeprogress(_('uploading largefiles'), unit=_('files'),
-                               total=len(files))
-    for hash in files:
-        progress.update(at)
-        source = lfutil.findfile(rsrc, hash)
-        if not source:
-            raise error.Abort(_('largefile %s missing from store'
-                               ' (needs to be uploaded)') % hash)
-        # XXX check for errors here
-        store.put(source, hash)
-        at += 1
-    progress.complete()
+    with ui.makeprogress(_('uploading largefiles'), unit=_('files'),
+                         total=len(files)) as progress:
+        for hash in files:
+            progress.update(at)
+            source = lfutil.findfile(rsrc, hash)
+            if not source:
+                raise error.Abort(_('largefile %s missing from store'
+                                   ' (needs to be uploaded)') % hash)
+            # XXX check for errors here
+            store.put(source, hash)
+            at += 1
 
 def verifylfiles(ui, repo, all=False, contents=False):
     '''Verify that every largefile revision in the current changeset

@@ -1,6 +1,6 @@
   $ cat << EOF >> $HGRCPATH
   > [ui]
-  > ssh=$PYTHON "$TESTDIR/dummyssh"
+  > ssh="$PYTHON" "$TESTDIR/dummyssh"
   > EOF
 
 Set up repo
@@ -341,7 +341,7 @@ Stripping and recovering changes should work
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 51cfd7b1e13b
+  new changesets 51cfd7b1e13b (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg --config extensions.strip= strip tip
   saved backup bundle to $TESTTMP/repo-mixed/.hg/strip-backup/*-backup.hg (glob)
@@ -410,7 +410,7 @@ Pushing to an empty repo works
   checking directory manifests
   crosschecking files in changesets and manifests
   checking files
-  10 files, 11 changesets, 15 total revisions
+  checked 11 changesets with 15 changes to 10 files
 
 Create deeper repo with tree manifests.
 
@@ -578,7 +578,7 @@ Verify works
   checking directory manifests
   crosschecking files in changesets and manifests
   checking files
-  8 files, 4 changesets, 18 total revisions
+  checked 4 changesets with 18 changes to 8 files
 
 #if repofncache
 Dirlogs are included in fncache
@@ -636,7 +636,7 @@ Verify reports missing dirlog
    b/bar/orange/fly/housefly.txt@0: in changeset but not in manifest
    b/foo/apple/bees/flower.py@0: in changeset but not in manifest
   checking files
-  8 files, 4 changesets, 18 total revisions
+  checked 4 changesets with 18 changes to 8 files
   6 warnings encountered! (reporevlogstore !)
   9 integrity errors encountered!
   (first damaged changeset appears to be 0)
@@ -661,7 +661,7 @@ Verify reports missing dirlog entry
    (expected None)
   crosschecking files in changesets and manifests
   checking files
-  8 files, 4 changesets, 18 total revisions
+  checked 4 changesets with 18 changes to 8 files
   2 warnings encountered!
   8 integrity errors encountered!
   (first damaged changeset appears to be 2)
@@ -718,7 +718,7 @@ Verify passes.
   checking directory manifests
   crosschecking files in changesets and manifests
   checking files
-  8 files, 4 changesets, 18 total revisions
+  checked 4 changesets with 18 changes to 8 files
   $ cd ..
 
 #if reporevlogstore
@@ -766,7 +766,7 @@ Local clone with basicstore
   checking directory manifests
   crosschecking files in changesets and manifests
   checking files
-  8 files, 4 changesets, 18 total revisions
+  checked 4 changesets with 18 changes to 8 files
 
 Local clone with encodedstore
   $ hg clone -U deeprepo-encodedstore local-clone-encodedstore
@@ -776,7 +776,7 @@ Local clone with encodedstore
   checking directory manifests
   crosschecking files in changesets and manifests
   checking files
-  8 files, 4 changesets, 18 total revisions
+  checked 4 changesets with 18 changes to 8 files
 
 Local clone with fncachestore
   $ hg clone -U deeprepo local-clone-fncachestore
@@ -786,55 +786,49 @@ Local clone with fncachestore
   checking directory manifests
   crosschecking files in changesets and manifests
   checking files
-  8 files, 4 changesets, 18 total revisions
+  checked 4 changesets with 18 changes to 8 files
 
 Stream clone with basicstore
   $ hg clone --config experimental.changegroup3=True --stream -U \
   >   http://localhost:$HGPORT1 stream-clone-basicstore
   streaming all changes
-  18 files to transfer, * of data (glob)
+  21 files to transfer, * of data (glob)
   transferred * in * seconds (*) (glob)
-  searching for changes
-  no changes found
   $ hg -R stream-clone-basicstore verify
   checking changesets
   checking manifests
   checking directory manifests
   crosschecking files in changesets and manifests
   checking files
-  8 files, 4 changesets, 18 total revisions
+  checked 4 changesets with 18 changes to 8 files
 
 Stream clone with encodedstore
   $ hg clone --config experimental.changegroup3=True --stream -U \
   >   http://localhost:$HGPORT2 stream-clone-encodedstore
   streaming all changes
-  18 files to transfer, * of data (glob)
+  21 files to transfer, * of data (glob)
   transferred * in * seconds (*) (glob)
-  searching for changes
-  no changes found
   $ hg -R stream-clone-encodedstore verify
   checking changesets
   checking manifests
   checking directory manifests
   crosschecking files in changesets and manifests
   checking files
-  8 files, 4 changesets, 18 total revisions
+  checked 4 changesets with 18 changes to 8 files
 
 Stream clone with fncachestore
   $ hg clone --config experimental.changegroup3=True --stream -U \
   >   http://localhost:$HGPORT stream-clone-fncachestore
   streaming all changes
-  18 files to transfer, * of data (glob)
+  22 files to transfer, * of data (glob)
   transferred * in * seconds (*) (glob)
-  searching for changes
-  no changes found
   $ hg -R stream-clone-fncachestore verify
   checking changesets
   checking manifests
   checking directory manifests
   crosschecking files in changesets and manifests
   checking files
-  8 files, 4 changesets, 18 total revisions
+  checked 4 changesets with 18 changes to 8 files
 
 Packed bundle
   $ hg -R deeprepo debugcreatestreamclonebundle repo-packed.hg

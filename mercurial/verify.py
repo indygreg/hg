@@ -19,7 +19,6 @@ from . import (
     error,
     pycompat,
     revlog,
-    scmutil,
     util,
 )
 
@@ -35,17 +34,15 @@ def _normpath(f):
     return f
 
 class verifier(object):
-    # The match argument is always None in hg core, but e.g. the narrowhg
-    # extension will pass in a matcher here.
-    def __init__(self, repo, match=None):
+    def __init__(self, repo):
         self.repo = repo.unfiltered()
         self.ui = repo.ui
-        self.match = match or scmutil.matchall(repo)
+        self.match = repo.narrowmatch()
         self.badrevs = set()
         self.errors = 0
         self.warnings = 0
         self.havecl = len(repo.changelog) > 0
-        self.havemf = len(repo.manifestlog._revlog) > 0
+        self.havemf = len(repo.manifestlog.getstorage(b'')) > 0
         self.revlogv1 = repo.changelog.version != revlog.REVLOGV0
         self.lrugetctx = util.lrucachefunc(repo.__getitem__)
         self.refersmf = False
@@ -153,8 +150,8 @@ class verifier(object):
 
         totalfiles, filerevisions = self._verifyfiles(filenodes, filelinkrevs)
 
-        ui.status(_("%d files, %d changesets, %d total revisions\n") %
-                       (totalfiles, len(repo.changelog), filerevisions))
+        ui.status(_("checked %d changesets with %d changes to %d files\n") %
+                       (len(repo.changelog), filerevisions, totalfiles))
         if self.warnings:
             ui.warn(_("%d warnings encountered!\n") % self.warnings)
         if self.fncachewarned:
@@ -205,7 +202,7 @@ class verifier(object):
         ui = self.ui
         match = self.match
         mfl = self.repo.manifestlog
-        mf = mfl._revlog.dirlog(dir)
+        mf = mfl.getstorage(dir)
 
         if not dir:
             self.ui.status(_("checking manifests\n"))
@@ -341,6 +338,14 @@ class verifier(object):
             elif (size > 0 or not revlogv1) and f.startswith('data/'):
                 storefiles.add(_normpath(f))
 
+        state = {
+            # TODO this assumes revlog storage for changelog.
+            'expectedversion': self.repo.changelog.version & 0xFFFF,
+            'skipflags': self.skipflags,
+            # experimental config: censor.policy
+            'erroroncensored': ui.config('censor', 'policy') == 'abort',
+        }
+
         files = sorted(set(filenodes) | set(filelinkrevs))
         revisions = 0
         progress = ui.makeprogress(_('checking'), unit=_('files'),
@@ -360,7 +365,7 @@ class verifier(object):
 
             try:
                 fl = repo.file(f)
-            except error.RevlogError as e:
+            except error.StorageError as e:
                 self.err(lr, _("broken revlog! (%s)") % e, f)
                 continue
 
@@ -373,9 +378,28 @@ class verifier(object):
                                   ff)
                         self.fncachewarned = True
 
-            self.checklog(fl, f, lr)
+            if not len(fl) and (self.havecl or self.havemf):
+                self.err(lr, _("empty or missing %s") % f)
+            else:
+                # Guard against implementations not setting this.
+                state['skipread'] = set()
+                for problem in fl.verifyintegrity(state):
+                    if problem.node is not None:
+                        linkrev = fl.linkrev(fl.rev(problem.node))
+                    else:
+                        linkrev = None
+
+                    if problem.warning:
+                        self.warn(problem.warning)
+                    elif problem.error:
+                        self.err(linkrev if linkrev is not None else lr,
+                                 problem.error, f)
+                    else:
+                        raise error.ProgrammingError(
+                            'problem instance does not set warning or error '
+                            'attribute: %s' % problem.msg)
+
             seen = {}
-            rp = None
             for i in fl:
                 revisions += 1
                 n = fl.node(i)
@@ -386,75 +410,15 @@ class verifier(object):
                     else:
                         del filenodes[f][n]
 
-                # Verify contents. 4 cases to care about:
-                #
-                #   common: the most common case
-                #   rename: with a rename
-                #   meta: file content starts with b'\1\n', the metadata
-                #         header defined in filelog.py, but without a rename
-                #   ext: content stored externally
-                #
-                # More formally, their differences are shown below:
-                #
-                #                       | common | rename | meta  | ext
-                #  -------------------------------------------------------
-                #   flags()             | 0      | 0      | 0     | not 0
-                #   renamed()           | False  | True   | False | ?
-                #   rawtext[0:2]=='\1\n'| False  | True   | True  | ?
-                #
-                # "rawtext" means the raw text stored in revlog data, which
-                # could be retrieved by "revision(rev, raw=True)". "text"
-                # mentioned below is "revision(rev, raw=False)".
-                #
-                # There are 3 different lengths stored physically:
-                #  1. L1: rawsize, stored in revlog index
-                #  2. L2: len(rawtext), stored in revlog data
-                #  3. L3: len(text), stored in revlog data if flags==0, or
-                #     possibly somewhere else if flags!=0
-                #
-                # L1 should be equal to L2. L3 could be different from them.
-                # "text" may or may not affect commit hash depending on flag
-                # processors (see revlog.addflagprocessor).
-                #
-                #              | common  | rename | meta  | ext
-                # -------------------------------------------------
-                #    rawsize() | L1      | L1     | L1    | L1
-                #       size() | L1      | L2-LM  | L1(*) | L1 (?)
-                # len(rawtext) | L2      | L2     | L2    | L2
-                #    len(text) | L2      | L2     | L2    | L3
-                #  len(read()) | L2      | L2-LM  | L2-LM | L3 (?)
-                #
-                # LM:  length of metadata, depending on rawtext
-                # (*): not ideal, see comment in filelog.size
-                # (?): could be "- len(meta)" if the resolved content has
-                #      rename metadata
-                #
-                # Checks needed to be done:
-                #  1. length check: L1 == L2, in all cases.
-                #  2. hash check: depending on flag processor, we may need to
-                #     use either "text" (external), or "rawtext" (in revlog).
-                try:
-                    skipflags = self.skipflags
-                    if skipflags:
-                        skipflags &= fl.flags(i)
-                    if not skipflags:
-                        fl.read(n) # side effect: read content and do checkhash
-                        rp = fl.renamed(n)
-                    # the "L1 == L2" check
-                    l1 = fl.rawsize(i)
-                    l2 = len(fl.revision(n, raw=True))
-                    if l1 != l2:
-                        self.err(lr, _("unpacked size is %s, %s expected") %
-                                 (l2, l1), f)
-                except error.CensoredNodeError:
-                    # experimental config: censor.policy
-                    if ui.config("censor", "policy") == "abort":
-                        self.err(lr, _("censored file data"), f)
-                except Exception as inst:
-                    self.exc(lr, _("unpacking %s") % short(n), inst, f)
+                if n in state['skipread']:
+                    continue
 
                 # check renames
                 try:
+                    # This requires resolving fulltext (at least on revlogs). We
+                    # may want ``verifyintegrity()`` to pass a set of nodes with
+                    # rename metadata as an optimization.
+                    rp = fl.renamed(n)
                     if rp:
                         if lr is not None and ui.verbose:
                             ctx = lrugetctx(lr)

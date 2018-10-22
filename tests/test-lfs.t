@@ -1,5 +1,52 @@
 #require no-reposimplestore no-chg
 
+  $ hg init requirements
+  $ cd requirements
+
+# LFS not loaded by default.
+
+  $ hg config extensions
+  [1]
+
+# Adding lfs to requires file will auto-load lfs extension.
+
+  $ echo lfs >> .hg/requires
+  $ hg config extensions
+  extensions.lfs=
+
+# But only if there is no config entry for the extension already.
+
+  $ cat > .hg/hgrc << EOF
+  > [extensions]
+  > lfs=!
+  > EOF
+
+  $ hg config extensions
+  abort: repository requires features unknown to this Mercurial: lfs!
+  (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
+  [255]
+
+  $ cat > .hg/hgrc << EOF
+  > [extensions]
+  > lfs=
+  > EOF
+
+  $ hg config extensions
+  extensions.lfs=
+
+  $ cat > .hg/hgrc << EOF
+  > [extensions]
+  > lfs = missing.py
+  > EOF
+
+  $ hg config extensions
+  *** failed to import extension lfs from missing.py: [Errno 2] $ENOENT$: 'missing.py'
+  abort: repository requires features unknown to this Mercurial: lfs!
+  (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
+  [255]
+
+  $ cd ..
+
 # Initial setup
 
   $ cat >> $HGRCPATH << EOF
@@ -248,8 +295,6 @@ enabled adds the lfs requirement
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd repo7
-  $ hg config extensions --debug | grep lfs
-  $TESTTMP/repo7/.hg/hgrc:*: extensions.lfs= (glob)
   $ cat large
   LARGE-BECAUSE-IT-IS-MORE-THAN-30-BYTES
   $ cat small
@@ -260,8 +305,8 @@ enabled adds the lfs requirement
   $ hg --config extensions.share= share repo7 sharedrepo
   updating working directory
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ hg -R sharedrepo config extensions --debug | grep lfs
-  $TESTTMP/sharedrepo/.hg/hgrc:*: extensions.lfs= (glob)
+  $ grep lfs sharedrepo/.hg/requires
+  lfs
 
 # Test rename and status
 
@@ -282,9 +327,9 @@ enabled adds the lfs requirement
   $ hg commit -m b
   $ hg status
   >>> with open('a2', 'wb') as f:
-  ...     f.write(b'\1\nSTART-WITH-HG-FILELOG-METADATA')
+  ...     f.write(b'\1\nSTART-WITH-HG-FILELOG-METADATA') and None
   >>> with open('a1', 'wb') as f:
-  ...     f.write(b'\1\nMETA\n')
+  ...     f.write(b'\1\nMETA\n') and None
   $ hg commit -m meta
   $ hg status
   $ hg log -T '{rev}: {file_copies} | {file_dels} | {file_adds}\n'
@@ -486,7 +531,7 @@ enabled adds the lfs requirement
   > [lfs]
   > track=all()
   > EOF
-  $ $PYTHON <<'EOF'
+  $ "$PYTHON" <<'EOF'
   > def write(path, content):
   >     with open(path, 'wb') as f:
   >         f.write(content)
@@ -504,9 +549,13 @@ enabled adds the lfs requirement
    4 files changed, 2 insertions(+), 0 deletions(-)
   $ hg commit -m binarytest
   $ cat > $TESTTMP/dumpbinary.py << EOF
+  > from mercurial.utils import (
+  >     stringutil,
+  > )
   > def reposetup(ui, repo):
-  >     for n in 'abcd':
-  >         ui.write(('%s: binary=%s\n') % (n, repo['.'][n].isbinary()))
+  >     for n in (b'a', b'b', b'c', b'd'):
+  >         ui.write((b'%s: binary=%s\n')
+  >                   % (n, stringutil.pprint(repo[b'.'][n].isbinary())))
   > EOF
   $ hg --config extensions.dumpbinary=$TESTTMP/dumpbinary.py id --trace
   a: binary=True
@@ -634,23 +683,29 @@ absence doesn't cause an abort.)
   > # print raw revision sizes, flags, and hashes for certain files
   > import hashlib
   > from mercurial.node import short
-  > from mercurial import revlog
+  > from mercurial import (
+  >     pycompat,
+  >     revlog,
+  > )
+  > from mercurial.utils import (
+  >     stringutil,
+  > )
   > def hash(rawtext):
   >     h = hashlib.sha512()
   >     h.update(rawtext)
-  >     return h.hexdigest()[:4]
+  >     return pycompat.sysbytes(h.hexdigest()[:4])
   > def reposetup(ui, repo):
   >     # these 2 files are interesting
-  >     for name in ['l', 's']:
+  >     for name in [b'l', b's']:
   >         fl = repo.file(name)
   >         if len(fl) == 0:
   >             continue
-  >         sizes = [fl.rawsize(i) for i in fl]
+  >         sizes = [fl._revlog.rawsize(i) for i in fl]
   >         texts = [fl.revision(i, raw=True) for i in fl]
-  >         flags = [int(fl.flags(i)) for i in fl]
+  >         flags = [int(fl._revlog.flags(i)) for i in fl]
   >         hashes = [hash(t) for t in texts]
-  >         print('  %s: rawsizes=%r flags=%r hashes=%r'
-  >               % (name, sizes, flags, hashes))
+  >         pycompat.stdout.write(b'  %s: rawsizes=%r flags=%r hashes=%s\n'
+  >                               % (name, sizes, flags, stringutil.pprint(hashes)))
   > EOF
 
   $ for i in client client2 server repo3 repo4 repo5 repo6 repo7 repo8 repo9 \
@@ -722,7 +777,7 @@ Repo with damaged lfs objects in any revision will fail verification.
   checking files
    l@1: unpacking 46a2f24864bc: integrity check failed on data/l.i:0
    large@0: unpacking 2c531e0992ff: integrity check failed on data/large.i:0
-  4 files, 5 changesets, 10 total revisions
+  checked 5 changesets with 10 changes to 4 files
   2 integrity errors encountered!
   (first damaged changeset appears to be 0)
   [1]
@@ -759,7 +814,7 @@ the (uncorrupted) remote store.
   lfs: found 89b6070915a3d573ff3599d1cda305bc5e38549b15c4847ab034169da66e1ca8 in the local lfs store
   lfs: adding b1a6ea88da0017a0e77db139a54618986e9a2489bee24af9fe596de9daac498c to the usercache
   lfs: found b1a6ea88da0017a0e77db139a54618986e9a2489bee24af9fe596de9daac498c in the local lfs store
-  4 files, 5 changesets, 10 total revisions
+  checked 5 changesets with 10 changes to 4 files
 
 Verify will not copy/link a corrupted file from the usercache into the local
 store, and poison it.  (The verify with a good remote now works.)
@@ -776,7 +831,7 @@ store, and poison it.  (The verify with a good remote now works.)
    large@0: unpacking 2c531e0992ff: integrity check failed on data/large.i:0
   lfs: found 89b6070915a3d573ff3599d1cda305bc5e38549b15c4847ab034169da66e1ca8 in the local lfs store
   lfs: found b1a6ea88da0017a0e77db139a54618986e9a2489bee24af9fe596de9daac498c in the local lfs store
-  4 files, 5 changesets, 10 total revisions
+  checked 5 changesets with 10 changes to 4 files
   2 integrity errors encountered!
   (first damaged changeset appears to be 0)
   [1]
@@ -791,7 +846,7 @@ store, and poison it.  (The verify with a good remote now works.)
   lfs: found 66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e in the local lfs store
   lfs: found 89b6070915a3d573ff3599d1cda305bc5e38549b15c4847ab034169da66e1ca8 in the local lfs store
   lfs: found b1a6ea88da0017a0e77db139a54618986e9a2489bee24af9fe596de9daac498c in the local lfs store
-  4 files, 5 changesets, 10 total revisions
+  checked 5 changesets with 10 changes to 4 files
 
 Damaging a file required by the update destination fails the update.
 
@@ -817,7 +872,7 @@ usercache or local store.
   checking files
    l@1: unpacking 46a2f24864bc: integrity check failed on data/l.i:0
    large@0: unpacking 2c531e0992ff: integrity check failed on data/large.i:0
-  4 files, 5 changesets, 10 total revisions
+  checked 5 changesets with 10 changes to 4 files
   2 integrity errors encountered!
   (first damaged changeset appears to be 0)
   [1]
@@ -831,8 +886,6 @@ avoids the corrupt lfs object in the original remote.)
   pushing to dest
   searching for changes
   lfs: found 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b in the local lfs store
-  lfs: found 89b6070915a3d573ff3599d1cda305bc5e38549b15c4847ab034169da66e1ca8 in the local lfs store
-  lfs: found b1a6ea88da0017a0e77db139a54618986e9a2489bee24af9fe596de9daac498c in the local lfs store
   abort: detected corrupt lfs object: 66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e
   (run hg verify)
   [255]
@@ -848,7 +901,7 @@ avoids the corrupt lfs object in the original remote.)
    large@0: unpacking 2c531e0992ff: integrity check failed on data/large.i:0
   lfs: found 89b6070915a3d573ff3599d1cda305bc5e38549b15c4847ab034169da66e1ca8 in the local lfs store
   lfs: found b1a6ea88da0017a0e77db139a54618986e9a2489bee24af9fe596de9daac498c in the local lfs store
-  4 files, 5 changesets, 10 total revisions
+  checked 5 changesets with 10 changes to 4 files
   2 integrity errors encountered!
   (first damaged changeset appears to be 0)
   [1]
@@ -976,9 +1029,6 @@ This convert is trickier, because it contains deleted files (via `hg mv`)
   oid sha256:66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e
   size 39
   x-is-binary 0
-
-  $ hg -R convert_lfs2 config --debug extensions | grep lfs
-  $TESTTMP/convert_lfs2/.hg/hgrc:*: extensions.lfs= (glob)
 
 Committing deleted files works:
 

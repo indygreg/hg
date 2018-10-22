@@ -8,6 +8,12 @@ from mercurial import (
 
 ignore = {b'highlight', b'win32text', b'factotum', b'beautifygraph'}
 
+try:
+    import sqlite3
+    del sqlite3 # unused, just checking that import works
+except ImportError:
+    ignore.add(b'sqlitestore')
+
 if os.name != 'nt':
     ignore.add(b'win32mbcs')
 

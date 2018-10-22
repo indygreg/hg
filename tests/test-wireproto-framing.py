@@ -44,9 +44,6 @@ class FrameHumanStringTests(unittest.TestCase):
         self.assertEqual(ffs(b"1 1 0 1 0 cbor:b'foo'"),
                          b'\x04\x00\x00\x01\x00\x01\x00\x10Cfoo')
 
-        self.assertEqual(ffs(b"1 1 0 1 0 cbor:u'foo'"),
-                         b'\x04\x00\x00\x01\x00\x01\x00\x10cfoo')
-
     def testcborlists(self):
         self.assertEqual(ffs(b"1 1 0 1 0 cbor:[None, True, False, 42, b'foo']"),
                          b'\n\x00\x00\x01\x00\x01\x00\x10\x85\xf6\xf5\xf4'

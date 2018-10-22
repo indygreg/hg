@@ -52,11 +52,34 @@ experimental:
   $ hg log -r 'wdir()' -T '{rev}:{node}\n'
   2147483647:ffffffffffffffffffffffffffffffffffffffff
 
-Some keywords are invalid for working-directory revision, but they should
-never cause crash:
+  $ hg log -r 'wdir()' -Tjson --debug
+  [
+   {
+    "added": [],
+    "bookmarks": [],
+    "branch": "default",
+    "date": [0, 0],
+    "desc": "",
+    "extra": {"branch": "default"},
+    "manifest": "ffffffffffffffffffffffffffffffffffffffff",
+    "modified": [],
+    "node": "ffffffffffffffffffffffffffffffffffffffff",
+    "parents": ["95c24699272ef57d062b8bccc32c878bf841784a"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 2147483647,
+    "tags": [],
+    "user": "test"
+   }
+  ]
 
   $ hg log -r 'wdir()' -T '{manifest}\n'
-  
+  2147483647:ffffffffffff
+
+Changectx-derived keywords are disabled within {manifest} as {node} changes:
+
+  $ hg log -r0 -T 'outer:{p1node} {manifest % "inner:{p1node}"}\n'
+  outer:0000000000000000000000000000000000000000 inner:
 
 Check that {phase} works correctly on parents:
 
@@ -91,7 +114,7 @@ Keys work:
   $ for key in author branch branches date desc file_adds file_dels file_mods \
   >         file_copies file_copies_switch files \
   >         manifest node parents rev tags diffstat extras \
-  >         p1rev p2rev p1node p2node; do
+  >         p1rev p2rev p1node p2node user; do
   >     for mode in '' --verbose --debug; do
   >         hg log $mode --template "$key$mode: {$key}\n"
   >     done
@@ -702,6 +725,33 @@ Keys work:
   p2node--debug: 0000000000000000000000000000000000000000
   p2node--debug: 0000000000000000000000000000000000000000
   p2node--debug: 0000000000000000000000000000000000000000
+  user: test
+  user: User Name <user@hostname>
+  user: person
+  user: person
+  user: person
+  user: person
+  user: other@place
+  user: A. N. Other <other@place>
+  user: User Name <user@hostname>
+  user--verbose: test
+  user--verbose: User Name <user@hostname>
+  user--verbose: person
+  user--verbose: person
+  user--verbose: person
+  user--verbose: person
+  user--verbose: other@place
+  user--verbose: A. N. Other <other@place>
+  user--verbose: User Name <user@hostname>
+  user--debug: test
+  user--debug: User Name <user@hostname>
+  user--debug: person
+  user--debug: person
+  user--debug: person
+  user--debug: person
+  user--debug: other@place
+  user--debug: A. N. Other <other@place>
+  user--debug: User Name <user@hostname>
 
 Add a dummy commit to make up for the instability of the above:
 
@@ -717,6 +767,64 @@ Add a commit that does all possible modifications at once
   $ hg mv fourth fifth
   $ hg rm a
   $ hg ci -m "Modify, add, remove, rename"
+
+Test files list:
+
+  $ hg log -l1 -T '{join(file_mods, " ")}\n'
+  third
+  $ hg log -l1 -T '{file_mods % "{file}\n"}'
+  third
+  $ hg log -l1 -T '{file_mods % "{path}\n"}'
+  third
+
+  $ hg log -l1 -T '{join(files, " ")}\n'
+  a b fifth fourth third
+  $ hg log -l1 -T '{files % "{file}\n"}'
+  a
+  b
+  fifth
+  fourth
+  third
+  $ hg log -l1 -T '{files % "{path}\n"}'
+  a
+  b
+  fifth
+  fourth
+  third
+
+Test file copies dict:
+
+  $ hg log -r8 -T '{join(file_copies, " ")}\n'
+  fourth (second)
+  $ hg log -r8 -T '{file_copies % "{name} <- {source}\n"}'
+  fourth <- second
+  $ hg log -r8 -T '{file_copies % "{path} <- {source}\n"}'
+  fourth <- second
+
+  $ hg log -r8 -T '{join(file_copies_switch, " ")}\n'
+  
+  $ hg log -r8 -C -T '{join(file_copies_switch, " ")}\n'
+  fourth (second)
+  $ hg log -r8 -C -T '{file_copies_switch % "{name} <- {source}\n"}'
+  fourth <- second
+  $ hg log -r8 -C -T '{file_copies_switch % "{path} <- {source}\n"}'
+  fourth <- second
+
+Test file attributes:
+
+  $ hg log -l1 -T '{files % "{status} {pad(size, 3, left=True)} {path}\n"}'
+  R     a
+  A   0 b
+  A   7 fifth
+  R     fourth
+  M  13 third
+
+Test file status including clean ones:
+
+  $ hg log -r9 -T '{files("**") % "{status} {path}\n"}'
+  A a
+  C fourth
+  C third
 
 Test index keyword:
 

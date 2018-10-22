@@ -130,7 +130,7 @@ check shamap LF and CRLF handling
   >          for i, l in enumerate(open(sys.argv[1], 'rb'))]
   > open(sys.argv[1], 'wb').write(b''.join(lines))
   > EOF
-  $ $PYTHON rewrite.py new/.hg/shamap
+  $ "$PYTHON" rewrite.py new/.hg/shamap
   $ cd orig
   $ hg up -qC 1
   $ echo foo >> foo
@@ -193,7 +193,7 @@ break it
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 5 changesets, 5 total revisions
+  checked 5 changesets with 5 changes to 3 files
 
 manifest -r 0
 

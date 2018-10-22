@@ -19,6 +19,7 @@
 #   Mercurial
 
 from __future__ import absolute_import
+import contextlib
 import functools
 import gc
 import os
@@ -64,12 +65,29 @@ try:
     from mercurial import scmutil # since 1.9 (or 8b252e826c68)
 except ImportError:
     pass
+
+def identity(a):
+    return a
+
 try:
     from mercurial import pycompat
     getargspec = pycompat.getargspec  # added to module after 4.5
+    _byteskwargs = pycompat.byteskwargs  # since 4.1 (or fbc3f73dc802)
+    _sysstr = pycompat.sysstr         # since 4.0 (or 2219f4f82ede)
+    _xrange = pycompat.xrange         # since 4.8 (or 7eba8f83129b)
+    fsencode = pycompat.fsencode      # since 3.9 (or f4a5e0e86a7e)
+    if pycompat.ispy3:
+        _maxint = sys.maxsize  # per py3 docs for replacing maxint
+    else:
+        _maxint = sys.maxint
 except (ImportError, AttributeError):
     import inspect
     getargspec = inspect.getargspec
+    _byteskwargs = identity
+    fsencode = identity               # no py3 support
+    _maxint = sys.maxint              # no py3 support
+    _sysstr = lambda x: x             # no py3 support
+    _xrange = xrange
 
 try:
     # 4.7+
@@ -95,7 +113,7 @@ except (AttributeError, ImportError):
 # available since 1.9.3 (or 94b200a11cf7)
 _undefined = object()
 def safehasattr(thing, attr):
-    return getattr(thing, attr, _undefined) is not _undefined
+    return getattr(thing, _sysstr(attr), _undefined) is not _undefined
 setattr(util, 'safehasattr', safehasattr)
 
 # for "historical portability":
@@ -103,7 +121,7 @@ setattr(util, 'safehasattr', safehasattr)
 # since ae5d60bb70c9
 if safehasattr(time, 'perf_counter'):
     util.timer = time.perf_counter
-elif os.name == 'nt':
+elif os.name == b'nt':
     util.timer = time.clock
 else:
     util.timer = time.time
@@ -123,9 +141,9 @@ formatteropts = getattr(cmdutil, "formatteropts",
 # since 1.9 (or a79fea6b3e77).
 revlogopts = getattr(cmdutil, "debugrevlogopts",
                      getattr(commands, "debugrevlogopts", [
-        ('c', 'changelog', False, ('open changelog')),
-        ('m', 'manifest', False, ('open manifest')),
-        ('', 'dir', False, ('open directory manifest')),
+        (b'c', b'changelog', False, (b'open changelog')),
+        (b'm', b'manifest', False, (b'open manifest')),
+        (b'', b'dir', False, (b'open directory manifest')),
         ]))
 
 cmdtable = {}
@@ -134,20 +152,20 @@ cmdtable = {}
 # define parsealiases locally, because cmdutil.parsealiases has been
 # available since 1.5 (or 6252852b4332)
 def parsealiases(cmd):
-    return cmd.lstrip("^").split("|")
+    return cmd.split(b"|")
 
 if safehasattr(registrar, 'command'):
     command = registrar.command(cmdtable)
 elif safehasattr(cmdutil, 'command'):
     command = cmdutil.command(cmdtable)
-    if 'norepo' not in getargspec(command).args:
+    if b'norepo' not in getargspec(command).args:
         # for "historical portability":
         # wrap original cmdutil.command, because "norepo" option has
         # been available since 3.1 (or 75a96326cecb)
         _command = command
         def command(name, options=(), synopsis=None, norepo=False):
             if norepo:
-                commands.norepo += ' %s' % ' '.join(parsealiases(name))
+                commands.norepo += b' %s' % b' '.join(parsealiases(name))
             return _command(name, list(options), synopsis)
 else:
     # for "historical portability":
@@ -160,7 +178,7 @@ else:
             else:
                 cmdtable[name] = func, list(options)
             if norepo:
-                commands.norepo += ' %s' % ' '.join(parsealiases(name))
+                commands.norepo += b' %s' % b' '.join(parsealiases(name))
             return func
         return decorator
 
@@ -169,23 +187,23 @@ try:
     import mercurial.configitems
     configtable = {}
     configitem = mercurial.registrar.configitem(configtable)
-    configitem('perf', 'presleep',
+    configitem(b'perf', b'presleep',
         default=mercurial.configitems.dynamicdefault,
     )
-    configitem('perf', 'stub',
+    configitem(b'perf', b'stub',
         default=mercurial.configitems.dynamicdefault,
     )
-    configitem('perf', 'parentscount',
+    configitem(b'perf', b'parentscount',
         default=mercurial.configitems.dynamicdefault,
     )
-    configitem('perf', 'all-timing',
+    configitem(b'perf', b'all-timing',
         default=mercurial.configitems.dynamicdefault,
     )
 except (ImportError, AttributeError):
     pass
 
 def getlen(ui):
-    if ui.configbool("perf", "stub", False):
+    if ui.configbool(b"perf", b"stub", False):
         return lambda x: 1
     return len
 
@@ -197,14 +215,14 @@ def gettimer(ui, opts=None):
 
     # enforce an idle period before execution to counteract power management
     # experimental config: perf.presleep
-    time.sleep(getint(ui, "perf", "presleep", 1))
+    time.sleep(getint(ui, b"perf", b"presleep", 1))
 
     if opts is None:
         opts = {}
     # redirect all to stderr unless buffer api is in use
     if not ui._buffers:
         ui = ui.copy()
-        uifout = safeattrsetter(ui, 'fout', ignoremissing=True)
+        uifout = safeattrsetter(ui, b'fout', ignoremissing=True)
         if uifout:
             # for "historical portability":
             # ui.fout/ferr have been available since 1.9 (or 4e1ccd4c2b6d)
@@ -213,7 +231,7 @@ def gettimer(ui, opts=None):
     # get a formatter
     uiformatter = getattr(ui, 'formatter', None)
     if uiformatter:
-        fm = uiformatter('perf', opts)
+        fm = uiformatter(b'perf', opts)
     else:
         # for "historical portability":
         # define formatter locally, because ui.formatter has been
@@ -244,19 +262,30 @@ def gettimer(ui, opts=None):
                 self._ui.write(text, **opts)
             def end(self):
                 pass
-        fm = defaultformatter(ui, 'perf', opts)
+        fm = defaultformatter(ui, b'perf', opts)
 
     # stub function, runs code only once instead of in a loop
     # experimental config: perf.stub
-    if ui.configbool("perf", "stub", False):
+    if ui.configbool(b"perf", b"stub", False):
         return functools.partial(stub_timer, fm), fm
 
     # experimental config: perf.all-timing
-    displayall = ui.configbool("perf", "all-timing", False)
+    displayall = ui.configbool(b"perf", b"all-timing", False)
     return functools.partial(_timer, fm, displayall=displayall), fm
 
 def stub_timer(fm, func, title=None):
     func()
+
+@contextlib.contextmanager
+def timeone():
+    r = []
+    ostart = os.times()
+    cstart = util.timer()
+    yield r
+    cstop = util.timer()
+    ostop = os.times()
+    a, b = ostart, ostop
+    r.append((cstop - cstart, b[0] - a[0], b[1]-a[1]))
 
 def _timer(fm, func, title=None, displayall=False):
     gc.collect()
@@ -264,46 +293,50 @@ def _timer(fm, func, title=None, displayall=False):
     begin = util.timer()
     count = 0
     while True:
-        ostart = os.times()
-        cstart = util.timer()
-        r = func()
-        cstop = util.timer()
-        ostop = os.times()
+        with timeone() as item:
+            r = func()
         count += 1
-        a, b = ostart, ostop
-        results.append((cstop - cstart, b[0] - a[0], b[1]-a[1]))
+        results.append(item[0])
+        cstop = util.timer()
         if cstop - begin > 3 and count >= 100:
             break
         if cstop - begin > 10 and count >= 3:
             break
 
+    formatone(fm, results, title=title, result=r,
+              displayall=displayall)
+
+def formatone(fm, timings, title=None, result=None, displayall=False):
+
+    count = len(timings)
+
     fm.startitem()
 
     if title:
-        fm.write('title', '! %s\n', title)
-    if r:
-        fm.write('result', '! result: %s\n', r)
+        fm.write(b'title', b'! %s\n', title)
+    if result:
+        fm.write(b'result', b'! result: %s\n', result)
     def display(role, entry):
-        prefix = ''
-        if role != 'best':
-            prefix = '%s.' % role
-        fm.plain('!')
-        fm.write(prefix + 'wall', ' wall %f', entry[0])
-        fm.write(prefix + 'comb', ' comb %f', entry[1] + entry[2])
-        fm.write(prefix + 'user', ' user %f', entry[1])
-        fm.write(prefix + 'sys',  ' sys %f', entry[2])
-        fm.write(prefix + 'count',  ' (%s of %d)', role, count)
-        fm.plain('\n')
-    results.sort()
-    min_val = results[0]
-    display('best', min_val)
+        prefix = b''
+        if role != b'best':
+            prefix = b'%s.' % role
+        fm.plain(b'!')
+        fm.write(prefix + b'wall', b' wall %f', entry[0])
+        fm.write(prefix + b'comb', b' comb %f', entry[1] + entry[2])
+        fm.write(prefix + b'user', b' user %f', entry[1])
+        fm.write(prefix + b'sys',  b' sys %f', entry[2])
+        fm.write(prefix + b'count',  b' (%s of %%d)' % role, count)
+        fm.plain(b'\n')
+    timings.sort()
+    min_val = timings[0]
+    display(b'best', min_val)
     if displayall:
-        max_val = results[-1]
-        display('max', max_val)
-        avg = tuple([sum(x) / count for x in zip(*results)])
-        display('avg', avg)
-        median = results[len(results) // 2]
-        display('median', median)
+        max_val = timings[-1]
+        display(b'max', max_val)
+        avg = tuple([sum(x) / count for x in zip(*timings)])
+        display(b'avg', avg)
+        median = timings[len(timings) // 2]
+        display(b'median', median)
 
 # utilities for historical portability
 
@@ -316,7 +349,7 @@ def getint(ui, section, name, default):
     try:
         return int(v)
     except ValueError:
-        raise error.ConfigError(("%s.%s is not an integer ('%s')")
+        raise error.ConfigError((b"%s.%s is not an integer ('%s')")
                                 % (section, name, v))
 
 def safeattrsetter(obj, name, ignoremissing=False):
@@ -337,15 +370,15 @@ def safeattrsetter(obj, name, ignoremissing=False):
     if not util.safehasattr(obj, name):
         if ignoremissing:
             return None
-        raise error.Abort(("missing attribute %s of %s might break assumption"
-                           " of performance measurement") % (name, obj))
+        raise error.Abort((b"missing attribute %s of %s might break assumption"
+                           b" of performance measurement") % (name, obj))
 
-    origvalue = getattr(obj, name)
+    origvalue = getattr(obj, _sysstr(name))
     class attrutil(object):
         def set(self, newvalue):
-            setattr(obj, name, newvalue)
+            setattr(obj, _sysstr(name), newvalue)
         def restore(self):
-            setattr(obj, name, origvalue)
+            setattr(obj, _sysstr(name), origvalue)
 
     return attrutil()
 
@@ -364,8 +397,8 @@ def getbranchmapsubsettable():
     # bisecting in bcee63733aad::59a9f18d4587 can reach here (both
     # branchmap and repoview modules exist, but subsettable attribute
     # doesn't)
-    raise error.Abort(("perfbranchmap not available with this Mercurial"),
-                      hint="use 2.5 or later")
+    raise error.Abort((b"perfbranchmap not available with this Mercurial"),
+                      hint=b"use 2.5 or later")
 
 def getsvfs(repo):
     """Return appropriate object to access files under .hg/store
@@ -392,22 +425,22 @@ def getvfs(repo):
 def repocleartagscachefunc(repo):
     """Return the function to clear tags cache according to repo internal API
     """
-    if util.safehasattr(repo, '_tagscache'): # since 2.0 (or 9dca7653b525)
+    if util.safehasattr(repo, b'_tagscache'): # since 2.0 (or 9dca7653b525)
         # in this case, setattr(repo, '_tagscache', None) or so isn't
         # correct way to clear tags cache, because existing code paths
         # expect _tagscache to be a structured object.
         def clearcache():
             # _tagscache has been filteredpropertycache since 2.5 (or
             # 98c867ac1330), and delattr() can't work in such case
-            if '_tagscache' in vars(repo):
-                del repo.__dict__['_tagscache']
+            if b'_tagscache' in vars(repo):
+                del repo.__dict__[b'_tagscache']
         return clearcache
 
-    repotags = safeattrsetter(repo, '_tags', ignoremissing=True)
+    repotags = safeattrsetter(repo, b'_tags', ignoremissing=True)
     if repotags: # since 1.4 (or 5614a628d173)
         return lambda : repotags.set(None)
 
-    repotagscache = safeattrsetter(repo, 'tagscache', ignoremissing=True)
+    repotagscache = safeattrsetter(repo, b'tagscache', ignoremissing=True)
     if repotagscache: # since 0.6 (or d7df759d0e97)
         return lambda : repotagscache.set(None)
 
@@ -416,7 +449,7 @@ def repocleartagscachefunc(repo):
     # - repo.tags of such Mercurial isn't "callable", and repo.tags()
     #   in perftags() causes failure soon
     # - perf.py itself has been available since 1.1 (or eb240755386d)
-    raise error.Abort(("tags API of this hg command is unknown"))
+    raise error.Abort((b"tags API of this hg command is unknown"))
 
 # utilities to clear cache
 
@@ -428,56 +461,61 @@ def clearfilecache(repo, attrname):
 
 # perf commands
 
-@command('perfwalk', formatteropts)
+@command(b'perfwalk', formatteropts)
 def perfwalk(ui, repo, *pats, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     m = scmutil.match(repo[None], pats, {})
     timer(lambda: len(list(repo.dirstate.walk(m, subrepos=[], unknown=True,
                                               ignored=False))))
     fm.end()
 
-@command('perfannotate', formatteropts)
+@command(b'perfannotate', formatteropts)
 def perfannotate(ui, repo, f, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
-    fc = repo['.'][f]
+    fc = repo[b'.'][f]
     timer(lambda: len(fc.annotate(True)))
     fm.end()
 
-@command('perfstatus',
-         [('u', 'unknown', False,
-           'ask status to look for unknown files')] + formatteropts)
+@command(b'perfstatus',
+         [(b'u', b'unknown', False,
+           b'ask status to look for unknown files')] + formatteropts)
 def perfstatus(ui, repo, **opts):
+    opts = _byteskwargs(opts)
     #m = match.always(repo.root, repo.getcwd())
     #timer(lambda: sum(map(len, repo.dirstate.status(m, [], False, False,
     #                                                False))))
     timer, fm = gettimer(ui, opts)
-    timer(lambda: sum(map(len, repo.status(unknown=opts['unknown']))))
+    timer(lambda: sum(map(len, repo.status(unknown=opts[b'unknown']))))
     fm.end()
 
-@command('perfaddremove', formatteropts)
+@command(b'perfaddremove', formatteropts)
 def perfaddremove(ui, repo, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     try:
         oldquiet = repo.ui.quiet
         repo.ui.quiet = True
         matcher = scmutil.match(repo[None])
-        opts['dry_run'] = True
-        timer(lambda: scmutil.addremove(repo, matcher, "", opts))
+        opts[b'dry_run'] = True
+        timer(lambda: scmutil.addremove(repo, matcher, b"", opts))
     finally:
         repo.ui.quiet = oldquiet
         fm.end()
 
 def clearcaches(cl):
     # behave somewhat consistently across internal API changes
-    if util.safehasattr(cl, 'clearcaches'):
+    if util.safehasattr(cl, b'clearcaches'):
         cl.clearcaches()
-    elif util.safehasattr(cl, '_nodecache'):
+    elif util.safehasattr(cl, b'_nodecache'):
         from mercurial.node import nullid, nullrev
         cl._nodecache = {nullid: nullrev}
         cl._nodepos = None
 
-@command('perfheads', formatteropts)
+@command(b'perfheads', formatteropts)
 def perfheads(ui, repo, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     cl = repo.changelog
     def d():
@@ -486,23 +524,28 @@ def perfheads(ui, repo, **opts):
     timer(d)
     fm.end()
 
-@command('perftags', formatteropts)
+@command(b'perftags', formatteropts)
 def perftags(ui, repo, **opts):
     import mercurial.changelog
     import mercurial.manifest
+
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     svfs = getsvfs(repo)
     repocleartagscache = repocleartagscachefunc(repo)
     def t():
         repo.changelog = mercurial.changelog.changelog(svfs)
-        repo.manifestlog = mercurial.manifest.manifestlog(svfs, repo)
+        rootmanifest = mercurial.manifest.manifestrevlog(svfs)
+        repo.manifestlog = mercurial.manifest.manifestlog(svfs, repo,
+                                                          rootmanifest)
         repocleartagscache()
         return len(repo.tags())
     timer(t)
     fm.end()
 
-@command('perfancestors', formatteropts)
+@command(b'perfancestors', formatteropts)
 def perfancestors(ui, repo, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     heads = repo.changelog.headrevs()
     def d():
@@ -511,8 +554,9 @@ def perfancestors(ui, repo, **opts):
     timer(d)
     fm.end()
 
-@command('perfancestorset', formatteropts)
+@command(b'perfancestorset', formatteropts)
 def perfancestorset(ui, repo, revset, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     revs = repo.revs(revset)
     heads = repo.changelog.headrevs()
@@ -523,17 +567,18 @@ def perfancestorset(ui, repo, revset, **opts):
     timer(d)
     fm.end()
 
-@command('perfbookmarks', formatteropts)
+@command(b'perfbookmarks', formatteropts)
 def perfbookmarks(ui, repo, **opts):
     """benchmark parsing bookmarks from disk to memory"""
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     def d():
-        clearfilecache(repo, '_bookmarks')
+        clearfilecache(repo, b'_bookmarks')
         repo._bookmarks
     timer(d)
     fm.end()
 
-@command('perfbundleread', formatteropts, 'BUNDLE')
+@command(b'perfbundleread', formatteropts, b'BUNDLE')
 def perfbundleread(ui, repo, bundlepath, **opts):
     """Benchmark reading of bundle files.
 
@@ -546,9 +591,11 @@ def perfbundleread(ui, repo, bundlepath, **opts):
         streamclone,
     )
 
+    opts = _byteskwargs(opts)
+
     def makebench(fn):
         def run():
-            with open(bundlepath, 'rb') as fh:
+            with open(bundlepath, b'rb') as fh:
                 bundle = exchange.readbundle(ui, fh, bundlepath)
                 fn(bundle)
 
@@ -556,7 +603,7 @@ def perfbundleread(ui, repo, bundlepath, **opts):
 
     def makereadnbytes(size):
         def run():
-            with open(bundlepath, 'rb') as fh:
+            with open(bundlepath, b'rb') as fh:
                 bundle = exchange.readbundle(ui, fh, bundlepath)
                 while bundle.read(size):
                     pass
@@ -565,7 +612,7 @@ def perfbundleread(ui, repo, bundlepath, **opts):
 
     def makestdioread(size):
         def run():
-            with open(bundlepath, 'rb') as fh:
+            with open(bundlepath, b'rb') as fh:
                 while fh.read(size):
                     pass
 
@@ -601,7 +648,7 @@ def perfbundleread(ui, repo, bundlepath, **opts):
 
     def makepartreadnbytes(size):
         def run():
-            with open(bundlepath, 'rb') as fh:
+            with open(bundlepath, b'rb') as fh:
                 bundle = exchange.readbundle(ui, fh, bundlepath)
                 for part in bundle.iterparts():
                     while part.read(size):
@@ -610,49 +657,49 @@ def perfbundleread(ui, repo, bundlepath, **opts):
         return run
 
     benches = [
-        (makestdioread(8192), 'read(8k)'),
-        (makestdioread(16384), 'read(16k)'),
-        (makestdioread(32768), 'read(32k)'),
-        (makestdioread(131072), 'read(128k)'),
+        (makestdioread(8192), b'read(8k)'),
+        (makestdioread(16384), b'read(16k)'),
+        (makestdioread(32768), b'read(32k)'),
+        (makestdioread(131072), b'read(128k)'),
     ]
 
-    with open(bundlepath, 'rb') as fh:
+    with open(bundlepath, b'rb') as fh:
         bundle = exchange.readbundle(ui, fh, bundlepath)
 
         if isinstance(bundle, changegroup.cg1unpacker):
             benches.extend([
-                (makebench(deltaiter), 'cg1 deltaiter()'),
-                (makebench(iterchunks), 'cg1 getchunks()'),
-                (makereadnbytes(8192), 'cg1 read(8k)'),
-                (makereadnbytes(16384), 'cg1 read(16k)'),
-                (makereadnbytes(32768), 'cg1 read(32k)'),
-                (makereadnbytes(131072), 'cg1 read(128k)'),
+                (makebench(deltaiter), b'cg1 deltaiter()'),
+                (makebench(iterchunks), b'cg1 getchunks()'),
+                (makereadnbytes(8192), b'cg1 read(8k)'),
+                (makereadnbytes(16384), b'cg1 read(16k)'),
+                (makereadnbytes(32768), b'cg1 read(32k)'),
+                (makereadnbytes(131072), b'cg1 read(128k)'),
             ])
         elif isinstance(bundle, bundle2.unbundle20):
             benches.extend([
-                (makebench(forwardchunks), 'bundle2 forwardchunks()'),
-                (makebench(iterparts), 'bundle2 iterparts()'),
-                (makebench(iterpartsseekable), 'bundle2 iterparts() seekable'),
-                (makebench(seek), 'bundle2 part seek()'),
-                (makepartreadnbytes(8192), 'bundle2 part read(8k)'),
-                (makepartreadnbytes(16384), 'bundle2 part read(16k)'),
-                (makepartreadnbytes(32768), 'bundle2 part read(32k)'),
-                (makepartreadnbytes(131072), 'bundle2 part read(128k)'),
+                (makebench(forwardchunks), b'bundle2 forwardchunks()'),
+                (makebench(iterparts), b'bundle2 iterparts()'),
+                (makebench(iterpartsseekable), b'bundle2 iterparts() seekable'),
+                (makebench(seek), b'bundle2 part seek()'),
+                (makepartreadnbytes(8192), b'bundle2 part read(8k)'),
+                (makepartreadnbytes(16384), b'bundle2 part read(16k)'),
+                (makepartreadnbytes(32768), b'bundle2 part read(32k)'),
+                (makepartreadnbytes(131072), b'bundle2 part read(128k)'),
             ])
         elif isinstance(bundle, streamclone.streamcloneapplier):
-            raise error.Abort('stream clone bundles not supported')
+            raise error.Abort(b'stream clone bundles not supported')
         else:
-            raise error.Abort('unhandled bundle type: %s' % type(bundle))
+            raise error.Abort(b'unhandled bundle type: %s' % type(bundle))
 
     for fn, title in benches:
         timer, fm = gettimer(ui, opts)
         timer(fn, title=title)
         fm.end()
 
-@command('perfchangegroupchangelog', formatteropts +
-         [('', 'version', '02', 'changegroup version'),
-          ('r', 'rev', '', 'revisions to add to changegroup')])
-def perfchangegroupchangelog(ui, repo, version='02', rev=None, **opts):
+@command(b'perfchangegroupchangelog', formatteropts +
+         [(b'', b'version', b'02', b'changegroup version'),
+          (b'r', b'rev', b'', b'revisions to add to changegroup')])
+def perfchangegroupchangelog(ui, repo, version=b'02', rev=None, **opts):
     """Benchmark producing a changelog group for a changegroup.
 
     This measures the time spent processing the changelog during a
@@ -662,92 +709,99 @@ def perfchangegroupchangelog(ui, repo, version='02', rev=None, **opts):
 
     By default, all revisions are added to the changegroup.
     """
+    opts = _byteskwargs(opts)
     cl = repo.changelog
-    revs = [cl.lookup(r) for r in repo.revs(rev or 'all()')]
+    nodes = [cl.lookup(r) for r in repo.revs(rev or b'all()')]
     bundler = changegroup.getbundler(version, repo)
 
-    def lookup(node):
-        # The real bundler reads the revision in order to access the
-        # manifest node and files list. Do that here.
-        cl.read(node)
-        return node
-
     def d():
-        for chunk in bundler.group(revs, cl, lookup):
+        state, chunks = bundler._generatechangelog(cl, nodes)
+        for chunk in chunks:
             pass
 
     timer, fm = gettimer(ui, opts)
-    timer(d)
+
+    # Terminal printing can interfere with timing. So disable it.
+    with ui.configoverride({(b'progress', b'disable'): True}):
+        timer(d)
+
     fm.end()
 
-@command('perfdirs', formatteropts)
+@command(b'perfdirs', formatteropts)
 def perfdirs(ui, repo, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     dirstate = repo.dirstate
-    'a' in dirstate
+    b'a' in dirstate
     def d():
-        dirstate.hasdir('a')
+        dirstate.hasdir(b'a')
         del dirstate._map._dirs
     timer(d)
     fm.end()
 
-@command('perfdirstate', formatteropts)
+@command(b'perfdirstate', formatteropts)
 def perfdirstate(ui, repo, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
-    "a" in repo.dirstate
+    b"a" in repo.dirstate
     def d():
         repo.dirstate.invalidate()
-        "a" in repo.dirstate
+        b"a" in repo.dirstate
     timer(d)
     fm.end()
 
-@command('perfdirstatedirs', formatteropts)
+@command(b'perfdirstatedirs', formatteropts)
 def perfdirstatedirs(ui, repo, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
-    "a" in repo.dirstate
+    b"a" in repo.dirstate
     def d():
-        repo.dirstate.hasdir("a")
+        repo.dirstate.hasdir(b"a")
         del repo.dirstate._map._dirs
     timer(d)
     fm.end()
 
-@command('perfdirstatefoldmap', formatteropts)
+@command(b'perfdirstatefoldmap', formatteropts)
 def perfdirstatefoldmap(ui, repo, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     dirstate = repo.dirstate
-    'a' in dirstate
+    b'a' in dirstate
     def d():
-        dirstate._map.filefoldmap.get('a')
+        dirstate._map.filefoldmap.get(b'a')
         del dirstate._map.filefoldmap
     timer(d)
     fm.end()
 
-@command('perfdirfoldmap', formatteropts)
+@command(b'perfdirfoldmap', formatteropts)
 def perfdirfoldmap(ui, repo, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     dirstate = repo.dirstate
-    'a' in dirstate
+    b'a' in dirstate
     def d():
-        dirstate._map.dirfoldmap.get('a')
+        dirstate._map.dirfoldmap.get(b'a')
         del dirstate._map.dirfoldmap
         del dirstate._map._dirs
     timer(d)
     fm.end()
 
-@command('perfdirstatewrite', formatteropts)
+@command(b'perfdirstatewrite', formatteropts)
 def perfdirstatewrite(ui, repo, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     ds = repo.dirstate
-    "a" in ds
+    b"a" in ds
     def d():
         ds._dirty = True
         ds.write(repo.currenttransaction())
     timer(d)
     fm.end()
 
-@command('perfmergecalculate',
-         [('r', 'rev', '.', 'rev to merge against')] + formatteropts)
+@command(b'perfmergecalculate',
+         [(b'r', b'rev', b'.', b'rev to merge against')] + formatteropts)
 def perfmergecalculate(ui, repo, rev, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     wctx = repo[None]
     rctx = scmutil.revsingle(repo, rev, rev)
@@ -763,8 +817,9 @@ def perfmergecalculate(ui, repo, rev, **opts):
     timer(d)
     fm.end()
 
-@command('perfpathcopies', [], "REV REV")
+@command(b'perfpathcopies', [], b"REV REV")
 def perfpathcopies(ui, repo, rev1, rev2, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     ctx1 = scmutil.revsingle(repo, rev1, rev1)
     ctx2 = scmutil.revsingle(repo, rev2, rev2)
@@ -773,26 +828,27 @@ def perfpathcopies(ui, repo, rev1, rev2, **opts):
     timer(d)
     fm.end()
 
-@command('perfphases',
-         [('', 'full', False, 'include file reading time too'),
-         ], "")
+@command(b'perfphases',
+         [(b'', b'full', False, b'include file reading time too'),
+          ], b"")
 def perfphases(ui, repo, **opts):
     """benchmark phasesets computation"""
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     _phases = repo._phasecache
-    full = opts.get('full')
+    full = opts.get(b'full')
     def d():
         phases = _phases
         if full:
-            clearfilecache(repo, '_phasecache')
+            clearfilecache(repo, b'_phasecache')
             phases = repo._phasecache
         phases.invalidate()
         phases.loadphaserevs(repo)
     timer(d)
     fm.end()
 
-@command('perfphasesremote',
-         [], "[DEST]")
+@command(b'perfphasesremote',
+         [], b"[DEST]")
 def perfphasesremote(ui, repo, dest=None, **opts):
     """benchmark time needed to analyse phases of the remote server"""
     from mercurial.node import (
@@ -803,16 +859,17 @@ def perfphasesremote(ui, repo, dest=None, **opts):
         hg,
         phases,
     )
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
 
-    path = ui.paths.getpath(dest, default=('default-push', 'default'))
+    path = ui.paths.getpath(dest, default=(b'default-push', b'default'))
     if not path:
-        raise error.Abort(('default repository not configured!'),
-                         hint=("see 'hg help config.paths'"))
+        raise error.Abort((b'default repository not configured!'),
+                          hint=(b"see 'hg help config.paths'"))
     dest = path.pushloc or path.loc
-    branches = (path.branch, opts.get('branch') or [])
-    ui.status(('analysing phase of %s\n') % util.hidepassword(dest))
-    revs, checkout = hg.addbranchrevs(repo, repo, branches, opts.get('rev'))
+    branches = (path.branch, opts.get(b'branch') or [])
+    ui.status((b'analysing phase of %s\n') % util.hidepassword(dest))
+    revs, checkout = hg.addbranchrevs(repo, repo, branches, opts.get(b'rev'))
     other = hg.peer(repo, opts, dest)
 
     # easier to perform discovery through the operation
@@ -822,25 +879,25 @@ def perfphasesremote(ui, repo, dest=None, **opts):
     remotesubset = op.fallbackheads
 
     with other.commandexecutor() as e:
-        remotephases = e.callcommand('listkeys',
-                       {'namespace': 'phases'}).result()
+        remotephases = e.callcommand(b'listkeys',
+                       {b'namespace': b'phases'}).result()
     del other
-    publishing = remotephases.get('publishing', False)
+    publishing = remotephases.get(b'publishing', False)
     if publishing:
-        ui.status(('publishing: yes\n'))
+        ui.status((b'publishing: yes\n'))
     else:
-        ui.status(('publishing: no\n'))
+        ui.status((b'publishing: no\n'))
 
     nodemap = repo.changelog.nodemap
     nonpublishroots = 0
     for nhex, phase in remotephases.iteritems():
-        if nhex == 'publishing': # ignore data related to publish option
+        if nhex == b'publishing': # ignore data related to publish option
             continue
         node = bin(nhex)
         if node in nodemap and int(phase):
             nonpublishroots += 1
-    ui.status(('number of roots: %d\n') % len(remotephases))
-    ui.status(('number of known non public roots: %d\n') % nonpublishroots)
+    ui.status((b'number of roots: %d\n') % len(remotephases))
+    ui.status((b'number of known non public roots: %d\n') % nonpublishroots)
     def d():
         phases.remotephasessummary(repo,
                                    remotesubset,
@@ -848,23 +905,45 @@ def perfphasesremote(ui, repo, dest=None, **opts):
     timer(d)
     fm.end()
 
-@command('perfmanifest', [], 'REV')
-def perfmanifest(ui, repo, rev, **opts):
+@command(b'perfmanifest',[
+            (b'm', b'manifest-rev', False, b'Look up a manifest node revision'),
+            (b'', b'clear-disk', False, b'clear on-disk caches too'),
+         ] + formatteropts, b'REV|NODE')
+def perfmanifest(ui, repo, rev, manifest_rev=False, clear_disk=False, **opts):
     """benchmark the time to read a manifest from disk and return a usable
     dict-like object
 
     Manifest caches are cleared before retrieval."""
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
-    ctx = scmutil.revsingle(repo, rev, rev)
-    t = ctx.manifestnode()
+    if not manifest_rev:
+        ctx = scmutil.revsingle(repo, rev, rev)
+        t = ctx.manifestnode()
+    else:
+        from mercurial.node import bin
+
+        if len(rev) == 40:
+            t = bin(rev)
+        else:
+            try:
+                rev = int(rev)
+
+                if util.safehasattr(repo.manifestlog, b'getstorage'):
+                    t = repo.manifestlog.getstorage(b'').node(rev)
+                else:
+                    t = repo.manifestlog._revlog.lookup(rev)
+            except ValueError:
+                raise error.Abort(b'manifest revision must be integer or full '
+                                  b'node')
     def d():
-        repo.manifestlog.clearcaches()
+        repo.manifestlog.clearcaches(clear_persisted_data=clear_disk)
         repo.manifestlog[t].read()
     timer(d)
     fm.end()
 
-@command('perfchangeset', formatteropts)
+@command(b'perfchangeset', formatteropts)
 def perfchangeset(ui, repo, rev, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     n = scmutil.revsingle(repo, rev).node()
     def d():
@@ -873,50 +952,54 @@ def perfchangeset(ui, repo, rev, **opts):
     timer(d)
     fm.end()
 
-@command('perfindex', formatteropts)
+@command(b'perfindex', formatteropts)
 def perfindex(ui, repo, **opts):
     import mercurial.revlog
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     mercurial.revlog._prereadsize = 2**24 # disable lazy parser in old hg
-    n = repo["tip"].node()
+    n = repo[b"tip"].node()
     svfs = getsvfs(repo)
     def d():
-        cl = mercurial.revlog.revlog(svfs, "00changelog.i")
+        cl = mercurial.revlog.revlog(svfs, b"00changelog.i")
         cl.rev(n)
     timer(d)
     fm.end()
 
-@command('perfstartup', formatteropts)
+@command(b'perfstartup', formatteropts)
 def perfstartup(ui, repo, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
-    cmd = sys.argv[0]
     def d():
-        if os.name != 'nt':
-            os.system("HGRCPATH= %s version -q > /dev/null" % cmd)
+        if os.name != r'nt':
+            os.system(b"HGRCPATH= %s version -q > /dev/null" %
+                      fsencode(sys.argv[0]))
         else:
-            os.environ['HGRCPATH'] = ' '
-            os.system("%s version -q > NUL" % cmd)
+            os.environ[r'HGRCPATH'] = r' '
+            os.system(r"%s version -q > NUL" % sys.argv[0])
     timer(d)
     fm.end()
 
-@command('perfparents', formatteropts)
+@command(b'perfparents', formatteropts)
 def perfparents(ui, repo, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     # control the number of commits perfparents iterates over
     # experimental config: perf.parentscount
-    count = getint(ui, "perf", "parentscount", 1000)
+    count = getint(ui, b"perf", b"parentscount", 1000)
     if len(repo.changelog) < count:
-        raise error.Abort("repo needs %d commits for this test" % count)
+        raise error.Abort(b"repo needs %d commits for this test" % count)
     repo = repo.unfiltered()
-    nl = [repo.changelog.node(i) for i in xrange(count)]
+    nl = [repo.changelog.node(i) for i in _xrange(count)]
     def d():
         for n in nl:
             repo.changelog.parents(n)
     timer(d)
     fm.end()
 
-@command('perfctxfiles', formatteropts)
+@command(b'perfctxfiles', formatteropts)
 def perfctxfiles(ui, repo, x, **opts):
+    opts = _byteskwargs(opts)
     x = int(x)
     timer, fm = gettimer(ui, opts)
     def d():
@@ -924,8 +1007,9 @@ def perfctxfiles(ui, repo, x, **opts):
     timer(d)
     fm.end()
 
-@command('perfrawfiles', formatteropts)
+@command(b'perfrawfiles', formatteropts)
 def perfrawfiles(ui, repo, x, **opts):
+    opts = _byteskwargs(opts)
     x = int(x)
     timer, fm = gettimer(ui, opts)
     cl = repo.changelog
@@ -934,77 +1018,119 @@ def perfrawfiles(ui, repo, x, **opts):
     timer(d)
     fm.end()
 
-@command('perflookup', formatteropts)
+@command(b'perflookup', formatteropts)
 def perflookup(ui, repo, rev, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     timer(lambda: len(repo.lookup(rev)))
     fm.end()
 
-@command('perfrevrange', formatteropts)
+@command(b'perflinelogedits',
+         [(b'n', b'edits', 10000, b'number of edits'),
+          (b'', b'max-hunk-lines', 10, b'max lines in a hunk'),
+          ], norepo=True)
+def perflinelogedits(ui, **opts):
+    from mercurial import linelog
+
+    opts = _byteskwargs(opts)
+
+    edits = opts[b'edits']
+    maxhunklines = opts[b'max_hunk_lines']
+
+    maxb1 = 100000
+    random.seed(0)
+    randint = random.randint
+    currentlines = 0
+    arglist = []
+    for rev in _xrange(edits):
+        a1 = randint(0, currentlines)
+        a2 = randint(a1, min(currentlines, a1 + maxhunklines))
+        b1 = randint(0, maxb1)
+        b2 = randint(b1, b1 + maxhunklines)
+        currentlines += (b2 - b1) - (a2 - a1)
+        arglist.append((rev, a1, a2, b1, b2))
+
+    def d():
+        ll = linelog.linelog()
+        for args in arglist:
+            ll.replacelines(*args)
+
+    timer, fm = gettimer(ui, opts)
+    timer(d)
+    fm.end()
+
+@command(b'perfrevrange', formatteropts)
 def perfrevrange(ui, repo, *specs, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     revrange = scmutil.revrange
     timer(lambda: len(revrange(repo, specs)))
     fm.end()
 
-@command('perfnodelookup', formatteropts)
+@command(b'perfnodelookup', formatteropts)
 def perfnodelookup(ui, repo, rev, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     import mercurial.revlog
     mercurial.revlog._prereadsize = 2**24 # disable lazy parser in old hg
     n = scmutil.revsingle(repo, rev).node()
-    cl = mercurial.revlog.revlog(getsvfs(repo), "00changelog.i")
+    cl = mercurial.revlog.revlog(getsvfs(repo), b"00changelog.i")
     def d():
         cl.rev(n)
         clearcaches(cl)
     timer(d)
     fm.end()
 
-@command('perflog',
-         [('', 'rename', False, 'ask log to follow renames')] + formatteropts)
+@command(b'perflog',
+         [(b'', b'rename', False, b'ask log to follow renames')
+         ] + formatteropts)
 def perflog(ui, repo, rev=None, **opts):
+    opts = _byteskwargs(opts)
     if rev is None:
         rev=[]
     timer, fm = gettimer(ui, opts)
     ui.pushbuffer()
-    timer(lambda: commands.log(ui, repo, rev=rev, date='', user='',
-                               copies=opts.get('rename')))
+    timer(lambda: commands.log(ui, repo, rev=rev, date=b'', user=b'',
+                               copies=opts.get(b'rename')))
     ui.popbuffer()
     fm.end()
 
-@command('perfmoonwalk', formatteropts)
+@command(b'perfmoonwalk', formatteropts)
 def perfmoonwalk(ui, repo, **opts):
     """benchmark walking the changelog backwards
 
     This also loads the changelog data for each revision in the changelog.
     """
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     def moonwalk():
-        for i in xrange(len(repo), -1, -1):
+        for i in repo.changelog.revs(start=(len(repo) - 1), stop=-1):
             ctx = repo[i]
             ctx.branch() # read changelog data (in addition to the index)
     timer(moonwalk)
     fm.end()
 
-@command('perftemplating',
-         [('r', 'rev', [], 'revisions to run the template on'),
-         ] + formatteropts)
+@command(b'perftemplating',
+         [(b'r', b'rev', [], b'revisions to run the template on'),
+          ] + formatteropts)
 def perftemplating(ui, repo, testedtemplate=None, **opts):
     """test the rendering time of a given template"""
     if makelogtemplater is None:
-        raise error.Abort(("perftemplating not available with this Mercurial"),
-                          hint="use 4.3 or later")
+        raise error.Abort((b"perftemplating not available with this Mercurial"),
+                          hint=b"use 4.3 or later")
+
+    opts = _byteskwargs(opts)
 
     nullui = ui.copy()
-    nullui.fout = open(os.devnull, 'wb')
+    nullui.fout = open(os.devnull, r'wb')
     nullui.disablepager()
-    revs = opts.get('rev')
+    revs = opts.get(b'rev')
     if not revs:
-        revs = ['all()']
+        revs = [b'all()']
     revs = list(scmutil.revrange(repo, revs))
 
-    defaulttemplate = ('{date|shortdate} [{rev}:{node|short}]'
-                       ' {author|person}: {desc|firstline}\n')
+    defaulttemplate = (b'{date|shortdate} [{rev}:{node|short}]'
+                       b' {author|person}: {desc|firstline}\n')
     if testedtemplate is None:
         testedtemplate = defaulttemplate
     displayer = makelogtemplater(nullui, repo, testedtemplate)
@@ -1018,14 +1144,16 @@ def perftemplating(ui, repo, testedtemplate=None, **opts):
     timer(format)
     fm.end()
 
-@command('perfcca', formatteropts)
+@command(b'perfcca', formatteropts)
 def perfcca(ui, repo, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     timer(lambda: scmutil.casecollisionauditor(ui, False, repo.dirstate))
     fm.end()
 
-@command('perffncacheload', formatteropts)
+@command(b'perffncacheload', formatteropts)
 def perffncacheload(ui, repo, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     s = repo.store
     def d():
@@ -1033,14 +1161,15 @@ def perffncacheload(ui, repo, **opts):
     timer(d)
     fm.end()
 
-@command('perffncachewrite', formatteropts)
+@command(b'perffncachewrite', formatteropts)
 def perffncachewrite(ui, repo, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     s = repo.store
     lock = repo.lock()
     s.fncache._load()
-    tr = repo.transaction('perffncachewrite')
-    tr.addbackup('fncache')
+    tr = repo.transaction(b'perffncachewrite')
+    tr.addbackup(b'fncache')
     def d():
         s.fncache._dirty = True
         s.fncache.write(tr)
@@ -1049,8 +1178,9 @@ def perffncachewrite(ui, repo, **opts):
     lock.release()
     fm.end()
 
-@command('perffncacheencode', formatteropts)
+@command(b'perffncacheencode', formatteropts)
 def perffncacheencode(ui, repo, **opts):
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     s = repo.store
     s.fncache._load()
@@ -1076,15 +1206,25 @@ def _bdiffworker(q, blocks, xdiff, ready, done):
         with ready:
             ready.wait()
 
-@command('perfbdiff', revlogopts + formatteropts + [
-    ('', 'count', 1, 'number of revisions to test (when using --startrev)'),
-    ('', 'alldata', False, 'test bdiffs for all associated revisions'),
-    ('', 'threads', 0, 'number of thread to use (disable with 0)'),
-    ('', 'blocks', False, 'test computing diffs into blocks'),
-    ('', 'xdiff', False, 'use xdiff algorithm'),
+def _manifestrevision(repo, mnode):
+    ml = repo.manifestlog
+
+    if util.safehasattr(ml, b'getstorage'):
+        store = ml.getstorage(b'')
+    else:
+        store = ml._revlog
+
+    return store.revision(mnode)
+
+@command(b'perfbdiff', revlogopts + formatteropts + [
+    (b'', b'count', 1, b'number of revisions to test (when using --startrev)'),
+    (b'', b'alldata', False, b'test bdiffs for all associated revisions'),
+    (b'', b'threads', 0, b'number of thread to use (disable with 0)'),
+    (b'', b'blocks', False, b'test computing diffs into blocks'),
+    (b'', b'xdiff', False, b'use xdiff algorithm'),
     ],
 
-    '-c|-m|FILE REV')
+    b'-c|-m|FILE REV')
 def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
     """benchmark a bdiff between revisions
 
@@ -1097,33 +1237,33 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
     measure bdiffs for all changes related to that changeset (manifest
     and filelogs).
     """
-    opts = pycompat.byteskwargs(opts)
+    opts = _byteskwargs(opts)
 
-    if opts['xdiff'] and not opts['blocks']:
-        raise error.CommandError('perfbdiff', '--xdiff requires --blocks')
+    if opts[b'xdiff'] and not opts[b'blocks']:
+        raise error.CommandError(b'perfbdiff', b'--xdiff requires --blocks')
 
-    if opts['alldata']:
-        opts['changelog'] = True
+    if opts[b'alldata']:
+        opts[b'changelog'] = True
 
-    if opts.get('changelog') or opts.get('manifest'):
+    if opts.get(b'changelog') or opts.get(b'manifest'):
         file_, rev = None, file_
     elif rev is None:
-        raise error.CommandError('perfbdiff', 'invalid arguments')
+        raise error.CommandError(b'perfbdiff', b'invalid arguments')
 
-    blocks = opts['blocks']
-    xdiff = opts['xdiff']
+    blocks = opts[b'blocks']
+    xdiff = opts[b'xdiff']
     textpairs = []
 
-    r = cmdutil.openrevlog(repo, 'perfbdiff', file_, opts)
+    r = cmdutil.openrevlog(repo, b'perfbdiff', file_, opts)
 
     startrev = r.rev(r.lookup(rev))
     for rev in range(startrev, min(startrev + count, len(r) - 1)):
-        if opts['alldata']:
+        if opts[b'alldata']:
             # Load revisions associated with changeset.
             ctx = repo[rev]
-            mtext = repo.manifestlog._revlog.revision(ctx.manifestnode())
+            mtext = _manifestrevision(repo, ctx.manifestnode())
             for pctx in ctx.parents():
-                pman = repo.manifestlog._revlog.revision(pctx.manifestnode())
+                pman = _manifestrevision(repo, pctx.manifestnode())
                 textpairs.append((pman, mtext))
 
             # Load filelog revisions by iterating manifest delta.
@@ -1150,18 +1290,18 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
                     mdiff.textdiff(*pair)
     else:
         q = queue()
-        for i in xrange(threads):
+        for i in _xrange(threads):
             q.put(None)
         ready = threading.Condition()
         done = threading.Event()
-        for i in xrange(threads):
+        for i in _xrange(threads):
             threading.Thread(target=_bdiffworker,
                              args=(q, blocks, xdiff, ready, done)).start()
         q.join()
         def d():
             for pair in textpairs:
                 q.put(pair)
-            for i in xrange(threads):
+            for i in _xrange(threads):
                 q.put(None)
             with ready:
                 ready.notify_all()
@@ -1172,15 +1312,15 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
 
     if withthreads:
         done.set()
-        for i in xrange(threads):
+        for i in _xrange(threads):
             q.put(None)
         with ready:
             ready.notify_all()
 
-@command('perfunidiff', revlogopts + formatteropts + [
-    ('', 'count', 1, 'number of revisions to test (when using --startrev)'),
-    ('', 'alldata', False, 'test unidiffs for all associated revisions'),
-    ], '-c|-m|FILE REV')
+@command(b'perfunidiff', revlogopts + formatteropts + [
+    (b'', b'count', 1, b'number of revisions to test (when using --startrev)'),
+    (b'', b'alldata', False, b'test unidiffs for all associated revisions'),
+    ], b'-c|-m|FILE REV')
 def perfunidiff(ui, repo, file_, rev=None, count=None, **opts):
     """benchmark a unified diff between revisions
 
@@ -1196,26 +1336,27 @@ def perfunidiff(ui, repo, file_, rev=None, count=None, **opts):
     measure diffs for all changes related to that changeset (manifest
     and filelogs).
     """
-    if opts['alldata']:
-        opts['changelog'] = True
+    opts = _byteskwargs(opts)
+    if opts[b'alldata']:
+        opts[b'changelog'] = True
 
-    if opts.get('changelog') or opts.get('manifest'):
+    if opts.get(b'changelog') or opts.get(b'manifest'):
         file_, rev = None, file_
     elif rev is None:
-        raise error.CommandError('perfunidiff', 'invalid arguments')
+        raise error.CommandError(b'perfunidiff', b'invalid arguments')
 
     textpairs = []
 
-    r = cmdutil.openrevlog(repo, 'perfunidiff', file_, opts)
+    r = cmdutil.openrevlog(repo, b'perfunidiff', file_, opts)
 
     startrev = r.rev(r.lookup(rev))
     for rev in range(startrev, min(startrev + count, len(r) - 1)):
-        if opts['alldata']:
+        if opts[b'alldata']:
             # Load revisions associated with changeset.
             ctx = repo[rev]
-            mtext = repo.manifestlog._revlog.revision(ctx.manifestnode())
+            mtext = _manifestrevision(repo, ctx.manifestnode())
             for pctx in ctx.parents():
-                pman = repo.manifestlog._revlog.revision(pctx.manifestnode())
+                pman = _manifestrevision(repo, pctx.manifestnode())
                 textpairs.append((pman, mtext))
 
             # Load filelog revisions by iterating manifest delta.
@@ -1234,7 +1375,7 @@ def perfunidiff(ui, repo, file_, rev=None, count=None, **opts):
         for left, right in textpairs:
             # The date strings don't matter, so we pass empty strings.
             headerlines, hunks = mdiff.unidiff(
-                left, '', right, '', 'left', 'right', binary=False)
+                left, b'', right, b'', b'left', b'right', binary=False)
             # consume iterators in roughly the way patch.py does
             b'\n'.join(headerlines)
             b''.join(sum((list(hlines) for hrange, hlines in hunks), []))
@@ -1242,9 +1383,10 @@ def perfunidiff(ui, repo, file_, rev=None, count=None, **opts):
     timer(d)
     fm.end()
 
-@command('perfdiffwd', formatteropts)
+@command(b'perfdiffwd', formatteropts)
 def perfdiffwd(ui, repo, **opts):
     """Profile diff of working directory changes"""
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     options = {
         'w': 'ignore_all_space',
@@ -1253,17 +1395,18 @@ def perfdiffwd(ui, repo, **opts):
         }
 
     for diffopt in ('', 'w', 'b', 'B', 'wB'):
-        opts = dict((options[c], '1') for c in diffopt)
+        opts = dict((options[c], b'1') for c in diffopt)
         def d():
             ui.pushbuffer()
             commands.diff(ui, repo, **opts)
             ui.popbuffer()
-        title = 'diffopts: %s' % (diffopt and ('-' + diffopt) or 'none')
+        diffopt = diffopt.encode('ascii')
+        title = b'diffopts: %s' % (diffopt and (b'-' + diffopt) or b'none')
         timer(d, title)
     fm.end()
 
-@command('perfrevlogindex', revlogopts + formatteropts,
-         '-c|-m|FILE')
+@command(b'perfrevlogindex', revlogopts + formatteropts,
+         b'-c|-m|FILE')
 def perfrevlogindex(ui, repo, file_=None, **opts):
     """Benchmark operations against a revlog index.
 
@@ -1272,19 +1415,21 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
     index data.
     """
 
-    rl = cmdutil.openrevlog(repo, 'perfrevlogindex', file_, opts)
+    opts = _byteskwargs(opts)
+
+    rl = cmdutil.openrevlog(repo, b'perfrevlogindex', file_, opts)
 
     opener = getattr(rl, 'opener')  # trick linter
     indexfile = rl.indexfile
     data = opener.read(indexfile)
 
-    header = struct.unpack('>I', data[0:4])[0]
+    header = struct.unpack(b'>I', data[0:4])[0]
     version = header & 0xFFFF
     if version == 1:
         revlogio = revlog.revlogio()
         inline = header & (1 << 16)
     else:
-        raise error.Abort(('unsupported revlog version: %d') % version)
+        raise error.Abort((b'unsupported revlog version: %d') % version)
 
     rllen = len(rl)
 
@@ -1344,33 +1489,33 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
                     pass
 
     benches = [
-        (constructor, 'revlog constructor'),
-        (read, 'read'),
-        (parseindex, 'create index object'),
-        (lambda: getentry(0), 'retrieve index entry for rev 0'),
-        (lambda: resolvenode('a' * 20), 'look up missing node'),
-        (lambda: resolvenode(node0), 'look up node at rev 0'),
-        (lambda: resolvenode(node25), 'look up node at 1/4 len'),
-        (lambda: resolvenode(node50), 'look up node at 1/2 len'),
-        (lambda: resolvenode(node75), 'look up node at 3/4 len'),
-        (lambda: resolvenode(node100), 'look up node at tip'),
+        (constructor, b'revlog constructor'),
+        (read, b'read'),
+        (parseindex, b'create index object'),
+        (lambda: getentry(0), b'retrieve index entry for rev 0'),
+        (lambda: resolvenode(b'a' * 20), b'look up missing node'),
+        (lambda: resolvenode(node0), b'look up node at rev 0'),
+        (lambda: resolvenode(node25), b'look up node at 1/4 len'),
+        (lambda: resolvenode(node50), b'look up node at 1/2 len'),
+        (lambda: resolvenode(node75), b'look up node at 3/4 len'),
+        (lambda: resolvenode(node100), b'look up node at tip'),
         # 2x variation is to measure caching impact.
         (lambda: resolvenodes(allnodes),
-         'look up all nodes (forward)'),
+         b'look up all nodes (forward)'),
         (lambda: resolvenodes(allnodes, 2),
-         'look up all nodes 2x (forward)'),
+         b'look up all nodes 2x (forward)'),
         (lambda: resolvenodes(allnodesrev),
-         'look up all nodes (reverse)'),
+         b'look up all nodes (reverse)'),
         (lambda: resolvenodes(allnodesrev, 2),
-         'look up all nodes 2x (reverse)'),
+         b'look up all nodes 2x (reverse)'),
         (lambda: getentries(allrevs),
-         'retrieve all index entries (forward)'),
+         b'retrieve all index entries (forward)'),
         (lambda: getentries(allrevs, 2),
-         'retrieve all index entries 2x (forward)'),
+         b'retrieve all index entries 2x (forward)'),
         (lambda: getentries(allrevsrev),
-         'retrieve all index entries (reverse)'),
+         b'retrieve all index entries (reverse)'),
         (lambda: getentries(allrevsrev, 2),
-         'retrieve all index entries 2x (reverse)'),
+         b'retrieve all index entries 2x (reverse)'),
     ]
 
     for fn, title in benches:
@@ -1378,11 +1523,11 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
         timer(fn, title=title)
         fm.end()
 
-@command('perfrevlogrevisions', revlogopts + formatteropts +
-         [('d', 'dist', 100, 'distance between the revisions'),
-          ('s', 'startrev', 0, 'revision to start reading at'),
-          ('', 'reverse', False, 'read in reverse')],
-         '-c|-m|FILE')
+@command(b'perfrevlogrevisions', revlogopts + formatteropts +
+         [(b'd', b'dist', 100, b'distance between the revisions'),
+          (b's', b'startrev', 0, b'revision to start reading at'),
+          (b'', b'reverse', False, b'read in reverse')],
+         b'-c|-m|FILE')
 def perfrevlogrevisions(ui, repo, file_=None, startrev=0, reverse=False,
                         **opts):
     """Benchmark reading a series of revisions from a revlog.
@@ -1392,21 +1537,26 @@ def perfrevlogrevisions(ui, repo, file_=None, startrev=0, reverse=False,
 
     The start revision can be defined via ``-s/--startrev``.
     """
-    rl = cmdutil.openrevlog(repo, 'perfrevlogrevisions', file_, opts)
+    opts = _byteskwargs(opts)
+
+    rl = cmdutil.openrevlog(repo, b'perfrevlogrevisions', file_, opts)
     rllen = getlen(ui)(rl)
+
+    if startrev < 0:
+        startrev = rllen + startrev
 
     def d():
         rl.clearcaches()
 
         beginrev = startrev
         endrev = rllen
-        dist = opts['dist']
+        dist = opts[b'dist']
 
         if reverse:
             beginrev, endrev = endrev, beginrev
             dist = -1 * dist
 
-        for x in xrange(beginrev, endrev, dist):
+        for x in _xrange(beginrev, endrev, dist):
             # Old revisions don't support passing int.
             n = rl.node(x)
             rl.revision(n)
@@ -1415,10 +1565,10 @@ def perfrevlogrevisions(ui, repo, file_=None, startrev=0, reverse=False,
     timer(d)
     fm.end()
 
-@command('perfrevlogchunks', revlogopts + formatteropts +
-         [('e', 'engines', '', 'compression engines to use'),
-          ('s', 'startrev', 0, 'revision to start at')],
-         '-c|-m|FILE')
+@command(b'perfrevlogchunks', revlogopts + formatteropts +
+         [(b'e', b'engines', b'', b'compression engines to use'),
+          (b's', b'startrev', 0, b'revision to start at')],
+         b'-c|-m|FILE')
 def perfrevlogchunks(ui, repo, file_=None, engines=None, startrev=0, **opts):
     """Benchmark operations on revlog chunks.
 
@@ -1431,7 +1581,9 @@ def perfrevlogchunks(ui, repo, file_=None, engines=None, startrev=0, **opts):
     For measurements of higher-level operations like resolving revisions,
     see ``perfrevlogrevisions`` and ``perfrevlogrevision``.
     """
-    rl = cmdutil.openrevlog(repo, 'perfrevlogchunks', file_, opts)
+    opts = _byteskwargs(opts)
+
+    rl = cmdutil.openrevlog(repo, b'perfrevlogchunks', file_, opts)
 
     # _chunkraw was renamed to _getsegmentforrevs.
     try:
@@ -1441,19 +1593,19 @@ def perfrevlogchunks(ui, repo, file_=None, engines=None, startrev=0, **opts):
 
     # Verify engines argument.
     if engines:
-        engines = set(e.strip() for e in engines.split(','))
+        engines = set(e.strip() for e in engines.split(b','))
         for engine in engines:
             try:
                 util.compressionengines[engine]
             except KeyError:
-                raise error.Abort('unknown compression engine: %s' % engine)
+                raise error.Abort(b'unknown compression engine: %s' % engine)
     else:
         engines = []
         for e in util.compengines:
             engine = util.compengines[e]
             try:
                 if engine.available():
-                    engine.revlogcompressor().compress('dummy')
+                    engine.revlogcompressor().compress(b'dummy')
                     engines.append(e)
             except NotImplementedError:
                 pass
@@ -1513,27 +1665,27 @@ def perfrevlogchunks(ui, repo, file_=None, engines=None, startrev=0, **opts):
             rl._compressor = oldcompressor
 
     benches = [
-        (lambda: doread(), 'read'),
-        (lambda: doreadcachedfh(), 'read w/ reused fd'),
-        (lambda: doreadbatch(), 'read batch'),
-        (lambda: doreadbatchcachedfh(), 'read batch w/ reused fd'),
-        (lambda: dochunk(), 'chunk'),
-        (lambda: dochunkbatch(), 'chunk batch'),
+        (lambda: doread(), b'read'),
+        (lambda: doreadcachedfh(), b'read w/ reused fd'),
+        (lambda: doreadbatch(), b'read batch'),
+        (lambda: doreadbatchcachedfh(), b'read batch w/ reused fd'),
+        (lambda: dochunk(), b'chunk'),
+        (lambda: dochunkbatch(), b'chunk batch'),
     ]
 
     for engine in sorted(engines):
         compressor = util.compengines[engine].revlogcompressor()
         benches.append((functools.partial(docompress, compressor),
-                        'compress w/ %s' % engine))
+                        b'compress w/ %s' % engine))
 
     for fn, title in benches:
         timer, fm = gettimer(ui, opts)
         timer(fn, title=title)
         fm.end()
 
-@command('perfrevlogrevision', revlogopts + formatteropts +
-         [('', 'cache', False, 'use caches instead of clearing')],
-         '-c|-m|FILE REV')
+@command(b'perfrevlogrevision', revlogopts + formatteropts +
+         [(b'', b'cache', False, b'use caches instead of clearing')],
+         b'-c|-m|FILE REV')
 def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
     """Benchmark obtaining a revlog revision.
 
@@ -1547,12 +1699,14 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
 
     This command measures the time spent in each of these phases.
     """
-    if opts.get('changelog') or opts.get('manifest'):
+    opts = _byteskwargs(opts)
+
+    if opts.get(b'changelog') or opts.get(b'manifest'):
         file_, rev = None, file_
     elif rev is None:
-        raise error.CommandError('perfrevlogrevision', 'invalid arguments')
+        raise error.CommandError(b'perfrevlogrevision', b'invalid arguments')
 
-    r = cmdutil.openrevlog(repo, 'perfrevlogrevision', file_, opts)
+    r = cmdutil.openrevlog(repo, b'perfrevlogrevision', file_, opts)
 
     # _chunkraw was renamed to _getsegmentforrevs.
     try:
@@ -1622,18 +1776,18 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
     data = segmentforrevs(chain[0], chain[-1])[1]
     rawchunks = getrawchunks(data, chain)
     bins = r._chunks(chain)
-    text = str(bins[0])
+    text = bytes(bins[0])
     bins = bins[1:]
     text = mdiff.patches(text, bins)
 
     benches = [
-        (lambda: dorevision(), 'full'),
-        (lambda: dodeltachain(rev), 'deltachain'),
-        (lambda: doread(chain), 'read'),
-        (lambda: dorawchunks(data, chain), 'rawchunks'),
-        (lambda: dodecompress(rawchunks), 'decompress'),
-        (lambda: dopatch(text, bins), 'patch'),
-        (lambda: dohash(text), 'hash'),
+        (lambda: dorevision(), b'full'),
+        (lambda: dodeltachain(rev), b'deltachain'),
+        (lambda: doread(chain), b'read'),
+        (lambda: dorawchunks(data, chain), b'rawchunks'),
+        (lambda: dodecompress(rawchunks), b'decompress'),
+        (lambda: dopatch(text, bins), b'patch'),
+        (lambda: dohash(text), b'hash'),
     ]
 
     for fn, title in benches:
@@ -1641,16 +1795,18 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
         timer(fn, title=title)
         fm.end()
 
-@command('perfrevset',
-         [('C', 'clear', False, 'clear volatile cache between each call.'),
-          ('', 'contexts', False, 'obtain changectx for each revision')]
-         + formatteropts, "REVSET")
+@command(b'perfrevset',
+         [(b'C', b'clear', False, b'clear volatile cache between each call.'),
+          (b'', b'contexts', False, b'obtain changectx for each revision')]
+         + formatteropts, b"REVSET")
 def perfrevset(ui, repo, expr, clear=False, contexts=False, **opts):
     """benchmark the execution time of a revset
 
     Use the --clean option if need to evaluate the impact of build volatile
     revisions set cache on the revset execution. Volatile cache hold filtered
     and obsolete related cache."""
+    opts = _byteskwargs(opts)
+
     timer, fm = gettimer(ui, opts)
     def d():
         if clear:
@@ -1662,21 +1818,22 @@ def perfrevset(ui, repo, expr, clear=False, contexts=False, **opts):
     timer(d)
     fm.end()
 
-@command('perfvolatilesets',
-         [('', 'clear-obsstore', False, 'drop obsstore between each call.'),
-         ] + formatteropts)
+@command(b'perfvolatilesets',
+         [(b'', b'clear-obsstore', False, b'drop obsstore between each call.'),
+          ] + formatteropts)
 def perfvolatilesets(ui, repo, *names, **opts):
     """benchmark the computation of various volatile set
 
     Volatile set computes element related to filtering and obsolescence."""
+    opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     repo = repo.unfiltered()
 
     def getobs(name):
         def d():
             repo.invalidatevolatilesets()
-            if opts['clear_obsstore']:
-                clearfilecache(repo, 'obsstore')
+            if opts[b'clear_obsstore']:
+                clearfilecache(repo, b'obsstore')
             obsolete.getrevs(repo, name)
         return d
 
@@ -1690,8 +1847,8 @@ def perfvolatilesets(ui, repo, *names, **opts):
     def getfiltered(name):
         def d():
             repo.invalidatevolatilesets()
-            if opts['clear_obsstore']:
-                clearfilecache(repo, 'obsstore')
+            if opts[b'clear_obsstore']:
+                clearfilecache(repo, b'obsstore')
             repoview.filterrevs(repo, name)
         return d
 
@@ -1703,19 +1860,20 @@ def perfvolatilesets(ui, repo, *names, **opts):
         timer(getfiltered(name), title=name)
     fm.end()
 
-@command('perfbranchmap',
-         [('f', 'full', False,
-           'Includes build time of subset'),
-          ('', 'clear-revbranch', False,
-           'purge the revbranch cache between computation'),
-         ] + formatteropts)
+@command(b'perfbranchmap',
+         [(b'f', b'full', False,
+           b'Includes build time of subset'),
+          (b'', b'clear-revbranch', False,
+           b'purge the revbranch cache between computation'),
+          ] + formatteropts)
 def perfbranchmap(ui, repo, *filternames, **opts):
     """benchmark the update of a branchmap
 
     This benchmarks the full repo.branchmap() call with read and write disabled
     """
-    full = opts.get("full", False)
-    clear_revbranch = opts.get("clear_revbranch", False)
+    opts = _byteskwargs(opts)
+    full = opts.get(b"full", False)
+    clear_revbranch = opts.get(b"clear_revbranch", False)
     timer, fm = gettimer(ui, opts)
     def getbranchmap(filtername):
         """generate a benchmark function for the filtername"""
@@ -1744,7 +1902,7 @@ def perfbranchmap(ui, repo, *filternames, **opts):
             if subset not in possiblefilters:
                 break
         else:
-            assert False, 'subset cycle %s!' % possiblefilters
+            assert False, b'subset cycle %s!' % possiblefilters
         allfilters.append(name)
         possiblefilters.remove(name)
 
@@ -1752,26 +1910,53 @@ def perfbranchmap(ui, repo, *filternames, **opts):
     if not full:
         for name in allfilters:
             repo.filtered(name).branchmap()
-    if not filternames or 'unfiltered' in filternames:
+    if not filternames or b'unfiltered' in filternames:
         # add unfiltered
         allfilters.append(None)
 
-    branchcacheread = safeattrsetter(branchmap, 'read')
-    branchcachewrite = safeattrsetter(branchmap.branchcache, 'write')
+    branchcacheread = safeattrsetter(branchmap, b'read')
+    branchcachewrite = safeattrsetter(branchmap.branchcache, b'write')
     branchcacheread.set(lambda repo: None)
     branchcachewrite.set(lambda bc, repo: None)
     try:
         for name in allfilters:
             printname = name
             if name is None:
-                printname = 'unfiltered'
+                printname = b'unfiltered'
             timer(getbranchmap(name), title=str(printname))
     finally:
         branchcacheread.restore()
         branchcachewrite.restore()
     fm.end()
 
-@command('perfloadmarkers')
+@command(b'perfbranchmapload', [
+     (b'f', b'filter', b'', b'Specify repoview filter'),
+     (b'', b'list', False, b'List brachmap filter caches'),
+    ] + formatteropts)
+def perfbranchmapread(ui, repo, filter=b'', list=False, **opts):
+    """benchmark reading the branchmap"""
+    opts = _byteskwargs(opts)
+
+    if list:
+        for name, kind, st in repo.cachevfs.readdir(stat=True):
+            if name.startswith(b'branch2'):
+                filtername = name.partition(b'-')[2] or b'unfiltered'
+                ui.status(b'%s - %s\n'
+                          % (filtername, util.bytecount(st.st_size)))
+        return
+    if filter:
+        repo = repoview.repoview(repo, filter)
+    else:
+        repo = repo.unfiltered()
+    # try once without timer, the filter may not be cached
+    if branchmap.read(repo) is None:
+        raise error.Abort(b'No brachmap cached for %s repo'
+                          % (filter or b'unfiltered'))
+    timer, fm = gettimer(ui, opts)
+    timer(lambda: branchmap.read(repo) and None)
+    fm.end()
+
+@command(b'perfloadmarkers')
 def perfloadmarkers(ui, repo):
     """benchmark the time to parse the on-disk markers for a repo
 
@@ -1781,27 +1966,34 @@ def perfloadmarkers(ui, repo):
     timer(lambda: len(obsolete.obsstore(svfs)))
     fm.end()
 
-@command('perflrucachedict', formatteropts +
-    [('', 'size', 4, 'size of cache'),
-     ('', 'gets', 10000, 'number of key lookups'),
-     ('', 'sets', 10000, 'number of key sets'),
-     ('', 'mixed', 10000, 'number of mixed mode operations'),
-     ('', 'mixedgetfreq', 50, 'frequency of get vs set ops in mixed mode')],
+@command(b'perflrucachedict', formatteropts +
+    [(b'', b'costlimit', 0, b'maximum total cost of items in cache'),
+     (b'', b'mincost', 0, b'smallest cost of items in cache'),
+     (b'', b'maxcost', 100, b'maximum cost of items in cache'),
+     (b'', b'size', 4, b'size of cache'),
+     (b'', b'gets', 10000, b'number of key lookups'),
+     (b'', b'sets', 10000, b'number of key sets'),
+     (b'', b'mixed', 10000, b'number of mixed mode operations'),
+     (b'', b'mixedgetfreq', 50, b'frequency of get vs set ops in mixed mode')],
     norepo=True)
-def perflrucache(ui, size=4, gets=10000, sets=10000, mixed=10000,
-                 mixedgetfreq=50, **opts):
+def perflrucache(ui, mincost=0, maxcost=100, costlimit=0, size=4,
+                 gets=10000, sets=10000, mixed=10000, mixedgetfreq=50, **opts):
+    opts = _byteskwargs(opts)
+
     def doinit():
-        for i in xrange(10000):
+        for i in _xrange(10000):
             util.lrucachedict(size)
 
+    costrange = list(range(mincost, maxcost + 1))
+
     values = []
-    for i in xrange(size):
-        values.append(random.randint(0, sys.maxint))
+    for i in _xrange(size):
+        values.append(random.randint(0, _maxint))
 
     # Get mode fills the cache and tests raw lookup performance with no
     # eviction.
     getseq = []
-    for i in xrange(gets):
+    for i in _xrange(gets):
         getseq.append(random.choice(values))
 
     def dogets():
@@ -1812,10 +2004,33 @@ def perflrucache(ui, size=4, gets=10000, sets=10000, mixed=10000,
             value = d[key]
             value # silence pyflakes warning
 
+    def dogetscost():
+        d = util.lrucachedict(size, maxcost=costlimit)
+        for i, v in enumerate(values):
+            d.insert(v, v, cost=costs[i])
+        for key in getseq:
+            try:
+                value = d[key]
+                value # silence pyflakes warning
+            except KeyError:
+                pass
+
     # Set mode tests insertion speed with cache eviction.
     setseq = []
-    for i in xrange(sets):
-        setseq.append(random.randint(0, sys.maxint))
+    costs = []
+    for i in _xrange(sets):
+        setseq.append(random.randint(0, _maxint))
+        costs.append(random.choice(costrange))
+
+    def doinserts():
+        d = util.lrucachedict(size)
+        for v in setseq:
+            d.insert(v, v)
+
+    def doinsertscost():
+        d = util.lrucachedict(size, maxcost=costlimit)
+        for i, v in enumerate(setseq):
+            d.insert(v, v, cost=costs[i])
 
     def dosets():
         d = util.lrucachedict(size)
@@ -1824,19 +2039,21 @@ def perflrucache(ui, size=4, gets=10000, sets=10000, mixed=10000,
 
     # Mixed mode randomly performs gets and sets with eviction.
     mixedops = []
-    for i in xrange(mixed):
+    for i in _xrange(mixed):
         r = random.randint(0, 100)
         if r < mixedgetfreq:
             op = 0
         else:
             op = 1
 
-        mixedops.append((op, random.randint(0, size * 2)))
+        mixedops.append((op,
+                         random.randint(0, size * 2),
+                         random.choice(costrange)))
 
     def domixed():
         d = util.lrucachedict(size)
 
-        for op, v in mixedops:
+        for op, v, cost in mixedops:
             if op == 0:
                 try:
                     d[v]
@@ -1845,40 +2062,65 @@ def perflrucache(ui, size=4, gets=10000, sets=10000, mixed=10000,
             else:
                 d[v] = v
 
+    def domixedcost():
+        d = util.lrucachedict(size, maxcost=costlimit)
+
+        for op, v, cost in mixedops:
+            if op == 0:
+                try:
+                    d[v]
+                except KeyError:
+                    pass
+            else:
+                d.insert(v, v, cost=cost)
+
     benches = [
-        (doinit, 'init'),
-        (dogets, 'gets'),
-        (dosets, 'sets'),
-        (domixed, 'mixed')
+        (doinit, b'init'),
     ]
+
+    if costlimit:
+        benches.extend([
+            (dogetscost, b'gets w/ cost limit'),
+            (doinsertscost, b'inserts w/ cost limit'),
+            (domixedcost, b'mixed w/ cost limit'),
+        ])
+    else:
+        benches.extend([
+            (dogets, b'gets'),
+            (doinserts, b'inserts'),
+            (dosets, b'sets'),
+            (domixed, b'mixed')
+        ])
 
     for fn, title in benches:
         timer, fm = gettimer(ui, opts)
         timer(fn, title=title)
         fm.end()
 
-@command('perfwrite', formatteropts)
+@command(b'perfwrite', formatteropts)
 def perfwrite(ui, repo, **opts):
     """microbenchmark ui.write
     """
+    opts = _byteskwargs(opts)
+
     timer, fm = gettimer(ui, opts)
     def write():
         for i in range(100000):
-            ui.write(('Testing write performance\n'))
+            ui.write((b'Testing write performance\n'))
     timer(write)
     fm.end()
 
 def uisetup(ui):
-    if (util.safehasattr(cmdutil, 'openrevlog') and
-        not util.safehasattr(commands, 'debugrevlogopts')):
+    if (util.safehasattr(cmdutil, b'openrevlog') and
+        not util.safehasattr(commands, b'debugrevlogopts')):
         # for "historical portability":
         # In this case, Mercurial should be 1.9 (or a79fea6b3e77) -
         # 3.7 (or 5606f7d0d063). Therefore, '--dir' option for
         # openrevlog() should cause failure, because it has been
         # available since 3.5 (or 49c583ca48c4).
         def openrevlog(orig, repo, cmd, file_, opts):
-            if opts.get('dir') and not util.safehasattr(repo, 'dirlog'):
-                raise error.Abort("This version doesn't support --dir option",
-                                  hint="use 3.5 or later")
+            if opts.get(b'dir') and not util.safehasattr(repo, b'dirlog'):
+                raise error.Abort(b"This version doesn't support --dir option",
+                                  hint=b"use 3.5 or later")
             return orig(repo, cmd, file_, opts)
-        extensions.wrapfunction(cmdutil, 'openrevlog', openrevlog)
+        extensions.wrapfunction(cmdutil, b'openrevlog', openrevlog)

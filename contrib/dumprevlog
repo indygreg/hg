@@ -6,7 +6,9 @@ from __future__ import absolute_import, print_function
 
 import sys
 from mercurial import (
+    encoding,
     node,
+    pycompat,
     revlog,
 )
 from mercurial.utils import (
@@ -16,22 +18,26 @@ from mercurial.utils import (
 for fp in (sys.stdin, sys.stdout, sys.stderr):
     procutil.setbinary(fp)
 
-def binopen(path, mode='rb'):
-    if 'b' not in mode:
-        mode = mode + 'b'
-    return open(path, mode)
+def binopen(path, mode=b'rb'):
+    if b'b' not in mode:
+        mode = mode + b'b'
+    return open(path, pycompat.sysstr(mode))
+
+def printb(data, end=b'\n'):
+    sys.stdout.flush()
+    pycompat.stdout.write(data + end)
 
 for f in sys.argv[1:]:
-    r = revlog.revlog(binopen, f)
+    r = revlog.revlog(binopen, encoding.strtolocal(f))
     print("file:", f)
     for i in r:
         n = r.node(i)
         p = r.parents(n)
         d = r.revision(n)
-        print("node:", node.hex(n))
-        print("linkrev:", r.linkrev(i))
-        print("parents:", node.hex(p[0]), node.hex(p[1]))
-        print("length:", len(d))
-        print("-start-")
-        print(d)
-        print("-end-")
+        printb(b"node: %s" % node.hex(n))
+        printb(b"linkrev: %d" % r.linkrev(i))
+        printb(b"parents: %s %s" % (node.hex(p[0]), node.hex(p[1])))
+        printb(b"length: %d" % len(d))
+        printb(b"-start-")
+        printb(d)
+        printb(b"-end-")

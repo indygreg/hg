@@ -540,7 +540,7 @@ Rebase, collapse and copies
   adding manifests
   adding file changes
   added 4 changesets with 11 changes to 7 files (+1 heads)
-  new changesets f447d5abf5ea:338e84e2e558
+  new changesets f447d5abf5ea:338e84e2e558 (4 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg up -q tip
   $ hg tglog

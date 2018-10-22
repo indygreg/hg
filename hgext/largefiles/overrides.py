@@ -889,11 +889,6 @@ def hgclone(orig, ui, opts, *args, **kwargs):
         if not repo:
             return result
 
-        # If largefiles is required for this repo, permanently enable it locally
-        if 'largefiles' in repo.requirements:
-            repo.vfs.append('hgrc',
-                            util.tonativeeol('\n[extensions]\nlargefiles=\n'))
-
         # Caching is implicitly limited to 'rev' option, since the dest repo was
         # truncated at that point.  The user may expect a download count with
         # this option, so attempt whether or not this is a largefile repo.
@@ -904,14 +899,6 @@ def hgclone(orig, ui, opts, *args, **kwargs):
                 return None
 
     return result
-
-def hgpostshare(orig, sourcerepo, destrepo, bookmarks=True, defaultpath=None):
-    orig(sourcerepo, destrepo, bookmarks, defaultpath)
-
-    # If largefiles is required for this repo, permanently enable it locally
-    if 'largefiles' in destrepo.requirements:
-        destrepo.vfs.append('hgrc',
-                            util.tonativeeol('\n[extensions]\nlargefiles=\n'))
 
 def overriderebase(orig, ui, repo, **opts):
     if not util.safehasattr(repo, '_largefilesenabled'):

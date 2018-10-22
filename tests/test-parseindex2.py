@@ -8,12 +8,14 @@ from __future__ import absolute_import, print_function
 import struct
 import subprocess
 import sys
+import unittest
 
 from mercurial.node import (
     nullid,
     nullrev,
 )
 from mercurial import (
+    node as nodemod,
     policy,
     pycompat,
 )
@@ -60,9 +62,6 @@ def py_parseindex(data, inline) :
     type = gettype(e[0])
     e[0] = offset_type(0, type)
     index[0] = tuple(e)
-
-    # add the magic null revision at -1
-    index.append((0, 0, 0, -1, -1, -1, -1, nullid))
 
     return index, cache
 
@@ -132,88 +131,92 @@ def importparsers(hexversion):
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     return p.communicate()  # returns stdout, stderr
 
-def printhexfail(testnumber, hexversion, stdout, expected):
+def hexfailmsg(testnumber, hexversion, stdout, expected):
     try:
         hexstring = hex(hexversion)
     except TypeError:
         hexstring = None
-    print("FAILED: version test #%s with Python %s and patched "
-          "sys.hexversion %r (%r):\n Expected %s but got:\n-->'%s'\n" %
-          (testnumber, sys.version_info, hexversion, hexstring, expected,
-           stdout))
-
-def testversionokay(testnumber, hexversion):
-    stdout, stderr = importparsers(hexversion)
-    if stdout:
-        printhexfail(testnumber, hexversion, stdout, expected="no stdout")
-
-def testversionfail(testnumber, hexversion):
-    stdout, stderr = importparsers(hexversion)
-    # We include versionerrortext to distinguish from other ImportErrors.
-    errtext = b"ImportError: %s" % pycompat.sysbytes(parsers.versionerrortext)
-    if errtext not in stdout:
-        printhexfail(testnumber, hexversion, stdout,
-                     expected="stdout to contain %r" % errtext)
+    return ("FAILED: version test #%s with Python %s and patched "
+            "sys.hexversion %r (%r):\n Expected %s but got:\n-->'%s'\n" %
+            (testnumber, sys.version_info, hexversion, hexstring, expected,
+             stdout))
 
 def makehex(major, minor, micro):
     return int("%x%02x%02x00" % (major, minor, micro), 16)
 
-def runversiontests():
-    """Check the version-detection logic when importing parsers."""
-    info = sys.version_info
-    major, minor, micro = info[0], info[1], info[2]
-    # Test same major-minor versions.
-    testversionokay(1, makehex(major, minor, micro))
-    testversionokay(2, makehex(major, minor, micro + 1))
-    # Test different major-minor versions.
-    testversionfail(3, makehex(major + 1, minor, micro))
-    testversionfail(4, makehex(major, minor + 1, micro))
-    testversionfail(5, "'foo'")
+class parseindex2tests(unittest.TestCase):
 
-def runtest() :
-    # Only test the version-detection logic if it is present.
-    try:
-        parsers.versionerrortext
-    except AttributeError:
-        pass
-    else:
-        runversiontests()
+    def assertversionokay(self, testnumber, hexversion):
+        stdout, stderr = importparsers(hexversion)
+        self.assertFalse(
+            stdout, hexfailmsg(testnumber, hexversion, stdout, 'no stdout'))
 
-    # Check that parse_index2() raises TypeError on bad arguments.
-    try:
-        parse_index2(0, True)
-    except TypeError:
-        pass
-    else:
-        print("Expected to get TypeError.")
+    def assertversionfail(self, testnumber, hexversion):
+        stdout, stderr = importparsers(hexversion)
+        # We include versionerrortext to distinguish from other ImportErrors.
+        errtext = b"ImportError: %s" % pycompat.sysbytes(
+            parsers.versionerrortext)
+        self.assertIn(errtext, stdout,
+                      hexfailmsg(testnumber, hexversion, stdout,
+                                 expected="stdout to contain %r" % errtext))
 
-   # Check parsers.parse_index2() on an index file against the original
-   # Python implementation of parseindex, both with and without inlined data.
-
-    py_res_1 = py_parseindex(data_inlined, True)
-    c_res_1 = parse_index2(data_inlined, True)
-
-    py_res_2 = py_parseindex(data_non_inlined, False)
-    c_res_2 = parse_index2(data_non_inlined, False)
-
-    if py_res_1 != c_res_1:
-        print("Parse index result (with inlined data) differs!")
-
-    if py_res_2 != c_res_2:
-        print("Parse index result (no inlined data) differs!")
-
-    ix = parsers.parse_index2(data_inlined, True)[0]
-    for i, r in enumerate(ix):
-        if r[7] == nullid:
-            i = -1
+    def testversiondetection(self):
+        """Check the version-detection logic when importing parsers."""
+        # Only test the version-detection logic if it is present.
         try:
-            if ix[r[7]] != i:
-                print('Reverse lookup inconsistent for %r'
-                    % r[7].encode('hex'))
-        except TypeError:
-            # pure version doesn't support this
-            break
+            parsers.versionerrortext
+        except AttributeError:
+            return
+        info = sys.version_info
+        major, minor, micro = info[0], info[1], info[2]
+        # Test same major-minor versions.
+        self.assertversionokay(1, makehex(major, minor, micro))
+        self.assertversionokay(2, makehex(major, minor, micro + 1))
+        # Test different major-minor versions.
+        self.assertversionfail(3, makehex(major + 1, minor, micro))
+        self.assertversionfail(4, makehex(major, minor + 1, micro))
+        self.assertversionfail(5, "'foo'")
 
-    print("done")
+    def testbadargs(self):
+        # Check that parse_index2() raises TypeError on bad arguments.
+        with self.assertRaises(TypeError):
+            parse_index2(0, True)
 
-runtest()
+    def testparseindexfile(self):
+        # Check parsers.parse_index2() on an index file against the
+        # original Python implementation of parseindex, both with and
+        # without inlined data.
+
+        want = py_parseindex(data_inlined, True)
+        got = parse_index2(data_inlined, True)
+        self.assertEqual(want, got) # inline data
+
+        want = py_parseindex(data_non_inlined, False)
+        got = parse_index2(data_non_inlined, False)
+        self.assertEqual(want, got) # no inline data
+
+        ix = parsers.parse_index2(data_inlined, True)[0]
+        for i, r in enumerate(ix):
+            if r[7] == nullid:
+                i = -1
+            try:
+                self.assertEqual(
+                    ix[r[7]], i,
+                    'Reverse lookup inconsistent for %r' % nodemod.hex(r[7]))
+            except TypeError:
+                # pure version doesn't support this
+                break
+
+    def testminusone(self):
+        want = (0, 0, 0, -1, -1, -1, -1, nullid)
+        index, junk = parsers.parse_index2(data_inlined, True)
+        got = index[-1]
+        self.assertEqual(want, got) # inline data
+
+        index, junk = parsers.parse_index2(data_non_inlined, False)
+        got = index[-1]
+        self.assertEqual(want, got) # no inline data
+
+if __name__ == '__main__':
+    import silenttestrunner
+    silenttestrunner.main(__name__)

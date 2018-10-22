@@ -10,7 +10,7 @@ def raiseerror(web):
     '''Dummy web command that raises an uncaught Exception.'''
 
     # Simulate an error after partial response.
-    if 'partialresponse' in web.req.qsparams:
+    if b'partialresponse' in web.req.qsparams:
         web.res.status = b'200 Script output follows'
         web.res.headers[b'Content-Type'] = b'text/plain'
         web.res.setbodywillwrite()
@@ -21,4 +21,4 @@ def raiseerror(web):
 
 def extsetup(ui):
     setattr(webcommands, 'raiseerror', raiseerror)
-    webcommands.__all__.append('raiseerror')
+    webcommands.__all__.append(b'raiseerror')

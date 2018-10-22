@@ -22,7 +22,7 @@ New errors are not allowed. Warnings are strongly discouraged.
   >>> commands = []
   >>> with open('mercurial/debugcommands.py', 'rb') as fh:
   ...     for line in fh:
-  ...         m = re.match("^@command\('([a-z]+)", line)
+  ...         m = re.match(b"^@command\('([a-z]+)", line)
   ...         if m:
   ...             commands.append(m.group(1))
   >>> scommands = list(sorted(commands))
@@ -63,3 +63,7 @@ Prevent adding modules which could be shadowed by ancient .so/.dylib.
   > mercurial/parsers.py \
   > mercurial/zstd.py
   [1]
+
+Keep python3 tests sorted:
+  $ sort < contrib/python3-whitelist > $TESTTMP/py3sorted
+  $ cmp contrib/python3-whitelist $TESTTMP/py3sorted || echo 'Please sort passing tests!'

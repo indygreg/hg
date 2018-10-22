@@ -12,14 +12,14 @@ by the WSGI standard and strictly implemented by mod_wsgi.
   > import sys
   > from mercurial import (
   >     dispatch,
+  >     encoding,
   >     hg,
+  >     pycompat,
   >     ui as uimod,
   >     util,
   > )
   > ui = uimod.ui
-  > from mercurial.hgweb.hgweb_mod import (
-  >     hgweb,
-  > )
+  > from mercurial.hgweb import hgweb_mod
   > stringio = util.stringio
   > 
   > class FileLike(object):
@@ -65,18 +65,20 @@ by the WSGI standard and strictly implemented by mod_wsgi.
   >     'SERVER_PROTOCOL': 'HTTP/1.0'
   > }
   > 
-  > i = hgweb('.')
+  > i = hgweb_mod.hgweb(b'.')
   > for c in i(env, startrsp):
   >     pass
-  > print('---- ERRORS')
-  > print(errors.getvalue())
+  > sys.stdout.flush()
+  > pycompat.stdout.write(b'---- ERRORS\n')
+  > pycompat.stdout.write(b'%s\n' % errors.getvalue())
   > print('---- OS.ENVIRON wsgi variables')
   > print(sorted([x for x in os.environ if x.startswith('wsgi')]))
   > print('---- request.ENVIRON wsgi variables')
   > with i._obtainrepo() as repo:
-  >     print(sorted([x for x in repo.ui.environ if x.startswith('wsgi')]))
+  >     print(sorted([encoding.strfromlocal(x) for x in repo.ui.environ
+  >                   if x.startswith(b'wsgi')]))
   > EOF
-  $ $PYTHON request.py
+  $ "$PYTHON" request.py
   ---- STATUS
   200 Script output follows
   ---- HEADERS

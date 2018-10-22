@@ -30,10 +30,8 @@ narrow clone a file, f10
   store
   testonly-simplestore (reposimplestore !)
 
-  $ cat .hg/narrowspec
-  [includes]
-  path:dir/src/f10
-  [excludes]
+  $ hg tracked
+  I path:dir/src/f10
   $ hg update
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ find * | sort
@@ -55,11 +53,9 @@ narrow clone a directory, tests/, except tests/t19
   added 40 changesets with 19 changes to 19 files
   new changesets *:* (glob)
   $ cd narrowdir
-  $ cat .hg/narrowspec
-  [includes]
-  path:dir/tests
-  [excludes]
-  path:dir/tests/t19
+  $ hg tracked
+  I path:dir/tests
+  X path:dir/tests/t19
   $ hg update
   19 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ find * | sort
@@ -97,11 +93,9 @@ narrow clone everything but a directory (tests/)
   added 40 changesets with 20 changes to 20 files
   new changesets *:* (glob)
   $ cd narrowroot
-  $ cat .hg/narrowspec
-  [includes]
-  path:.
-  [excludes]
-  path:dir/tests
+  $ hg tracked
+  I path:.
+  X path:dir/tests
   $ hg update
   20 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ find * | sort
@@ -128,4 +122,40 @@ narrow clone everything but a directory (tests/)
   dir/src/f8
   dir/src/f9
 
+  $ cd ..
+
+Testing the --narrowspec flag to clone
+
+  $ cat >> narrowspecs <<EOF
+  > %include foo
+  > [include]
+  > path:dir/tests/
+  > path:dir/src/f12
+  > EOF
+
+  $ hg clone ssh://user@dummy/master specfile --narrowspec narrowspecs
+  reading narrowspec from '$TESTTMP/narrowspecs'
+  abort: cannot specify other files using '%include' in narrowspec
+  [255]
+
+  $ cat > narrowspecs <<EOF
+  > [include]
+  > path:dir/tests/
+  > path:dir/src/f12
+  > EOF
+
+  $ hg clone ssh://user@dummy/master specfile --narrowspec narrowspecs
+  reading narrowspec from '$TESTTMP/narrowspecs'
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 40 changesets with 21 changes to 21 files
+  new changesets 681085829a73:26ce255d5b5d
+  updating to branch default
+  21 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd specfile
+  $ hg tracked
+  I path:dir/src/f12
+  I path:dir/tests
   $ cd ..

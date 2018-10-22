@@ -285,7 +285,8 @@ override commit message
   $ rm -r b
 
   $ cat > mkmsg.py <<EOF
-  > import email.message, sys
+  > import email.message
+  > import sys
   > msg = email.message.Message()
   > patch = open(sys.argv[1], 'rb').read()
   > msg.set_payload(b'email commit message\n' + patch)
@@ -305,7 +306,7 @@ plain diff in email, subject, message body
   new changesets 80971e65b431
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ $PYTHON mkmsg.py diffed-tip.patch msg.patch
+  $ "$PYTHON" mkmsg.py diffed-tip.patch msg.patch
   $ hg --cwd b import ../msg.patch
   applying ../msg.patch
   $ hg --cwd b tip | grep email
@@ -371,7 +372,7 @@ hg export in email, should use patch header
   new changesets 80971e65b431
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ $PYTHON mkmsg.py exported-tip.patch msg.patch
+  $ "$PYTHON" mkmsg.py exported-tip.patch msg.patch
   $ cat msg.patch | hg --cwd b import -
   applying patch from stdin
   $ hg --cwd b tip | grep second
@@ -383,7 +384,8 @@ subject: duplicate detection, removal of [PATCH]
 The '---' tests the gitsendmail handling without proper mail headers
 
   $ cat > mkmsg2.py <<EOF
-  > import email.message, sys
+  > import email.message
+  > import sys
   > msg = email.message.Message()
   > patch = open(sys.argv[1], 'rb').read()
   > msg.set_payload(b'email patch\n\nnext line\n---\n' + patch)
@@ -403,7 +405,7 @@ plain diff in email, [PATCH] subject, message body with subject
   new changesets 80971e65b431
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ $PYTHON mkmsg2.py diffed-tip.patch msg.patch
+  $ "$PYTHON" mkmsg2.py diffed-tip.patch msg.patch
   $ cat msg.patch | hg --cwd b import -
   applying patch from stdin
   $ hg --cwd b tip --template '{desc}\n'
@@ -865,7 +867,7 @@ Test importing a patch ending with a binary file removal
   $ hg init binaryremoval
   $ cd binaryremoval
   $ echo a > a
-  $ $PYTHON -c "open('b', 'wb').write(b'a\x00b')"
+  $ "$PYTHON" -c "open('b', 'wb').write(b'a\x00b')"
   $ hg ci -Am addall
   adding a
   adding b
@@ -1014,8 +1016,8 @@ test import with similarity and git and strip (issue295 et al.)
     a
   R a
   $ hg revert -a
-  undeleting a
   forgetting b
+  undeleting a
   $ cat b
   mod b
   $ rm b
@@ -1871,8 +1873,8 @@ Importing some extra header
 ===========================
 
   $ cat > $TESTTMP/parseextra.py <<EOF
-  > import mercurial.patch
   > import mercurial.cmdutil
+  > import mercurial.patch
   > 
   > def processfoo(repo, data, extra, opts):
   >     if b'foo' in data:

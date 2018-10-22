@@ -16,7 +16,7 @@ This is a rudimentary test of the CGI files as of d74fc8dec2b4.
   > from mercurial.hgweb import hgweb
   > from mercurial.hgweb import wsgicgi
   > 
-  > application = hgweb("test", "Empty test repository")
+  > application = hgweb(b"test", b"Empty test repository")
   > wsgicgi.launch(application)
   > HGWEB
 
@@ -39,22 +39,22 @@ This is a rudimentary test of the CGI files as of d74fc8dec2b4.
   > from mercurial.hgweb import hgwebdir
   > from mercurial.hgweb import wsgicgi
   > 
-  > application = hgwebdir("hgweb.config")
+  > application = hgwebdir(b"hgweb.config")
   > wsgicgi.launch(application)
   > HGWEBDIR
 
   $ chmod 755 hgwebdir.cgi
 
   $ . "$TESTDIR/cgienv"
-  $ $PYTHON hgweb.cgi > page1
-  $ $PYTHON hgwebdir.cgi > page2
+  $ "$PYTHON" hgweb.cgi > page1
+  $ "$PYTHON" hgwebdir.cgi > page2
 
   $ PATH_INFO="/test/"
   $ PATH_TRANSLATED="/var/something/test.cgi"
   $ REQUEST_URI="/test/test/"
   $ SCRIPT_URI="http://hg.omnifarious.org/test/test/"
   $ SCRIPT_URL="/test/test/"
-  $ $PYTHON hgwebdir.cgi > page3
+  $ "$PYTHON" hgwebdir.cgi > page3
 
   $ grep -i error page1 page2 page3
   [1]

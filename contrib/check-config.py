@@ -42,6 +42,14 @@ ignorere = re.compile(br'''
     config:\s(?P<config>\S+\.\S+)$
     ''', re.VERBOSE | re.MULTILINE)
 
+if sys.version_info[0] > 2:
+    def mkstr(b):
+        if isinstance(b, str):
+            return b
+        return b.decode('utf8')
+else:
+    mkstr = lambda x: x
+
 def main(args):
     for f in args:
         sect = b''
@@ -92,7 +100,7 @@ def main(args):
             # look for ignore markers
             m = ignorere.search(l)
             if m:
-                if m.group('reason') == 'inconsistent':
+                if m.group('reason') == b'inconsistent':
                     allowinconsistent.add(m.group('config'))
                 else:
                     documented[m.group('config')] = 1
@@ -104,36 +112,45 @@ def main(args):
                 ctype = m.group('ctype')
                 if not ctype:
                     ctype = 'str'
-                name = m.group('section') + "." + m.group('option')
+                name = m.group('section') + b"." + m.group('option')
                 default = m.group('default')
-                if default in (None, 'False', 'None', '0', '[]', '""', "''"):
-                    default = ''
+                if default in (
+                        None, b'False', b'None', b'0', b'[]', b'""', b"''"):
+                    default = b''
                 if re.match(b'[a-z.]+$', default):
-                    default = '<variable>'
+                    default = b'<variable>'
                 if (name in foundopts and (ctype, default) != foundopts[name]
                     and name not in allowinconsistent):
-                    print(l.rstrip())
-                    print("conflict on %s: %r != %r" % (name, (ctype, default),
-                                                        foundopts[name]))
-                    print("at %s:%d:" % (f, linenum))
+                    print(mkstr(l.rstrip()))
+                    fctype, fdefault = foundopts[name]
+                    print("conflict on %s: %r != %r" % (
+                        mkstr(name),
+                        (mkstr(ctype), mkstr(default)),
+                        (mkstr(fctype), mkstr(fdefault))))
+                    print("at %s:%d:" % (mkstr(f), linenum))
                 foundopts[name] = (ctype, default)
-                carryover = ''
+                carryover = b''
             else:
                 m = re.search(configpartialre, line)
                 if m:
                     carryover = line
                 else:
-                    carryover = ''
+                    carryover = b''
 
     for name in sorted(foundopts):
         if name not in documented:
-            if not (name.startswith("devel.") or
-                    name.startswith("experimental.") or
-                    name.startswith("debug.")):
+            if not (name.startswith(b"devel.") or
+                    name.startswith(b"experimental.") or
+                    name.startswith(b"debug.")):
                 ctype, default = foundopts[name]
                 if default:
+                    if isinstance(default, bytes):
+                        default = mkstr(default)
                     default = ' [%s]' % default
-                print("undocumented: %s (%s)%s" % (name, ctype, default))
+                elif isinstance(default, bytes):
+                    default = mkstr(default)
+                print("undocumented: %s (%s)%s" % (
+                    mkstr(name), mkstr(ctype), default))
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

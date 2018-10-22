@@ -338,6 +338,7 @@ extdiffopts = [
     [('p', 'program', '', _('comparison program to run'), _('CMD')),
      ] + extdiffopts,
     _('hg extdiff [OPT]... [FILE]...'),
+    helpcategory=command.CATEGORY_FILE_CONTENTS,
     inferrepo=True)
 def extdiff(ui, repo, *pats, **opts):
     '''use external program to diff repository (or selected files)

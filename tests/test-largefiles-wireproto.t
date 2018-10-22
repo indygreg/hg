@@ -51,7 +51,7 @@ vanilla clients not locked out from largefiles servers on vanilla repos
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets b6eb3a2e2efe
+  new changesets b6eb3a2e2efe (1 drafts)
   updating to branch default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
@@ -64,7 +64,7 @@ largefiles clients still work with vanilla servers
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets b6eb3a2e2efe
+  new changesets b6eb3a2e2efe (1 drafts)
   updating to branch default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 #endif
@@ -166,7 +166,7 @@ largefiles clients refuse to push largefiles repos to vanilla servers
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 2 files
   searching 1 changesets for largefiles
   verified existence of 1 revisions of 1 largefiles
   $ hg serve --config extensions.largefiles=! -R ../r6 -d -p $HGPORT --pid-file ../hg.pid
@@ -236,14 +236,14 @@ Clone over http, no largefiles pulled on clone.
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets cf03e5bb9936
+  new changesets cf03e5bb9936 (1 drafts)
 
 Archive contains largefiles
   >>> import os
   >>> import urllib2
   >>> u = 'http://localhost:%s/archive/default.zip' % os.environ['HGPORT2']
   >>> with open('archive.zip', 'w') as f:
-  ...     f.write(urllib2.urlopen(u).read())
+  ...     f.write(urllib2.urlopen(u).read()) and None
   $ unzip -t archive.zip
   Archive:  archive.zip
       testing: empty-default/.hg_archival.txt*OK (glob)
@@ -259,7 +259,7 @@ test 'verify' with remotestore:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
   searching 1 changesets for largefiles
   changeset 0:cf03e5bb9936: f1 missing
   verified existence of 1 revisions of 1 largefiles
@@ -295,7 +295,7 @@ largefiles pulled on update - a largefile corrupted on the server:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
   searching 1 changesets for largefiles
   verified contents of 1 revisions of 1 largefiles
   $ hg -R http-clone up -Cqr null
@@ -352,13 +352,13 @@ largefiles should batch verify remote calls
   adding manifests
   adding file changes
   added 2 changesets with 2 changes to 2 files
-  new changesets 567253b0f523:04d19c27a332
+  new changesets 567253b0f523:04d19c27a332 (2 drafts)
   $ hg -R batchverifyclone verify --large --lfa
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 2 files
   searching 2 changesets for largefiles
   verified existence of 2 revisions of 2 largefiles
   $ tail -1 access.log
@@ -389,14 +389,14 @@ available locally.
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 6bba8cb6935d
+  new changesets 6bba8cb6935d (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg -R batchverifyclone verify --lfa
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 3 files
   searching 3 changesets for largefiles
   verified existence of 3 revisions of 3 largefiles
   $ tail -1 access.log
@@ -424,12 +424,12 @@ a large file from the server rather than to get it from the cache
   > import base64
   > from mercurial.hgweb import common
   > def perform_authentication(hgweb, req, op):
-  >     auth = req.headers.get('Authorization')
+  >     auth = req.headers.get(b'Authorization')
   >     if not auth:
-  >         raise common.ErrorResponse(common.HTTP_UNAUTHORIZED, 'who',
-  >                 [('WWW-Authenticate', 'Basic Realm="mercurial"')])
-  >     if base64.b64decode(auth.split()[1]).split(':', 1) != ['user', 'pass']:
-  >         raise common.ErrorResponse(common.HTTP_FORBIDDEN, 'no')
+  >         raise common.ErrorResponse(common.HTTP_UNAUTHORIZED, b'who',
+  >                 [(b'WWW-Authenticate', b'Basic Realm="mercurial"')])
+  >     if base64.b64decode(auth.split()[1]).split(b':', 1) != [b'user', b'pass']:
+  >         raise common.ErrorResponse(common.HTTP_FORBIDDEN, b'no')
   > def extsetup():
   >     common.permhooks.insert(0, perform_authentication)
   > EOT
@@ -452,7 +452,7 @@ a large file from the server rather than to get it from the cache
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 567253b0f523
+  new changesets 567253b0f523 (1 drafts)
   updating to branch default
   getting changed largefiles
   1 largefiles updated, 0 removed

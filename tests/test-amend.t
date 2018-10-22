@@ -250,15 +250,15 @@ Generates history of files having 3 states, r0_r1_wc:
   $ hg init $TESTTMP/wcstates
   $ cd $TESTTMP/wcstates
 
-  $ $PYTHON $TESTDIR/generate-working-copy-states.py state 2 1
+  $ "$PYTHON" $TESTDIR/generate-working-copy-states.py state 2 1
   $ hg addremove -q --similarity 0
   $ hg commit -m0
 
-  $ $PYTHON $TESTDIR/generate-working-copy-states.py state 2 2
+  $ "$PYTHON" $TESTDIR/generate-working-copy-states.py state 2 2
   $ hg addremove -q --similarity 0
   $ hg commit -m1
 
-  $ $PYTHON $TESTDIR/generate-working-copy-states.py state 2 wc
+  $ "$PYTHON" $TESTDIR/generate-working-copy-states.py state 2 wc
   $ hg addremove -q --similarity 0
   $ hg forget *_*_*-untracked
   $ rm *_*_missing-*
@@ -331,3 +331,37 @@ working directory should be all clean (with some missing/untracked files)
   ? missing_content2_content2-untracked
   ? missing_content2_content3-untracked
   ? missing_missing_content3-untracked
+
+==========================================
+Test history-editing-backup config option|
+==========================================
+  $ hg init $TESTTMP/repo4
+  $ cd $TESTTMP/repo4
+  $ echo a>a
+  $ hg ci -Aqma
+  $ echo oops>b
+  $ hg ci -Aqm "b"
+  $ echo partiallyfixed > b
+
+#if obsstore-off
+  $ hg amend
+  saved backup bundle to $TESTTMP/repo4/.hg/strip-backup/95e899acf2ce-f11cb050-amend.hg
+When history-editing-backup config option is set:
+  $ cat << EOF >> $HGRCPATH
+  > [ui]
+  > history-editing-backup = False
+  > EOF
+  $ echo fixed > b
+  $ hg amend
+
+#else
+  $ hg amend
+When history-editing-backup config option is set:
+  $ cat << EOF >> $HGRCPATH
+  > [ui]
+  > history-editing-backup = False
+  > EOF
+  $ echo fixed > b
+  $ hg amend
+
+#endif

@@ -15,6 +15,7 @@ Enable obsolete
   > [extensions]
   > rebase=
   > drawdag=$TESTDIR/drawdag.py
+  > strip=
   > EOF
 
 Setup rebase canonical repo
@@ -26,7 +27,7 @@ Setup rebase canonical repo
   adding manifests
   adding file changes
   added 8 changesets with 7 changes to 7 files (+2 heads)
-  new changesets cd010b8cd998:02de42196ebe
+  new changesets cd010b8cd998:02de42196ebe (8 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg up tip
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -355,9 +356,9 @@ collapse rebase
   $ hg id --debug -r tip
   4dc2197e807bae9817f09905b50ab288be2dbbcf tip
   $ hg debugobsolete
-  42ccdea3bb16d28e1848c95fe2e44c000f3f21b1 4dc2197e807bae9817f09905b50ab288be2dbbcf 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '13', 'operation': 'rebase', 'user': 'test'}
-  5fddd98957c8a54a4d436dfe1da9d87f21a1b97b 4dc2197e807bae9817f09905b50ab288be2dbbcf 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '13', 'operation': 'rebase', 'user': 'test'}
-  32af7686d403cf45b5d95f2d70cebea587ac806a 4dc2197e807bae9817f09905b50ab288be2dbbcf 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '13', 'operation': 'rebase', 'user': 'test'}
+  42ccdea3bb16d28e1848c95fe2e44c000f3f21b1 4dc2197e807bae9817f09905b50ab288be2dbbcf 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '13', 'fold-id': '6fb65cdc', 'fold-idx': '1', 'fold-size': '3', 'operation': 'rebase', 'user': 'test'}
+  5fddd98957c8a54a4d436dfe1da9d87f21a1b97b 4dc2197e807bae9817f09905b50ab288be2dbbcf 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '13', 'fold-id': '6fb65cdc', 'fold-idx': '2', 'fold-size': '3', 'operation': 'rebase', 'user': 'test'}
+  32af7686d403cf45b5d95f2d70cebea587ac806a 4dc2197e807bae9817f09905b50ab288be2dbbcf 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '13', 'fold-id': '6fb65cdc', 'fold-idx': '3', 'fold-size': '3', 'operation': 'rebase', 'user': 'test'}
 
   $ cd ..
 
@@ -574,7 +575,7 @@ test on rebase dropping a merge
   adding manifests
   adding file changes
   added 8 changesets with 7 changes to 7 files (+2 heads)
-  new changesets cd010b8cd998:02de42196ebe
+  new changesets cd010b8cd998:02de42196ebe (8 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg up 3
   4 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -1122,6 +1123,23 @@ consequence f (descendant of d) is left behind.
   o  0:b173517d0057 a
   
   $ hg strip -r 8:
+  $ hg log -G -r 'a'::
+  *  7:1143e9adc121 f
+  |
+  | o  6:d60ebfa0f1cb e
+  | |
+  | o  5:027ad6c5830d d'
+  | |
+  x |  4:76be324c128b d (rewritten using replace as 5:027ad6c5830d)
+  |/
+  o  3:a82ac2b38757 c
+  |
+  | o  2:630d7c95eff7 x
+  | |
+  o |  1:488e1b7e7341 b
+  |/
+  o  0:b173517d0057 a
+  
 
 If the rebase set has an obsolete (d) with a successor (d') outside the rebase
 set and none in destination, we still get the divergence warning.
@@ -1493,6 +1511,26 @@ Rebase merge where successor of other parent is ancestor of destination
   
   $ cd ..
 
+Rebase merge where extinct node has successor that is not an ancestor of
+destination
+
+  $ hg init extinct-with-succ-not-in-dest
+  $ cd extinct-with-succ-not-in-dest
+
+  $ hg debugdrawdag <<EOF
+  > E C # replace: C -> E
+  > | |
+  > D B
+  > |/
+  > A
+  > EOF
+
+  $ hg rebase -d D -s B
+  rebasing 1:112478962961 "B" (B)
+  note: not rebasing 3:26805aba1e60 "C" (C) and its descendants as this would cause divergence
+
+  $ cd ..
+
   $ hg init p2-succ-in-dest-c
   $ cd p2-succ-in-dest-c
 
@@ -1787,4 +1825,313 @@ Also test --continue for the above case
   o  2:b18e25de2cf5 D
   |
   o  0:426bada5c675 A
+  
+====================
+Test --stop option |
+====================
+  $ cd ..
+  $ hg init rbstop
+  $ cd rbstop
+  $ echo a>a
+  $ hg ci -Aqma
+  $ echo b>b
+  $ hg ci -Aqmb
+  $ echo c>c
+  $ hg ci -Aqmc
+  $ echo d>d
+  $ hg ci -Aqmd
+  $ hg up 0 -q
+  $ echo f>f
+  $ hg ci -Aqmf
+  $ echo D>d
+  $ hg ci -Aqm "conflict with d"
+  $ hg up 3 -q
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  o  5:00bfc9898aeb test
+  |  conflict with d
+  |
+  o  4:dafd40200f93 test
+  |  f
+  |
+  | @  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  | |  c
+  | |
+  | o  1:d2ae7f538514 test
+  |/   b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+  $ hg rebase -s 1 -d 5
+  rebasing 1:d2ae7f538514 "b"
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  merging d
+  warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg rebase --stop
+  1 new orphan changesets
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  o  7:7fffad344617 test
+  |  c
+  |
+  o  6:b15528633407 test
+  |  b
+  |
+  o  5:00bfc9898aeb test
+  |  conflict with d
+  |
+  o  4:dafd40200f93 test
+  |  f
+  |
+  | @  3:055a42cdd887 test
+  | |  d
+  | |
+  | x  2:177f92b77385 test
+  | |  c
+  | |
+  | x  1:d2ae7f538514 test
+  |/   b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+Test it aborts if unstable csets is not allowed:
+===============================================
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > evolution.allowunstable=False
+  > EOF
+
+  $ hg strip 6 --no-backup -q
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  o  5:00bfc9898aeb test
+  |  conflict with d
+  |
+  o  4:dafd40200f93 test
+  |  f
+  |
+  | @  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  | |  c
+  | |
+  | o  1:d2ae7f538514 test
+  |/   b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+  $ hg rebase -s 1 -d 5
+  rebasing 1:d2ae7f538514 "b"
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  merging d
+  warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg rebase --stop
+  abort: cannot remove original changesets with unrebased descendants
+  (either enable obsmarkers to allow unstable revisions or use --keep to keep original changesets)
+  [255]
+  $ hg rebase --abort
+  saved backup bundle to $TESTTMP/rbstop/.hg/strip-backup/b15528633407-6eb72b6f-backup.hg
+  rebase aborted
+
+Test --stop when --keep is passed:
+==================================
+  $ hg rebase -s 1 -d 5 --keep
+  rebasing 1:d2ae7f538514 "b"
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  merging d
+  warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg rebase --stop
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  o  7:7fffad344617 test
+  |  c
+  |
+  o  6:b15528633407 test
+  |  b
+  |
+  o  5:00bfc9898aeb test
+  |  conflict with d
+  |
+  o  4:dafd40200f93 test
+  |  f
+  |
+  | @  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  | |  c
+  | |
+  | o  1:d2ae7f538514 test
+  |/   b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+Test --stop aborts when --collapse was passed:
+=============================================
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > evolution.allowunstable=True
+  > EOF
+
+  $ hg strip 6
+  saved backup bundle to $TESTTMP/rbstop/.hg/strip-backup/b15528633407-6eb72b6f-backup.hg
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  o  5:00bfc9898aeb test
+  |  conflict with d
+  |
+  o  4:dafd40200f93 test
+  |  f
+  |
+  | @  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  | |  c
+  | |
+  | o  1:d2ae7f538514 test
+  |/   b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+  $ hg rebase -s 1 -d 5 --collapse -m "collapsed b c d"
+  rebasing 1:d2ae7f538514 "b"
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  merging d
+  warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg rebase --stop
+  abort: cannot stop in --collapse session
+  [255]
+  $ hg rebase --abort
+  rebase aborted
+  $ hg diff
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  o  5:00bfc9898aeb test
+  |  conflict with d
+  |
+  o  4:dafd40200f93 test
+  |  f
+  |
+  | @  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  | |  c
+  | |
+  | o  1:d2ae7f538514 test
+  |/   b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+Test --stop raise errors with conflicting options:
+=================================================
+  $ hg rebase -s 3 -d 5
+  rebasing 3:055a42cdd887 "d"
+  merging d
+  warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg rebase --stop --dry-run
+  abort: cannot specify both --dry-run and --stop
+  [255]
+
+  $ hg rebase -s 3 -d 5
+  abort: rebase in progress
+  (use 'hg rebase --continue' or 'hg rebase --abort')
+  [255]
+  $ hg rebase --stop --continue
+  abort: cannot use --stop with --continue
+  [255]
+
+Test --stop moves bookmarks of original revisions to new rebased nodes:
+======================================================================
+  $ cd ..
+  $ hg init repo
+  $ cd repo
+
+  $ echo a > a
+  $ hg ci -Am A
+  adding a
+
+  $ echo b > b
+  $ hg ci -Am B
+  adding b
+  $ hg book X
+  $ hg book Y
+
+  $ echo c > c
+  $ hg ci -Am C
+  adding c
+  $ hg book Z
+
+  $ echo d > d
+  $ hg ci -Am D
+  adding d
+
+  $ hg up 0 -q
+  $ echo e > e
+  $ hg ci -Am E
+  adding e
+  created new head
+
+  $ echo doubt > d
+  $ hg ci -Am "conflict with d"
+  adding d
+
+  $ hg log -GT "{rev}: {node|short} '{desc}' bookmarks: {bookmarks}\n"
+  @  5: 39adf30bc1be 'conflict with d' bookmarks:
+  |
+  o  4: 9c1e55f411b6 'E' bookmarks:
+  |
+  | o  3: 67a385d4e6f2 'D' bookmarks: Z
+  | |
+  | o  2: 49cb3485fa0c 'C' bookmarks: Y
+  | |
+  | o  1: 6c81ed0049f8 'B' bookmarks: X
+  |/
+  o  0: 1994f17a630e 'A' bookmarks:
+  
+  $ hg rebase -s 1 -d 5
+  rebasing 1:6c81ed0049f8 "B" (X)
+  rebasing 2:49cb3485fa0c "C" (Y)
+  rebasing 3:67a385d4e6f2 "D" (Z)
+  merging d
+  warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg rebase --stop
+  1 new orphan changesets
+  $ hg log -GT "{rev}: {node|short} '{desc}' bookmarks: {bookmarks}\n"
+  o  7: 9c86c650b686 'C' bookmarks: Y
+  |
+  o  6: 9b87b54e5fd8 'B' bookmarks: X
+  |
+  @  5: 39adf30bc1be 'conflict with d' bookmarks:
+  |
+  o  4: 9c1e55f411b6 'E' bookmarks:
+  |
+  | *  3: 67a385d4e6f2 'D' bookmarks: Z
+  | |
+  | x  2: 49cb3485fa0c 'C' bookmarks:
+  | |
+  | x  1: 6c81ed0049f8 'B' bookmarks:
+  |/
+  o  0: 1994f17a630e 'A' bookmarks:
   

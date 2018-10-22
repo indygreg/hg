@@ -32,9 +32,6 @@ from .node import (
     nullrev,
     short,
 )
-from .thirdparty import (
-    cbor,
-)
 from . import (
     bundle2,
     changegroup,
@@ -42,13 +39,12 @@ from . import (
     color,
     context,
     dagparser,
-    dagutil,
     encoding,
     error,
     exchange,
     extensions,
     filemerge,
-    fileset,
+    filesetlang,
     formatter,
     hg,
     httppeer,
@@ -84,9 +80,14 @@ from . import (
     wireprotov2peer,
 )
 from .utils import (
+    cborutil,
     dateutil,
     procutil,
     stringutil,
+)
+
+from .revlogutils import (
+    deltas as deltautil
 )
 
 release = lockmod.release
@@ -98,7 +99,7 @@ def debugancestor(ui, repo, *args):
     """find the ancestor revision of two revisions in a given index"""
     if len(args) == 3:
         index, rev1, rev2 = args
-        r = revlog.revlog(vfsmod.vfs(pycompat.getcwd(), audit=False), index)
+        r = revlog.revlog(vfsmod.vfs(encoding.getcwd(), audit=False), index)
         lookup = r.lookup
     elif len(args) == 2:
         if not repo:
@@ -177,7 +178,8 @@ def debugbuilddag(ui, repo, text=None,
     if mergeable_file:
         linesperrev = 2
         # make a file with k lines per rev
-        initialmergedlines = ['%d' % i for i in xrange(0, total * linesperrev)]
+        initialmergedlines = ['%d' % i
+                              for i in pycompat.xrange(0, total * linesperrev)]
         initialmergedlines.append("")
 
     tags = []
@@ -501,7 +503,7 @@ def debugdag(ui, repo, file_=None, *revs, **opts):
     spaces = opts.get(r'spaces')
     dots = opts.get(r'dots')
     if file_:
-        rlog = revlog.revlog(vfsmod.vfs(pycompat.getcwd(), audit=False),
+        rlog = revlog.revlog(vfsmod.vfs(encoding.getcwd(), audit=False),
                              file_)
         revs = set((int(r) for r in revs))
         def events():
@@ -556,7 +558,7 @@ def debugdata(ui, repo, file_, rev=None, **opts):
         file_, rev = None, file_
     elif rev is None:
         raise error.CommandError('debugdata', _('invalid arguments'))
-    r = cmdutil.openrevlog(repo, 'debugdata', file_, opts)
+    r = cmdutil.openstorage(repo, 'debugdata', file_, opts)
     try:
         ui.write(r.revision(r.lookup(rev), raw=True))
     except KeyError:
@@ -706,7 +708,7 @@ def debugdeltachain(ui, repo, file_=None, **opts):
             largestblock = 0
             srchunks = 0
 
-            for revschunk in revlog._slicechunk(r, chain):
+            for revschunk in deltautil.slicechunk(r, chain):
                 srchunks += 1
                 blkend = start(revschunk[-1]) + length(revschunk[-1])
                 blksize = blkend - start(revschunk[0])
@@ -731,13 +733,16 @@ def debugdeltachain(ui, repo, file_=None, **opts):
     fm.end()
 
 @command('debugdirstate|debugstate',
-    [('', 'nodates', None, _('do not display the saved mtime')),
-    ('', 'datesort', None, _('sort by saved mtime'))],
+    [('', 'nodates', None, _('do not display the saved mtime (DEPRECATED)')),
+     ('', 'dates', True, _('display the saved mtime')),
+     ('', 'datesort', None, _('sort by saved mtime'))],
     _('[OPTION]...'))
 def debugstate(ui, repo, **opts):
     """show the contents of the current dirstate"""
 
-    nodates = opts.get(r'nodates')
+    nodates = not opts[r'dates']
+    if opts.get(r'nodates') is not None:
+        nodates = True
     datesort = opts.get(r'datesort')
 
     timestr = ""
@@ -790,9 +795,10 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
             if not opts.get('nonheads'):
                 ui.write(("unpruned common: %s\n") %
                          " ".join(sorted(short(n) for n in common)))
-                dag = dagutil.revlogdag(repo.changelog)
-                all = dag.ancestorset(dag.internalizeall(common))
-                common = dag.externalizeall(dag.headsetofconnecteds(all))
+
+                clnode = repo.changelog.node
+                common = repo.revs('heads(::%ln)', common)
+                common = {clnode(r) for r in common}
         else:
             nodes = None
             if pushedrevs:
@@ -887,15 +893,45 @@ def debugextensions(ui, repo, **opts):
 @command('debugfileset',
     [('r', 'rev', '', _('apply the filespec on this revision'), _('REV')),
      ('', 'all-files', False,
-      _('test files from all revisions and working directory'))],
-    _('[-r REV] [--all-files] FILESPEC'))
+      _('test files from all revisions and working directory')),
+     ('s', 'show-matcher', None,
+      _('print internal representation of matcher')),
+     ('p', 'show-stage', [],
+      _('print parsed tree at the given stage'), _('NAME'))],
+    _('[-r REV] [--all-files] [OPTION]... FILESPEC'))
 def debugfileset(ui, repo, expr, **opts):
     '''parse and apply a fileset specification'''
+    from . import fileset
+    fileset.symbols # force import of fileset so we have predicates to optimize
     opts = pycompat.byteskwargs(opts)
     ctx = scmutil.revsingle(repo, opts.get('rev'), None)
-    if ui.verbose:
-        tree = fileset.parse(expr)
-        ui.note(fileset.prettyformat(tree), "\n")
+
+    stages = [
+        ('parsed', pycompat.identity),
+        ('analyzed', filesetlang.analyze),
+        ('optimized', filesetlang.optimize),
+    ]
+    stagenames = set(n for n, f in stages)
+
+    showalways = set()
+    if ui.verbose and not opts['show_stage']:
+        # show parsed tree by --verbose (deprecated)
+        showalways.add('parsed')
+    if opts['show_stage'] == ['all']:
+        showalways.update(stagenames)
+    else:
+        for n in opts['show_stage']:
+            if n not in stagenames:
+                raise error.Abort(_('invalid stage name: %s') % n)
+        showalways.update(opts['show_stage'])
+
+    tree = filesetlang.parse(expr)
+    for n, f in stages:
+        tree = f(tree)
+        if n in showalways:
+            if opts['show_stage'] or n != 'parsed':
+                ui.write(("* %s:\n") % n)
+            ui.write(filesetlang.prettyformat(tree), "\n")
 
     files = set()
     if opts['all_files']:
@@ -914,14 +950,15 @@ def debugfileset(ui, repo, expr, **opts):
         files.update(ctx.substate)
 
     m = ctx.matchfileset(expr)
+    if opts['show_matcher'] or (opts['show_matcher'] is None and ui.verbose):
+        ui.write(('* matcher:\n'), stringutil.prettyrepr(m), '\n')
     for f in sorted(files):
         if not m(f):
             continue
         ui.write("%s\n" % f)
 
 @command('debugformat',
-         [] + cmdutil.formatteropts,
-        _(''))
+         [] + cmdutil.formatteropts)
 def debugformat(ui, repo, **opts):
     """display format information about the current repository
 
@@ -1076,77 +1113,48 @@ def debugignore(ui, repo, *files, **opts):
             else:
                 ui.write(_("%s is not ignored\n") % m.uipath(f))
 
-@command('debugindex', cmdutil.debugrevlogopts +
-    [('f', 'format', 0, _('revlog format'), _('FORMAT'))],
-    _('[-f FORMAT] -c|-m|FILE'),
-    optionalrepo=True)
+@command('debugindex', cmdutil.debugrevlogopts + cmdutil.formatteropts,
+         _('-c|-m|FILE'))
 def debugindex(ui, repo, file_=None, **opts):
-    """dump the contents of an index file"""
+    """dump index data for a storage primitive"""
     opts = pycompat.byteskwargs(opts)
-    r = cmdutil.openrevlog(repo, 'debugindex', file_, opts)
-    format = opts.get('format', 0)
-    if format not in (0, 1):
-        raise error.Abort(_("unknown format %d") % format)
+    store = cmdutil.openstorage(repo, 'debugindex', file_, opts)
 
     if ui.debugflag:
         shortfn = hex
     else:
         shortfn = short
 
-    # There might not be anything in r, so have a sane default
     idlen = 12
-    for i in r:
-        idlen = len(shortfn(r.node(i)))
+    for i in store:
+        idlen = len(shortfn(store.node(i)))
         break
 
-    if format == 0:
-        if ui.verbose:
-            ui.write(("   rev    offset  length linkrev"
-                     " %s %s p2\n") % ("nodeid".ljust(idlen),
-                                       "p1".ljust(idlen)))
-        else:
-            ui.write(("   rev linkrev %s %s p2\n") % (
-                "nodeid".ljust(idlen), "p1".ljust(idlen)))
-    elif format == 1:
-        if ui.verbose:
-            ui.write(("   rev flag   offset   length     size   link     p1"
-                      "     p2 %s\n") % "nodeid".rjust(idlen))
-        else:
-            ui.write(("   rev flag     size   link     p1     p2 %s\n") %
-                     "nodeid".rjust(idlen))
+    fm = ui.formatter('debugindex', opts)
+    fm.plain(b'   rev linkrev %s %s p2\n' % (
+        b'nodeid'.ljust(idlen),
+        b'p1'.ljust(idlen)))
 
-    for i in r:
-        node = r.node(i)
-        if format == 0:
-            try:
-                pp = r.parents(node)
-            except Exception:
-                pp = [nullid, nullid]
-            if ui.verbose:
-                ui.write("% 6d % 9d % 7d % 7d %s %s %s\n" % (
-                        i, r.start(i), r.length(i), r.linkrev(i),
-                        shortfn(node), shortfn(pp[0]), shortfn(pp[1])))
-            else:
-                ui.write("% 6d % 7d %s %s %s\n" % (
-                    i, r.linkrev(i), shortfn(node), shortfn(pp[0]),
-                    shortfn(pp[1])))
-        elif format == 1:
-            pr = r.parentrevs(i)
-            if ui.verbose:
-                ui.write("% 6d %04x % 8d % 8d % 8d % 6d % 6d % 6d %s\n" % (
-                        i, r.flags(i), r.start(i), r.length(i), r.rawsize(i),
-                        r.linkrev(i), pr[0], pr[1], shortfn(node)))
-            else:
-                ui.write("% 6d %04x % 8d % 6d % 6d % 6d %s\n" % (
-                    i, r.flags(i), r.rawsize(i), r.linkrev(i), pr[0], pr[1],
-                    shortfn(node)))
+    for rev in store:
+        node = store.node(rev)
+        parents = store.parents(node)
+
+        fm.startitem()
+        fm.write(b'rev', b'%6d ', rev)
+        fm.write(b'linkrev', '%7d ', store.linkrev(rev))
+        fm.write(b'node', '%s ', shortfn(node))
+        fm.write(b'p1', '%s ', shortfn(parents[0]))
+        fm.write(b'p2', '%s', shortfn(parents[1]))
+        fm.plain(b'\n')
+
+    fm.end()
 
 @command('debugindexdot', cmdutil.debugrevlogopts,
     _('-c|-m|FILE'), optionalrepo=True)
 def debugindexdot(ui, repo, file_=None, **opts):
     """dump an index DAG as a graphviz dot file"""
     opts = pycompat.byteskwargs(opts)
-    r = cmdutil.openrevlog(repo, 'debugindexdot', file_, opts)
+    r = cmdutil.openstorage(repo, 'debugindexdot', file_, opts)
     ui.write(("digraph G {\n"))
     for i in r:
         node = r.node(i)
@@ -1155,6 +1163,16 @@ def debugindexdot(ui, repo, file_=None, **opts):
         if pp[1] != nullid:
             ui.write("\t%d -> %d\n" % (r.rev(pp[1]), i))
     ui.write("}\n")
+
+@command('debugindexstats', [])
+def debugindexstats(ui, repo):
+    """show stats related to the changelog index"""
+    repo.changelog.shortest(nullid, 1)
+    index = repo.changelog.index
+    if not util.safehasattr(index, 'stats'):
+        raise error.Abort(_('debugindexstats only works with native code'))
+    for k, v in sorted(index.stats().items()):
+        ui.write('%s: %s\n' % (k, v))
 
 @command('debuginstall', [] + cmdutil.formatteropts, '', norepo=True)
 def debuginstall(ui, **opts):
@@ -1428,10 +1446,10 @@ def debuglocks(ui, repo, **opts):
                 if ":" in locker:
                     host, pid = locker.split(':')
                     if host == socket.gethostname():
-                        locker = 'user %s, process %s' % (user, pid)
+                        locker = 'user %s, process %s' % (user or b'None', pid)
                     else:
                         locker = 'user %s, process %s, host %s' \
-                                 % (user, pid, host)
+                                 % (user or b'None', pid, host)
                 ui.write(("%-6s %s (%ds)\n") % (name + ":", locker, age))
                 return 1
             except OSError as e:
@@ -1445,6 +1463,53 @@ def debuglocks(ui, repo, **opts):
     held += report(repo.vfs, "wlock", repo.wlock)
 
     return held
+
+@command('debugmanifestfulltextcache', [
+        ('', 'clear', False, _('clear the cache')),
+        ('a', 'add', '', _('add the given manifest node to the cache'),
+         _('NODE'))
+    ], '')
+def debugmanifestfulltextcache(ui, repo, add=None, **opts):
+    """show, clear or amend the contents of the manifest fulltext cache"""
+    with repo.lock():
+        r = repo.manifestlog.getstorage(b'')
+        try:
+            cache = r._fulltextcache
+        except AttributeError:
+            ui.warn(_(
+                "Current revlog implementation doesn't appear to have a "
+                'manifest fulltext cache\n'))
+            return
+
+        if opts.get(r'clear'):
+            cache.clear()
+
+        if add:
+            try:
+                manifest = repo.manifestlog[r.lookup(add)]
+            except error.LookupError as e:
+                raise error.Abort(e, hint="Check your manifest node id")
+            manifest.read()  # stores revisision in cache too
+
+        if not len(cache):
+            ui.write(_('Cache empty'))
+        else:
+            ui.write(
+                _('Cache contains %d manifest entries, in order of most to '
+                  'least recent:\n') % (len(cache),))
+            totalsize = 0
+            for nodeid in cache:
+                # Use cache.get to not update the LRU order
+                data = cache.get(nodeid)
+                size = len(data)
+                totalsize += size + 24   # 20 bytes nodeid, 4 bytes size
+                ui.write(_('id: %s, size %s\n') % (
+                    hex(nodeid), util.bytecount(size)))
+            ondisk = cache._opener.stat('manifestfulltextcache').st_size
+            ui.write(
+                _('Total cache data size %s, on-disk %s\n') % (
+                    util.bytecount(totalsize), util.bytecount(ondisk))
+            )
 
 @command('debugmergestate', [], '')
 def debugmergestate(ui, repo, *args):
@@ -1699,7 +1764,7 @@ def debugpathcomplete(ui, repo, *specs, **opts):
 
     def complete(path, acceptable):
         dirstate = repo.dirstate
-        spec = os.path.normpath(os.path.join(pycompat.getcwd(), path))
+        spec = os.path.normpath(os.path.join(encoding.getcwd(), path))
         rootdir = repo.root + pycompat.ossep
         if spec != repo.root and not spec.startswith(rootdir):
             return [], []
@@ -1971,7 +2036,7 @@ def debugrevlog(ui, repo, file_=None, **opts):
         ts = 0
         heads = set()
 
-        for rev in xrange(numrevs):
+        for rev in pycompat.xrange(numrevs):
             dbase = r.deltaparent(rev)
             if dbase == -1:
                 dbase = rev
@@ -2006,20 +2071,43 @@ def debugrevlog(ui, repo, file_=None, **opts):
     if not flags:
         flags = ['(none)']
 
+    ### tracks merge vs single parent
     nummerges = 0
+
+    ### tracks ways the "delta" are build
+    # nodelta
+    numempty = 0
+    numemptytext = 0
+    numemptydelta = 0
+    # full file content
     numfull = 0
+    # intermediate snapshot against a prior snapshot
+    numsemi = 0
+    # snapshot count per depth
+    numsnapdepth = collections.defaultdict(lambda: 0)
+    # delta against previous revision
     numprev = 0
+    # delta against first or second parent (not prev)
     nump1 = 0
     nump2 = 0
+    # delta against neither prev nor parents
     numother = 0
+    # delta against prev that are also first or second parent
+    # (details of `numprev`)
     nump1prev = 0
     nump2prev = 0
+
+    # data about delta chain of each revs
     chainlengths = []
     chainbases = []
     chainspans = []
 
+    # data about each revision
     datasize = [None, 0, 0]
     fullsize = [None, 0, 0]
+    semisize = [None, 0, 0]
+    # snapshot count per depth
+    snapsizedepth = collections.defaultdict(lambda: [None, 0, 0])
     deltasize = [None, 0, 0]
     chunktypecounts = {}
     chunktypesizes = {}
@@ -2032,7 +2120,7 @@ def debugrevlog(ui, repo, file_=None, **opts):
         l[2] += size
 
     numrevs = len(r)
-    for rev in xrange(numrevs):
+    for rev in pycompat.xrange(numrevs):
         p1, p2 = r.parentrevs(rev)
         delta = r.deltaparent(rev)
         if format > 0:
@@ -2044,30 +2132,49 @@ def debugrevlog(ui, repo, file_=None, **opts):
             chainlengths.append(0)
             chainbases.append(r.start(rev))
             chainspans.append(size)
-            numfull += 1
-            addsize(size, fullsize)
+            if size == 0:
+                numempty += 1
+                numemptytext += 1
+            else:
+                numfull += 1
+                numsnapdepth[0] += 1
+                addsize(size, fullsize)
+                addsize(size, snapsizedepth[0])
         else:
             chainlengths.append(chainlengths[delta] + 1)
             baseaddr = chainbases[delta]
             revaddr = r.start(rev)
             chainbases.append(baseaddr)
             chainspans.append((revaddr - baseaddr) + size)
-            addsize(size, deltasize)
-            if delta == rev - 1:
-                numprev += 1
-                if delta == p1:
-                    nump1prev += 1
+            if size == 0:
+                numempty += 1
+                numemptydelta += 1
+            elif r.issnapshot(rev):
+                addsize(size, semisize)
+                numsemi += 1
+                depth = r.snapshotdepth(rev)
+                numsnapdepth[depth] += 1
+                addsize(size, snapsizedepth[depth])
+            else:
+                addsize(size, deltasize)
+                if delta == rev - 1:
+                    numprev += 1
+                    if delta == p1:
+                        nump1prev += 1
+                    elif delta == p2:
+                        nump2prev += 1
+                elif delta == p1:
+                    nump1 += 1
                 elif delta == p2:
-                    nump2prev += 1
-            elif delta == p1:
-                nump1 += 1
-            elif delta == p2:
-                nump2 += 1
-            elif delta != nullrev:
-                numother += 1
+                    nump2 += 1
+                elif delta != nullrev:
+                    numother += 1
 
         # Obtain data on the raw chunks in the revlog.
-        segment = r._getsegmentforrevs(rev, rev)[1]
+        if util.safehasattr(r, '_getsegmentforrevs'):
+            segment = r._getsegmentforrevs(rev, rev)[1]
+        else:
+            segment = r._revlog._getsegmentforrevs(rev, rev)[1]
         if segment:
             chunktype = bytes(segment[0:1])
         else:
@@ -2081,20 +2188,28 @@ def debugrevlog(ui, repo, file_=None, **opts):
         chunktypesizes[chunktype] += size
 
     # Adjust size min value for empty cases
-    for size in (datasize, fullsize, deltasize):
+    for size in (datasize, fullsize, semisize, deltasize):
         if size[0] is None:
             size[0] = 0
 
-    numdeltas = numrevs - numfull
+    numdeltas = numrevs - numfull - numempty - numsemi
     numoprev = numprev - nump1prev - nump2prev
     totalrawsize = datasize[2]
     datasize[2] /= numrevs
     fulltotal = fullsize[2]
     fullsize[2] /= numfull
+    semitotal = semisize[2]
+    snaptotal = {}
+    if numsemi > 0:
+        semisize[2] /= numsemi
+    for depth in snapsizedepth:
+        snaptotal[depth] = snapsizedepth[depth][2]
+        snapsizedepth[depth][2] /= numsnapdepth[depth]
+
     deltatotal = deltasize[2]
-    if numrevs - numfull > 0:
-        deltasize[2] /= numrevs - numfull
-    totalsize = fulltotal + deltatotal
+    if numdeltas > 0:
+        deltasize[2] /= numdeltas
+    totalsize = fulltotal + semitotal + deltatotal
     avgchainlen = sum(chainlengths) / numrevs
     maxchainlen = max(chainlengths)
     maxchainspan = max(chainspans)
@@ -2126,10 +2241,22 @@ def debugrevlog(ui, repo, file_=None, **opts):
     ui.write(('    merges    : ') + fmt % pcfmt(nummerges, numrevs))
     ui.write(('    normal    : ') + fmt % pcfmt(numrevs - nummerges, numrevs))
     ui.write(('revisions     : ') + fmt2 % numrevs)
-    ui.write(('    full      : ') + fmt % pcfmt(numfull, numrevs))
+    ui.write(('    empty     : ') + fmt % pcfmt(numempty, numrevs))
+    ui.write(('                   text  : ')
+             + fmt % pcfmt(numemptytext, numemptytext + numemptydelta))
+    ui.write(('                   delta : ')
+             + fmt % pcfmt(numemptydelta, numemptytext + numemptydelta))
+    ui.write(('    snapshot  : ') + fmt % pcfmt(numfull + numsemi, numrevs))
+    for depth in sorted(numsnapdepth):
+        ui.write(('      lvl-%-3d :       ' % depth)
+                 + fmt % pcfmt(numsnapdepth[depth], numrevs))
     ui.write(('    deltas    : ') + fmt % pcfmt(numdeltas, numrevs))
     ui.write(('revision size : ') + fmt2 % totalsize)
-    ui.write(('    full      : ') + fmt % pcfmt(fulltotal, totalsize))
+    ui.write(('    snapshot  : ')
+             + fmt % pcfmt(fulltotal + semitotal, totalsize))
+    for depth in sorted(numsnapdepth):
+        ui.write(('      lvl-%-3d :       ' % depth)
+                 + fmt % pcfmt(snaptotal[depth], totalsize))
     ui.write(('    deltas    : ') + fmt % pcfmt(deltatotal, totalsize))
 
     def fmtchunktype(chunktype):
@@ -2163,6 +2290,13 @@ def debugrevlog(ui, repo, file_=None, **opts):
                  % tuple(datasize))
     ui.write(('full revision size (min/max/avg)     : %d / %d / %d\n')
              % tuple(fullsize))
+    ui.write(('inter-snapshot size (min/max/avg)    : %d / %d / %d\n')
+             % tuple(semisize))
+    for depth in sorted(snapsizedepth):
+        if depth == 0:
+            continue
+        ui.write(('    level-%-3d (min/max/avg)          : %d / %d / %d\n')
+                 % ((depth,) + tuple(snapsizedepth[depth])))
     ui.write(('delta size (min/max/avg)             : %d / %d / %d\n')
              % tuple(deltasize))
 
@@ -2185,6 +2319,71 @@ def debugrevlog(ui, repo, file_=None, **opts):
                      + fmt % pcfmt(nump2, numdeltas))
             ui.write(('deltas against other : ') + fmt % pcfmt(numother,
                                                              numdeltas))
+
+@command('debugrevlogindex', cmdutil.debugrevlogopts +
+    [('f', 'format', 0, _('revlog format'), _('FORMAT'))],
+    _('[-f FORMAT] -c|-m|FILE'),
+    optionalrepo=True)
+def debugrevlogindex(ui, repo, file_=None, **opts):
+    """dump the contents of a revlog index"""
+    opts = pycompat.byteskwargs(opts)
+    r = cmdutil.openrevlog(repo, 'debugrevlogindex', file_, opts)
+    format = opts.get('format', 0)
+    if format not in (0, 1):
+        raise error.Abort(_("unknown format %d") % format)
+
+    if ui.debugflag:
+        shortfn = hex
+    else:
+        shortfn = short
+
+    # There might not be anything in r, so have a sane default
+    idlen = 12
+    for i in r:
+        idlen = len(shortfn(r.node(i)))
+        break
+
+    if format == 0:
+        if ui.verbose:
+            ui.write(("   rev    offset  length linkrev"
+                     " %s %s p2\n") % ("nodeid".ljust(idlen),
+                                       "p1".ljust(idlen)))
+        else:
+            ui.write(("   rev linkrev %s %s p2\n") % (
+                "nodeid".ljust(idlen), "p1".ljust(idlen)))
+    elif format == 1:
+        if ui.verbose:
+            ui.write(("   rev flag   offset   length     size   link     p1"
+                      "     p2 %s\n") % "nodeid".rjust(idlen))
+        else:
+            ui.write(("   rev flag     size   link     p1     p2 %s\n") %
+                     "nodeid".rjust(idlen))
+
+    for i in r:
+        node = r.node(i)
+        if format == 0:
+            try:
+                pp = r.parents(node)
+            except Exception:
+                pp = [nullid, nullid]
+            if ui.verbose:
+                ui.write("% 6d % 9d % 7d % 7d %s %s %s\n" % (
+                        i, r.start(i), r.length(i), r.linkrev(i),
+                        shortfn(node), shortfn(pp[0]), shortfn(pp[1])))
+            else:
+                ui.write("% 6d % 7d %s %s %s\n" % (
+                    i, r.linkrev(i), shortfn(node), shortfn(pp[0]),
+                    shortfn(pp[1])))
+        elif format == 1:
+            pr = r.parentrevs(i)
+            if ui.verbose:
+                ui.write("% 6d %04x % 8d % 8d % 8d % 6d % 6d % 6d %s\n" % (
+                        i, r.flags(i), r.start(i), r.length(i), r.rawsize(i),
+                        r.linkrev(i), pr[0], pr[1], shortfn(node)))
+            else:
+                ui.write("% 6d %04x % 8d % 6d % 6d % 6d %s\n" % (
+                    i, r.flags(i), r.rawsize(i), r.linkrev(i), pr[0], pr[1],
+                    shortfn(node)))
 
 @command('debugrevspec',
     [('', 'optimize', None,
@@ -2633,6 +2832,7 @@ def debugwireargs(ui, repopath, *vals, **opts):
 def _parsewirelangblocks(fh):
     activeaction = None
     blocklines = []
+    lastindent = 0
 
     for line in fh:
         line = line.rstrip()
@@ -2642,13 +2842,14 @@ def _parsewirelangblocks(fh):
         if line.startswith(b'#'):
             continue
 
-        if not line.startswith(' '):
+        if not line.startswith(b' '):
             # New block. Flush previous one.
             if activeaction:
                 yield activeaction, blocklines
 
             activeaction = line
             blocklines = []
+            lastindent = 0
             continue
 
         # Else we start with an indent.
@@ -2656,7 +2857,14 @@ def _parsewirelangblocks(fh):
         if not activeaction:
             raise error.Abort(_('indented line outside of block'))
 
-        blocklines.append(line)
+        indent = len(line) - len(line.lstrip())
+
+        # If this line is indented more than the last line, concatenate it.
+        if indent > lastindent and blocklines:
+            blocklines[-1] += line.lstrip()
+        else:
+            blocklines.append(line)
+            lastindent = indent
 
     # Flush last block.
     if activeaction:
@@ -2885,7 +3093,8 @@ def debugwireproto(ui, repo, path=None, **opts):
             '-R', repo.root,
             'debugserve', '--sshstdio',
         ]
-        proc = subprocess.Popen(args, stdin=subprocess.PIPE,
+        proc = subprocess.Popen(pycompat.rapply(procutil.tonativestr, args),
+                                stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                 bufsize=0)
 
@@ -3054,13 +3263,12 @@ def debugwireproto(ui, repo, path=None, **opts):
                     res = e.callcommand(command, args).result()
 
                 if isinstance(res, wireprotov2peer.commandresponse):
-                    val = list(res.cborobjects())
+                    val = res.objects()
                     ui.status(_('response: %s\n') %
-                              stringutil.pprint(val, bprefix=True))
-
+                              stringutil.pprint(val, bprefix=True, indent=2))
                 else:
                     ui.status(_('response: %s\n') %
-                              stringutil.pprint(res, bprefix=True))
+                              stringutil.pprint(res, bprefix=True, indent=2))
 
         elif action == 'batchbegin':
             if batchedcommands is not None:
@@ -3097,7 +3305,10 @@ def debugwireproto(ui, repo, path=None, **opts):
                 line = line.lstrip()
                 m = re.match(b'^([a-zA-Z0-9_-]+): (.*)$', line)
                 if m:
-                    headers[m.group(1)] = m.group(2)
+                    # Headers need to use native strings.
+                    key = pycompat.strurl(m.group(1))
+                    value = pycompat.strurl(m.group(2))
+                    headers[key] = value
                     continue
 
                 if line.startswith(b'BODYFILE '):
@@ -3122,18 +3333,22 @@ def debugwireproto(ui, repo, path=None, **opts):
             # urllib.Request insists on using has_data() as a proxy for
             # determining the request method. Override that to use our
             # explicitly requested method.
-            req.get_method = lambda: method
+            req.get_method = lambda: pycompat.sysstr(method)
 
             try:
                 res = opener.open(req)
                 body = res.read()
             except util.urlerr.urlerror as e:
-                e.read()
+                # read() method must be called, but only exists in Python 2
+                getattr(e, 'read', lambda: None)()
                 continue
 
-            if res.headers.get('Content-Type') == 'application/mercurial-cbor':
+            ct = res.headers.get(r'Content-Type')
+            if ct == r'application/mercurial-cbor':
                 ui.write(_('cbor> %s\n') %
-                         stringutil.pprint(cbor.loads(body), bprefix=True))
+                         stringutil.pprint(cborutil.decodeall(body),
+                                           bprefix=True,
+                                           indent=2))
 
         elif action == 'close':
             peer.close()

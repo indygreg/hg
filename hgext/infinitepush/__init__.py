@@ -357,8 +357,7 @@ def listkeyspatterns(self, namespace, patterns):
     if not self.capable('pushkey'):
         yield {}, None
     f = wireprotov1peer.future()
-    self.ui.debug('preparing listkeys for "%s" with pattern "%s"\n' %
-                  (namespace, patterns))
+    self.ui.debug('preparing listkeys for "%s"\n' % namespace)
     yield {
         'namespace': encoding.fromlocal(namespace),
         'patterns': wireprototypes.encodelist(patterns)
@@ -696,8 +695,8 @@ def _findcommonincoming(orig, *args, **kwargs):
     return common, True, remoteheads
 
 def _push(orig, ui, repo, dest=None, *args, **opts):
-
-    bookmark = opts.get(r'bookmark')
+    opts = pycompat.byteskwargs(opts)
+    bookmark = opts.get('bookmark')
     # we only support pushing one infinitepush bookmark at once
     if len(bookmark) == 1:
         bookmark = bookmark[0]
@@ -718,7 +717,7 @@ def _push(orig, ui, repo, dest=None, *args, **opts):
         if scratchpush:
             # this is an infinitepush, we don't want the bookmark to be applied
             # rather that should be stored in the bundlestore
-            opts[r'bookmark'] = []
+            opts['bookmark'] = []
             ui.setconfig(experimental, configscratchpush, True)
             oldphasemove = extensions.wrapfunction(exchange,
                                                    '_localphasemove',
@@ -732,7 +731,7 @@ def _push(orig, ui, repo, dest=None, *args, **opts):
         # Remote scratch bookmarks will be deleted because remotenames doesn't
         # know about them. Let's save it before push and restore after
         remotescratchbookmarks = _readscratchremotebookmarks(ui, repo, destpath)
-        result = orig(ui, repo, dest, *args, **opts)
+        result = orig(ui, repo, dest, *args, **pycompat.strkwargs(opts))
         if common.isremotebooksenabled(ui):
             if bookmark and scratchpush:
                 other = hg.peer(repo, opts, destpath)
@@ -899,7 +898,7 @@ def storetobundlestore(orig, repo, op, unbundler):
                 if part.type in ('pushkey', 'changegroup'):
                     if op.reply is not None:
                         rpart = op.reply.newpart('reply:%s' % part.type)
-                        rpart.addparam('in-reply-to', str(part.id),
+                        rpart.addparam('in-reply-to', b'%d' % part.id,
                                        mandatory=False)
                         rpart.addparam('return', '1', mandatory=False)
 
@@ -1182,5 +1181,6 @@ def _asyncsavemetadata(root, nodes):
         cmdline = [util.hgexecutable(), 'debugfillinfinitepushmetadata',
                    '-R', root] + nodesargs
         # Process will run in background. We don't care about the return code
-        subprocess.Popen(cmdline, close_fds=True, shell=False,
+        subprocess.Popen(pycompat.rapply(procutil.tonativestr, cmdline),
+                         close_fds=True, shell=False,
                          stdin=devnull, stdout=devnull, stderr=devnull)

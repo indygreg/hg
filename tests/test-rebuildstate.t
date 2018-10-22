@@ -47,14 +47,14 @@ basic test for hg debugrebuildstate
 
 state dump after
 
-  $ hg debugstate --nodates | sort
+  $ hg debugstate --no-dates | sort
   n   0         -1 unset               bar
   n   0         -1 unset               foo
 
   $ hg debugadddrop --normal-lookup file1 file2
   $ hg debugadddrop --drop bar
   $ hg debugadddrop --drop
-  $ hg debugstate --nodates
+  $ hg debugstate --no-dates
   n   0         -1 unset               file1
   n   0         -1 unset               file2
   n   0         -1 unset               foo
@@ -78,13 +78,13 @@ but in the dirstate
   ? baz
   C foo
   $ hg debugadddrop --normal-lookup baz
-  $ hg debugdirstate --nodates
+  $ hg debugdirstate --no-dates
   r   0          0 * bar (glob)
   n   0         -1 * baz (glob)
   n 644          0 * foo (glob)
   a   0         -1 * qux (glob)
   $ hg debugrebuilddirstate --minimal
-  $ hg debugdirstate --nodates
+  $ hg debugdirstate --no-dates
   r   0          0 * bar (glob)
   n 644          0 * foo (glob)
   a   0         -1 * qux (glob)
@@ -104,16 +104,16 @@ dirstate
   R bar
   ? baz
   C foo
-  $ hg debugdirstate --nodates
+  $ hg debugdirstate --no-dates
   r   0          0 * bar (glob)
   n 644          0 * foo (glob)
   a   0         -1 * qux (glob)
   $ hg debugadddrop --drop foo
-  $ hg debugdirstate --nodates
+  $ hg debugdirstate --no-dates
   r   0          0 * bar (glob)
   a   0         -1 * qux (glob)
   $ hg debugrebuilddirstate --minimal
-  $ hg debugdirstate --nodates
+  $ hg debugdirstate --no-dates
   r   0          0 * bar (glob)
   n   0         -1 * foo (glob)
   a   0         -1 * qux (glob)

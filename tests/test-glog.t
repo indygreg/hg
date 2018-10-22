@@ -81,49 +81,8 @@ o  (0) root
   >   hg commit -Aqd "$rev 0" -m "($rev) $msg"
   > }
 
-  $ cat > printrevset.py <<EOF
-  > from __future__ import absolute_import
-  > from mercurial import (
-  >   cmdutil,
-  >   commands,
-  >   extensions,
-  >   logcmdutil,
-  >   revsetlang,
-  >   smartset,
-  > )
-  > from mercurial.utils import stringutil
-  > 
-  > def logrevset(repo, pats, opts):
-  >     revs = logcmdutil._initialrevs(repo, opts)
-  >     if not revs:
-  >         return None
-  >     match, pats, slowpath = logcmdutil._makematcher(repo, revs, pats, opts)
-  >     return logcmdutil._makerevset(repo, match, pats, slowpath, opts)
-  > 
-  > def uisetup(ui):
-  >     def printrevset(orig, repo, pats, opts):
-  >         revs, filematcher = orig(repo, pats, opts)
-  >         if opts.get(b'print_revset'):
-  >             expr = logrevset(repo, pats, opts)
-  >             if expr:
-  >                 tree = revsetlang.parse(expr)
-  >                 tree = revsetlang.analyze(tree)
-  >             else:
-  >                 tree = []
-  >             ui = repo.ui
-  >             ui.write(b'%r\n' % (opts.get(b'rev', []),))
-  >             ui.write(revsetlang.prettyformat(tree) + b'\n')
-  >             ui.write(stringutil.prettyrepr(revs) + b'\n')
-  >             revs = smartset.baseset()  # display no revisions
-  >         return revs, filematcher
-  >     extensions.wrapfunction(logcmdutil, 'getrevs', printrevset)
-  >     aliases, entry = cmdutil.findcmd(b'log', commands.table)
-  >     entry[1].append((b'', b'print-revset', False,
-  >                      b'print generated revset and exit (DEPRECATED)'))
-  > EOF
-
   $ echo "[extensions]" >> $HGRCPATH
-  $ echo "printrevset=`pwd`/printrevset.py" >> $HGRCPATH
+  $ echo "printrevset=$TESTDIR/printrevset.py" >> $HGRCPATH
 
   $ hg init repo
   $ cd repo
@@ -1700,7 +1659,7 @@ Test multiple --include/--exclude/paths
 
 Test glob expansion of pats
 
-  $ expandglobs=`$PYTHON -c "import mercurial.util; \
+  $ expandglobs=`"$PYTHON" -c "import mercurial.util; \
   >   print(mercurial.util.expandglobs and 'true' or 'false')"`
   $ if [ $expandglobs = "true" ]; then
   >    testlog 'a*';
@@ -1890,7 +1849,7 @@ Test "set:..." and parent revision
     <spanset- 0:7>,
     <matchfiles patterns=[], include=['set:copied()'] exclude=[], default='relpath', rev=2147483647>>
   $ testlog -r "sort(file('set:copied()'), -rev)"
-  ["sort(file('set:copied()'), -rev)"]
+  ['sort(file(\'set:copied()\'), -rev)']
   []
   <filteredset
     <fullreposet- 0:7>,

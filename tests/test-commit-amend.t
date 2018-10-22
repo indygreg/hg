@@ -824,7 +824,8 @@ Amend a merge changeset (with manifest-level conflicts):
   $ hg merge -q bar --config ui.interactive=True << EOF
   > c
   > EOF
-  local [working copy] changed aa which other [merge rev] deleted
+  file 'aa' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? c
   $ hg ci -m 'merge bar (with conflicts)'
   $ hg log --config diff.git=1 -pr .

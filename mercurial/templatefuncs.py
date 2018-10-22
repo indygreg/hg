@@ -140,7 +140,7 @@ def files(context, mapping, args):
     ctx = context.resource(mapping, 'ctx')
     m = ctx.match([raw])
     files = list(ctx.matches(m))
-    return templateutil.compatlist(context, mapping, "file", files)
+    return templateutil.compatfileslist(context, mapping, "file", files)
 
 @templatefunc('fill(text[, width[, initialident[, hangindent]]])')
 def fill(context, mapping, args):
@@ -216,8 +216,9 @@ def mailmap(context, mapping, args):
 
     return stringutil.mapname(cache['mailmap'], author)
 
-@templatefunc('pad(text, width[, fillchar=\' \'[, left=False]])',
-              argspec='text width fillchar left')
+@templatefunc(
+    'pad(text, width[, fillchar=\' \'[, left=False[, truncate=False]]])',
+    argspec='text width fillchar left truncate')
 def pad(context, mapping, args):
     """Pad text with a
     fill character."""
@@ -231,6 +232,7 @@ def pad(context, mapping, args):
 
     text = evalstring(context, mapping, args['text'])
 
+    truncate = False
     left = False
     fillchar = ' '
     if 'fillchar' in args:
@@ -240,8 +242,12 @@ def pad(context, mapping, args):
             raise error.ParseError(_("pad() expects a single fill character"))
     if 'left' in args:
         left = evalboolean(context, mapping, args['left'])
+    if 'truncate' in args:
+        truncate = evalboolean(context, mapping, args['truncate'])
 
     fillwidth = width - encoding.colwidth(color.stripeffects(text))
+    if fillwidth < 0 and truncate:
+        return encoding.trim(color.stripeffects(text), width, leftside=left)
     if fillwidth <= 0:
         return text
     if left:
@@ -575,7 +581,7 @@ def rstdoc(context, mapping, args):
     text = evalstring(context, mapping, args[0])
     style = evalstring(context, mapping, args[1])
 
-    return minirst.format(text, style=style, keep=['verbose'])[0]
+    return minirst.format(text, style=style, keep=['verbose'])
 
 @templatefunc('separate(sep, args...)', argspec='sep *args')
 def separate(context, mapping, args):
@@ -596,7 +602,7 @@ def separate(context, mapping, args):
             yield sep
         yield argstr
 
-@templatefunc('shortest(node, minlength=4)', requires={'repo'})
+@templatefunc('shortest(node, minlength=4)', requires={'repo', 'cache'})
 def shortest(context, mapping, args):
     """Obtain the shortest representation of
     a node."""
@@ -629,8 +635,9 @@ def shortest(context, mapping, args):
             return hexnode
         if not node:
             return hexnode
+    cache = context.resource(mapping, 'cache')
     try:
-        return scmutil.shortesthexnodeidprefix(repo, node, minlength)
+        return scmutil.shortesthexnodeidprefix(repo, node, minlength, cache)
     except error.RepoLookupError:
         return hexnode
 

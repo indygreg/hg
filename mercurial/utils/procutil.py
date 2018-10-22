@@ -120,13 +120,15 @@ def popen(cmd, mode='rb', bufsize=-1):
     raise error.ProgrammingError('unsupported mode: %r' % mode)
 
 def _popenreader(cmd, bufsize):
-    p = subprocess.Popen(quotecommand(cmd), shell=True, bufsize=bufsize,
+    p = subprocess.Popen(tonativestr(quotecommand(cmd)),
+                         shell=True, bufsize=bufsize,
                          close_fds=closefds,
                          stdout=subprocess.PIPE)
     return _pfile(p, p.stdout)
 
 def _popenwriter(cmd, bufsize):
-    p = subprocess.Popen(quotecommand(cmd), shell=True, bufsize=bufsize,
+    p = subprocess.Popen(tonativestr(quotecommand(cmd)),
+                         shell=True, bufsize=bufsize,
                          close_fds=closefds,
                          stdin=subprocess.PIPE)
     return _pfile(p, p.stdin)
@@ -135,10 +137,11 @@ def popen2(cmd, env=None):
     # Setting bufsize to -1 lets the system decide the buffer size.
     # The default for bufsize is 0, meaning unbuffered. This leads to
     # poor performance on Mac OS X: http://bugs.python.org/issue4194
-    p = subprocess.Popen(cmd, shell=True, bufsize=-1,
+    p = subprocess.Popen(tonativestr(cmd),
+                         shell=True, bufsize=-1,
                          close_fds=closefds,
                          stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                         env=env)
+                         env=tonativeenv(env))
     return p.stdin, p.stdout
 
 def popen3(cmd, env=None):
@@ -146,16 +149,18 @@ def popen3(cmd, env=None):
     return stdin, stdout, stderr
 
 def popen4(cmd, env=None, bufsize=-1):
-    p = subprocess.Popen(cmd, shell=True, bufsize=bufsize,
+    p = subprocess.Popen(tonativestr(cmd),
+                         shell=True, bufsize=bufsize,
                          close_fds=closefds,
                          stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
-                         env=env)
+                         env=tonativeenv(env))
     return p.stdin, p.stdout, p.stderr, p
 
 def pipefilter(s, cmd):
     '''filter string S through command CMD, returning its output'''
-    p = subprocess.Popen(cmd, shell=True, close_fds=closefds,
+    p = subprocess.Popen(tonativestr(cmd),
+                         shell=True, close_fds=closefds,
                          stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     pout, perr = p.communicate(s)
     return pout
@@ -320,9 +325,18 @@ def shellenviron(environ=None):
 if pycompat.iswindows:
     def shelltonative(cmd, env):
         return platform.shelltocmdexe(cmd, shellenviron(env))
+
+    tonativestr = encoding.strfromlocal
 else:
     def shelltonative(cmd, env):
         return cmd
+
+    tonativestr = pycompat.identity
+
+def tonativeenv(env):
+    '''convert the environment from bytes to strings suitable for Popen(), etc.
+    '''
+    return pycompat.rapply(tonativestr, env)
 
 def system(cmd, environ=None, cwd=None, out=None):
     '''enhanced shell command execution.
@@ -337,11 +351,16 @@ def system(cmd, environ=None, cwd=None, out=None):
     cmd = quotecommand(cmd)
     env = shellenviron(environ)
     if out is None or isstdout(out):
-        rc = subprocess.call(cmd, shell=True, close_fds=closefds,
-                             env=env, cwd=cwd)
+        rc = subprocess.call(tonativestr(cmd),
+                             shell=True, close_fds=closefds,
+                             env=tonativeenv(env),
+                             cwd=pycompat.rapply(tonativestr, cwd))
     else:
-        proc = subprocess.Popen(cmd, shell=True, close_fds=closefds,
-                                env=env, cwd=cwd, stdout=subprocess.PIPE,
+        proc = subprocess.Popen(tonativestr(cmd),
+                                shell=True, close_fds=closefds,
+                                env=tonativeenv(env),
+                                cwd=pycompat.rapply(tonativestr, cwd),
+                                stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT)
         for line in iter(proc.stdout.readline, ''):
             out.write(line)

@@ -7,7 +7,8 @@
   > import re
   > import sys
   > if sys.platform == "win32":
-  >     import os, msvcrt
+  >     import msvcrt
+  >     import os
   >     msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
   > topics = set()
   > topicre = re.compile(br':hg:`help ([a-z0-9\-.]+)`')
@@ -25,5 +26,5 @@ Check if ":hg:`help TOPIC`" is valid:
 
   $ testrepohg files 'glob:{hgdemandimport,hgext,mercurial}/**/*.py' \
   > | sed 's|\\|/|g' \
-  > | xargs $PYTHON "$TESTTMP/scanhelptopics.py" \
-  > | xargs -n1 hg help > /dev/null
+  > | xargs "$PYTHON" "$TESTTMP/scanhelptopics.py" \
+  > | xargs -n1 hg help --config extensions.phabricator= > /dev/null

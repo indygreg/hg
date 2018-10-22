@@ -118,7 +118,7 @@ def _buildencodefun():
     def decode(s):
         i = 0
         while i < len(s):
-            for l in xrange(1, 4):
+            for l in pycompat.xrange(1, 4):
                 try:
                     yield dmap[s[i:i + l]]
                     i += l
@@ -127,7 +127,8 @@ def _buildencodefun():
                     pass
             else:
                 raise KeyError
-    return (lambda s: ''.join([cmap[s[c:c + 1]] for c in xrange(len(s))]),
+    return (lambda s: ''.join([cmap[s[c:c + 1]]
+                               for c in pycompat.xrange(len(s))]),
             lambda s: ''.join(list(decode(s))))
 
 _encodefname, _decodefname = _buildencodefun()
@@ -159,7 +160,7 @@ def _buildlowerencodefun():
     'the~07quick~adshot'
     '''
     xchr = pycompat.bytechr
-    cmap = dict([(xchr(x), xchr(x)) for x in xrange(127)])
+    cmap = dict([(xchr(x), xchr(x)) for x in pycompat.xrange(127)])
     for x in _reserved():
         cmap[xchr(x)] = "~%02x" % x
     for x in range(ord("A"), ord("Z") + 1):
@@ -316,8 +317,8 @@ def _calcmode(vfs):
         mode = None
     return mode
 
-_data = ('data meta 00manifest.d 00manifest.i 00changelog.d 00changelog.i'
-         ' phaseroots obsstore')
+_data = ('narrowspec data meta 00manifest.d 00manifest.i'
+         ' 00changelog.d 00changelog.i phaseroots obsstore')
 
 def isrevlog(f, kind, st):
     return kind == stat.S_IFREG and f[-2:] in ('.i', '.d')
@@ -358,17 +359,21 @@ class basicstore(object):
         l.sort()
         return l
 
-    def datafiles(self):
+    def datafiles(self, matcher=None):
         return self._walk('data', True) + self._walk('meta', True)
 
     def topfiles(self):
         # yield manifest before changelog
         return reversed(self._walk('', False))
 
-    def walk(self):
-        '''yields (unencoded, encoded, size)'''
+    def walk(self, matcher=None):
+        '''yields (unencoded, encoded, size)
+
+        if a matcher is passed, storage files of only those tracked paths
+        are passed with matches the matcher
+        '''
         # yield data files first
-        for x in self.datafiles():
+        for x in self.datafiles(matcher):
             yield x
         for x in self.topfiles():
             yield x
@@ -406,7 +411,7 @@ class encodedstore(basicstore):
         self.vfs = vfsmod.filtervfs(vfs, encodefilename)
         self.opener = self.vfs
 
-    def datafiles(self):
+    def datafiles(self, matcher=None):
         for a, b, size in super(encodedstore, self).datafiles():
             try:
                 a = decodefilename(a)
@@ -535,7 +540,7 @@ class fncachestore(basicstore):
     def getsize(self, path):
         return self.rawvfs.stat(path).st_size
 
-    def datafiles(self):
+    def datafiles(self, matcher=None):
         for f in sorted(self.fncache):
             ef = self.encode(f)
             try:
@@ -545,7 +550,7 @@ class fncachestore(basicstore):
                     raise
 
     def copylist(self):
-        d = ('data meta dh fncache phaseroots obsstore'
+        d = ('narrowspec data meta dh fncache phaseroots obsstore'
              ' 00manifest.d 00manifest.i 00changelog.d 00changelog.i')
         return (['requires', '00changelog.i'] +
                 ['store/' + f for f in d.split()])
@@ -584,10 +589,3 @@ class fncachestore(basicstore):
             if e.startswith(path) and self._exists(e):
                 return True
         return False
-
-def store(requirements, path, vfstype):
-    if 'store' in requirements:
-        if 'fncache' in requirements:
-            return fncachestore(path, vfstype, 'dotencode' in requirements)
-        return encodedstore(path, vfstype)
-    return basicstore(path, vfstype)

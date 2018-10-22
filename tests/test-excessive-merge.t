@@ -98,4 +98,4 @@ revision 4
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 5 changesets, 4 total revisions
+  checked 5 changesets with 4 changes to 2 files

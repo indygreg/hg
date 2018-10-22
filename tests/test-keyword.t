@@ -125,7 +125,7 @@ A bundle to test this was made with:
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets a2392c293916
+  new changesets a2392c293916 (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg up a2392c293916
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -214,10 +214,10 @@ hg cat files and symlink, no expansion
 
 hg status of kw-ignored binary file starting with '\1\n'
 
-  >>> open("i", "wb").write("\1\nfoo")
+  >>> open("i", "wb").write(b"\1\nfoo") and None
   $ hg -q commit -Am metasep i
   $ hg status
-  >>> open("i", "wb").write("\1\nbar")
+  >>> open("i", "wb").write(b"\1\nbar") and None
   $ hg status
   M i
   $ hg -q commit -m "modify metasep" i
@@ -263,7 +263,7 @@ Pull from bundle and trigger notify
   adding manifests
   adding file changes
   added 2 changesets with 3 changes to 3 files
-  new changesets a2392c293916:ef63ca68695b
+  new changesets a2392c293916:ef63ca68695b (2 drafts)
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
@@ -378,8 +378,8 @@ record
 record chunk
 
   >>> lines = open('a', 'rb').readlines()
-  >>> lines.insert(1, 'foo\n')
-  >>> lines.append('bar\n')
+  >>> lines.insert(1, b'foo\n')
+  >>> lines.append(b'bar\n')
   >>> open('a', 'wb').writelines(lines)
   $ hg record -d '10 1' -m rectest a<<EOF
   > y
@@ -842,7 +842,7 @@ Stat, verify and show custom expansion (firstline)
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 3 changesets, 4 total revisions
+  checked 3 changesets with 4 changes to 3 files
   $ cat a b
   expand $Id: a bb948857c743 Thu, 01 Jan 1970 00:00:02 +0000 user $
   do not process $Id:
@@ -942,8 +942,8 @@ Clone to test incoming
 Imported patch should not be rejected
 
   >>> import re
-  >>> text = re.sub(r'(Id.*)', r'\1 rejecttest', open('a').read())
-  >>> open('a', 'wb').write(text)
+  >>> text = re.sub(br'(Id.*)', br'\1 rejecttest', open('a', 'rb').read())
+  >>> open('a', 'wb').write(text) and None
   $ hg --debug commit -m'rejects?' -d '3 0' -u 'User Name <user@example.com>'
   committing files:
   a
@@ -1423,9 +1423,9 @@ suppress expanding keywords at subsequent commands
   ...     # hello block
   ...     readchannel(server)
   ... 
-  ...     runcommand(server, ['cat', 'm'])
-  ...     runcommand(server, ['diff', '-c', '.', 'm'])
-  ...     runcommand(server, ['cat', 'm'])
+  ...     runcommand(server, [b'cat', b'm'])
+  ...     runcommand(server, [b'diff', b'-c', b'.', b'm'])
+  ...     runcommand(server, [b'cat', b'm'])
   *** runcommand cat m
   $Id: m 800511b3a22d Thu, 01 Jan 1970 00:00:00 +0000 test $
   bar

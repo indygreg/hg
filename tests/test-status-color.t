@@ -168,10 +168,10 @@ Make sure ui.formatted=False works
   $ touch modified removed deleted ignored
   $ echo "^ignored$" > .hgignore
   $ hg ci -A -m 'initial checkin'
-  adding .hgignore
-  adding deleted
-  adding modified
-  adding removed
+  \x1b[0;32madding .hgignore\x1b[0m (esc)
+  \x1b[0;32madding deleted\x1b[0m (esc)
+  \x1b[0;32madding modified\x1b[0m (esc)
+  \x1b[0;32madding removed\x1b[0m (esc)
   $ hg log --color=debug
   [log.changeset changeset.draft|changeset:   0:389aef86a55e]
   [log.tag|tag:         tip]
@@ -240,8 +240,8 @@ hg status -A (with terminfo color):
 
 #if tic
 
-  $ mkdir "$TESTTMP/terminfo"
-  $ TERMINFO="$TESTTMP/terminfo" tic "$TESTDIR/hgterm.ti"
+  $ tic -o "$TESTTMP/terminfo" "$TESTDIR/hgterm.ti"
+  $ ln -s "$TESTTMP/terminfo" "$TESTTMP/terminfo.cdb"
   $ TERM=hgterm TERMINFO="$TESTTMP/terminfo" hg status --config color.mode=terminfo -A
   \x1b[30m\x1b[32m\x1b[1mA \x1b[30m\x1b[30m\x1b[32m\x1b[1madded\x1b[30m (esc)
   \x1b[30m\x1b[32m\x1b[1mA \x1b[30m\x1b[30m\x1b[32m\x1b[1mcopied\x1b[30m (esc)
@@ -296,10 +296,10 @@ check 'status -q' and some combinations
   $ touch modified removed deleted ignored
   $ echo "^ignored$" > .hgignore
   $ hg commit -A -m 'initial checkin'
-  adding .hgignore
-  adding deleted
-  adding modified
-  adding removed
+  \x1b[0;32madding .hgignore\x1b[0m (esc)
+  \x1b[0;32madding deleted\x1b[0m (esc)
+  \x1b[0;32madding modified\x1b[0m (esc)
+  \x1b[0;32madding removed\x1b[0m (esc)
   $ touch added unknown ignored
   $ hg add added
   $ echo "test" >> modified
@@ -393,6 +393,7 @@ color coding of error message with current availability of curses
 
   $ hg unknowncommand > /dev/null
   hg: unknown command 'unknowncommand'
+  (use 'hg help' for a list of commands)
   [255]
 
 color coding of error message without curses
@@ -400,6 +401,7 @@ color coding of error message without curses
   $ echo 'raise ImportError' > curses.py
   $ PYTHONPATH=`pwd`:$PYTHONPATH hg unknowncommand > /dev/null
   hg: unknown command 'unknowncommand'
+  (use 'hg help' for a list of commands)
   [255]
 
   $ cd ..

@@ -27,6 +27,7 @@ Missing manifest should not result in server lookup
   adding file changes
   added 2 changesets with 2 changes to 2 files
   new changesets 53245c60e682:aaff8d2ffbbf
+  (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
 
   $ cat server/access.log
   * - - [*] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
@@ -45,6 +46,7 @@ Empty manifest file results in retrieval
   adding file changes
   added 2 changesets with 2 changes to 2 files
   new changesets 53245c60e682:aaff8d2ffbbf
+  (sent 4 HTTP requests and * bytes; received * bytes in responses) (glob)
 
 Manifest file with invalid URL aborts
 
@@ -52,7 +54,7 @@ Manifest file with invalid URL aborts
   $ hg clone http://localhost:$HGPORT 404-url
   applying clone bundle from http://does.not.exist/bundle.hg
   error fetching bundle: (.* not known|(\[Errno -?\d+])? No address associated with hostname) (re) (no-windows !)
-  error fetching bundle: [Errno 11004] getaddrinfo failed (windows !)
+  error fetching bundle: [Errno 1100*] getaddrinfo failed (glob) (windows !)
   abort: error applying bundle
   (if this error persists, consider contacting the server operator or disable clone bundles via "--config ui.clonebundles=false")
   [255]
@@ -465,10 +467,8 @@ A manifest with just a gzip bundle
   no compatible clone bundles available on server; falling back to regular clone
   (you may want to report this to the server operator)
   streaming all changes
-  4 files to transfer, 613 bytes of data
-  transferred 613 bytes in * seconds (*) (glob)
-  searching for changes
-  no changes found
+  9 files to transfer, 816 bytes of data
+  transferred 816 bytes in * seconds (*) (glob)
 
 A manifest with a stream clone but no BUNDLESPEC
 
@@ -480,10 +480,8 @@ A manifest with a stream clone but no BUNDLESPEC
   no compatible clone bundles available on server; falling back to regular clone
   (you may want to report this to the server operator)
   streaming all changes
-  4 files to transfer, 613 bytes of data
-  transferred 613 bytes in * seconds (*) (glob)
-  searching for changes
-  no changes found
+  9 files to transfer, 816 bytes of data
+  transferred 816 bytes in * seconds (*) (glob)
 
 A manifest with a gzip bundle and a stream clone
 
@@ -526,10 +524,8 @@ A manifest with a gzip bundle and a stream clone with unsupported requirements
   no compatible clone bundles available on server; falling back to regular clone
   (you may want to report this to the server operator)
   streaming all changes
-  4 files to transfer, 613 bytes of data
-  transferred 613 bytes in * seconds (*) (glob)
-  searching for changes
-  no changes found
+  9 files to transfer, 816 bytes of data
+  transferred 816 bytes in * seconds (*) (glob)
 
 Test clone bundle retrieved through bundle2
 

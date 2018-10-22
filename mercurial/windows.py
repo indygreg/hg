@@ -123,10 +123,35 @@ class mixedfilemodewrapper(object):
         object.__setattr__(self, r'_lastop', self.OPREAD)
         return self._fp.readlines(*args, **kwargs)
 
+class fdproxy(object):
+    """Wraps osutil.posixfile() to override the name attribute to reflect the
+    underlying file name.
+    """
+    def __init__(self, name, fp):
+        self.name = name
+        self._fp = fp
+
+    def __enter__(self):
+        return self._fp.__enter__()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._fp.__exit__(exc_type, exc_value, traceback)
+
+    def __iter__(self):
+        return iter(self._fp)
+
+    def __getattr__(self, name):
+        return getattr(self._fp, name)
+
 def posixfile(name, mode='r', buffering=-1):
     '''Open a file with even more POSIX-like semantics'''
     try:
         fp = osutil.posixfile(name, mode, buffering) # may raise WindowsError
+
+        # PyFile_FromFd() ignores the name, and seems to report fp.name as the
+        # underlying file descriptor.
+        if pycompat.ispy3:
+            fp = fdproxy(name, fp)
 
         # The position when opening in append mode is implementation defined, so
         # make it consistent with other platforms, which position at EOF.
@@ -139,8 +164,8 @@ def posixfile(name, mode='r', buffering=-1):
         return fp
     except WindowsError as err:
         # convert to a friendlier exception
-        raise IOError(err.errno, '%s: %s' % (
-            name, encoding.strtolocal(err.strerror)))
+        raise IOError(err.errno, r'%s: %s' % (
+            encoding.strfromlocal(name), err.strerror))
 
 # may be wrapped by win32mbcs extension
 listdir = osutil.listdir
@@ -176,7 +201,7 @@ class winstdout(object):
             if inst.errno != 0 and not win32.lasterrorwaspipeerror(inst):
                 raise
             self.close()
-            raise IOError(errno.EPIPE, 'Broken pipe')
+            raise IOError(errno.EPIPE, r'Broken pipe')
 
     def flush(self):
         try:
@@ -184,7 +209,7 @@ class winstdout(object):
         except IOError as inst:
             if not win32.lasterrorwaspipeerror(inst):
                 raise
-            raise IOError(errno.EPIPE, 'Broken pipe')
+            raise IOError(errno.EPIPE, r'Broken pipe')
 
 def _is_win_9x():
     '''return true if run on windows 95, 98 or me.'''
@@ -289,7 +314,7 @@ def shelltocmdexe(path, env):
     index = 0
     pathlen = len(path)
     while index < pathlen:
-        c = path[index]
+        c = path[index:index + 1]
         if c == b'\'':   # no expansion within single quotes
             path = path[index + 1:]
             pathlen = len(path)
@@ -319,7 +344,7 @@ def shelltocmdexe(path, env):
                     var = path[:index]
 
                     # See below for why empty variables are handled specially
-                    if env.get(var, '') != '':
+                    if env.get(var, b'') != b'':
                         res += b'%' + var + b'%'
                     else:
                         res += b'${' + var + b'}'
@@ -340,20 +365,20 @@ def shelltocmdexe(path, env):
                 # VAR, and that really confuses things like revset expressions.
                 # OTOH, if it's left in Unix format and the hook runs sh.exe, it
                 # will substitute to an empty string, and everything is happy.
-                if env.get(var, '') != '':
+                if env.get(var, b'') != b'':
                     res += b'%' + var + b'%'
                 else:
                     res += b'$' + var
 
-                if c != '':
+                if c != b'':
                     index -= 1
         elif (c == b'~' and index + 1 < pathlen
-              and path[index + 1] in (b'\\', b'/')):
+              and path[index + 1:index + 2] in (b'\\', b'/')):
             res += "%USERPROFILE%"
         elif (c == b'\\' and index + 1 < pathlen
-              and path[index + 1] in (b'$', b'~')):
+              and path[index + 1:index + 2] in (b'$', b'~')):
             # Skip '\', but only if it is escaping $ or ~
-            res += path[index + 1]
+            res += path[index + 1:index + 2]
             index += 1
         else:
             res += c
@@ -389,7 +414,7 @@ def shellquote(s):
     """
     global _quotere
     if _quotere is None:
-        _quotere = re.compile(r'(\\*)("|\\$)')
+        _quotere = re.compile(br'(\\*)("|\\$)')
     global _needsshellquote
     if _needsshellquote is None:
         # ":" is also treated as "safe character", because it is used as a part
@@ -397,11 +422,11 @@ def shellquote(s):
         # safe because shlex.split() (kind of) treats it as an escape char and
         # drops it.  It will leave the next character, even if it is another
         # "\".
-        _needsshellquote = re.compile(r'[^a-zA-Z0-9._:/-]').search
+        _needsshellquote = re.compile(br'[^a-zA-Z0-9._:/-]').search
     if s and not _needsshellquote(s) and not _quotere.search(s):
         # "s" shouldn't have to be quoted
         return s
-    return '"%s"' % _quotere.sub(r'\1\1\\\2', s)
+    return b'"%s"' % _quotere.sub(br'\1\1\\\2', s)
 
 def _unquote(s):
     if s.startswith(b'"') and s.endswith(b'"'):
@@ -494,6 +519,9 @@ def groupname(gid=None):
     If gid is None, return the name of the current group."""
     return None
 
+def readlink(pathname):
+    return pycompat.fsencode(os.readlink(pycompat.fsdecode(pathname)))
+
 def removedirs(name):
     """special version of os.removedirs that does not remove symlinked
     directories or junction points if they actually contain files"""
@@ -523,7 +551,7 @@ def rename(src, dst):
         os.rename(src, dst)
 
 def gethgcmd():
-    return [sys.executable] + sys.argv[:1]
+    return [encoding.strtolocal(arg) for arg in [sys.executable] + sys.argv[:1]]
 
 def groupmembers(name):
     # Don't support groups on Windows for now
@@ -554,9 +582,11 @@ def lookupreg(key, valname=None, scope=None):
         scope = (scope,)
     for s in scope:
         try:
-            val = winreg.QueryValueEx(winreg.OpenKey(s, key), valname)[0]
-            # never let a Unicode string escape into the wild
-            return encoding.unitolocal(val)
+            with winreg.OpenKey(s, encoding.strfromlocal(key)) as hkey:
+                name = valname and encoding.strfromlocal(valname) or valname
+                val = winreg.QueryValueEx(hkey, name)[0]
+                # never let a Unicode string escape into the wild
+                return encoding.unitolocal(val)
         except EnvironmentError:
             pass
 
@@ -590,4 +620,4 @@ def readpipe(pipe):
     return ''.join(chunks)
 
 def bindunixsocket(sock, path):
-    raise NotImplementedError('unsupported platform')
+    raise NotImplementedError(r'unsupported platform')

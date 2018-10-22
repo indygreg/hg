@@ -1,4 +1,6 @@
+default = 'shortlog'
 mimetype = 'application/json'
+
 filerevision = '\{
   "node": {node|json},
   "path": {file|json},
@@ -238,4 +240,7 @@ indexentry = '\{
   "contact": {contact|utf8|json},
   "lastchange": {lastchange|json},
   "labels": {labels|json}
+  }'
+error = '\{
+  "error": {error|utf8|json}
   }'

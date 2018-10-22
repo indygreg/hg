@@ -33,26 +33,26 @@
   >         nested = True
   >     loops = abs(loops)
   > 
-  >     progress = ui.makeprogress(topiclabel, unit='loopnum', total=total)
-  >     other = ui.makeprogress('other', unit='othernum', total=total)
+  >     progress = ui.makeprogress(topiclabel, unit=b'loopnum', total=total)
+  >     other = ui.makeprogress(b'other', unit=b'othernum', total=total)
   >     for i in range(loops):
   >         progress.update(i, item=getloopitem(i))
   >         if opts.get('parallel'):
-  >             other.update(i, item='other.%d' % i)
+  >             other.update(i, item=b'other.%d' % i)
   >         if nested:
   >             nested_steps = 2
   >             if i and i % 4 == 0:
   >                 nested_steps = 5
-  >             nested = ui.makeprogress('nested', unit='nestnum',
+  >             nested = ui.makeprogress(b'nested', unit=b'nestnum',
   >                                      total=nested_steps)
   >             for j in range(nested_steps):
-  >                 nested.update(j, item='nested.%d' % j)
+  >                 nested.update(j, item=b'nested.%d' % j)
   >             nested.complete()
   >     progress.complete()
   > 
-  > topiclabel = 'loop'
+  > topiclabel = b'loop'
   > def getloopitem(i):
-  >     return 'loop.%d' % i
+  >     return b'loop.%d' % i
   > 
   > EOF
 

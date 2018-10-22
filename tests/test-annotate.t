@@ -56,7 +56,6 @@ annotate (JSON)
   $ hg annotate -Tjson a
   [
    {
-    "abspath": "a",
     "lines": [{"line": "a\n", "rev": 0}],
     "path": "a"
    }
@@ -65,8 +64,7 @@ annotate (JSON)
   $ hg annotate -Tjson -cdfnul a
   [
    {
-    "abspath": "a",
-    "lines": [{"date": [1.0, 0], "file": "a", "line": "a\n", "line_number": 1, "node": "8435f90966e442695d2ded29fdade2bac5ad8065", "rev": 0, "user": "nobody"}],
+    "lines": [{"date": [1.0, 0], "line": "a\n", "lineno": 1, "node": "8435f90966e442695d2ded29fdade2bac5ad8065", "path": "a", "rev": 0, "user": "nobody"}],
     "path": "a"
    }
   ]
@@ -76,12 +74,12 @@ log-like templating
   $ hg annotate -T'{lines % "{rev} {node|shortest}: {line}"}' a
   0 8435: a
 
-'{line_number}' field should be populated as necessary
+'{lineno}' field should be populated as necessary
 
-  $ hg annotate -T'{lines % "{rev}:{line_number}: {line}"}' a
+  $ hg annotate -T'{lines % "{rev}:{lineno}: {line}"}' a
   0:1: a
   $ hg annotate -Ta a \
-  > --config templates.a='"{lines % "{rev}:{line_number}: {line}"}"'
+  > --config templates.a='"{lines % "{rev}:{lineno}: {line}"}"'
   0:1: a
 
   $ cat <<EOF >>a
@@ -127,12 +125,10 @@ annotate multiple files (JSON)
   $ hg annotate -Tjson a b
   [
    {
-    "abspath": "a",
     "lines": [{"line": "a\n", "rev": 0}, {"line": "a\n", "rev": 1}, {"line": "a\n", "rev": 1}],
     "path": "a"
    },
    {
-    "abspath": "b",
     "lines": [{"line": "a\n", "rev": 0}, {"line": "a\n", "rev": 1}, {"line": "a\n", "rev": 1}, {"line": "b4\n", "rev": 3}, {"line": "b5\n", "rev": 3}, {"line": "b6\n", "rev": 3}],
     "path": "b"
    }
@@ -140,7 +136,7 @@ annotate multiple files (JSON)
 
 annotate multiple files (template)
 
-  $ hg annotate -T'== {abspath} ==\n{lines % "{rev}: {line}"}' a b
+  $ hg annotate -T'== {path} ==\n{lines % "{rev}: {line}"}' a b
   == a ==
   0: a
   1: a
@@ -568,8 +564,7 @@ annotate modified file
   $ hg annotate -ncr "wdir()" -Tjson foo
   [
    {
-    "abspath": "foo",
-    "lines": [{"line": "foo\n", "node": "472b18db256d1e8282064eab4bfdaf48cbfe83cd", "rev": 11}, {"line": "foofoo\n", "node": null, "rev": null}],
+    "lines": [{"line": "foo\n", "node": "472b18db256d1e8282064eab4bfdaf48cbfe83cd", "rev": 11}, {"line": "foofoo\n", "node": "ffffffffffffffffffffffffffffffffffffffff", "rev": 2147483647}],
     "path": "foo"
    }
   ]
@@ -870,11 +865,9 @@ Test empty annotate output
   $ hg annotate -Tjson binary empty
   [
    {
-    "abspath": "binary",
     "path": "binary"
    },
    {
-    "abspath": "empty",
     "lines": [],
     "path": "empty"
    }
@@ -957,13 +950,13 @@ Annotate with orphaned CR (issue5798)
   ...     f.write(b'0a\r0b\r\n1c\r1d\r\n0e\n1f\n0g') and None
   $ hg ci -m1
 
-  $ hg annotate -r0 a | $PYTHON "$TESTTMP/substcr.py"
+  $ hg annotate -r0 a | "$PYTHON" "$TESTTMP/substcr.py"
   0: 0a[CR]0b[CR]
   0: 0c[CR]0d[CR]
   0: 0e
   0: 0f
   0: 0g
-  $ hg annotate -r1 a | $PYTHON "$TESTTMP/substcr.py"
+  $ hg annotate -r1 a | "$PYTHON" "$TESTTMP/substcr.py"
   0: 0a[CR]0b[CR]
   1: 1c[CR]1d[CR]
   0: 0e

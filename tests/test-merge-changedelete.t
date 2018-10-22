@@ -54,9 +54,11 @@ Make sure HGMERGE doesn't interfere with the test
 Non-interactive merge:
 
   $ hg merge -y
-  local [working copy] changed file1 which other [merge rev] deleted
+  file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? u
-  other [merge rev] changed file2 which local [working copy] deleted
+  file 'file2' was deleted in local [working copy] but was modified in other [merge rev].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
   merging file3
   warning: conflicts while merging file3! (edit, then use 'hg resolve --mark')
@@ -121,9 +123,11 @@ Interactive merge:
   > c
   > d
   > EOF
-  local [working copy] changed file1 which other [merge rev] deleted
+  file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? c
-  other [merge rev] changed file2 which local [working copy] deleted
+  file 'file2' was deleted in local [working copy] but was modified in other [merge rev].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? d
   merging file3
   warning: conflicts while merging file3! (edit, then use 'hg resolve --mark')
@@ -189,18 +193,23 @@ Interactive merge with bad input:
   > baz
   > c
   > EOF
-  local [working copy] changed file1 which other [merge rev] deleted
+  file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? foo
   unrecognized response
-  local [working copy] changed file1 which other [merge rev] deleted
+  file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? bar
   unrecognized response
-  local [working copy] changed file1 which other [merge rev] deleted
+  file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? d
-  other [merge rev] changed file2 which local [working copy] deleted
+  file 'file2' was deleted in local [working copy] but was modified in other [merge rev].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? baz
   unrecognized response
-  other [merge rev] changed file2 which local [working copy] deleted
+  file 'file2' was deleted in local [working copy] but was modified in other [merge rev].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? c
   merging file3
   warning: conflicts while merging file3! (edit, then use 'hg resolve --mark')
@@ -262,9 +271,11 @@ Interactive merge with not enough input:
   $ hg merge --config ui.interactive=true <<EOF
   > d
   > EOF
-  local [working copy] changed file1 which other [merge rev] deleted
+  file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? d
-  other [merge rev] changed file2 which local [working copy] deleted
+  file 'file2' was deleted in local [working copy] but was modified in other [merge rev].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? 
   merging file3
   warning: conflicts while merging file3! (edit, then use 'hg resolve --mark')
@@ -473,9 +484,11 @@ Force prompts with no input (should be similar to :fail)
   1 other heads for branch "default"
 
   $ hg merge --config ui.interactive=True --tool :prompt
-  local [working copy] changed file1 which other [merge rev] deleted
+  file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? 
-  other [merge rev] changed file2 which local [working copy] deleted
+  file 'file2' was deleted in local [working copy] but was modified in other [merge rev].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? 
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for file3? 
   0 files updated, 0 files merged, 0 files removed, 3 files unresolved
@@ -532,9 +545,11 @@ Force prompts
   1 other heads for branch "default"
 
   $ hg merge --tool :prompt
-  local [working copy] changed file1 which other [merge rev] deleted
+  file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? u
-  other [merge rev] changed file2 which local [working copy] deleted
+  file 'file2' was deleted in local [working copy] but was modified in other [merge rev].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for file3? u
   0 files updated, 0 files merged, 0 files removed, 3 files unresolved
@@ -589,9 +604,11 @@ Choose to merge all files
   1 other heads for branch "default"
 
   $ hg merge --tool :merge3
-  local [working copy] changed file1 which other [merge rev] deleted
+  file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? u
-  other [merge rev] changed file2 which local [working copy] deleted
+  file 'file2' was deleted in local [working copy] but was modified in other [merge rev].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
   merging file3
   warning: conflicts while merging file3! (edit, then use 'hg resolve --mark')
@@ -679,9 +696,11 @@ invocations.)
   (status identical)
   
   === :other -> :prompt ===
-  local [working copy] changed file1 which other [merge rev] deleted
+  file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? 
-  other [merge rev] changed file2 which local [working copy] deleted
+  file 'file2' was deleted in local [working copy] but was modified in other [merge rev].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? 
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for file3? 
   --- diff of status ---
@@ -707,9 +726,11 @@ invocations.)
   (status identical)
   
   === :local -> :prompt ===
-  local [working copy] changed file1 which other [merge rev] deleted
+  file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? 
-  other [merge rev] changed file2 which local [working copy] deleted
+  file 'file2' was deleted in local [working copy] but was modified in other [merge rev].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? 
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for file3? 
   --- diff of status ---
@@ -725,9 +746,11 @@ invocations.)
   (status identical)
   
   === :fail -> :prompt ===
-  local [working copy] changed file1 which other [merge rev] deleted
+  file 'file1' was deleted in other [merge rev] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? 
-  other [merge rev] changed file2 which local [working copy] deleted
+  file 'file2' was deleted in local [working copy] but was modified in other [merge rev].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? 
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for file3? 
   --- diff of status ---
@@ -751,9 +774,11 @@ Non-interactive linear update
   $ echo changed >> file1
   $ hg rm file2
   $ hg update 1 -y
-  local [working copy] changed file1 which other [destination] deleted
+  file 'file1' was deleted in other [destination] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? u
-  other [destination] changed file2 which local [working copy] deleted
+  file 'file2' was deleted in local [working copy] but was modified in other [destination].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
   1 files updated, 0 files merged, 0 files removed, 2 files unresolved
   use 'hg resolve' to retry unresolved file merges
@@ -927,9 +952,11 @@ Force prompts with no input
   $ echo changed >> file1
   $ hg rm file2
   $ hg update 1 --config ui.interactive=True --tool :prompt
-  local [working copy] changed file1 which other [destination] deleted
+  file 'file1' was deleted in other [destination] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? 
-  other [destination] changed file2 which local [working copy] deleted
+  file 'file2' was deleted in local [working copy] but was modified in other [destination].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? 
   1 files updated, 0 files merged, 0 files removed, 2 files unresolved
   use 'hg resolve' to retry unresolved file merges
@@ -977,9 +1004,11 @@ Choose to merge all files
   $ echo changed >> file1
   $ hg rm file2
   $ hg update 1 --tool :merge3
-  local [working copy] changed file1 which other [destination] deleted
+  file 'file1' was deleted in other [destination] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? u
-  other [destination] changed file2 which local [working copy] deleted
+  file 'file2' was deleted in local [working copy] but was modified in other [destination].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
   1 files updated, 0 files merged, 0 files removed, 2 files unresolved
   use 'hg resolve' to retry unresolved file merges
@@ -1033,9 +1062,11 @@ Test transitions between different merge tools
   (status identical)
   
   === :other -> :prompt ===
-  local [working copy] changed file1 which other [destination] deleted
+  file 'file1' was deleted in other [destination] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? 
-  other [destination] changed file2 which local [working copy] deleted
+  file 'file2' was deleted in local [working copy] but was modified in other [destination].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? 
   --- diff of status ---
   (status identical)
@@ -1060,9 +1091,11 @@ Test transitions between different merge tools
   (status identical)
   
   === :local -> :prompt ===
-  local [working copy] changed file1 which other [destination] deleted
+  file 'file1' was deleted in other [destination] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? 
-  other [destination] changed file2 which local [working copy] deleted
+  file 'file2' was deleted in local [working copy] but was modified in other [destination].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? 
   --- diff of status ---
   (status identical)
@@ -1077,9 +1110,11 @@ Test transitions between different merge tools
   (status identical)
   
   === :fail -> :prompt ===
-  local [working copy] changed file1 which other [destination] deleted
+  file 'file1' was deleted in other [destination] but was modified in local [working copy].
+  What do you want to do?
   use (c)hanged version, (d)elete, or leave (u)nresolved? 
-  other [destination] changed file2 which local [working copy] deleted
+  file 'file2' was deleted in local [working copy] but was modified in other [destination].
+  What do you want to do?
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? 
   --- diff of status ---
   (status identical)

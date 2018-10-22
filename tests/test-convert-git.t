@@ -420,7 +420,7 @@ test binary conversion (issue1359)
   $ mkdir git-repo3
   $ cd git-repo3
   $ git init-db >/dev/null 2>/dev/null
-  $ $PYTHON -c 'import struct; open("b", "wb").write(b"".join([struct.Struct(">B").pack(i) for i in range(256)])*16)'
+  $ "$PYTHON" -c 'import struct; open("b", "wb").write(b"".join([struct.Struct(">B").pack(i) for i in range(256)])*16)'
   $ git add b
   $ commit -a -m addbinary
   $ cd ..
@@ -437,7 +437,7 @@ convert binary file
   $ cd git-repo3-hg
   $ hg up -C
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ $PYTHON -c 'from __future__ import print_function; print(len(open("b", "rb").read()))'
+  $ "$PYTHON" -c 'from __future__ import print_function; print(len(open("b", "rb").read()))'
   4096
   $ cd ..
 

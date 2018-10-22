@@ -19,10 +19,10 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 1 files
 
 Dumping revlog of file a to stdout:
-  $ $PYTHON "$CONTRIBDIR/dumprevlog" .hg/store/data/a.i
+  $ "$PYTHON" "$CONTRIBDIR/dumprevlog" .hg/store/data/a.i
   file: .hg/store/data/a.i
   node: 183d2312b35066fb6b3b449b84efc370d50993d0
   linkrev: 0
@@ -54,14 +54,14 @@ Dumping revlog of file a to stdout:
 
 Dump all revlogs to file repo.dump:
 
-  $ find .hg/store -name "*.i" | sort | xargs $PYTHON "$CONTRIBDIR/dumprevlog" > ../repo.dump
+  $ find .hg/store -name "*.i" | sort | xargs "$PYTHON" "$CONTRIBDIR/dumprevlog" > ../repo.dump
   $ cd ..
 
 Undumping into repo-b:
 
   $ hg init repo-b
   $ cd repo-b
-  $ $PYTHON "$CONTRIBDIR/undumprevlog" < ../repo.dump
+  $ "$PYTHON" "$CONTRIBDIR/undumprevlog" < ../repo.dump
   .hg/store/00changelog.i
   .hg/store/00manifest.i
   .hg/store/data/a.i
@@ -84,7 +84,7 @@ Verify:
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 1 files
 
 Compare repos:
 

@@ -120,8 +120,8 @@ define centos_targets
 centos$(1):
 	mkdir -p $$(HGROOT)/packages/centos$(1)
 	./buildrpm $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython)
-	cp $$(HGROOT)/rpmbuild/RPMS/*/* $$(HGROOT)/packages/centos$(1)
-	cp $$(HGROOT)/rpmbuild/SRPMS/* $$(HGROOT)/packages/centos$(1)
+	cp $$(HGROOT)/contrib/packaging/rpmbuild/RPMS/*/* $$(HGROOT)/packages/centos$(1)
+	cp $$(HGROOT)/contrib/packaging/rpmbuild/SRPMS/* $$(HGROOT)/packages/centos$(1)
 
 .PHONY: docker-centos$(1)
 docker-centos$(1):

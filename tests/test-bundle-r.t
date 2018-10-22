@@ -5,7 +5,7 @@
   adding manifests
   adding file changes
   added 9 changesets with 7 changes to 4 files (+1 heads)
-  new changesets bfaf4b5cbf01:916f1afdef90
+  new changesets bfaf4b5cbf01:916f1afdef90 (9 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg up tip
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -27,13 +27,13 @@
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets bfaf4b5cbf01
+  new changesets bfaf4b5cbf01 (1 drafts)
   (run 'hg update' to get a working copy)
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
   0:bfaf4b5cbf01
   searching for changes
   2 changesets found
@@ -41,13 +41,13 @@
   adding manifests
   adding file changes
   added 2 changesets with 2 changes to 1 files
-  new changesets bfaf4b5cbf01:21f32785131f
+  new changesets bfaf4b5cbf01:21f32785131f (2 drafts)
   (run 'hg update' to get a working copy)
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 1 files
   1:21f32785131f
   searching for changes
   3 changesets found
@@ -55,13 +55,13 @@
   adding manifests
   adding file changes
   added 3 changesets with 3 changes to 1 files
-  new changesets bfaf4b5cbf01:4ce51a113780
+  new changesets bfaf4b5cbf01:4ce51a113780 (3 drafts)
   (run 'hg update' to get a working copy)
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 1 files
   2:4ce51a113780
   searching for changes
   4 changesets found
@@ -69,13 +69,13 @@
   adding manifests
   adding file changes
   added 4 changesets with 4 changes to 1 files
-  new changesets bfaf4b5cbf01:93ee6ab32777
+  new changesets bfaf4b5cbf01:93ee6ab32777 (4 drafts)
   (run 'hg update' to get a working copy)
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 4 changesets, 4 total revisions
+  checked 4 changesets with 4 changes to 1 files
   3:93ee6ab32777
   searching for changes
   2 changesets found
@@ -83,13 +83,13 @@
   adding manifests
   adding file changes
   added 2 changesets with 2 changes to 1 files
-  new changesets bfaf4b5cbf01:c70afb1ee985
+  new changesets bfaf4b5cbf01:c70afb1ee985 (2 drafts)
   (run 'hg update' to get a working copy)
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 1 files
   1:c70afb1ee985
   searching for changes
   3 changesets found
@@ -97,13 +97,13 @@
   adding manifests
   adding file changes
   added 3 changesets with 3 changes to 1 files
-  new changesets bfaf4b5cbf01:f03ae5a9b979
+  new changesets bfaf4b5cbf01:f03ae5a9b979 (3 drafts)
   (run 'hg update' to get a working copy)
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 3 changesets, 3 total revisions
+  checked 3 changesets with 3 changes to 1 files
   2:f03ae5a9b979
   searching for changes
   4 changesets found
@@ -111,13 +111,13 @@
   adding manifests
   adding file changes
   added 4 changesets with 5 changes to 2 files
-  new changesets bfaf4b5cbf01:095cb14b1b4d
+  new changesets bfaf4b5cbf01:095cb14b1b4d (4 drafts)
   (run 'hg update' to get a working copy)
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 4 changesets, 5 total revisions
+  checked 4 changesets with 5 changes to 2 files
   3:095cb14b1b4d
   searching for changes
   5 changesets found
@@ -125,13 +125,13 @@
   adding manifests
   adding file changes
   added 5 changesets with 6 changes to 3 files
-  new changesets bfaf4b5cbf01:faa2e4234c7a
+  new changesets bfaf4b5cbf01:faa2e4234c7a (5 drafts)
   (run 'hg update' to get a working copy)
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 5 changesets, 6 total revisions
+  checked 5 changesets with 6 changes to 3 files
   4:faa2e4234c7a
   searching for changes
   5 changesets found
@@ -139,13 +139,13 @@
   adding manifests
   adding file changes
   added 5 changesets with 5 changes to 2 files
-  new changesets bfaf4b5cbf01:916f1afdef90
+  new changesets bfaf4b5cbf01:916f1afdef90 (5 drafts)
   (run 'hg update' to get a working copy)
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 5 changesets, 5 total revisions
+  checked 5 changesets with 5 changes to 2 files
   4:916f1afdef90
   $ cd test-8
   $ hg pull ../test-7
@@ -163,7 +163,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 9 changesets, 7 total revisions
+  checked 9 changesets with 7 changes to 4 files
   $ hg rollback
   repository tip rolled back to revision 4 (undo pull)
   $ cd ..
@@ -235,7 +235,7 @@ revision 2
   adding manifests
   adding file changes
   added 6 changesets with 4 changes to 4 files (+1 heads)
-  new changesets 93ee6ab32777:916f1afdef90
+  new changesets 93ee6ab32777:916f1afdef90 (6 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
 revision 8
@@ -247,7 +247,7 @@ revision 8
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 9 changesets, 7 total revisions
+  checked 9 changesets with 7 changes to 4 files
   $ hg rollback
   repository tip rolled back to revision 2 (undo unbundle)
 
@@ -260,7 +260,7 @@ revision 2
   adding manifests
   adding file changes
   added 2 changesets with 2 changes to 2 files
-  new changesets 93ee6ab32777:916f1afdef90
+  new changesets 93ee6ab32777:916f1afdef90 (2 drafts)
   (run 'hg update' to get a working copy)
 
 revision 4
@@ -272,7 +272,7 @@ revision 4
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 5 changesets, 5 total revisions
+  checked 5 changesets with 5 changes to 2 files
   $ hg rollback
   repository tip rolled back to revision 2 (undo unbundle)
   $ hg unbundle ../test-bundle-branch2.hg
@@ -280,7 +280,7 @@ revision 4
   adding manifests
   adding file changes
   added 4 changesets with 3 changes to 3 files (+1 heads)
-  new changesets c70afb1ee985:faa2e4234c7a
+  new changesets c70afb1ee985:faa2e4234c7a (4 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
 revision 6
@@ -292,7 +292,7 @@ revision 6
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  3 files, 7 changesets, 6 total revisions
+  checked 7 changesets with 6 changes to 3 files
   $ hg rollback
   repository tip rolled back to revision 2 (undo unbundle)
   $ hg unbundle ../test-bundle-cset-7.hg
@@ -300,7 +300,7 @@ revision 6
   adding manifests
   adding file changes
   added 2 changesets with 2 changes to 2 files
-  new changesets 93ee6ab32777:916f1afdef90
+  new changesets 93ee6ab32777:916f1afdef90 (2 drafts)
   (run 'hg update' to get a working copy)
 
 revision 4
@@ -312,7 +312,7 @@ revision 4
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 5 changesets, 5 total revisions
+  checked 5 changesets with 5 changes to 2 files
 
   $ cd ../test
   $ hg merge 7
@@ -334,7 +334,7 @@ revision 4
   adding manifests
   adding file changes
   added 7 changesets with 4 changes to 4 files
-  new changesets 93ee6ab32777:03fc0b0e347c
+  new changesets 93ee6ab32777:03fc0b0e347c (7 drafts)
   (run 'hg update' to get a working copy)
 
 revision 9
@@ -346,6 +346,6 @@ revision 9
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 10 changesets, 7 total revisions
+  checked 10 changesets with 7 changes to 4 files
 
   $ cd ..

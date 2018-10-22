@@ -10,11 +10,14 @@ from __future__ import absolute_import
 import heapq
 import itertools
 import struct
+import weakref
 
 from .i18n import _
 from .node import (
     bin,
     hex,
+    nullid,
+    nullrev,
 )
 from . import (
     error,
@@ -54,12 +57,11 @@ def _parse(data):
 def _text(it):
     files = []
     lines = []
-    _hex = revlog.hex
     for f, n, fl in it:
         files.append(f)
         # if this is changed to support newlines in filenames,
         # be sure to check the templates/ dir again (especially *-raw.tmpl)
-        lines.append("%s\0%s%s\n" % (f, _hex(n), fl))
+        lines.append("%s\0%s%s\n" % (f, hex(n), fl))
 
     _checkforbidden(files)
     return ''.join(lines)
@@ -565,7 +567,7 @@ class manifestdict(object):
                 start, end = _msearch(addbuf, f, start)
                 if not todelete:
                     h, fl = self._lm[f]
-                    l = "%s\0%s%s\n" % (f, revlog.hex(h), fl)
+                    l = "%s\0%s%s\n" % (f, hex(h), fl)
                 else:
                     if start == end:
                         # item we want to delete was not found, error out
@@ -641,7 +643,7 @@ def _checkforbidden(l):
     """Check filenames for illegal characters."""
     for f in l:
         if '\n' in f or '\r' in f:
-            raise error.RevlogError(
+            raise error.StorageError(
                 _("'\\n' and '\\r' disallowed in filenames: %r")
                 % pycompat.bytestr(f))
 
@@ -679,11 +681,12 @@ _noop = lambda s: None
 class treemanifest(object):
     def __init__(self, dir='', text=''):
         self._dir = dir
-        self._node = revlog.nullid
+        self._node = nullid
         self._loadfunc = _noop
         self._copyfunc = _noop
         self._dirty = False
         self._dirs = {}
+        self._lazydirs = {}
         # Using _lazymanifest here is a little slower than plain old dicts
         self._files = {}
         self._flags = {}
@@ -697,9 +700,63 @@ class treemanifest(object):
     def _subpath(self, path):
         return self._dir + path
 
+    def _loadalllazy(self):
+        selfdirs = self._dirs
+        for d, (path, node, readsubtree, docopy) in self._lazydirs.iteritems():
+            if docopy:
+                selfdirs[d] = readsubtree(path, node).copy()
+            else:
+                selfdirs[d] = readsubtree(path, node)
+        self._lazydirs = {}
+
+    def _loadlazy(self, d):
+        v = self._lazydirs.get(d)
+        if v:
+            path, node, readsubtree, docopy = v
+            if docopy:
+                self._dirs[d] = readsubtree(path, node).copy()
+            else:
+                self._dirs[d] = readsubtree(path, node)
+            del self._lazydirs[d]
+
+    def _loadchildrensetlazy(self, visit):
+        if not visit:
+            return None
+        if visit == 'all' or visit == 'this':
+            self._loadalllazy()
+            return None
+
+        loadlazy = self._loadlazy
+        for k in visit:
+            loadlazy(k + '/')
+        return visit
+
+    def _loaddifflazy(self, t1, t2):
+        """load items in t1 and t2 if they're needed for diffing.
+
+        The criteria currently is:
+        - if it's not present in _lazydirs in either t1 or t2, load it in the
+          other (it may already be loaded or it may not exist, doesn't matter)
+        - if it's present in _lazydirs in both, compare the nodeid; if it
+          differs, load it in both
+        """
+        toloadlazy = []
+        for d, v1 in t1._lazydirs.iteritems():
+            v2 = t2._lazydirs.get(d)
+            if not v2 or v2[1] != v1[1]:
+                toloadlazy.append(d)
+        for d, v1 in t2._lazydirs.iteritems():
+            if d not in t1._lazydirs:
+                toloadlazy.append(d)
+
+        for d in toloadlazy:
+            t1._loadlazy(d)
+            t2._loadlazy(d)
+
     def __len__(self):
         self._load()
         size = len(self._files)
+        self._loadalllazy()
         for m in self._dirs.values():
             size += m.__len__()
         return size
@@ -712,12 +769,17 @@ class treemanifest(object):
 
     def _isempty(self):
         self._load() # for consistency; already loaded by all callers
-        return (not self._files and (not self._dirs or
-                all(m._isempty() for m in self._dirs.values())))
+        # See if we can skip loading everything.
+        if self._files or (self._dirs and
+                           any(not m._isempty() for m in self._dirs.values())):
+            return False
+        self._loadalllazy()
+        return (not self._dirs or
+                all(m._isempty() for m in self._dirs.values()))
 
     def __repr__(self):
         return ('<treemanifest dir=%s, node=%s, loaded=%s, dirty=%s at 0x%x>' %
-                (self._dir, revlog.hex(self._node),
+                (self._dir, hex(self._node),
                  bool(self._loadfunc is _noop),
                  self._dirty, id(self)))
 
@@ -739,6 +801,7 @@ class treemanifest(object):
 
     def iterentries(self):
         self._load()
+        self._loadalllazy()
         for p, n in sorted(itertools.chain(self._dirs.items(),
                                            self._files.items())):
             if p in self._files:
@@ -749,6 +812,7 @@ class treemanifest(object):
 
     def items(self):
         self._load()
+        self._loadalllazy()
         for p, n in sorted(itertools.chain(self._dirs.items(),
                                            self._files.items())):
             if p in self._files:
@@ -761,6 +825,7 @@ class treemanifest(object):
 
     def iterkeys(self):
         self._load()
+        self._loadalllazy()
         for p in sorted(itertools.chain(self._dirs, self._files)):
             if p in self._files:
                 yield self._subpath(p)
@@ -780,8 +845,11 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
+            self._loadlazy(dir)
+
             if dir not in self._dirs:
                 return False
+
             return self._dirs[dir].__contains__(subpath)
         else:
             return f in self._files
@@ -790,6 +858,8 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
+            self._loadlazy(dir)
+
             if dir not in self._dirs:
                 return default
             return self._dirs[dir].get(subpath, default)
@@ -800,6 +870,8 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
+            self._loadlazy(dir)
+
             return self._dirs[dir].__getitem__(subpath)
         else:
             return self._files[f]
@@ -808,11 +880,13 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
+            self._loadlazy(dir)
+
             if dir not in self._dirs:
                 return ''
             return self._dirs[dir].flags(subpath)
         else:
-            if f in self._dirs:
+            if f in self._lazydirs or f in self._dirs:
                 return ''
             return self._flags.get(f, '')
 
@@ -820,6 +894,8 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
+            self._loadlazy(dir)
+
             return self._dirs[dir].find(subpath)
         else:
             return self._files[f], self._flags.get(f, '')
@@ -828,6 +904,8 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
+            self._loadlazy(dir)
+
             self._dirs[dir].__delitem__(subpath)
             # If the directory is now empty, remove it
             if self._dirs[dir]._isempty():
@@ -843,6 +921,7 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
+            self._loadlazy(dir)
             if dir not in self._dirs:
                 self._dirs[dir] = treemanifest(self._subpath(dir))
             self._dirs[dir].__setitem__(subpath, n)
@@ -863,6 +942,7 @@ class treemanifest(object):
         self._load()
         dir, subpath = _splittopdir(f)
         if dir:
+            self._loadlazy(dir)
             if dir not in self._dirs:
                 self._dirs[dir] = treemanifest(self._subpath(dir))
             self._dirs[dir].setflag(subpath, flags)
@@ -877,8 +957,11 @@ class treemanifest(object):
         if self._copyfunc is _noop:
             def _copyfunc(s):
                 self._load()
-                for d in self._dirs:
-                    s._dirs[d] = self._dirs[d].copy()
+                s._lazydirs = {d: (p, n, r, True) for
+                               d, (p, n, r, c) in self._lazydirs.iteritems()}
+                sdirs = s._dirs
+                for d, v in self._dirs.iteritems():
+                    sdirs[d] = v.copy()
                 s._files = dict.copy(self._files)
                 s._flags = dict.copy(self._flags)
             if self._loadfunc is _noop:
@@ -891,7 +974,7 @@ class treemanifest(object):
 
     def filesnotin(self, m2, match=None):
         '''Set of files in this manifest that are not in the other'''
-        if match:
+        if match and not match.always():
             m1 = self.matches(match)
             m2 = m2.matches(match)
             return m1.filesnotin(m2)
@@ -902,6 +985,7 @@ class treemanifest(object):
                 return
             t1._load()
             t2._load()
+            self._loaddifflazy(t1, t2)
             for d, m1 in t1._dirs.iteritems():
                 if d in t2._dirs:
                     m2 = t2._dirs[d]
@@ -927,10 +1011,12 @@ class treemanifest(object):
         self._load()
         topdir, subdir = _splittopdir(dir)
         if topdir:
+            self._loadlazy(topdir)
             if topdir in self._dirs:
                 return self._dirs[topdir].hasdir(subdir)
             return False
-        return (dir + '/') in self._dirs
+        dirslash = dir + '/'
+        return dirslash in self._dirs or dirslash in self._lazydirs
 
     def walk(self, match):
         '''Generates matching file names.
@@ -963,19 +1049,22 @@ class treemanifest(object):
 
     def _walk(self, match):
         '''Recursively generates matching file names for walk().'''
-        if not match.visitdir(self._dir[:-1] or '.'):
+        visit = match.visitchildrenset(self._dir[:-1] or '.')
+        if not visit:
             return
 
         # yield this dir's files and walk its submanifests
         self._load()
+        visit = self._loadchildrensetlazy(visit)
         for p in sorted(list(self._dirs) + list(self._files)):
             if p in self._files:
                 fullp = self._subpath(p)
                 if match(fullp):
                     yield fullp
             else:
-                for f in self._dirs[p]._walk(match):
-                    yield f
+                if not visit or p[:-1] in visit:
+                    for f in self._dirs[p]._walk(match):
+                        yield f
 
     def matches(self, match):
         '''generate a new manifest filtered by the match argument'''
@@ -988,7 +1077,7 @@ class treemanifest(object):
         '''recursively generate a new manifest filtered by the match argument.
         '''
 
-        visit = match.visitdir(self._dir[:-1] or '.')
+        visit = match.visitchildrenset(self._dir[:-1] or '.')
         if visit == 'all':
             return self.copy()
         ret = treemanifest(self._dir)
@@ -997,14 +1086,26 @@ class treemanifest(object):
 
         self._load()
         for fn in self._files:
+            # While visitchildrenset *usually* lists only subdirs, this is
+            # actually up to the matcher and may have some files in the set().
+            # If visit == 'this', we should obviously look at the files in this
+            # directory; if visit is a set, and fn is in it, we should inspect
+            # fn (but no need to inspect things not in the set).
+            if visit != 'this' and fn not in visit:
+                continue
             fullp = self._subpath(fn)
+            # visitchildrenset isn't perfect, we still need to call the regular
+            # matcher code to further filter results.
             if not match(fullp):
                 continue
             ret._files[fn] = self._files[fn]
             if fn in self._flags:
                 ret._flags[fn] = self._flags[fn]
 
+        visit = self._loadchildrensetlazy(visit)
         for dir, subm in self._dirs.iteritems():
+            if visit and dir[:-1] not in visit:
+                continue
             m = subm._matches(match)
             if not m._isempty():
                 ret._dirs[dir] = m
@@ -1028,7 +1129,7 @@ class treemanifest(object):
         the nodeid will be None and the flags will be the empty
         string.
         '''
-        if match:
+        if match and not match.always():
             m1 = self.matches(match)
             m2 = m2.matches(match)
             return m1.diff(m2, clean=clean)
@@ -1039,6 +1140,8 @@ class treemanifest(object):
                 return
             t1._load()
             t2._load()
+            self._loaddifflazy(t1, t2)
+
             for d, m1 in t1._dirs.iteritems():
                 m2 = t2._dirs.get(d, emptytree)
                 _diff(m1, m2)
@@ -1068,10 +1171,14 @@ class treemanifest(object):
         return not self._dirty and not m2._dirty and self._node == m2._node
 
     def parse(self, text, readsubtree):
+        selflazy = self._lazydirs
+        subpath = self._subpath
         for f, n, fl in _parse(text):
             if fl == 't':
                 f = f + '/'
-                self._dirs[f] = readsubtree(self._subpath(f), n)
+                # False below means "doesn't need to be copied" and can use the
+                # cached value from readsubtree directly.
+                selflazy[f] = (subpath(f), n, readsubtree, False)
             elif '/' in f:
                 # This is a flat manifest, so use __setitem__ and setflag rather
                 # than assigning directly to _files and _flags, so we can
@@ -1098,9 +1205,10 @@ class treemanifest(object):
         """
         self._load()
         flags = self.flags
+        lazydirs = [(d[:-1], v[1], 't') for d, v in self._lazydirs.iteritems()]
         dirs = [(d[:-1], self._dirs[d]._node, 't') for d in self._dirs]
         files = [(f, self._files[f], flags(f)) for f in self._files]
-        return _text(sorted(dirs + files))
+        return _text(sorted(dirs + files + lazydirs))
 
     def read(self, gettext, readsubtree):
         def _load_for_read(s):
@@ -1108,17 +1216,30 @@ class treemanifest(object):
             s._dirty = False
         self._loadfunc = _load_for_read
 
-    def writesubtrees(self, m1, m2, writesubtree):
+    def writesubtrees(self, m1, m2, writesubtree, match):
         self._load() # for consistency; should never have any effect here
         m1._load()
         m2._load()
         emptytree = treemanifest()
+        def getnode(m, d):
+            ld = m._lazydirs.get(d)
+            if ld:
+                return ld[1]
+            return m._dirs.get(d, emptytree)._node
+
+        # let's skip investigating things that `match` says we do not need.
+        visit = match.visitchildrenset(self._dir[:-1] or '.')
+        visit = self._loadchildrensetlazy(visit)
+        if visit == 'this' or visit == 'all':
+            visit = None
         for d, subm in self._dirs.iteritems():
-            subp1 = m1._dirs.get(d, emptytree)._node
-            subp2 = m2._dirs.get(d, emptytree)._node
-            if subp1 == revlog.nullid:
+            if visit and d[:-1] not in visit:
+                continue
+            subp1 = getnode(m1, d)
+            subp2 = getnode(m2, d)
+            if subp1 == nullid:
                 subp1, subp2 = subp2, subp1
-            writesubtree(subm, subp1, subp2)
+            writesubtree(subm, subp1, subp2, match)
 
     def walksubtrees(self, matcher=None):
         """Returns an iterator of the subtrees of this manifest, including this
@@ -1132,15 +1253,127 @@ class treemanifest(object):
             yield self
 
         self._load()
+        # OPT: use visitchildrenset to avoid loading everything.
+        self._loadalllazy()
         for d, subm in self._dirs.iteritems():
             for subtree in subm.walksubtrees(matcher=matcher):
                 yield subtree
 
-class manifestrevlog(revlog.revlog):
+class manifestfulltextcache(util.lrucachedict):
+    """File-backed LRU cache for the manifest cache
+
+    File consists of entries, up to EOF:
+
+    - 20 bytes node, 4 bytes length, <length> manifest data
+
+    These are written in reverse cache order (oldest to newest).
+
+    """
+    def __init__(self, max):
+        super(manifestfulltextcache, self).__init__(max)
+        self._dirty = False
+        self._read = False
+        self._opener = None
+
+    def read(self):
+        if self._read or self._opener is None:
+            return
+
+        try:
+            with self._opener('manifestfulltextcache') as fp:
+                set = super(manifestfulltextcache, self).__setitem__
+                # ignore trailing data, this is a cache, corruption is skipped
+                while True:
+                    node = fp.read(20)
+                    if len(node) < 20:
+                        break
+                    try:
+                        size = struct.unpack('>L', fp.read(4))[0]
+                    except struct.error:
+                        break
+                    value = bytearray(fp.read(size))
+                    if len(value) != size:
+                        break
+                    set(node, value)
+        except IOError:
+            # the file is allowed to be missing
+            pass
+
+        self._read = True
+        self._dirty = False
+
+    def write(self):
+        if not self._dirty or self._opener is None:
+            return
+        # rotate backwards to the first used node
+        with self._opener(
+                'manifestfulltextcache', 'w', atomictemp=True, checkambig=True
+            ) as fp:
+            node = self._head.prev
+            while True:
+                if node.key in self._cache:
+                    fp.write(node.key)
+                    fp.write(struct.pack('>L', len(node.value)))
+                    fp.write(node.value)
+                if node is self._head:
+                    break
+                node = node.prev
+
+    def __len__(self):
+        if not self._read:
+            self.read()
+        return super(manifestfulltextcache, self).__len__()
+
+    def __contains__(self, k):
+        if not self._read:
+            self.read()
+        return super(manifestfulltextcache, self).__contains__(k)
+
+    def __iter__(self):
+        if not self._read:
+            self.read()
+        return super(manifestfulltextcache, self).__iter__()
+
+    def __getitem__(self, k):
+        if not self._read:
+            self.read()
+        # the cache lru order can change on read
+        setdirty = self._cache.get(k) is not self._head
+        value = super(manifestfulltextcache, self).__getitem__(k)
+        if setdirty:
+            self._dirty = True
+        return value
+
+    def __setitem__(self, k, v):
+        if not self._read:
+            self.read()
+        super(manifestfulltextcache, self).__setitem__(k, v)
+        self._dirty = True
+
+    def __delitem__(self, k):
+        if not self._read:
+            self.read()
+        super(manifestfulltextcache, self).__delitem__(k)
+        self._dirty = True
+
+    def get(self, k, default=None):
+        if not self._read:
+            self.read()
+        return super(manifestfulltextcache, self).get(k, default=default)
+
+    def clear(self, clear_persisted_data=False):
+        super(manifestfulltextcache, self).clear()
+        if clear_persisted_data:
+            self._dirty = True
+            self.write()
+        self._read = False
+
+@interfaceutil.implementer(repository.imanifeststorage)
+class manifestrevlog(object):
     '''A revlog that stores manifest texts. This is responsible for caching the
     full-text manifest contents.
     '''
-    def __init__(self, opener, dir='', dirlogcache=None, indexfile=None,
+    def __init__(self, opener, tree='', dirlogcache=None, indexfile=None,
                  treemanifest=False):
         """Constructs a new manifest revlog
 
@@ -1164,36 +1397,63 @@ class manifestrevlog(revlog.revlog):
 
         self._treeondisk = optiontreemanifest or treemanifest
 
-        self._fulltextcache = util.lrucachedict(cachesize)
+        self._fulltextcache = manifestfulltextcache(cachesize)
 
-        if dir:
+        if tree:
             assert self._treeondisk, 'opts is %r' % opts
 
         if indexfile is None:
             indexfile = '00manifest.i'
-            if dir:
-                indexfile = "meta/" + dir + indexfile
+            if tree:
+                indexfile = "meta/" + tree + indexfile
 
-        self._dir = dir
+        self.tree = tree
+
         # The dirlogcache is kept on the root manifest log
-        if dir:
+        if tree:
             self._dirlogcache = dirlogcache
         else:
             self._dirlogcache = {'': self}
 
-        super(manifestrevlog, self).__init__(opener, indexfile,
-                                             # only root indexfile is cached
-                                             checkambig=not bool(dir),
-                                             mmaplargeindex=True)
+        self._revlog = revlog.revlog(opener, indexfile,
+                                     # only root indexfile is cached
+                                     checkambig=not bool(tree),
+                                     mmaplargeindex=True)
+
+        self.index = self._revlog.index
+        self.version = self._revlog.version
+        self._generaldelta = self._revlog._generaldelta
+
+    def _setupmanifestcachehooks(self, repo):
+        """Persist the manifestfulltextcache on lock release"""
+        if not util.safehasattr(repo, '_lockref'):
+            return
+
+        self._fulltextcache._opener = repo.cachevfs
+        reporef = weakref.ref(repo)
+        manifestrevlogref = weakref.ref(self)
+
+        def persistmanifestcache():
+            repo = reporef()
+            self = manifestrevlogref()
+            if repo is None or self is None:
+                return
+            if repo.manifestlog.getstorage(b'') is not self:
+                # there's a different manifest in play now, abort
+                return
+            self._fulltextcache.write()
+
+        if repo._currentlock(repo._lockref) is not None:
+            repo._afterlock(persistmanifestcache)
 
     @property
     def fulltextcache(self):
         return self._fulltextcache
 
-    def clearcaches(self):
-        super(manifestrevlog, self).clearcaches()
-        self._fulltextcache.clear()
-        self._dirlogcache = {'': self}
+    def clearcaches(self, clear_persisted_data=False):
+        self._revlog.clearcaches()
+        self._fulltextcache.clear(clear_persisted_data=clear_persisted_data)
+        self._dirlogcache = {self.tree: self}
 
     def dirlog(self, d):
         if d:
@@ -1205,7 +1465,8 @@ class manifestrevlog(revlog.revlog):
             self._dirlogcache[d] = mfrevlog
         return self._dirlogcache[d]
 
-    def add(self, m, transaction, link, p1, p2, added, removed, readtree=None):
+    def add(self, m, transaction, link, p1, p2, added, removed, readtree=None,
+            match=None):
         if p1 in self.fulltextcache and util.safehasattr(m, 'fastdelta'):
             # If our first parent is in the manifest cache, we can
             # compute a delta here using properties we know about the
@@ -1218,9 +1479,10 @@ class manifestrevlog(revlog.revlog):
                                [(x, True) for x in removed])
 
             arraytext, deltatext = m.fastdelta(self.fulltextcache[p1], work)
-            cachedelta = self.rev(p1), deltatext
+            cachedelta = self._revlog.rev(p1), deltatext
             text = util.buffer(arraytext)
-            n = self.addrevision(text, transaction, link, p1, p2, cachedelta)
+            n = self._revlog.addrevision(text, transaction, link, p1, p2,
+                                         cachedelta)
         else:
             # The first parent manifest isn't already loaded, so we'll
             # just encode a fulltext of the manifest and pass that
@@ -1228,13 +1490,15 @@ class manifestrevlog(revlog.revlog):
             # process.
             if self._treeondisk:
                 assert readtree, "readtree must be set for treemanifest writes"
-                m1 = readtree(self._dir, p1)
-                m2 = readtree(self._dir, p2)
-                n = self._addtree(m, transaction, link, m1, m2, readtree)
+                assert match, "match must be specified for treemanifest writes"
+                m1 = readtree(self.tree, p1)
+                m2 = readtree(self.tree, p2)
+                n = self._addtree(m, transaction, link, m1, m2, readtree,
+                                  match=match)
                 arraytext = None
             else:
                 text = m.text()
-                n = self.addrevision(text, transaction, link, p1, p2)
+                n = self._revlog.addrevision(text, transaction, link, p1, p2)
                 arraytext = bytearray(text)
 
         if arraytext is not None:
@@ -1242,19 +1506,20 @@ class manifestrevlog(revlog.revlog):
 
         return n
 
-    def _addtree(self, m, transaction, link, m1, m2, readtree):
+    def _addtree(self, m, transaction, link, m1, m2, readtree, match):
         # If the manifest is unchanged compared to one parent,
         # don't write a new revision
-        if self._dir != '' and (m.unmodifiedsince(m1) or m.unmodifiedsince(m2)):
+        if self.tree != '' and (m.unmodifiedsince(m1) or m.unmodifiedsince(
+            m2)):
             return m.node()
-        def writesubtree(subm, subp1, subp2):
+        def writesubtree(subm, subp1, subp2, match):
             sublog = self.dirlog(subm.dir())
             sublog.add(subm, transaction, link, subp1, subp2, None, None,
-                       readtree=readtree)
-        m.writesubtrees(m1, m2, writesubtree)
+                       readtree=readtree, match=match)
+        m.writesubtrees(m1, m2, writesubtree, match)
         text = m.dirtext()
         n = None
-        if self._dir != '':
+        if self.tree != '':
             # Double-check whether contents are unchanged to one parent
             if text == m1.dirtext():
                 n = m1.node()
@@ -1262,11 +1527,105 @@ class manifestrevlog(revlog.revlog):
                 n = m2.node()
 
         if not n:
-            n = self.addrevision(text, transaction, link, m1.node(), m2.node())
+            n = self._revlog.addrevision(text, transaction, link, m1.node(),
+                                         m2.node())
 
         # Save nodeid so parent manifest can calculate its nodeid
         m.setnode(n)
         return n
+
+    def __len__(self):
+        return len(self._revlog)
+
+    def __iter__(self):
+        return self._revlog.__iter__()
+
+    def rev(self, node):
+        return self._revlog.rev(node)
+
+    def node(self, rev):
+        return self._revlog.node(rev)
+
+    def lookup(self, value):
+        return self._revlog.lookup(value)
+
+    def parentrevs(self, rev):
+        return self._revlog.parentrevs(rev)
+
+    def parents(self, node):
+        return self._revlog.parents(node)
+
+    def linkrev(self, rev):
+        return self._revlog.linkrev(rev)
+
+    def checksize(self):
+        return self._revlog.checksize()
+
+    def revision(self, node, _df=None, raw=False):
+        return self._revlog.revision(node, _df=_df, raw=raw)
+
+    def revdiff(self, rev1, rev2):
+        return self._revlog.revdiff(rev1, rev2)
+
+    def cmp(self, node, text):
+        return self._revlog.cmp(node, text)
+
+    def deltaparent(self, rev):
+        return self._revlog.deltaparent(rev)
+
+    def emitrevisions(self, nodes, nodesorder=None,
+                      revisiondata=False, assumehaveparentrevisions=False,
+                      deltaprevious=False):
+        return self._revlog.emitrevisions(
+            nodes, nodesorder=nodesorder, revisiondata=revisiondata,
+            assumehaveparentrevisions=assumehaveparentrevisions,
+            deltaprevious=deltaprevious)
+
+    def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None):
+        return self._revlog.addgroup(deltas, linkmapper, transaction,
+                                     addrevisioncb=addrevisioncb)
+
+    def rawsize(self, rev):
+        return self._revlog.rawsize(rev)
+
+    def getstrippoint(self, minlink):
+        return self._revlog.getstrippoint(minlink)
+
+    def strip(self, minlink, transaction):
+        return self._revlog.strip(minlink, transaction)
+
+    def files(self):
+        return self._revlog.files()
+
+    def clone(self, tr, destrevlog, **kwargs):
+        if not isinstance(destrevlog, manifestrevlog):
+            raise error.ProgrammingError('expected manifestrevlog to clone()')
+
+        return self._revlog.clone(tr, destrevlog._revlog, **kwargs)
+
+    def storageinfo(self, exclusivefiles=False, sharedfiles=False,
+                    revisionscount=False, trackedsize=False,
+                    storedsize=False):
+        return self._revlog.storageinfo(
+            exclusivefiles=exclusivefiles, sharedfiles=sharedfiles,
+            revisionscount=revisionscount, trackedsize=trackedsize,
+            storedsize=storedsize)
+
+    @property
+    def indexfile(self):
+        return self._revlog.indexfile
+
+    @indexfile.setter
+    def indexfile(self, value):
+        self._revlog.indexfile = value
+
+    @property
+    def opener(self):
+        return self._revlog.opener
+
+    @opener.setter
+    def opener(self, value):
+        self._revlog.opener = value
 
 @interfaceutil.implementer(repository.imanifestlog)
 class manifestlog(object):
@@ -1277,7 +1636,7 @@ class manifestlog(object):
     of the list of files in the given commit. Consumers of the output of this
     class do not care about the implementation details of the actual manifests
     they receive (i.e. tree or flat or lazily loaded, etc)."""
-    def __init__(self, opener, repo):
+    def __init__(self, opener, repo, rootstore):
         usetreemanifest = False
         cachesize = 4
 
@@ -1285,9 +1644,11 @@ class manifestlog(object):
         if opts is not None:
             usetreemanifest = opts.get('treemanifest', usetreemanifest)
             cachesize = opts.get('manifestcachesize', cachesize)
-        self._treeinmem = usetreemanifest
 
-        self._revlog = repo._constructmanifest()
+        self._treemanifests = usetreemanifest
+
+        self._rootstore = rootstore
+        self._rootstore._setupmanifestcachehooks(repo)
         self._narrowmatch = repo.narrowmatch()
 
         # A cache of the manifestctx or treemanifestctx for each directory
@@ -1302,58 +1663,58 @@ class manifestlog(object):
         """
         return self.get('', node)
 
-    def get(self, dir, node, verify=True):
+    def get(self, tree, node, verify=True):
         """Retrieves the manifest instance for the given node. Throws a
         LookupError if not found.
 
         `verify` - if True an exception will be thrown if the node is not in
                    the revlog
         """
-        if node in self._dirmancache.get(dir, ()):
-            return self._dirmancache[dir][node]
+        if node in self._dirmancache.get(tree, ()):
+            return self._dirmancache[tree][node]
 
         if not self._narrowmatch.always():
-            if not self._narrowmatch.visitdir(dir[:-1] or '.'):
-                return excludeddirmanifestctx(dir, node)
-        if dir:
-            if self._revlog._treeondisk:
+            if not self._narrowmatch.visitdir(tree[:-1] or '.'):
+                return excludeddirmanifestctx(tree, node)
+        if tree:
+            if self._rootstore._treeondisk:
                 if verify:
-                    dirlog = self._revlog.dirlog(dir)
-                    if node not in dirlog.nodemap:
-                        raise LookupError(node, dirlog.indexfile,
-                                          _('no node'))
-                m = treemanifestctx(self, dir, node)
+                    # Side-effect is LookupError is raised if node doesn't
+                    # exist.
+                    self.getstorage(tree).rev(node)
+
+                m = treemanifestctx(self, tree, node)
             else:
                 raise error.Abort(
                         _("cannot ask for manifest directory '%s' in a flat "
-                          "manifest") % dir)
+                          "manifest") % tree)
         else:
             if verify:
-                if node not in self._revlog.nodemap:
-                    raise LookupError(node, self._revlog.indexfile,
-                                      _('no node'))
-            if self._treeinmem:
+                # Side-effect is LookupError is raised if node doesn't exist.
+                self._rootstore.rev(node)
+
+            if self._treemanifests:
                 m = treemanifestctx(self, '', node)
             else:
                 m = manifestctx(self, node)
 
-        if node != revlog.nullid:
-            mancache = self._dirmancache.get(dir)
+        if node != nullid:
+            mancache = self._dirmancache.get(tree)
             if not mancache:
                 mancache = util.lrucachedict(self._cachesize)
-                self._dirmancache[dir] = mancache
+                self._dirmancache[tree] = mancache
             mancache[node] = m
         return m
 
-    def clearcaches(self):
+    def getstorage(self, tree):
+        return self._rootstore.dirlog(tree)
+
+    def clearcaches(self, clear_persisted_data=False):
         self._dirmancache.clear()
-        self._revlog.clearcaches()
+        self._rootstore.clearcaches(clear_persisted_data=clear_persisted_data)
 
     def rev(self, node):
-        return self._revlog.rev(node)
-
-    def addgroup(self, deltas, linkmapper, transaction):
-        return self._revlog.addgroup(deltas, linkmapper, transaction)
+        return self._rootstore.rev(node)
 
 @interfaceutil.implementer(repository.imanifestrevisionwritable)
 class memmanifestctx(object):
@@ -1361,8 +1722,8 @@ class memmanifestctx(object):
         self._manifestlog = manifestlog
         self._manifestdict = manifestdict()
 
-    def _revlog(self):
-        return self._manifestlog._revlog
+    def _storage(self):
+        return self._manifestlog.getstorage(b'')
 
     def new(self):
         return memmanifestctx(self._manifestlog)
@@ -1375,9 +1736,9 @@ class memmanifestctx(object):
     def read(self):
         return self._manifestdict
 
-    def write(self, transaction, link, p1, p2, added, removed):
-        return self._revlog().add(self._manifestdict, transaction, link, p1, p2,
-                                  added, removed)
+    def write(self, transaction, link, p1, p2, added, removed, match=None):
+        return self._storage().add(self._manifestdict, transaction, link,
+                                   p1, p2, added, removed, match=match)
 
 @interfaceutil.implementer(repository.imanifestrevisionstored)
 class manifestctx(object):
@@ -1393,12 +1754,12 @@ class manifestctx(object):
         # TODO: We eventually want p1, p2, and linkrev exposed on this class,
         # but let's add it later when something needs it and we can load it
         # lazily.
-        #self.p1, self.p2 = revlog.parents(node)
-        #rev = revlog.rev(node)
-        #self.linkrev = revlog.linkrev(rev)
+        #self.p1, self.p2 = store.parents(node)
+        #rev = store.rev(node)
+        #self.linkrev = store.linkrev(rev)
 
-    def _revlog(self):
-        return self._manifestlog._revlog
+    def _storage(self):
+        return self._manifestlog.getstorage(b'')
 
     def node(self):
         return self._node
@@ -1413,17 +1774,20 @@ class manifestctx(object):
 
     @propertycache
     def parents(self):
-        return self._revlog().parents(self._node)
+        return self._storage().parents(self._node)
 
     def read(self):
         if self._data is None:
-            if self._node == revlog.nullid:
+            if self._node == nullid:
                 self._data = manifestdict()
             else:
-                rl = self._revlog()
-                text = rl.revision(self._node)
-                arraytext = bytearray(text)
-                rl._fulltextcache[self._node] = arraytext
+                store = self._storage()
+                if self._node in store.fulltextcache:
+                    text = pycompat.bytestr(store.fulltextcache[self._node])
+                else:
+                    text = store.revision(self._node)
+                    arraytext = bytearray(text)
+                    store.fulltextcache[self._node] = arraytext
                 self._data = manifestdict(text)
         return self._data
 
@@ -1434,10 +1798,10 @@ class manifestctx(object):
 
         If `shallow` is True, nothing changes since this is a flat manifest.
         '''
-        rl = self._revlog()
-        r = rl.rev(self._node)
-        deltaparent = rl.deltaparent(r)
-        if deltaparent != revlog.nullrev and deltaparent in rl.parentrevs(r):
+        store = self._storage()
+        r = store.rev(self._node)
+        deltaparent = store.deltaparent(r)
+        if deltaparent != nullrev and deltaparent in store.parentrevs(r):
             return self.readdelta()
         return self.read()
 
@@ -1448,9 +1812,9 @@ class manifestctx(object):
 
         Changing the value of `shallow` has no effect on flat manifests.
         '''
-        revlog = self._revlog()
-        r = revlog.rev(self._node)
-        d = mdiff.patchtext(revlog.revdiff(revlog.deltaparent(r), r))
+        store = self._storage()
+        r = store.rev(self._node)
+        d = mdiff.patchtext(store.revdiff(store.deltaparent(r), r))
         return manifestdict(d)
 
     def find(self, key):
@@ -1463,8 +1827,8 @@ class memtreemanifestctx(object):
         self._dir = dir
         self._treemanifest = treemanifest()
 
-    def _revlog(self):
-        return self._manifestlog._revlog
+    def _storage(self):
+        return self._manifestlog.getstorage(b'')
 
     def new(self, dir=''):
         return memtreemanifestctx(self._manifestlog, dir=dir)
@@ -1477,11 +1841,12 @@ class memtreemanifestctx(object):
     def read(self):
         return self._treemanifest
 
-    def write(self, transaction, link, p1, p2, added, removed):
+    def write(self, transaction, link, p1, p2, added, removed, match=None):
         def readtree(dir, node):
             return self._manifestlog.get(dir, node).read()
-        return self._revlog().add(self._treemanifest, transaction, link, p1, p2,
-                                  added, removed, readtree=readtree)
+        return self._storage().add(self._treemanifest, transaction, link,
+                                   p1, p2, added, removed, readtree=readtree,
+                                   match=match)
 
 @interfaceutil.implementer(repository.imanifestrevisionstored)
 class treemanifestctx(object):
@@ -1495,26 +1860,27 @@ class treemanifestctx(object):
         # TODO: Load p1/p2/linkrev lazily. They need to be lazily loaded so that
         # we can instantiate treemanifestctx objects for directories we don't
         # have on disk.
-        #self.p1, self.p2 = revlog.parents(node)
-        #rev = revlog.rev(node)
-        #self.linkrev = revlog.linkrev(rev)
+        #self.p1, self.p2 = store.parents(node)
+        #rev = store.rev(node)
+        #self.linkrev = store.linkrev(rev)
 
-    def _revlog(self):
+    def _storage(self):
         narrowmatch = self._manifestlog._narrowmatch
         if not narrowmatch.always():
             if not narrowmatch.visitdir(self._dir[:-1] or '.'):
                 return excludedmanifestrevlog(self._dir)
-        return self._manifestlog._revlog.dirlog(self._dir)
+        return self._manifestlog.getstorage(self._dir)
 
     def read(self):
         if self._data is None:
-            rl = self._revlog()
-            if self._node == revlog.nullid:
+            store = self._storage()
+            if self._node == nullid:
                 self._data = treemanifest()
-            elif rl._treeondisk:
+            # TODO accessing non-public API
+            elif store._treeondisk:
                 m = treemanifest(dir=self._dir)
                 def gettext():
-                    return rl.revision(self._node)
+                    return store.revision(self._node)
                 def readsubtree(dir, subm):
                     # Set verify to False since we need to be able to create
                     # subtrees for trees that don't exist on disk.
@@ -1523,9 +1889,12 @@ class treemanifestctx(object):
                 m.setnode(self._node)
                 self._data = m
             else:
-                text = rl.revision(self._node)
-                arraytext = bytearray(text)
-                rl.fulltextcache[self._node] = arraytext
+                if self._node in store.fulltextcache:
+                    text = pycompat.bytestr(store.fulltextcache[self._node])
+                else:
+                    text = store.revision(self._node)
+                    arraytext = bytearray(text)
+                    store.fulltextcache[self._node] = arraytext
                 self._data = treemanifest(dir=self._dir, text=text)
 
         return self._data
@@ -1543,7 +1912,7 @@ class treemanifestctx(object):
 
     @propertycache
     def parents(self):
-        return self._revlog().parents(self._node)
+        return self._storage().parents(self._node)
 
     def readdelta(self, shallow=False):
         '''Returns a manifest containing just the entries that are present
@@ -1556,15 +1925,15 @@ class treemanifestctx(object):
         the subdirectory will be reported among files and distinguished only by
         its 't' flag.
         '''
-        revlog = self._revlog()
+        store = self._storage()
         if shallow:
-            r = revlog.rev(self._node)
-            d = mdiff.patchtext(revlog.revdiff(revlog.deltaparent(r), r))
+            r = store.rev(self._node)
+            d = mdiff.patchtext(store.revdiff(store.deltaparent(r), r))
             return manifestdict(d)
         else:
             # Need to perform a slow delta
-            r0 = revlog.deltaparent(revlog.rev(self._node))
-            m0 = self._manifestlog.get(self._dir, revlog.node(r0)).read()
+            r0 = store.deltaparent(store.rev(self._node))
+            m0 = self._manifestlog.get(self._dir, store.node(r0)).read()
             m1 = self.read()
             md = treemanifest(dir=self._dir)
             for f, ((n0, fl0), (n1, fl1)) in m0.diff(m1).iteritems():
@@ -1582,15 +1951,15 @@ class treemanifestctx(object):
         If `shallow` is True, it only returns the entries from this manifest,
         and not any submanifests.
         '''
-        rl = self._revlog()
-        r = rl.rev(self._node)
-        deltaparent = rl.deltaparent(r)
-        if (deltaparent != revlog.nullrev and
-            deltaparent in rl.parentrevs(r)):
+        store = self._storage()
+        r = store.rev(self._node)
+        deltaparent = store.deltaparent(r)
+        if (deltaparent != nullrev and
+            deltaparent in store.parentrevs(r)):
             return self.readdelta(shallow=shallow)
 
         if shallow:
-            return manifestdict(rl.revision(self._node))
+            return manifestdict(store.revision(self._node))
         else:
             return self.read()
 

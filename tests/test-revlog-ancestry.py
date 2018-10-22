@@ -22,10 +22,10 @@ def addcommit(name, time):
     commit(name, time)
 
 def update(rev):
-    merge.update(repo, rev, False, True)
+    merge.update(repo, rev, branchmerge=False, force=True)
 
 def merge_(rev):
-    merge.update(repo, rev, True, False)
+    merge.update(repo, rev, branchmerge=True, force=False)
 
 if __name__ == '__main__':
     addcommit(b"A", 0)

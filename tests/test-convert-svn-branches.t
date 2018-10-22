@@ -85,8 +85,8 @@ Convert again
   $ hg branches
   newbranch                     11:a6d7cc050ad1
   default                       10:6e2b33404495
-  old                            9:93c4b0f99529
-  old2                           8:b52884d7bead (inactive)
+  old                            9:1b494af68c0b
+  old2                           8:5be40b8dcbf6 (inactive)
   $ hg tags -q
   tip
   $ cd ..

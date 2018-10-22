@@ -10,15 +10,16 @@ from __future__ import absolute_import
 import contextlib
 import os
 import struct
-import warnings
 
 from .i18n import _
 from . import (
     branchmap,
     cacheutil,
     error,
+    narrowspec,
     phases,
     pycompat,
+    repository,
     store,
     util,
 )
@@ -114,6 +115,8 @@ def maybeperformlegacystreamclone(pullop):
     A legacy stream clone will not be performed if a bundle2 stream clone is
     supported.
     """
+    from . import localrepo
+
     supported, requirements = canperformstreamclone(pullop)
 
     if not supported:
@@ -166,7 +169,8 @@ def maybeperformlegacystreamclone(pullop):
         # requirements from the streamed-in repository
         repo.requirements = requirements | (
                 repo.requirements - repo.supportedformats)
-        repo._applyopenerreqs()
+        repo.svfs.options = localrepo.resolvestorevfsoptions(
+            repo.ui, repo.requirements, repo.features)
         repo._writerequirements()
 
         if rbranchmap:
@@ -176,6 +180,9 @@ def maybeperformlegacystreamclone(pullop):
 
 def allowservergeneration(repo):
     """Whether streaming clones are allowed from the server."""
+    if repository.REPO_FEATURE_STREAM_CLONE not in repo.features:
+        return False
+
     if not repo.ui.configbool('server', 'uncompressed', untrusted=True):
         return False
 
@@ -188,8 +195,8 @@ def allowservergeneration(repo):
     return True
 
 # This is it's own function so extensions can override it.
-def _walkstreamfiles(repo):
-    return repo.store.walk()
+def _walkstreamfiles(repo, matcher=None):
+    return repo.store.walk(matcher)
 
 def generatev1(repo):
     """Emit content for version 1 of a streaming clone.
@@ -358,7 +365,7 @@ def consumev1(repo, fp, filecount, bytecount):
 
         with repo.transaction('clone'):
             with repo.svfs.backgroundclosing(repo.ui, expectedcount=filecount):
-                for i in xrange(filecount):
+                for i in pycompat.xrange(filecount):
                     # XXX doesn't support '\n' or '\r' in filenames
                     l = fp.readline()
                     try:
@@ -525,7 +532,7 @@ def _emit2(repo, entries, totalfilesize):
             finally:
                 fp.close()
 
-def generatev2(repo):
+def generatev2(repo, includes, excludes, includeobsmarkers):
     """Emit content for version 2 of a streaming clone.
 
     the data stream consists the following entries:
@@ -538,13 +545,21 @@ def generatev2(repo):
     Returns a 3-tuple of (file count, file size, data iterator).
     """
 
+    # temporarily raise error until we add storage level logic
+    if includes or excludes:
+        raise error.Abort(_("server does not support narrow stream clones"))
+
     with repo.lock():
 
         entries = []
         totalfilesize = 0
 
+        matcher = None
+        if includes or excludes:
+            matcher = narrowspec.match(repo.root, includes, excludes)
+
         repo.ui.debug('scanning\n')
-        for name, ename, size in _walkstreamfiles(repo):
+        for name, ename, size in _walkstreamfiles(repo, matcher):
             if size:
                 entries.append((_srcstore, name, _fileappend, size))
                 totalfilesize += size
@@ -552,6 +567,9 @@ def generatev2(repo):
             if repo.svfs.exists(name):
                 totalfilesize += repo.svfs.lstat(name).st_size
                 entries.append((_srcstore, name, _filefull, None))
+        if includeobsmarkers and repo.svfs.exists('obsstore'):
+            totalfilesize += repo.svfs.lstat('obsstore').st_size
+            entries.append((_srcstore, 'obsstore', _filefull, None))
         for name in cacheutil.cachetocopy(repo):
             if repo.cachevfs.exists(name):
                 totalfilesize += repo.cachevfs.lstat(name).st_size
@@ -565,12 +583,13 @@ def generatev2(repo):
 
 @contextlib.contextmanager
 def nested(*ctxs):
-    with warnings.catch_warnings():
-        # For some reason, Python decided 'nested' was deprecated without
-        # replacement. They officially advertised for filtering the deprecation
-        # warning for people who actually need the feature.
-        warnings.filterwarnings("ignore",category=DeprecationWarning)
-        with contextlib.nested(*ctxs):
+    this = ctxs[0]
+    rest = ctxs[1:]
+    with this:
+        if rest:
+            with nested(*rest):
+                yield
+        else:
             yield
 
 def consumev2(repo, fp, filecount, filesize):
@@ -624,6 +643,8 @@ def consumev2(repo, fp, filecount, filesize):
         progress.complete()
 
 def applybundlev2(repo, fp, filecount, filesize, requirements):
+    from . import localrepo
+
     missingreqs = [r for r in requirements if r not in repo.supported]
     if missingreqs:
         raise error.Abort(_('unable to apply stream clone: '
@@ -637,5 +658,6 @@ def applybundlev2(repo, fp, filecount, filesize, requirements):
     # requirements from the streamed-in repository
     repo.requirements = set(requirements) | (
             repo.requirements - repo.supportedformats)
-    repo._applyopenerreqs()
+    repo.svfs.options = localrepo.resolvestorevfsoptions(
+        repo.ui, repo.requirements, repo.features)
     repo._writerequirements()

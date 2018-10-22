@@ -161,10 +161,6 @@ coreconfigitem('bookmarks', 'pushing',
 coreconfigitem('bundle', 'mainreporoot',
     default='',
 )
-# bundle.reorder: experimental config
-coreconfigitem('bundle', 'reorder',
-    default='auto',
-)
 coreconfigitem('censor', 'policy',
     default='abort',
 )
@@ -189,6 +185,15 @@ coreconfigitem('color', 'pagermode',
 )
 coreconfigitem('commands', 'grep.all-files',
     default=False,
+)
+coreconfigitem('commands', 'resolve.confirm',
+    default=False,
+)
+coreconfigitem('commands', 'resolve.explicit-re-merge',
+    default=False,
+)
+coreconfigitem('commands', 'resolve.mark-check',
+    default='none',
 )
 coreconfigitem('commands', 'show.aliasprefix',
     default=list,
@@ -372,6 +377,9 @@ coreconfigitem('devel', 'user.obsmarker',
 coreconfigitem('devel', 'warn-config-unknown',
     default=None,
 )
+coreconfigitem('devel', 'debug.copies',
+    default=False,
+)
 coreconfigitem('devel', 'debug.extensions',
     default=False,
 )
@@ -445,9 +453,6 @@ coreconfigitem('experimental', 'bundle2-output-capture',
     default=False,
 )
 coreconfigitem('experimental', 'bundle2.pushback',
-    default=False,
-)
-coreconfigitem('experimental', 'bundle2.stream',
     default=False,
 )
 coreconfigitem('experimental', 'bundle2lazylocking',
@@ -533,6 +538,9 @@ coreconfigitem('experimental', 'mergetempdirprefix',
 coreconfigitem('experimental', 'mmapindexthreshold',
     default=None,
 )
+coreconfigitem('experimental', 'narrow',
+    default=False,
+)
 coreconfigitem('experimental', 'nonnormalparanoidcheck',
     default=False,
 )
@@ -566,6 +574,9 @@ coreconfigitem('experimental', 'hook-track-tags',
 coreconfigitem('experimental', 'httppeer.advertise-v2',
     default=False,
 )
+coreconfigitem('experimental', 'httppeer.v2-encoder-order',
+    default=None,
+)
 coreconfigitem('experimental', 'httppostargs',
     default=False,
 )
@@ -584,16 +595,28 @@ coreconfigitem('experimental', 'remotenames',
 coreconfigitem('experimental', 'removeemptydirs',
     default=True,
 )
+coreconfigitem('experimental', 'revisions.prefixhexnode',
+    default=False,
+)
 coreconfigitem('experimental', 'revlogv2',
     default=None,
+)
+coreconfigitem('experimental', 'revisions.disambiguatewithin',
+    default=None,
+)
+coreconfigitem('experimental', 'server.filesdata.recommended-batch-size',
+    default=50000,
+)
+coreconfigitem('experimental', 'server.manifestdata.recommended-batch-size',
+    default=100000,
+)
+coreconfigitem('experimental.server', 'stream-narrow-clones',
+    default=False,
 )
 coreconfigitem('experimental', 'single-head-per-branch',
     default=False,
 )
 coreconfigitem('experimental', 'sshserver.support-v2',
-    default=False,
-)
-coreconfigitem('experimental', 'spacemovesdown',
     default=False,
 )
 coreconfigitem('experimental', 'sparse-read',
@@ -650,7 +673,7 @@ coreconfigitem('format', 'manifestcachesize',
     default=None,
 )
 coreconfigitem('format', 'maxchainlen',
-    default=None,
+    default=dynamicdefault,
 )
 coreconfigitem('format', 'obsstore-version',
     default=None,
@@ -666,6 +689,9 @@ coreconfigitem('format', 'usegeneraldelta',
 )
 coreconfigitem('format', 'usestore',
     default=True,
+)
+coreconfigitem('format', 'internal-phase',
+    default=False,
 )
 coreconfigitem('fsmonitor', 'warn_when_unused',
     default=True,
@@ -726,6 +752,11 @@ coreconfigitem('http_proxy', 'passwd',
 coreconfigitem('http_proxy', 'user',
     default=None,
 )
+
+coreconfigitem('http', 'timeout',
+    default=None,
+)
+
 coreconfigitem('logtoprocess', 'commandexception',
     default=None,
 )
@@ -758,6 +789,9 @@ coreconfigitem('merge', 'on-failure',
 )
 coreconfigitem('merge', 'preferancestor',
         default=lambda: ['*'],
+)
+coreconfigitem('merge', 'strict-capability-check',
+    default=False,
 )
 coreconfigitem('merge-tools', '.*',
     default=None,
@@ -889,7 +923,7 @@ coreconfigitem('profiling', 'statformat',
     default='hotpath',
 )
 coreconfigitem('profiling', 'time-track',
-    default='cpu',
+    default='real',
 )
 coreconfigitem('profiling', 'type',
     default='stat',
@@ -927,6 +961,9 @@ coreconfigitem('progress', 'width',
 coreconfigitem('push', 'pushvars.server',
     default=False,
 )
+coreconfigitem('storage', 'new-repo-backend',
+    default='revlogv1',
+)
 coreconfigitem('storage', 'revlog.optimize-delta-parent-choice',
     default=True,
     alias=[('format', 'aggressivemergedeltas')],
@@ -951,6 +988,10 @@ coreconfigitem('server', 'bundle1.push',
 )
 coreconfigitem('server', 'bundle1gd.push',
     default=None,
+)
+coreconfigitem('server', 'bundle2.stream',
+    default=True,
+    alias=[('experimental', 'bundle2.stream')]
 )
 coreconfigitem('server', 'compressionengines',
     default=list,
@@ -1328,6 +1369,9 @@ coreconfigitem('web', 'refreshinterval',
     default=20,
 )
 coreconfigitem('web', 'server-header',
+    default=None,
+)
+coreconfigitem('web', 'static',
     default=None,
 )
 coreconfigitem('web', 'staticurl',

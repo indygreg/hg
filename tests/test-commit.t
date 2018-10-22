@@ -650,11 +650,11 @@ verify pathauditor blocks evil filepaths
   > def filectxfn(repo, memctx, path):
   >     return context.memfilectx(repo, memctx, path,
   >         b'[hooks]\nupdate = echo owned')
-  > c = context.memctx(r, [r[b'tip'].node(), node.nullid],
+  > c = context.memctx(r, [r.changelog.tip(), node.nullid],
   >                    b'evil', [notrc], filectxfn, 0)
   > r.commitctx(c)
   > EOF
-  $ $PYTHON evil-commit.py
+  $ "$PYTHON" evil-commit.py
 #if windows
   $ hg co --clean tip
   abort: path contains illegal component: .h\xe2\x80\x8cg\\hgrc (esc)
@@ -680,7 +680,7 @@ verify pathauditor blocks evil filepaths
   >                    b'evil', [notrc], filectxfn, 0)
   > r.commitctx(c)
   > EOF
-  $ $PYTHON evil-commit.py
+  $ "$PYTHON" evil-commit.py
   $ hg co --clean tip
   abort: path contains illegal component: HG~1/hgrc
   [255]
@@ -700,7 +700,7 @@ verify pathauditor blocks evil filepaths
   >                    b'evil', [notrc], filectxfn, 0)
   > r.commitctx(c)
   > EOF
-  $ $PYTHON evil-commit.py
+  $ "$PYTHON" evil-commit.py
   $ hg co --clean tip
   abort: path contains illegal component: HG8B6C~2/hgrc
   [255]

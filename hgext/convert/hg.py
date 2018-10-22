@@ -358,7 +358,7 @@ class mercurial_sink(common.converter_sink):
             p2 = node
 
         if self.filemapmode and nparents == 1:
-            man = self.repo.manifestlog._revlog
+            man = self.repo.manifestlog.getstorage(b'')
             mnode = self.repo.changelog.read(nodemod.bin(p2))[0]
             closed = 'close' in commit.extra
             if not closed and not man.cmp(m1node, man.revision(mnode)):

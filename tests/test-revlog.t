@@ -34,14 +34,20 @@ Test for CVE-2016-3630
 
   $ hg init
 
-  >>> open("a.i", "wb").write(
+  >>> import codecs
+  >>> open("a.i", "wb").write(codecs.decode(codecs.decode(
   ... b"""eJxjYGZgZIAAYQYGxhgom+k/FMx8YKx9ZUaKSOyqo4cnuKb8mbqHV5cBCVTMWb1Cwqkhe4Gsg9AD
-  ... Joa3dYtcYYYBAQ8Qr4OqZAYRICPTSr5WKd/42rV36d+8/VmrNpv7NP1jQAXrQE4BqQUARngwVA=="""
-  ... .decode("base64").decode("zlib"))
+  ... Joa3dYtcYYYBAQ8Qr4OqZAYRICPTSr5WKd/42rV36d+8/VmrNpv7NP1jQAXrQE4BqQUARngwVA==""",
+  ... "base64"), "zlib")) and None
 
-  $ hg debugindex a.i
+  $ hg debugrevlogindex a.i
      rev linkrev nodeid       p1           p2
        0       2 99e0332bd498 000000000000 000000000000
        1       3 6674f57a23d8 99e0332bd498 000000000000
-  $ hg debugdata a.i 1 2>&1 | egrep 'Error:.*decoded'
-  (mercurial\.\w+\.mpatch\.)?mpatchError: patch cannot be decoded (re)
+
+  >>> from mercurial import revlog, vfs
+  >>> tvfs = vfs.vfs(b'.')
+  >>> tvfs.options = {b'revlogv1': True}
+  >>> rl = revlog.revlog(tvfs, b'a.i')
+  >>> rl.revision(1)
+  mpatchError(*'patch cannot be decoded'*) (glob)

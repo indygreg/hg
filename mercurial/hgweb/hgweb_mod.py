@@ -140,11 +140,6 @@ class requestcontext(object):
         if not staticurl.endswith('/'):
             staticurl += '/'
 
-        # some functions for the templater
-
-        def motd(**map):
-            yield self.config('web', 'motd')
-
         # figure out which style to use
 
         vars = {}
@@ -177,12 +172,16 @@ class requestcontext(object):
             'urlbase': req.advertisedbaseurl,
             'repo': self.reponame,
             'encoding': encoding.encoding,
-            'motd': motd,
             'sessionvars': sessionvars,
             'pathdef': makebreadcrumb(req.apppath),
             'style': style,
             'nonce': self.nonce,
         }
+        templatekeyword = registrar.templatekeyword(defaults)
+        @templatekeyword('motd', requires=())
+        def motd(context, mapping):
+            yield self.config('web', 'motd')
+
         tres = formatter.templateresources(self.repo.ui, self.repo)
         tmpl = templater.templater.frommapfile(mapfile,
                                                filters=filters,
@@ -436,8 +435,12 @@ class hgweb(object):
             res.status = '404 Not Found'
             res.headers['Content-Type'] = ctype
             return rctx.sendtemplate('error', error=msg)
-        except (error.RepoError, error.RevlogError) as e:
+        except (error.RepoError, error.StorageError) as e:
             res.status = '500 Internal Server Error'
+            res.headers['Content-Type'] = ctype
+            return rctx.sendtemplate('error', error=pycompat.bytestr(e))
+        except error.Abort as e:
+            res.status = '403 Forbidden'
             res.headers['Content-Type'] = ctype
             return rctx.sendtemplate('error', error=pycompat.bytestr(e))
         except ErrorResponse as e:

@@ -36,8 +36,9 @@ merge tools are:
 
 .. internaltoolsmarker
 
-Internal tools are always available and do not require a GUI but will by default
-not handle symlinks or binary files.
+Internal tools are always available and do not require a GUI but will
+by default not handle symlinks or binary files. See next section for
+detail about "actual capabilities" described above.
 
 Choosing a merge tool
 =====================
@@ -54,8 +55,7 @@ Mercurial uses these rules when deciding which merge tool to use:
 
 3. If the filename of the file to be merged matches any of the patterns in the
    merge-patterns configuration section, the first usable merge tool
-   corresponding to a matching pattern is used. Here, binary capabilities of the
-   merge tool are not considered.
+   corresponding to a matching pattern is used.
 
 4. If ui.merge is set it will be considered next. If the value is not the name
    of a configured tool, the specified value is used and must be executable by
@@ -71,6 +71,30 @@ Mercurial uses these rules when deciding which merge tool to use:
    internal ``:merge`` is used.
 
 8. Otherwise, ``:prompt`` is used.
+
+For historical reason, Mercurial treats merge tools as below while
+examining rules above.
+
+==== =============== ====== =======
+step specified via   binary symlink
+==== =============== ====== =======
+1.   --tool          o/o    o/o
+2.   HGMERGE         o/o    o/o
+3.   merge-patterns  o/o(*) x/?(*)
+4.   ui.merge        x/?(*) x/?(*)
+==== =============== ====== =======
+
+Each capability column indicates Mercurial behavior for
+internal/external merge tools at examining each rule.
+
+- "o": "assume that a tool has capability"
+- "x": "assume that a tool does not have capability"
+- "?": "check actual capability of a tool"
+
+If ``merge.strict-capability-check`` configuration is true, Mercurial
+checks capabilities of merge tools strictly in (*) cases above (= each
+capability column becomes "?/?"). It is false by default for backward
+compatibility.
 
 .. note::
 

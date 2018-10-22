@@ -10,7 +10,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 1 changesets, 1 total revisions
+  checked 1 changesets with 1 changes to 1 files
 
   $ hg clone . ../branch
   updating to branch default
@@ -39,7 +39,7 @@
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  1 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 1 files
 
   $ hg co
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -79,7 +79,7 @@ update with worker processes
   > [worker]
   > numcpus = 4
   > EOF
-  $ for i in `$PYTHON $TESTDIR/seq.py 1 100`; do
+  $ for i in `"$PYTHON" $TESTDIR/seq.py 1 100`; do
   >   echo $i > $i
   > done
   $ hg ci -qAm 'add 100 files'

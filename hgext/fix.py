@@ -58,6 +58,10 @@ from mercurial.i18n import _
 from mercurial.node import nullrev
 from mercurial.node import wdirrev
 
+from mercurial.utils import (
+    procutil,
+)
+
 from mercurial import (
     cmdutil,
     context,
@@ -96,15 +100,17 @@ for key in FIXER_ATTRS:
 # user.
 configitem('fix', 'maxfilesize', default='2MB')
 
-@command('fix',
-    [('', 'all', False, _('fix all non-public non-obsolete revisions')),
-     ('', 'base', [], _('revisions to diff against (overrides automatic '
-                        'selection, and applies to every revision being '
-                        'fixed)'), _('REV')),
-     ('r', 'rev', [], _('revisions to fix'), _('REV')),
-     ('w', 'working-dir', False, _('fix the working directory')),
-     ('', 'whole', False, _('always fix every line of a file'))],
-    _('[OPTION]... [FILE]...'))
+allopt = ('', 'all', False, _('fix all non-public non-obsolete revisions'))
+baseopt = ('', 'base', [], _('revisions to diff against (overrides automatic '
+                             'selection, and applies to every revision being '
+                             'fixed)'), _('REV'))
+revopt = ('r', 'rev', [], _('revisions to fix'), _('REV'))
+wdiropt = ('w', 'working-dir', False, _('fix the working directory'))
+wholeopt = ('', 'whole', False, _('always fix every line of a file'))
+usage = _('[OPTION]... [FILE]...')
+
+@command('fix', [allopt, baseopt, revopt, wdiropt, wholeopt], usage,
+        helpcategory=command.CATEGORY_FILE_CONTENTS)
 def fix(ui, repo, *pats, **opts):
     """rewrite file content in changesets or working directory
 
@@ -161,6 +167,7 @@ def fix(ui, repo, *pats, **opts):
         # it makes the results more easily reproducible.
         filedata = collections.defaultdict(dict)
         replacements = {}
+        wdirwritten = False
         commitorder = sorted(revstofix, reverse=True)
         with ui.makeprogress(topic=_('fixing'), unit=_('files'),
                              total=sum(numitems.values())) as progress:
@@ -178,12 +185,28 @@ def fix(ui, repo, *pats, **opts):
                     ctx = repo[rev]
                     if rev == wdirrev:
                         writeworkingdir(repo, ctx, filedata[rev], replacements)
+                        wdirwritten = bool(filedata[rev])
                     else:
                         replacerev(ui, repo, ctx, filedata[rev], replacements)
                     del filedata[rev]
 
-        replacements = {prec: [succ] for prec, succ in replacements.iteritems()}
-        scmutil.cleanupnodes(repo, replacements, 'fix', fixphase=True)
+        cleanup(repo, replacements, wdirwritten)
+
+def cleanup(repo, replacements, wdirwritten):
+    """Calls scmutil.cleanupnodes() with the given replacements.
+
+    "replacements" is a dict from nodeid to nodeid, with one key and one value
+    for every revision that was affected by fixing. This is slightly different
+    from cleanupnodes().
+
+    "wdirwritten" is a bool which tells whether the working copy was affected by
+    fixing, since it has no entry in "replacements".
+
+    Useful as a hook point for extending "hg fix" with output summarizing the
+    effects of the command, though we choose not to output anything here.
+    """
+    replacements = {prec: [succ] for prec, succ in replacements.iteritems()}
+    scmutil.cleanupnodes(repo, replacements, 'fix', fixphase=True)
 
 def getworkqueue(ui, repo, pats, opts, revstofix, basectxs):
     """"Constructs the list of files to be fixed at specific revisions
@@ -267,8 +290,8 @@ def pathstofix(ui, repo, pats, opts, match, basectxs, fixctx):
     """
     files = set()
     for basectx in basectxs:
-        stat = repo.status(
-            basectx, fixctx, match=match, clean=bool(pats), unknown=bool(pats))
+        stat = basectx.status(fixctx, match=match, listclean=bool(pats),
+                              listunknown=bool(pats))
         files.update(
             set(itertools.chain(stat.added, stat.modified, stat.clean,
                                 stat.unknown)))
@@ -417,27 +440,33 @@ def fixfile(ui, opts, fixers, fixctx, path, basectxs):
     starting with the file's content in the fixctx. Fixers that support line
     ranges will affect lines that have changed relative to any of the basectxs
     (i.e. they will only avoid lines that are common to all basectxs).
+
+    A fixer tool's stdout will become the file's new content if and only if it
+    exits with code zero.
     """
     newdata = fixctx[path].data()
     for fixername, fixer in fixers.iteritems():
         if fixer.affects(opts, fixctx, path):
-            ranges = lineranges(opts, path, basectxs, fixctx, newdata)
-            command = fixer.command(ui, path, ranges)
+            rangesfn = lambda: lineranges(opts, path, basectxs, fixctx, newdata)
+            command = fixer.command(ui, path, rangesfn)
             if command is None:
                 continue
             ui.debug('subprocess: %s\n' % (command,))
             proc = subprocess.Popen(
-                command,
+                procutil.tonativestr(command),
                 shell=True,
-                cwd='/',
+                cwd=procutil.tonativestr(b'/'),
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
             newerdata, stderr = proc.communicate(newdata)
             if stderr:
                 showstderr(ui, fixctx.rev(), fixername, stderr)
-            else:
+            if proc.returncode == 0:
                 newdata = newerdata
+            elif not stderr:
+                showstderr(ui, fixctx.rev(), fixername,
+                           _('exited with status %d\n') % (proc.returncode,))
     return newdata
 
 def showstderr(ui, rev, fixername, stderr):
@@ -567,7 +596,7 @@ class Fixer(object):
         """Should this fixer run on the file at the given path and context?"""
         return scmutil.match(fixctx, [self._fileset], opts)(path)
 
-    def command(self, ui, path, ranges):
+    def command(self, ui, path, rangesfn):
         """A shell command to use to invoke this fixer on the given file/lines
 
         May return None if there is no appropriate command to run for the given
@@ -577,6 +606,7 @@ class Fixer(object):
         parts = [expand(ui, self._command,
                         {'rootpath': path, 'basename': os.path.basename(path)})]
         if self._linerange:
+            ranges = rangesfn()
             if not ranges:
                 # No line ranges to fix, so don't run the fixer.
                 return None

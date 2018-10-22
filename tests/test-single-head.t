@@ -200,5 +200,4 @@ actual stripping
 
   $ hg strip --config extensions.strip= --rev 'desc("c_dH0")'
   saved backup bundle to $TESTTMP/client/.hg/strip-backup/fe47ea669cea-a41bf5a9-backup.hg
-  warning: ignoring unknown working parent 49003e504178!
 

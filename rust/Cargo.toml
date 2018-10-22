@@ -1,2 +1,3 @@
 [workspace]
-members = ["hgcli"]
+members = ["hgcli", "hg-core", "hg-direct-ffi"]
+exclude = ["chg"]

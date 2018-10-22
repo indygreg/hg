@@ -48,6 +48,14 @@ try:
 except ImportError:
     from . import pybser as bser
 
+from mercurial.utils import (
+    procutil,
+)
+
+from mercurial import (
+    pycompat,
+)
+
 from . import (
     capabilities,
     compat,
@@ -580,7 +588,8 @@ class CLIProcessTransport(Transport):
             '--no-pretty',
             '-j',
         ]
-        self.proc = subprocess.Popen(args,
+        self.proc = subprocess.Popen(pycompat.rapply(procutil.tonativestr,
+                                                     args),
                                      stdin=subprocess.PIPE,
                                      stdout=subprocess.PIPE)
         return self.proc
@@ -822,7 +831,8 @@ class client(object):
                 startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
                 args['startupinfo'] = startupinfo
 
-            p = subprocess.Popen(cmd, **args)
+            p = subprocess.Popen(pycompat.rapply(procutil.tonativestr, cmd),
+                                 **args)
 
         except OSError as e:
             raise WatchmanError('"watchman" executable not in PATH (%s)' % e)

@@ -11,9 +11,12 @@
   > from __future__ import absolute_import, print_function
   > import os
   > import sys
-  > from mercurial import util
+  > from mercurial import (
+  >     pycompat,
+  >     util,
+  > )
   > path1, path2 = sys.argv[1:3]
-  > if util.samefile(path1, path2):
+  > if util.samefile(pycompat.fsencode(path1), pycompat.fsencode(path2)):
   >     print('%s == %s' % (path1, path2))
   > else:
   >     print('%s != %s' % (path1, path2))
@@ -49,7 +52,7 @@ don't sit forever trying to double-lock the source repo
 
 Test files are read in binary mode
 
-  $ $PYTHON -c "open('.hg/store/data/dummy.i', 'wb').write(b'a\r\nb\n')"
+  $ "$PYTHON" -c "open('.hg/store/data/dummy.i', 'wb').write(b'a\r\nb\n')"
   $ cd ..
 
 
@@ -68,7 +71,7 @@ clone and pull to break links
   $ echo b >> b
   $ hg ci -m changeb
   created new head
-  $ $PYTHON -c "open('.hg/store/data/dummy.i', 'wb').write(b'a\nb\r\n')"
+  $ "$PYTHON" -c "open('.hg/store/data/dummy.i', 'wb').write(b'a\nb\r\n')"
 
 
 relink
@@ -98,9 +101,9 @@ relink
 
 check hardlinks
 
-  $ $PYTHON arelinked.py repo/.hg/store/data/a.i clone/.hg/store/data/a.i
+  $ "$PYTHON" arelinked.py repo/.hg/store/data/a.i clone/.hg/store/data/a.i
   repo/.hg/store/data/a.i == clone/.hg/store/data/a.i
-  $ $PYTHON arelinked.py repo/.hg/store/data/b.i clone/.hg/store/data/b.i
+  $ "$PYTHON" arelinked.py repo/.hg/store/data/b.i clone/.hg/store/data/b.i
   repo/.hg/store/data/b.i != clone/.hg/store/data/b.i
 
 #endif

@@ -232,7 +232,7 @@ Create an extension to test bundle2 API
   > [experimental]
   > evolution.createmarkers=True
   > [ui]
-  > ssh=$PYTHON "$TESTDIR/dummyssh"
+  > ssh="$PYTHON" "$TESTDIR/dummyssh"
   > logtemplate={rev}:{node|short} {phase} {author} {bookmarks} {desc|firstline}
   > [web]
   > push_ssl = false
@@ -824,7 +824,7 @@ Test push race detection
 
   $ hg unbundle2 < ../part-race.hg2
   0 unread bytes
-  abort: push race: repository changed while pushing - please try again
+  abort: push race: remote repository changed while pushing - please try again
   [255]
 
 Support for changegroup
@@ -835,7 +835,7 @@ Support for changegroup
   adding manifests
   adding file changes
   added 8 changesets with 7 changes to 7 files (+3 heads)
-  new changesets cd010b8cd998:02de42196ebe
+  new changesets cd010b8cd998:02de42196ebe (8 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
   $ hg log -G
@@ -873,17 +873,17 @@ Support for changegroup
   bundle2-output-part: "changegroup" (advisory) streamed payload
   bundle2-output: part 0: "changegroup"
   bundle2-output: header chunk size: 18
-  bundling: 1/4 changesets (25.00%)
-  bundling: 2/4 changesets (50.00%)
-  bundling: 3/4 changesets (75.00%)
-  bundling: 4/4 changesets (100.00%)
-  bundling: 1/4 manifests (25.00%)
-  bundling: 2/4 manifests (50.00%)
-  bundling: 3/4 manifests (75.00%)
-  bundling: 4/4 manifests (100.00%)
-  bundling: D 1/3 files (33.33%)
-  bundling: E 2/3 files (66.67%)
-  bundling: H 3/3 files (100.00%)
+  changesets: 1/4 chunks (25.00%)
+  changesets: 2/4 chunks (50.00%)
+  changesets: 3/4 chunks (75.00%)
+  changesets: 4/4 chunks (100.00%)
+  manifests: 1/4 chunks (25.00%)
+  manifests: 2/4 chunks (50.00%)
+  manifests: 3/4 chunks (75.00%)
+  manifests: 4/4 chunks (100.00%)
+  files: D 1/3 files (33.33%)
+  files: E 2/3 files (66.67%)
+  files: H 3/3 files (100.00%)
   bundle2-output: payload chunk size: 1555
   bundle2-output: closing payload chunk
   bundle2-output: end of bundle

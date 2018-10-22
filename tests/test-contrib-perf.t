@@ -55,6 +55,8 @@ perfstatus
                  benchmark parsing bookmarks from disk to memory
    perfbranchmap
                  benchmark the update of a branchmap
+   perfbranchmapload
+                 benchmark reading the branchmap
    perfbundleread
                  Benchmark reading of bundle files.
    perfcca       (no help text available)
@@ -82,6 +84,8 @@ perfstatus
                  (no help text available)
    perfheads     (no help text available)
    perfindex     (no help text available)
+   perflinelogedits
+                 (no help text available)
    perfloadmarkers
                  benchmark the time to parse the on-disk markers for a repo
    perflog       (no help text available)
@@ -156,11 +160,16 @@ perfstatus
 #endif
   $ hg perfheads
   $ hg perfindex
+  $ hg perflinelogedits -n 1
   $ hg perfloadmarkers
   $ hg perflog
   $ hg perflookup 2
   $ hg perflrucache
   $ hg perfmanifest 2
+  $ hg perfmanifest -m 44fe2c8352bb3a478ffd7d8350bbc721920134d1
+  $ hg perfmanifest -m 44fe2c8352bb
+  abort: manifest revision must be integer or full node
+  [255]
   $ hg perfmergecalculate -r 3
   $ hg perfmoonwalk
   $ hg perfnodelookup 2
@@ -197,6 +206,50 @@ detailed output:
   ! wall * comb * user * sys * (max of *) (glob)
   ! wall * comb * user * sys * (avg of *) (glob)
   ! wall * comb * user * sys * (median of *) (glob)
+
+test json output
+----------------
+
+normal output:
+
+  $ hg perfheads --template json --config perf.stub=no
+  [
+   {
+    "comb": *, (glob)
+    "count": *, (glob)
+    "sys": *, (glob)
+    "user": *, (glob)
+    "wall": * (glob)
+   }
+  ]
+
+detailed output:
+
+  $ hg perfheads --template json --config perf.all-timing=yes --config perf.stub=no
+  [
+   {
+    "avg.comb": *, (glob)
+    "avg.count": *, (glob)
+    "avg.sys": *, (glob)
+    "avg.user": *, (glob)
+    "avg.wall": *, (glob)
+    "comb": *, (glob)
+    "count": *, (glob)
+    "max.comb": *, (glob)
+    "max.count": *, (glob)
+    "max.sys": *, (glob)
+    "max.user": *, (glob)
+    "max.wall": *, (glob)
+    "median.comb": *, (glob)
+    "median.count": *, (glob)
+    "median.sys": *, (glob)
+    "median.user": *, (glob)
+    "median.wall": *, (glob)
+    "sys": *, (glob)
+    "user": *, (glob)
+    "wall": * (glob)
+   }
+  ]
 
 Check perf.py for historical portability
 ----------------------------------------

@@ -951,9 +951,11 @@ class svnsubrepo(abstractsubrepo):
             env['LANG'] = lc_all
             del env['LC_ALL']
         env['LC_MESSAGES'] = 'C'
-        p = subprocess.Popen(cmd, bufsize=-1, close_fds=procutil.closefds,
+        p = subprocess.Popen(pycompat.rapply(procutil.tonativestr, cmd),
+                             bufsize=-1, close_fds=procutil.closefds,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                              universal_newlines=True, env=env, **extrakw)
+                             universal_newlines=True,
+                             env=procutil.tonativeenv(env), **extrakw)
         stdout, stderr = p.communicate()
         stderr = stderr.strip()
         if not failok:
@@ -1268,8 +1270,12 @@ class gitsubrepo(abstractsubrepo):
             # insert the argument in the front,
             # the end of git diff arguments is used for paths
             commands.insert(1, '--color')
-        p = subprocess.Popen([self._gitexecutable] + commands, bufsize=-1,
-                             cwd=cwd, env=env, close_fds=procutil.closefds,
+        p = subprocess.Popen(pycompat.rapply(procutil.tonativestr,
+                                             [self._gitexecutable] + commands),
+                             bufsize=-1,
+                             cwd=pycompat.rapply(procutil.tonativestr, cwd),
+                             env=procutil.tonativeenv(env),
+                             close_fds=procutil.closefds,
                              stdout=subprocess.PIPE, stderr=errpipe)
         if stream:
             return p.stdout, None
@@ -1577,17 +1583,15 @@ class gitsubrepo(abstractsubrepo):
         if self._gitmissing():
             return []
 
-        (modified, added, removed,
-         deleted, unknown, ignored, clean) = self.status(None, unknown=True,
-                                                         clean=True)
+        s = self.status(None, unknown=True, clean=True)
 
         tracked = set()
         # dirstates 'amn' warn, 'r' is added again
-        for l in (modified, added, deleted, clean):
+        for l in (s.modified, s.added, s.deleted, s.clean):
             tracked.update(l)
 
         # Unknown files not of interest will be rejected by the matcher
-        files = unknown
+        files = s.unknown
         files.extend(match.files())
 
         rejected = []

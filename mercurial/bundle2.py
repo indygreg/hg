@@ -839,7 +839,7 @@ class unbundle20(unpackermixin):
             params = self._readexact(paramssize)
             self._processallparams(params)
             yield params
-            assert self._compengine.bundletype == 'UN'
+            assert self._compengine.bundletype()[1] == 'UN'
         # From there, payload might need to be decompressed
         self._fp = self._compengine.decompressorreader(self._fp)
         emptycount = 0
@@ -1532,7 +1532,7 @@ def getrepocaps(repo, allowpushback=False, role=None):
     if role == 'server':
         streamsupported = repo.ui.configbool('server', 'uncompressed',
                                              untrusted=True)
-        featuresupported = repo.ui.configbool('experimental', 'bundle2.stream')
+        featuresupported = repo.ui.configbool('server', 'bundle2.stream')
 
         if not streamsupported or not featuresupported:
             caps.pop('stream')
@@ -1672,7 +1672,7 @@ def _formatrequirementsparams(requirements):
     return params
 
 def addpartbundlestream2(bundler, repo, **kwargs):
-    if not kwargs.get('stream', False):
+    if not kwargs.get(r'stream', False):
         return
 
     if not streamclone.allowservergeneration(repo):
@@ -1687,7 +1687,28 @@ def addpartbundlestream2(bundler, repo, **kwargs):
     # to avoid compression to consumers of the bundle.
     bundler.prefercompressed = False
 
-    filecount, bytecount, it = streamclone.generatev2(repo)
+    # get the includes and excludes
+    includepats = kwargs.get(r'includepats')
+    excludepats = kwargs.get(r'excludepats')
+
+    narrowstream = repo.ui.configbool('experimental.server',
+                                      'stream-narrow-clones')
+
+    if (includepats or excludepats) and not narrowstream:
+        raise error.Abort(_('server does not support narrow stream clones'))
+
+    includeobsmarkers = False
+    if repo.obsstore:
+        remoteversions = obsmarkersversion(bundler.capabilities)
+        if not remoteversions:
+            raise error.Abort(_('server has obsolescence markers, but client '
+                                'cannot receive them via stream clone'))
+        elif repo.obsstore._version in remoteversions:
+            includeobsmarkers = True
+
+    filecount, bytecount, it = streamclone.generatev2(repo, includepats,
+                                                      excludepats,
+                                                      includeobsmarkers)
     requirements = _formatrequirementsspec(repo.requirements)
     part = bundler.newpart('stream2', data=it)
     part.addparam('bytecount', '%d' % bytecount, mandatory=True)
@@ -1779,6 +1800,8 @@ def handlechangegroup(op, inpart):
     This is a very early implementation that will massive rework before being
     inflicted to any end-user.
     """
+    from . import localrepo
+
     tr = op.gettransaction()
     unpackerversion = inpart.params.get('version', '01')
     # We should raise an appropriate exception here
@@ -1795,7 +1818,8 @@ def handlechangegroup(op, inpart):
                 "bundle contains tree manifests, but local repo is "
                 "non-empty and does not use tree manifests"))
         op.repo.requirements.add('treemanifest')
-        op.repo._applyopenerreqs()
+        op.repo.svfs.options = localrepo.resolvestorevfsoptions(
+            op.repo.ui, op.repo.requirements, op.repo.features)
         op.repo._writerequirements()
     extrakwargs = {}
     targetphase = inpart.params.get('targetphase')
@@ -1897,11 +1921,11 @@ def handlecheckbookmarks(op, inpart):
     """
     bookdata = bookmarks.binarydecode(inpart)
 
-    msgstandard = ('repository changed while pushing - please try again '
+    msgstandard = ('remote repository changed while pushing - please try again '
                    '(bookmark "%s" move from %s to %s)')
-    msgmissing = ('repository changed while pushing - please try again '
+    msgmissing = ('remote repository changed while pushing - please try again '
                   '(bookmark "%s" is missing, expected %s)')
-    msgexist = ('repository changed while pushing - please try again '
+    msgexist = ('remote repository changed while pushing - please try again '
                 '(bookmark "%s" set on %s, expected missing)')
     for book, node in bookdata:
         currentnode = op.repo._bookmarks.get(book)
@@ -1931,7 +1955,7 @@ def handlecheckheads(op, inpart):
     if op.ui.configbool('experimental', 'bundle2lazylocking'):
         op.gettransaction()
     if sorted(heads) != sorted(op.repo.heads()):
-        raise error.PushRaced('repository changed while pushing - '
+        raise error.PushRaced('remote repository changed while pushing - '
                               'please try again')
 
 @parthandler('check:updated-heads')
@@ -1960,7 +1984,7 @@ def handlecheckupdatedheads(op, inpart):
 
     for h in heads:
         if h not in currentheads:
-            raise error.PushRaced('repository changed while pushing - '
+            raise error.PushRaced('remote repository changed while pushing - '
                                   'please try again')
 
 @parthandler('check:phases')
@@ -1973,7 +1997,7 @@ def handlecheckphases(op, inpart):
     unfi = op.repo.unfiltered()
     cl = unfi.changelog
     phasecache = unfi._phasecache
-    msg = ('repository changed while pushing - please try again '
+    msg = ('remote repository changed while pushing - please try again '
            '(%s is %s expected %s)')
     for expectedphase, nodes in enumerate(phasetonodes):
         for n in nodes:
@@ -2223,11 +2247,11 @@ def handlerbc(op, inpart):
         total += header[1] + header[2]
         utf8branch = inpart.read(header[0])
         branch = encoding.tolocal(utf8branch)
-        for x in xrange(header[1]):
+        for x in pycompat.xrange(header[1]):
             node = inpart.read(20)
             rev = cl.rev(node)
             cache.setdata(branch, rev, node, False)
-        for x in xrange(header[2]):
+        for x in pycompat.xrange(header[2]):
             node = inpart.read(20)
             rev = cl.rev(node)
             cache.setdata(branch, rev, node, True)
@@ -2263,3 +2287,39 @@ def handlestreamv2bundle(op, part):
     repo.ui.debug('applying stream bundle\n')
     streamclone.applybundlev2(repo, part, filecount, bytecount,
                               requirements)
+
+def widen_bundle(repo, oldmatcher, newmatcher, common, known, cgversion,
+                 ellipses):
+    """generates bundle2 for widening a narrow clone
+
+    repo is the localrepository instance
+    oldmatcher matches what the client already has
+    newmatcher matches what the client needs (including what it already has)
+    common is set of common heads between server and client
+    known is a set of revs known on the client side (used in ellipses)
+    cgversion is the changegroup version to send
+    ellipses is boolean value telling whether to send ellipses data or not
+
+    returns bundle2 of the data required for extending
+    """
+    bundler = bundle20(repo.ui)
+    commonnodes = set()
+    cl = repo.changelog
+    for r in repo.revs("::%ln", common):
+        commonnodes.add(cl.node(r))
+    if commonnodes:
+        # XXX: we should only send the filelogs (and treemanifest). user
+        # already has the changelog and manifest
+        packer = changegroup.getbundler(cgversion, repo,
+                                        oldmatcher=oldmatcher,
+                                        matcher=newmatcher,
+                                        fullnodes=commonnodes)
+        cgdata = packer.generate(set([nodemod.nullid]), list(commonnodes),
+                                 False, 'narrow_widen', changelog=False)
+
+        part = bundler.newpart('changegroup', data=cgdata)
+        part.addparam('version', cgversion)
+        if 'treemanifest' in repo.requirements:
+            part.addparam('treemanifest', '1')
+
+    return bundler

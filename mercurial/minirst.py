@@ -316,7 +316,7 @@ def findtables(blocks):
 
             # column markers are ASCII so we can calculate column
             # position in bytes
-            columns = [x for x in xrange(len(div))
+            columns = [x for x in pycompat.xrange(len(div))
                        if div[x:x + 1] == '=' and (x == 0 or
                                                    div[x - 1:x] == ' ')]
             rows = []
@@ -663,69 +663,79 @@ def formatblocks(blocks, width):
     text = ''.join(formatblock(b, width) for b in blocks)
     return text
 
+def formatplain(blocks, width):
+    """Format parsed blocks as plain text"""
+    return ''.join(formatblock(b, width) for b in blocks)
+
 def format(text, width=80, indent=0, keep=None, style='plain', section=None):
     """Parse and format the text according to width."""
     blocks, pruned = parse(text, indent, keep or [])
-    parents = []
     if section:
-        sections = getsections(blocks)
-        blocks = []
-        i = 0
-        lastparents = []
-        synthetic = []
-        collapse = True
-        while i < len(sections):
-            name, nest, b = sections[i]
-            del parents[nest:]
-            parents.append(i)
-            if name == section:
-                if lastparents != parents:
-                    llen = len(lastparents)
-                    plen = len(parents)
-                    if llen and llen != plen:
-                        collapse = False
-                    s = []
-                    for j in xrange(3, plen - 1):
-                        parent = parents[j]
-                        if (j >= llen or
-                            lastparents[j] != parent):
-                            s.append(len(blocks))
-                            sec = sections[parent][2]
-                            blocks.append(sec[0])
-                            blocks.append(sec[-1])
-                    if s:
-                        synthetic.append(s)
-
-                lastparents = parents[:]
-                blocks.extend(b)
-
-                ## Also show all subnested sections
-                while i + 1 < len(sections) and sections[i + 1][1] > nest:
-                    i += 1
-                    blocks.extend(sections[i][2])
-            i += 1
-        if collapse:
-            synthetic.reverse()
-            for s in synthetic:
-                path = [blocks[syn]['lines'][0] for syn in s]
-                real = s[-1] + 2
-                realline = blocks[real]['lines']
-                realline[0] = ('"%s"' %
-                               '.'.join(path + [realline[0]]).replace('"', ''))
-                del blocks[s[0]:real]
-
+        blocks = filtersections(blocks, section)
     if style == 'html':
-        text = formathtml(blocks)
+        return formathtml(blocks)
     else:
-        text = ''.join(formatblock(b, width) for b in blocks)
-    if keep is None:
-        return text
-    else:
-        return text, pruned
+        return formatplain(blocks, width=width)
 
-def getsections(blocks):
-    '''return a list of (section name, nesting level, blocks) tuples'''
+def filtersections(blocks, section):
+    """Select parsed blocks under the specified section
+
+    The section name is separated by a dot, and matches the suffix of the
+    full section path.
+    """
+    parents = []
+    sections = _getsections(blocks)
+    blocks = []
+    i = 0
+    lastparents = []
+    synthetic = []
+    collapse = True
+    while i < len(sections):
+        path, nest, b = sections[i]
+        del parents[nest:]
+        parents.append(i)
+        if path == section or path.endswith('.' + section):
+            if lastparents != parents:
+                llen = len(lastparents)
+                plen = len(parents)
+                if llen and llen != plen:
+                    collapse = False
+                s = []
+                for j in pycompat.xrange(3, plen - 1):
+                    parent = parents[j]
+                    if (j >= llen or
+                        lastparents[j] != parent):
+                        s.append(len(blocks))
+                        sec = sections[parent][2]
+                        blocks.append(sec[0])
+                        blocks.append(sec[-1])
+                if s:
+                    synthetic.append(s)
+
+            lastparents = parents[:]
+            blocks.extend(b)
+
+            ## Also show all subnested sections
+            while i + 1 < len(sections) and sections[i + 1][1] > nest:
+                i += 1
+                blocks.extend(sections[i][2])
+        i += 1
+    if collapse:
+        synthetic.reverse()
+        for s in synthetic:
+            path = [blocks[syn]['lines'][0] for syn in s]
+            real = s[-1] + 2
+            realline = blocks[real]['lines']
+            realline[0] = ('"%s"' %
+                           '.'.join(path + [realline[0]]).replace('"', ''))
+            del blocks[s[0]:real]
+
+    return blocks
+
+def _getsections(blocks):
+    '''return a list of (section path, nesting level, blocks) tuples'''
     nest = ""
+    names = ()
     level = 0
     secs = []
 
@@ -746,7 +756,8 @@ def getsections(blocks):
                 nest += i
             level = nest.index(i) + 1
             nest = nest[:level]
-            secs.append((getname(b), level, [b]))
+            names = names[:level] + (getname(b),)
+            secs.append(('.'.join(names), level, [b]))
         elif b['type'] in ('definition', 'field'):
             i = ' '
             if i not in nest:
@@ -767,7 +778,8 @@ def getsections(blocks):
                     elif siblingindent == indent:
                         level = sec[1]
                         break
-            secs.append((getname(b), level, [b]))
+            names = names[:level] + (getname(b),)
+            secs.append(('.'.join(names), level, [b]))
         else:
             if not secs:
                 # add an initial empty section
@@ -792,15 +804,6 @@ def getsections(blocks):
                     secs.append(('', blevel, []))
             secs[-1][2].append(b)
     return secs
-
-def decorateblocks(blocks, width):
-    '''generate a list of (section name, line text) pairs for search'''
-    lines = []
-    for s in getsections(blocks):
-        section = s[0]
-        text = formatblocks(s[2], width)
-        lines.append([(section, l) for l in text.splitlines(True)])
-    return lines
 
 def maketable(data, indent=0, header=False):
     '''Generate an RST table for the given table data as a list of lines'''

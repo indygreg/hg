@@ -59,7 +59,7 @@ Test pullbundle functionality
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets bbd179dfa0a7
+  new changesets bbd179dfa0a7 (1 drafts)
   updating to branch default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd repo.pullbundle
@@ -70,7 +70,7 @@ Test pullbundle functionality
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets ed1b79f46b9a
+  new changesets ed1b79f46b9a (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg pull -r 2
   pulling from http://localhost:$HGPORT2/
@@ -79,7 +79,7 @@ Test pullbundle functionality
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets effea6de0384
+  new changesets effea6de0384 (1 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ cd ..
   $ killdaemons.py
@@ -110,7 +110,7 @@ Test pullbundle functionality for incremental pulls
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
-  new changesets bbd179dfa0a7:ed1b79f46b9a
+  new changesets bbd179dfa0a7:ed1b79f46b9a (3 drafts)
   updating to branch default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ killdaemons.py
@@ -136,7 +136,7 @@ Test recovery from misconfigured server sending no new data
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets bbd179dfa0a7
+  new changesets bbd179dfa0a7 (1 drafts)
   updating to branch default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd repo.pullbundle3

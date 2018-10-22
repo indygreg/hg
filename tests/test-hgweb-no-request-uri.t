@@ -18,11 +18,9 @@ should be used from d74fc8dec2b4 onward to route the request.
   > from __future__ import absolute_import
   > import os
   > import sys
-  > from mercurial.hgweb import (
-  >     hgweb,
-  >     hgwebdir,
-  > )
   > from mercurial import (
+  >     encoding,
+  >     hgweb,
   >     util,
   > )
   > stringio = util.stringio
@@ -55,33 +53,33 @@ should be used from d74fc8dec2b4 onward to route the request.
   > 
   > def process(app):
   >     content = app(env, startrsp)
-  >     sys.stdout.write(output.getvalue())
-  >     sys.stdout.write(''.join(content))
+  >     sys.stdout.write(encoding.strfromlocal(output.getvalue()))
+  >     sys.stdout.write(encoding.strfromlocal(b''.join(content)))
   >     getattr(content, 'close', lambda : None)()
   >     print('---- ERRORS')
-  >     print(errors.getvalue())
+  >     print(encoding.strfromlocal(errors.getvalue())) # avoid b'' output diff
   > 
   > output = stringio()
   > env['PATH_INFO'] = '/'
   > env['QUERY_STRING'] = 'style=atom'
-  > process(hgweb('.', name = 'repo'))
+  > process(hgweb.hgweb(b'.', name = b'repo'))
   > 
   > output = stringio()
   > env['PATH_INFO'] = '/file/tip/'
   > env['QUERY_STRING'] = 'style=raw'
-  > process(hgweb('.', name = 'repo'))
+  > process(hgweb.hgweb(b'.', name = b'repo'))
   > 
   > output = stringio()
   > env['PATH_INFO'] = '/'
   > env['QUERY_STRING'] = 'style=raw'
-  > process(hgwebdir({'repo': '.'}))
+  > process(hgweb.hgwebdir({b'repo': b'.'}))
   > 
   > output = stringio()
   > env['PATH_INFO'] = '/repo/file/tip/'
   > env['QUERY_STRING'] = 'style=raw'
-  > process(hgwebdir({'repo': '.'}))
+  > process(hgweb.hgwebdir({b'repo': b'.'}))
   > EOF
-  $ $PYTHON request.py
+  $ "$PYTHON" request.py
   ---- STATUS
   200 Script output follows
   ---- HEADERS

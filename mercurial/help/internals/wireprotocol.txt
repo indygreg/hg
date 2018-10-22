@@ -220,9 +220,10 @@ exchange takes place. This provides a better end-user experience.
 Requests to unknown commands or URLS result in an HTTP 404.
 TODO formally define response type, how error is communicated, etc.
 
-HTTP request and response bodies use the *Unified Frame-Based Protocol*
-(defined below) for media exchange. The entirety of the HTTP message
-body is 0 or more frames as defined by this protocol.
+HTTP request and response bodies use the ``hgrpc`` protocol for media
+exchange.` (See :hg:`help internals.wireprotocolrpc` for details of
+the protocol.) The entirety of the HTTP message body is 0 or more frames
+as defined by this protocol.
 
 Clients and servers MUST advertise the ``TBD`` media type via the
 ``Content-Type`` request and response headers. In addition, clients MUST
@@ -236,11 +237,10 @@ an HTTP 406.
 Servers receiving requests with an invalid ``Content-Type`` header SHOULD
 respond with an HTTP 415.
 
-The command to run is specified in the POST payload as defined by the
-*Unified Frame-Based Protocol*. This is redundant with data already
-encoded in the URL. This is by design, so server operators can have
-better understanding about server activity from looking merely at
-HTTP access logs.
+The command to run is specified in the POST payload as defined by ``hgrpc``.
+This is redundant with data already encoded in the URL. This is by design,
+so server operators can have better understanding about server activity from
+looking merely at HTTP access logs.
 
 In most circumstances, the command specified in the URL MUST match
 the command specified in the frame-based payload or the server will
@@ -254,9 +254,9 @@ The ``multirequest`` command endpoints (``ro/multirequest`` and
 *any* command and allow the execution of multiple commands. If the
 HTTP request issues multiple commands across multiple frames, all
 issued commands will be processed by the server. Per the defined
-behavior of the *Unified Frame-Based Protocol*, commands may be
-issued interleaved and responses may come back in a different order
-than they were issued. Clients MUST be able to deal with this.
+behavior of ``hgrpc```, commands may be issued interleaved and responses
+may come back in a different order than they were issued. Clients MUST
+be able to deal with this.
 
 SSH Protocol
 ============
@@ -513,503 +513,6 @@ e.g.
 Following capabilities advertisement, the peers communicate using version
 1 of the SSH transport.
 
-Unified Frame-Based Protocol
-============================
-
-**Experimental and under development**
-
-The *Unified Frame-Based Protocol* is a communications protocol between
-Mercurial peers. The protocol aims to be mostly transport agnostic
-(works similarly on HTTP, SSH, etc).
-
-To operate the protocol, a bi-directional, half-duplex pipe supporting
-ordered sends and receives is required. That is, each peer has one pipe
-for sending data and another for receiving.
-
-All data is read and written in atomic units called *frames*. These
-are conceptually similar to TCP packets. Higher-level functionality
-is built on the exchange and processing of frames.
-
-All frames are associated with a *stream*. A *stream* provides a
-unidirectional grouping of frames. Streams facilitate two goals:
-content encoding and parallelism. There is a dedicated section on
-streams below.
-
-The protocol is request-response based: the client issues requests to
-the server, which issues replies to those requests. Server-initiated
-messaging is not currently supported, but this specification carves
-out room to implement it.
-
-All frames are associated with a numbered request. Frames can thus
-be logically grouped by their request ID.
-
-Frames begin with an 8 octet header followed by a variable length
-payload::
-
-    +------------------------------------------------+
-    |                 Length (24)                    |
-    +--------------------------------+---------------+
-    |         Request ID (16)        | Stream ID (8) |
-    +------------------+-------------+---------------+
-    | Stream Flags (8) |
-    +-----------+------+
-    | Type (4)  |
-    +-----------+
-    | Flags (4) |
-    +===========+===================================================|
-    |                     Frame Payload (0...)                    ...
-    +---------------------------------------------------------------+
-
-The length of the frame payload is expressed as an unsigned 24 bit
-little endian integer. Values larger than 65535 MUST NOT be used unless
-given permission by the server as part of the negotiated capabilities
-during the handshake. The frame header is not part of the advertised
-frame length. The payload length is the over-the-wire length. If there
-is content encoding applied to the payload as part of the frame's stream,
-the length is the output of that content encoding, not the input.
-
-The 16-bit ``Request ID`` field denotes the integer request identifier,
-stored as an unsigned little endian integer. Odd numbered requests are
-client-initiated. Even numbered requests are server-initiated. This
-refers to where the *request* was initiated - not where the *frame* was
-initiated, so servers will send frames with odd ``Request ID`` in
-response to client-initiated requests. Implementations are advised to
-start ordering request identifiers at ``1`` and ``0``, increment by
-``2``, and wrap around if all available numbers have been exhausted.
-
-The 8-bit ``Stream ID`` field denotes the stream that the frame is
-associated with. Frames belonging to a stream may have content
-encoding applied and the receiver may need to decode the raw frame
-payload to obtain the original data. Odd numbered IDs are
-client-initiated. Even numbered IDs are server-initiated.
-
-The 8-bit ``Stream Flags`` field defines stream processing semantics.
-See the section on streams below.
-
-The 4-bit ``Type`` field denotes the type of frame being sent.
-
-The 4-bit ``Flags`` field defines special, per-type attributes for
-the frame.
-
-The sections below define the frame types and their behavior.
-
-Command Request (``0x01``)
---------------------------
-
-This frame contains a request to run a command.
-
-The payload consists of a CBOR map defining the command request. The
-bytestring keys of that map are:
-
-name
-   Name of the command that should be executed (bytestring).
-args
-   Map of bytestring keys to various value types containing the named
-   arguments to this command.
-
-   Each command defines its own set of argument names and their expected
-   types.
-
-This frame type MUST ONLY be sent from clients to servers: it is illegal
-for a server to send this frame to a client.
-
-The following flag values are defined for this type:
-
-0x01
-   New command request. When set, this frame represents the beginning
-   of a new request to run a command. The ``Request ID`` attached to this
-   frame MUST NOT be active.
-0x02
-   Command request continuation. When set, this frame is a continuation
-   from a previous command request frame for its ``Request ID``. This
-   flag is set when the CBOR data for a command request does not fit
-   in a single frame.
-0x04
-   Additional frames expected. When set, the command request didn't fit
-   into a single frame and additional CBOR data follows in a subsequent
-   frame.
-0x08
-   Command data frames expected. When set, command data frames are
-   expected to follow the final command request frame for this request.
-
-``0x01`` MUST be set on the initial command request frame for a
-``Request ID``.
-
-``0x01`` or ``0x02`` MUST be set to indicate this frame's role in
-a series of command request frames.
-
-If command data frames are to be sent, ``0x08`` MUST be set on ALL
-command request frames.
-
-Command Data (``0x02``)
------------------------
-
-This frame contains raw data for a command.
-
-Most commands can be executed by specifying arguments. However,
-arguments have an upper bound to their length. For commands that
-accept data that is beyond this length or whose length isn't known
-when the command is initially sent, they will need to stream
-arbitrary data to the server. This frame type facilitates the sending
-of this data.
-
-The payload of this frame type consists of a stream of raw data to be
-consumed by the command handler on the server. The format of the data
-is command specific.
-
-The following flag values are defined for this type:
-
-0x01
-   Command data continuation. When set, the data for this command
-   continues into a subsequent frame.
-
-0x02
-   End of data. When set, command data has been fully sent to the
-   server. The command has been fully issued and no new data for this
-   command will be sent. The next frame will belong to a new command.
-
-Command Response Data (``0x03``)
---------------------------------
-
-This frame contains response data to an issued command.
-
-Response data ALWAYS consists of a series of 1 or more CBOR encoded
-values. A CBOR value may be using indefinite length encoding. And the
-bytes constituting the value may span several frames.
-
-The following flag values are defined for this type:
-
-0x01
-   Data continuation. When set, an additional frame containing response data
-   will follow.
-0x02
-   End of data. When set, the response data has been fully sent and
-   no additional frames for this response will be sent.
-
-The ``0x01`` flag is mutually exclusive with the ``0x02`` flag.
-
-Error Occurred (``0x05``)
--------------------------
-
-Some kind of error occurred.
-
-There are 3 general kinds of failures that can occur:
-
-* Command error encountered before any response issued
-* Command error encountered after a response was issued
-* Protocol or stream level error
-
-This frame type is used to capture the latter cases. (The general
-command error case is handled by the leading CBOR map in
-``Command Response`` frames.)
-
-The payload of this frame contains a CBOR map detailing the error. That
-map has the following bytestring keys:
-
-type
-   (bytestring) The overall type of error encountered. Can be one of the
-   following values:
-
-   protocol
-      A protocol-level error occurred. This typically means someone
-      is violating the framing protocol semantics and the server is
-      refusing to proceed.
-
-   server
-      A server-level error occurred. This typically indicates some kind of
-      logic error on the server, likely the fault of the server.
-
-   command
-      A command-level error, likely the fault of the client.
-
-message
-   (array of maps) A richly formatted message that is intended for
-   human consumption. See the ``Human Output Side-Channel`` frame
-   section for a description of the format of this data structure.
-
-Human Output Side-Channel (``0x06``)
-------------------------------------
-
-This frame contains a message that is intended to be displayed to
-people. Whereas most frames communicate machine readable data, this
-frame communicates textual data that is intended to be shown to
-humans.
-
-The frame consists of a series of *formatting requests*. Each formatting
-request consists of a formatting string, arguments for that formatting
-string, and labels to apply to that formatting string.
-
-A formatting string is a printf()-like string that allows variable
-substitution within the string. Labels allow the rendered text to be
-*decorated*. Assuming use of the canonical Mercurial code base, a
-formatting string can be the input to the ``i18n._`` function. This
-allows messages emitted from the server to be localized. So even if
-the server has different i18n settings, people could see messages in
-their *native* settings. Similarly, the use of labels allows
-decorations like coloring and underlining to be applied using the
-client's configured rendering settings.
-
-Formatting strings are similar to ``printf()`` strings or how
-Python's ``%`` operator works. The only supported formatting sequences
-are ``%s`` and ``%%``. ``%s`` will be replaced by whatever the string
-at that position resolves to. ``%%`` will be replaced by ``%``. All
-other 2-byte sequences beginning with ``%`` represent a literal
-``%`` followed by that character. However, future versions of the
-wire protocol reserve the right to allow clients to opt in to receiving
-formatting strings with additional formatters, hence why ``%%`` is
-required to represent the literal ``%``.
-
-The frame payload consists of a CBOR array of CBOR maps. Each map
-defines an *atom* of text data to print. Each *atom* has the following
-bytestring keys:
-
-msg
-   (bytestring) The formatting string. Content MUST be ASCII.
-args (optional)
-   Array of bytestrings defining arguments to the formatting string.
-labels (optional)
-   Array of bytestrings defining labels to apply to this atom.
-
-All data to be printed MUST be encoded into a single frame: this frame
-does not support spanning data across multiple frames.
-
-All textual data encoded in these frames is assumed to be line delimited.
-The last atom in the frame SHOULD end with a newline (``\n``). If it
-doesn't, clients MAY add a newline to facilitate immediate printing.
-
-Progress Update (``0x07``)
---------------------------
-
-This frame holds the progress of an operation on the peer. Consumption
-of these frames allows clients to display progress bars, estimated
-completion times, etc.
-
-Each frame defines the progress of a single operation on the peer. The
-payload consists of a CBOR map with the following bytestring keys:
-
-topic
-   Topic name (string)
-pos
-   Current numeric position within the topic (integer)
-total
-   Total/end numeric position of this topic (unsigned integer)
-label (optional)
-   Unit label (string)
-item (optional)
-   Item name (string)
-
-Progress state is created when a frame is received referencing a
-*topic* that isn't currently tracked. Progress tracking for that
-*topic* is finished when a frame is received reporting the current
-position of that topic as ``-1``.
-
-Multiple *topics* may be active at any given time.
-
-Rendering of progress information is not mandated or governed by this
-specification: implementations MAY render progress information however
-they see fit, including not at all.
-
-The string data describing the topic SHOULD be static strings to
-facilitate receivers localizing that string data. The emitter
-MUST normalize all string data to valid UTF-8 and receivers SHOULD
-validate that received data conforms to UTF-8. The topic name
-SHOULD be ASCII.
-
-Stream Encoding Settings (``0x08``)
------------------------------------
-
-This frame type holds information defining the content encoding
-settings for a *stream*.
-
-This frame type is likely consumed by the protocol layer and is not
-passed on to applications.
-
-This frame type MUST ONLY occur on frames having the *Beginning of Stream*
-``Stream Flag`` set.
-
-The payload of this frame defines what content encoding has (possibly)
-been applied to the payloads of subsequent frames in this stream.
-
-The payload begins with an 8-bit integer defining the length of the
-encoding *profile*, followed by the string name of that profile, which
-must be an ASCII string. All bytes that follow can be used by that
-profile for supplemental settings definitions. See the section below
-on defined encoding profiles.
-
-Stream States and Flags
------------------------
-
-Streams can be in two states: *open* and *closed*. An *open* stream
-is active and frames attached to that stream could arrive at any time.
-A *closed* stream is not active. If a frame attached to a *closed*
-stream arrives, that frame MUST have an appropriate stream flag
-set indicating beginning of stream. All streams are in the *closed*
-state by default.
-
-The ``Stream Flags`` field denotes a set of bit flags for defining
-the relationship of this frame within a stream. The following flags
-are defined:
-
-0x01
-   Beginning of stream. The first frame in the stream MUST set this
-   flag. When received, the ``Stream ID`` this frame is attached to
-   becomes ``open``.
-
-0x02
-   End of stream. The last frame in a stream MUST set this flag. When
-   received, the ``Stream ID`` this frame is attached to becomes
-   ``closed``. Any content encoding context associated with this stream
-   can be destroyed after processing the payload of this frame.
-
-0x04
-   Apply content encoding. When set, any content encoding settings
-   defined by the stream should be applied when attempting to read
-   the frame. When not set, the frame payload isn't encoded.
-
-Streams
--------
-
-Streams - along with ``Request IDs`` - facilitate grouping of frames.
-But the purpose of each is quite different and the groupings they
-constitute are independent.
-
-A ``Request ID`` is essentially a tag. It tells you which logical
-request a frame is associated with.
-
-A *stream* is a sequence of frames grouped for the express purpose
-of applying a stateful encoding or for denoting sub-groups of frames.
-
-Unlike ``Request ID``s which span the request and response, a stream
-is unidirectional and stream IDs are independent from client to
-server.
-
-There is no strict hierarchical relationship between ``Request IDs``
-and *streams*. A stream can contain frames having multiple
-``Request IDs``. Frames belonging to the same ``Request ID`` can
-span multiple streams.
-
-One goal of streams is to facilitate content encoding. A stream can
-define an encoding to be applied to frame payloads. For example, the
-payload transmitted over the wire may contain output from a
-zstandard compression operation and the receiving end may decompress
-that payload to obtain the original data.
-
-The other goal of streams is to facilitate concurrent execution. For
-example, a server could spawn 4 threads to service a request that can
-be easily parallelized. Each of those 4 threads could write into its
-own stream. Those streams could then in turn be delivered to 4 threads
-on the receiving end, with each thread consuming its stream in near
-isolation. The *main* thread on both ends merely does I/O and
-encodes/decodes frame headers: the bulk of the work is done by worker
-threads.
-
-In addition, since content encoding is defined per stream, each
-*worker thread* could perform potentially CPU bound work concurrently
-with other threads. This approach of applying encoding at the
-sub-protocol / stream level eliminates a potential resource constraint
-on the protocol stream as a whole (it is common for the throughput of
-a compression engine to be smaller than the throughput of a network).
-
-Having multiple streams - each with their own encoding settings - also
-facilitates the use of advanced data compression techniques. For
-example, a transmitter could see that it is generating data faster
-and slower than the receiving end is consuming it and adjust its
-compression settings to trade CPU for compression ratio accordingly.
-
-While streams can define a content encoding, not all frames within
-that stream must use that content encoding. This can be useful when
-data is being served from caches and being derived dynamically. A
-cache could pre-compressed data so the server doesn't have to
-recompress it. The ability to pick and choose which frames are
-compressed allows servers to easily send data to the wire without
-involving potentially expensive encoding overhead.
-
-Content Encoding Profiles
--------------------------
-
-Streams can have named content encoding *profiles* associated with
-them. A profile defines a shared understanding of content encoding
-settings and behavior.
-
-The following profiles are defined:
-
-TBD
-
-Command Protocol
-----------------
-
-A client can request that a remote run a command by sending it
-frames defining that command. This logical stream is composed of
-1 or more ``Command Request`` frames and and 0 or more ``Command Data``
-frames.
-
-All frames composing a single command request MUST be associated with
-the same ``Request ID``.
-
-Clients MAY send additional command requests without waiting on the
-response to a previous command request. If they do so, they MUST ensure
-that the ``Request ID`` field of outbound frames does not conflict
-with that of an active ``Request ID`` whose response has not yet been
-fully received.
-
-Servers MAY respond to commands in a different order than they were
-sent over the wire. Clients MUST be prepared to deal with this. Servers
-also MAY start executing commands in a different order than they were
-received, or MAY execute multiple commands concurrently.
-
-If there is a dependency between commands or a race condition between
-commands executing (e.g. a read-only command that depends on the results
-of a command that mutates the repository), then clients MUST NOT send
-frames issuing a command until a response to all dependent commands has
-been received.
-TODO think about whether we should express dependencies between commands
-to avoid roundtrip latency.
-
-A command is defined by a command name, 0 or more command arguments,
-and optional command data.
-
-Arguments are the recommended mechanism for transferring fixed sets of
-parameters to a command. Data is appropriate for transferring variable
-data. Thinking in terms of HTTP, arguments would be headers and data
-would be the message body.
-
-It is recommended for servers to delay the dispatch of a command
-until all argument have been received. Servers MAY impose limits on the
-maximum argument size.
-TODO define failure mechanism.
-
-Servers MAY dispatch to commands immediately once argument data
-is available or delay until command data is received in full.
-
-Once a ``Command Request`` frame is sent, a client must be prepared to
-receive any of the following frames associated with that request:
-``Command Response``, ``Error Response``, ``Human Output Side-Channel``,
-``Progress Update``.
-
-The *main* response for a command will be in ``Command Response`` frames.
-The payloads of these frames consist of 1 or more CBOR encoded values.
-The first CBOR value on the first ``Command Response`` frame is special
-and denotes the overall status of the command. This CBOR map contains
-the following bytestring keys:
-
-status
-   (bytestring) A well-defined message containing the overall status of
-   this command request. The following values are defined:
-
-   ok
-      The command was received successfully and its response follows.
-   error
-      There was an error processing the command. More details about the
-      error are encoded in the ``error`` key.
-
-error (optional)
-   A map containing information about an encountered error. The map has the
-   following keys:
-
-   message
-      (array of maps) A message describing the error. The message uses the
-      same format as those in the ``Human Output Side-Channel`` frame.
-
 Capabilities
 ============
 
@@ -1199,6 +702,25 @@ Whether the server supports the ``known`` command.
 
 This capability/command was introduced in Mercurial 1.9 (released July 2011).
 
+lfs
+---
+
+Indicates that the LFS extension is enabled on the server.  It makes no claims
+about the repository actually having LFS blobs committed to it.
+
+This capability was introduced by the LFS extension in Mercurial 4.5 (released
+Feb 2018).
+
+lfs-serve
+---------
+
+Indicates that the LFS extension is enabled on the server, and LFS blobs are
+committed to the remote repository.  (Specifically, it indicates that the 'lfs'
+requirement is present in the remote repository.)
+
+This capability was introduced by the LFS extension in Mercurial 4.8 (released
+Nov 2018).
+
 lookup
 ------
 
@@ -1378,6 +900,9 @@ Commands
 
 This section contains a list of all wire protocol commands implemented by
 the canonical Mercurial server.
+
+See :hg:`help internals.wireprotocolv2` for information on commands exposed
+to the frame-based protocol.
 
 batch
 -----
@@ -1750,164 +1275,3 @@ response is zlib compressed.
 
 The server may also respond with a generic error type, which contains a string
 indicating the failure.
-
-Frame-Based Protocol Commands
-=============================
-
-**Experimental and under active development**
-
-This section documents the wire protocol commands exposed to transports
-using the frame-based protocol. The set of commands exposed through
-these transports is distinct from the set of commands exposed to legacy
-transports.
-
-The frame-based protocol uses CBOR to encode command execution requests.
-All command arguments must be mapped to a specific or set of CBOR data
-types.
-
-The response to many commands is also CBOR. There is no common response
-format: each command defines its own response format.
-
-TODO require node type be specified, as N bytes of binary node value
-could be ambiguous once SHA-1 is replaced.
-
-branchmap
----------
-
-Obtain heads in named branches.
-
-Receives no arguments.
-
-The response is a map with bytestring keys defining the branch name.
-Values are arrays of bytestring defining raw changeset nodes.
-
-capabilities
-------------
-
-Obtain the server's capabilities.
-
-Receives no arguments.
-
-This command is typically called only as part of the handshake during
-initial connection establishment.
-
-The response is a map with bytestring keys defining server information.
-
-The defined keys are:
-
-commands
-   A map defining available wire protocol commands on this server.
-
-   Keys in the map are the names of commands that can be invoked. Values
-   are maps defining information about that command. The bytestring keys
-   are:
-
-      args
-         A map of argument names and their expected types.
-
-         Types are defined as a representative value for the expected type.
-         e.g. an argument expecting a boolean type will have its value
-         set to true. An integer type will have its value set to 42. The
-         actual values are arbitrary and may not have meaning.
-      permissions
-         An array of permissions required to execute this command.
-
-compression
-   An array of maps defining available compression format support.
-
-   The array is sorted from most preferred to least preferred.
-
-   Each entry has the following bytestring keys:
-
-      name
-         Name of the compression engine. e.g. ``zstd`` or ``zlib``.
-
-framingmediatypes
-   An array of bytestrings defining the supported framing protocol
-   media types. Servers will not accept media types not in this list.
-
-rawrepoformats
-   An array of storage formats the repository is using. This set of
-   requirements can be used to determine whether a client can read a
-   *raw* copy of file data available.
-
-heads
------
-
-Obtain DAG heads in the repository.
-
-The command accepts the following arguments:
-
-publiconly (optional)
-   (boolean) If set, operate on the DAG for public phase changesets only.
-   Non-public (i.e. draft) phase DAG heads will not be returned.
-
-The response is a CBOR array of bytestrings defining changeset nodes
-of DAG heads. The array can be empty if the repository is empty or no
-changesets satisfied the request.
-
-TODO consider exposing phase of heads in response
-
-known
------
-
-Determine whether a series of changeset nodes is known to the server.
-
-The command accepts the following arguments:
-
-nodes
-   (array of bytestrings) List of changeset nodes whose presence to
-   query.
-
-The response is a bytestring where each byte contains a 0 or 1 for the
-corresponding requested node at the same index.
-
-TODO use a bit array for even more compact response
-
-listkeys
---------
-
-List values in a specified ``pushkey`` namespace.
-
-The command receives the following arguments:
-
-namespace
-   (bytestring) Pushkey namespace to query.
-
-The response is a map with bytestring keys and values.
-
-TODO consider using binary to represent nodes in certain pushkey namespaces.
-
-lookup
-------
-
-Try to resolve a value to a changeset revision.
-
-Unlike ``known`` which operates on changeset nodes, lookup operates on
-node fragments and other names that a user may use.
-
-The command receives the following arguments:
-
-key
-   (bytestring) Value to try to resolve.
-
-On success, returns a bytestring containing the resolved node.
-
-pushkey
--------
-
-Set a value using the ``pushkey`` protocol.
-
-The command receives the following arguments:
-
-namespace
-   (bytestring) Pushkey namespace to operate on.
-key
-   (bytestring) The pushkey key to set.
-old
-   (bytestring) Old value for this key.
-new
-   (bytestring) New value for this key.
-
-TODO consider using binary to represent nodes is certain pushkey namespaces.
-TODO better define response type and meaning.

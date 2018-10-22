@@ -123,11 +123,26 @@ from . import (
 
 _fphasesentry = struct.Struct('>i20s')
 
-allphases = public, draft, secret = range(3)
+INTERNAL_FLAG = 64 # Phases for mercurial internal usage only
+HIDEABLE_FLAG = 32 # Phases that are hideable
+
+# record phase index
+public, draft, secret = range(3)
+internal = INTERNAL_FLAG | HIDEABLE_FLAG
+allphases = range(internal + 1)
 trackedphases = allphases[1:]
-phasenames = ['public', 'draft', 'secret']
+# record phase names
+phasenames = [None] * len(allphases)
+phasenames[:3] = ['public', 'draft', 'secret']
+phasenames[internal] = 'internal'
+# record phase property
 mutablephases = tuple(allphases[1:])
 remotehiddenphases = tuple(allphases[2:])
+localhiddenphases = tuple(p for p in allphases if p & HIDEABLE_FLAG)
+
+def supportinternal(repo):
+    """True if the internal phase can be used on a repository"""
+    return 'internal-phase' in repo.requirements
 
 def _readroots(repo, phasedefaults=None):
     """Read phase roots from disk
@@ -272,19 +287,16 @@ class phasecache(object):
         repo = repo.unfiltered()
         cl = repo.changelog
         self._phasesets = [set() for phase in allphases]
-        roots = pycompat.maplist(cl.rev, self.phaseroots[secret])
-        if roots:
-            ps = set(cl.descendants(roots))
-            for root in roots:
-                ps.add(root)
-            self._phasesets[secret] = ps
-        roots = pycompat.maplist(cl.rev, self.phaseroots[draft])
-        if roots:
-            ps = set(cl.descendants(roots))
-            for root in roots:
-                ps.add(root)
-            ps.difference_update(self._phasesets[secret])
-            self._phasesets[draft] = ps
+        lowerroots = set()
+        for phase in reversed(trackedphases):
+            roots = pycompat.maplist(cl.rev, self.phaseroots[phase])
+            if roots:
+                ps = set(cl.descendants(roots))
+                for root in roots:
+                    ps.add(root)
+                ps.difference_update(lowerroots)
+                lowerroots.update(ps)
+                self._phasesets[phase] = ps
         self._loadedrevslen = len(cl)
 
     def loadphaserevs(self, repo):
@@ -374,7 +386,7 @@ class phasecache(object):
 
         changes = set() # set of revisions to be changed
         delroots = [] # set of root deleted by this path
-        for phase in xrange(targetphase + 1, len(allphases)):
+        for phase in pycompat.xrange(targetphase + 1, len(allphases)):
             # filter nodes that are not in a compatible phase already
             nodes = [n for n in nodes
                      if self.phase(repo, repo[n].rev()) >= phase]
@@ -420,7 +432,7 @@ class phasecache(object):
             affected = set(repo.revs('(%ln::) - (%ln::)', new, old))
 
             # find the phase of the affected revision
-            for phase in xrange(targetphase, -1, -1):
+            for phase in pycompat.xrange(targetphase, -1, -1):
                 if phase:
                     roots = oldroots[phase]
                     revs = set(repo.revs('%ln::%ld', roots, affected))
@@ -434,6 +446,9 @@ class phasecache(object):
     def _retractboundary(self, repo, tr, targetphase, nodes):
         # Be careful to preserve shallow-copied values: do not update
         # phaseroots values, replace them.
+        if targetphase == internal and not supportinternal(repo):
+            msg = 'this repository does not support the internal phase'
+            raise error.ProgrammingError(msg)
 
         repo = repo.unfiltered()
         currentroots = self.phaseroots[targetphase]
@@ -589,7 +604,7 @@ def subsetphaseheads(repo, subset):
     headsbyphase = [[] for i in allphases]
     # No need to keep track of secret phase; any heads in the subset that
     # are not mentioned are implicitly secret.
-    for phase in allphases[:-1]:
+    for phase in allphases[:secret]:
         revset = "heads(%%ln & %s())" % phasenames[phase]
         headsbyphase[phase] = [cl.node(r) for r in repo.revs(revset, subset)]
     return headsbyphase
@@ -602,8 +617,8 @@ def updatephases(repo, trgetter, headsbyphase):
     # to update. This avoid creating empty transaction during no-op operation.
 
     for phase in allphases[:-1]:
-        revset = '%%ln - %s()' % phasenames[phase]
-        heads = [c.node() for c in repo.set(revset, headsbyphase[phase])]
+        revset = '%ln - _phase(%s)'
+        heads = [c.node() for c in repo.set(revset, headsbyphase[phase], phase)]
         if heads:
             advanceboundary(repo, trgetter(), phase, heads)
 

@@ -44,11 +44,12 @@ command = registrar.command(cmdtable)
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
-@command('^split',
+@command('split',
     [('r', 'rev', '', _("revision to split"), _('REV')),
      ('', 'rebase', True, _('rebase descendants after split')),
     ] + cmdutil.commitopts2,
-    _('hg split [--no-rebase] [[-r] REV]'))
+    _('hg split [--no-rebase] [[-r] REV]'),
+    helpcategory=command.CATEGORY_CHANGE_MANAGEMENT, helpbasic=True)
 def split(ui, repo, *revs, **opts):
     """split a changeset into smaller ones
 

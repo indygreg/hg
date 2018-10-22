@@ -60,7 +60,7 @@ The extension requires a repo (currently unused)
   adding file changes
   added 8 changesets with 7 changes to 7 files (+3 heads)
   pre-close-tip:02de42196ebe draft 
-  new changesets cd010b8cd998:02de42196ebe
+  new changesets cd010b8cd998:02de42196ebe (8 drafts)
   postclose-tip:02de42196ebe draft 
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NODE=cd010b8cd998f3981a5a8115f94f8da4ab506089 HG_NODE_LAST=02de42196ebee42ef284b6780a87cdc96e8eaab6 HG_PHASES_MOVED=1 HG_SOURCE=unbundle HG_TXNID=TXN:$ID$ HG_TXNNAME=unbundle
   bundle:*/tests/bundles/rebase.hg HG_URL=bundle:*/tests/bundles/rebase.hg (glob)
@@ -95,7 +95,7 @@ clone --pull
   added 2 changesets with 2 changes to 2 files
   1 new obsolescence markers
   pre-close-tip:9520eea781bc draft 
-  new changesets cd010b8cd998:9520eea781bc
+  new changesets cd010b8cd998:9520eea781bc (1 drafts)
   postclose-tip:9520eea781bc draft 
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_NODE=cd010b8cd998f3981a5a8115f94f8da4ab506089 HG_NODE_LAST=9520eea781bcca16c1e15acc0ba14335a0e8e5ba HG_PHASES_MOVED=1 HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_TXNNAME=pull
   file:/*/$TESTTMP/main HG_URL=file:$TESTTMP/main (glob)
@@ -124,7 +124,7 @@ pull
   added 1 changesets with 1 changes to 1 files (+1 heads)
   1 new obsolescence markers
   pre-close-tip:24b6387c8c8c draft 
-  new changesets 24b6387c8c8c
+  new changesets 24b6387c8c8c (1 drafts)
   postclose-tip:24b6387c8c8c draft 
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_NODE=24b6387c8c8cae37178880f3fa95ded3cb1cf785 HG_NODE_LAST=24b6387c8c8cae37178880f3fa95ded3cb1cf785 HG_PHASES_MOVED=1 HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_TXNNAME=pull
   file:/*/$TESTTMP/main HG_URL=file:$TESTTMP/main (glob)
@@ -300,7 +300,7 @@ pull over ssh
   1 new obsolescence markers
   updating bookmark book_02de
   pre-close-tip:02de42196ebe draft book_02de
-  new changesets 02de42196ebe
+  new changesets 02de42196ebe (1 drafts)
   postclose-tip:02de42196ebe draft book_02de
   txnclose hook: HG_BOOKMARK_MOVED=1 HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_NODE=02de42196ebee42ef284b6780a87cdc96e8eaab6 HG_NODE_LAST=02de42196ebee42ef284b6780a87cdc96e8eaab6 HG_PHASES_MOVED=1 HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_TXNNAME=pull
   ssh://user@dummy/main HG_URL=ssh://user@dummy/main
@@ -326,7 +326,7 @@ pull over http
   1 new obsolescence markers
   updating bookmark book_42cc
   pre-close-tip:42ccdea3bb16 draft book_42cc
-  new changesets 42ccdea3bb16
+  new changesets 42ccdea3bb16 (1 drafts)
   postclose-tip:42ccdea3bb16 draft book_42cc
   txnclose hook: HG_BOOKMARK_MOVED=1 HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=1 HG_NODE=42ccdea3bb16d28e1848c95fe2e44c000f3f21b1 HG_NODE_LAST=42ccdea3bb16d28e1848c95fe2e44c000f3f21b1 HG_PHASES_MOVED=1 HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_TXNNAME=pull
   http://localhost:$HGPORT/ HG_URL=http://localhost:$HGPORT/
@@ -587,21 +587,21 @@ Doing the actual push: race
   pushing to other
   searching for changes
   abort: push failed:
-  'repository changed while pushing - please try again'
+  'remote repository changed while pushing - please try again'
   [255]
 
   $ hg -R main push ssh://user@dummy/other -r e7ec4e813ba6
   pushing to ssh://user@dummy/other
   searching for changes
   abort: push failed:
-  'repository changed while pushing - please try again'
+  'remote repository changed while pushing - please try again'
   [255]
 
   $ hg -R main push http://localhost:$HGPORT2/ -r e7ec4e813ba6
   pushing to http://localhost:$HGPORT2/
   searching for changes
   abort: push failed:
-  'repository changed while pushing - please try again'
+  'remote repository changed while pushing - please try again'
   [255]
 
 Doing the actual push: hook abort
@@ -934,7 +934,7 @@ Test lazily acquiring the lock during unbundle
 
   $ cat >> $TESTTMP/locktester.py <<EOF
   > import os
-  > from mercurial import extensions, bundle2, error
+  > from mercurial import bundle2, error, extensions
   > def checklock(orig, repo, *args, **kwargs):
   >     if repo.svfs.lexists(b"lock"):
   >         raise error.Abort(b"Lock should not be taken")

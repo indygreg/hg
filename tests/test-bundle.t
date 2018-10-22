@@ -33,7 +33,7 @@ Setting up test
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 9 changesets, 7 total revisions
+  checked 9 changesets with 7 changes to 4 files
   $ cd ..
   $ hg init empty
 
@@ -75,7 +75,7 @@ Verify empty
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  0 files, 0 changesets, 0 total revisions
+  checked 0 changesets with 0 changes to 0 files
 
 #if repobundlerepo
 
@@ -100,7 +100,7 @@ Pull full.hg into empty (using --cwd)
   adding manifests
   adding file changes
   added 9 changesets with 7 changes to 4 files (+1 heads)
-  new changesets f9ee2f85a263:aa35859c02ea
+  new changesets f9ee2f85a263:aa35859c02ea (9 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
 Rollback empty
@@ -117,7 +117,7 @@ Pull full.hg into empty again (using --cwd)
   adding manifests
   adding file changes
   added 9 changesets with 7 changes to 4 files (+1 heads)
-  new changesets f9ee2f85a263:aa35859c02ea
+  new changesets f9ee2f85a263:aa35859c02ea (9 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
 Pull full.hg into test (using -R)
@@ -148,7 +148,7 @@ Pull full.hg into empty again (using -R)
   adding manifests
   adding file changes
   added 9 changesets with 7 changes to 4 files (+1 heads)
-  new changesets f9ee2f85a263:aa35859c02ea
+  new changesets f9ee2f85a263:aa35859c02ea (9 drafts)
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
 Log -R full.hg in fresh empty
@@ -231,7 +231,7 @@ hg -R bundle://../full.hg verify
   adding manifests
   adding file changes
   added 9 changesets with 7 changes to 4 files (+1 heads)
-  new changesets f9ee2f85a263:aa35859c02ea
+  new changesets f9ee2f85a263:aa35859c02ea (9 drafts)
   changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=f9ee2f85a263049e9ae6d37a0e67e96194ffb735 HG_NODE_LAST=aa35859c02ea8bd48da5da68cd2740ac71afcbaf HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_URL=bundle*../full.hg (glob)
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
@@ -255,7 +255,7 @@ Pull full.hg into empty again (using -R; with hook)
   adding manifests
   adding file changes
   added 9 changesets with 7 changes to 4 files (+1 heads)
-  new changesets f9ee2f85a263:aa35859c02ea
+  new changesets f9ee2f85a263:aa35859c02ea (9 drafts)
   changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=f9ee2f85a263049e9ae6d37a0e67e96194ffb735 HG_NODE_LAST=aa35859c02ea8bd48da5da68cd2740ac71afcbaf HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_URL=bundle:empty+full.hg
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
@@ -556,7 +556,7 @@ Direct clone from bundle (all-history)
   adding manifests
   adding file changes
   added 9 changesets with 7 changes to 4 files (+1 heads)
-  new changesets f9ee2f85a263:aa35859c02ea
+  new changesets f9ee2f85a263:aa35859c02ea (9 drafts)
   updating to branch default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg -R full-clone heads
@@ -596,12 +596,12 @@ Unbundle incremental bundles into fresh empty in one go
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets f9ee2f85a263
+  new changesets f9ee2f85a263 (1 drafts)
   adding changesets
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 34c2bf6b0626
+  new changesets 34c2bf6b0626 (1 drafts)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 View full contents of the bundle
@@ -729,7 +729,7 @@ but, regular verify must continue to work
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  2 files, 2 changesets, 2 total revisions
+  checked 2 changesets with 2 changes to 2 files
 
 #if repobundlerepo
 diff against bundle
@@ -796,13 +796,13 @@ bundle single branch
   057f4db07f61970e1c11e83be79e9d08adc4dc31
   bundle2-output-bundle: "HG20", (1 params) 2 parts total
   bundle2-output-part: "changegroup" (params: 1 mandatory 1 advisory) streamed payload
-  bundling: 1/2 changesets (50.00%)
-  bundling: 2/2 changesets (100.00%)
-  bundling: 1/2 manifests (50.00%)
-  bundling: 2/2 manifests (100.00%)
-  bundling: b 1/3 files (33.33%)
-  bundling: b1 2/3 files (66.67%)
-  bundling: x 3/3 files (100.00%)
+  changesets: 1/2 chunks (50.00%)
+  changesets: 2/2 chunks (100.00%)
+  manifests: 1/2 chunks (50.00%)
+  manifests: 2/2 chunks (100.00%)
+  files: b 1/3 files (33.33%)
+  files: b1 2/3 files (66.67%)
+  files: x 3/3 files (100.00%)
   bundle2-output-part: "cache:rev-branch-cache" (advisory) streamed payload
 
 #if repobundlerepo
@@ -815,7 +815,7 @@ bundle single branch
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  4 files, 3 changesets, 5 total revisions
+  checked 3 changesets with 5 changes to 4 files
 #endif
 
 == Test bundling no commits

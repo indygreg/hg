@@ -559,7 +559,8 @@ class sqlitefilestore(object):
         return not storageutil.filedataequivalent(self, node, fulltext)
 
     def emitrevisions(self, nodes, nodesorder=None, revisiondata=False,
-                      assumehaveparentrevisions=False, deltaprevious=False):
+                      assumehaveparentrevisions=False,
+                      deltamode=repository.CG_DELTAMODE_STD):
         if nodesorder not in ('nodes', 'storage', None):
             raise error.ProgrammingError('unhandled value for nodesorder: %s' %
                                          nodesorder)
@@ -590,7 +591,7 @@ class sqlitefilestore(object):
             deltaparentfn=deltabases.__getitem__,
             revisiondata=revisiondata,
             assumehaveparentrevisions=assumehaveparentrevisions,
-            deltaprevious=deltaprevious):
+            deltamode=deltamode):
 
             yield delta
 

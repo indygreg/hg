@@ -144,12 +144,7 @@ Test that extending already included files should not call narrow_widen
 wireprotocol command
 
   $ hg tracked --addinclude widest/f
-  comparing with ssh://user@dummy/master
-  searching for changes
-  adding changesets
-  adding manifests
-  adding file changes
-  added 0 changesets with 0 changes to 0 files
+  nothing to widen or narrow
 
 Pull down the newly added upstream revision.
 

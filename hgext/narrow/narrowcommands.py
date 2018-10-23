@@ -392,9 +392,21 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     removedincludes = narrowspec.parsepatterns(opts['removeinclude'])
     addedexcludes = narrowspec.parsepatterns(opts['addexclude'])
     removedexcludes = narrowspec.parsepatterns(opts['removeexclude'])
+
+    only_show = not (addedincludes or removedincludes or addedexcludes or
+                     removedexcludes or newrules)
+
+    oldincludes, oldexcludes = repo.narrowpats
+
+    # filter the user passed additions and deletions into actual additions and
+    # deletions of excludes and includes
+    addedincludes = set([i for i in addedincludes if i not in oldincludes])
+    removedincludes = set([i for i in removedincludes if i in oldincludes])
+    addedexcludes = set([i for i in addedexcludes if i not in oldexcludes])
+    removedexcludes = set([i for i in removedexcludes if i in oldexcludes])
+
     widening = addedincludes or removedexcludes
     narrowing = removedincludes or addedexcludes
-    only_show = not widening and not narrowing
 
     # Only print the current narrowspec.
     if only_show:
@@ -411,6 +423,10 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
             fm.write('status', '%s ', 'X', label='narrow.excluded')
             fm.write('pat', '%s\n', i, label='narrow.excluded')
         fm.end()
+        return 0
+
+    if not widening and not narrowing:
+        ui.status(_("nothing to widen or narrow\n"))
         return 0
 
     with repo.wlock(), repo.lock():
@@ -432,7 +448,6 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
 
         commoninc = discovery.findcommonincoming(repo, remote)
 
-        oldincludes, oldexcludes = repo.narrowpats
         if narrowing:
             newincludes = oldincludes - removedincludes
             newexcludes = oldexcludes | addedexcludes

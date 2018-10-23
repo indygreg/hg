@@ -58,7 +58,11 @@ gracefully:
   comparing with http://localhost:$HGPORT1/
   searching for changes
   looking for local changes to affected paths
+
   $ hg tracked --addinclude f1 http://localhost:$HGPORT1/
+  nothing to widen or narrow
+
+  $ hg tracked --addinclude f9 http://localhost:$HGPORT1/
   comparing with http://localhost:$HGPORT1/
   abort: server does not support narrow clones
   [255]

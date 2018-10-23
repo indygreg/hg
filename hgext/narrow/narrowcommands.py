@@ -400,10 +400,10 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
 
     # filter the user passed additions and deletions into actual additions and
     # deletions of excludes and includes
-    addedincludes = set([i for i in addedincludes if i not in oldincludes])
-    removedincludes = set([i for i in removedincludes if i in oldincludes])
-    addedexcludes = set([i for i in addedexcludes if i not in oldexcludes])
-    removedexcludes = set([i for i in removedexcludes if i in oldexcludes])
+    addedincludes -= oldincludes
+    removedincludes &= oldincludes
+    addedexcludes -= oldexcludes
+    removedexcludes &= oldexcludes
 
     widening = addedincludes or removedexcludes
     narrowing = removedincludes or addedexcludes

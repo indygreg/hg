@@ -309,6 +309,7 @@ test-linelog.py
 test-linerange.py
 test-locate.t
 test-lock-badness.t
+test-log-exthook.t
 test-log-linerange.t
 test-log.t
 test-logexchange.t

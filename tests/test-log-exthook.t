@@ -9,10 +9,12 @@ Test hg log changeset printer external hook
   >   logcmdutil,
   >   repair,
   > )
+  > def brot13(b):
+  >     return codecs.encode(b.decode('utf8'), 'rot-13').encode('utf8')
   > def rot13description(self, ctx):
-  >     summary = codecs.encode("summary", 'rot-13')
-  >     description = ctx.description().strip().splitlines()[0].encode('rot13')
-  >     self.ui.write("%s:     %s\n" % (summary, description))
+  >     description = ctx.description().strip().splitlines()[0]
+  >     self.ui.write(b"%s:     %s\n" % (brot13(b"summary"),
+  >                                      brot13(description)))
   > def reposetup(ui, repo):
   >     logcmdutil.changesetprinter._exthook = rot13description
   > EOF

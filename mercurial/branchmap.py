@@ -281,7 +281,7 @@ class branchcache(dict):
         newbranches = {}
         getbranchinfo = repo.revbranchcache().branchinfo
         for r in revgen:
-            branch, closesbranch = getbranchinfo(r, changelog=cl)
+            branch, closesbranch = getbranchinfo(r)
             newbranches.setdefault(branch, []).append(r)
             if closesbranch:
                 self._closednodes.add(cl.node(r))
@@ -407,10 +407,10 @@ class revbranchcache(object):
         self._rbcrevslen = len(self._repo.changelog)
         self._rbcrevs = bytearray(self._rbcrevslen * _rbcrecsize)
 
-    def branchinfo(self, rev, changelog=None):
+    def branchinfo(self, rev):
         """Return branch name and close flag for rev, using and updating
         persistent cache."""
-        changelog = changelog or self._repo.changelog
+        changelog = self._repo.changelog
         rbcrevidx = rev * _rbcrecsize
 
         # avoid negative index, changelog.read(nullrev) is fast without cache
@@ -419,7 +419,7 @@ class revbranchcache(object):
 
         # if requested rev isn't allocated, grow and cache the rev info
         if len(self._rbcrevs) < rbcrevidx + _rbcrecsize:
-            return self._branchinfo(rev, changelog=changelog)
+            return self._branchinfo(rev)
 
         # fast path: extract data from cache, use it if node is matching
         reponode = changelog.node(rev)[:_rbcnodelen]
@@ -447,11 +447,11 @@ class revbranchcache(object):
             self._rbcrevslen = min(self._rbcrevslen, truncate)
 
         # fall back to slow path and make sure it will be written to disk
-        return self._branchinfo(rev, changelog=changelog)
+        return self._branchinfo(rev)
 
-    def _branchinfo(self, rev, changelog=None):
+    def _branchinfo(self, rev):
         """Retrieve branch info from changelog and update _rbcrevs"""
-        changelog = changelog or self._repo.changelog
+        changelog = self._repo.changelog
         b, close = changelog.branchinfo(rev)
         if b in self._namesreverse:
             branchidx = self._namesreverse[b]
@@ -462,7 +462,7 @@ class revbranchcache(object):
         reponode = changelog.node(rev)
         if close:
             branchidx |= _rbccloseflag
-        self._setcachedata(rev, reponode, branchidx, changelog)
+        self._setcachedata(rev, reponode, branchidx)
         return b, close
 
     def setdata(self, branch, rev, node, close):
@@ -485,16 +485,14 @@ class revbranchcache(object):
         if r'branchinfo' in vars(self):
             del self.branchinfo
 
-    def _setcachedata(self, rev, node, branchidx, changelog=None):
+    def _setcachedata(self, rev, node, branchidx):
         """Writes the node's branch data to the in-memory cache data."""
         if rev == nullrev:
             return
-
-        changelog = changelog or self._repo.changelog
         rbcrevidx = rev * _rbcrecsize
         if len(self._rbcrevs) < rbcrevidx + _rbcrecsize:
             self._rbcrevs.extend('\0' *
-                                 (len(changelog) * _rbcrecsize -
+                                 (len(self._repo.changelog) * _rbcrecsize -
                                   len(self._rbcrevs)))
         pack_into(_rbcrecfmt, self._rbcrevs, rbcrevidx, node, branchidx)
         self._rbcrevslen = min(self._rbcrevslen, rev)

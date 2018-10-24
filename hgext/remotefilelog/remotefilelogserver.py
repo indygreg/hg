@@ -178,18 +178,6 @@ def onetimesetup(ui):
 
     extensions.wrapfunction(streamclone, '_walkstreamfiles', _walkstreamfiles)
 
-    # We no longer use getbundle_shallow commands, but we must still
-    # support it for migration purposes
-    def getbundleshallow(repo, proto, others):
-        bundlecaps = others.get('bundlecaps', '')
-        bundlecaps = set(bundlecaps.split(','))
-        bundlecaps.add(constants.BUNDLE2_CAPABLITY)
-        others['bundlecaps'] = ','.join(bundlecaps)
-
-        return wireprotov1server.commands["getbundle"][0](repo, proto, others)
-
-    wireprotov1server.commands["getbundle_shallow"] = (getbundleshallow, '*')
-
     # expose remotefilelog capabilities
     def _capabilities(orig, repo, proto):
         caps = orig(repo, proto)

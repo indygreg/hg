@@ -121,6 +121,7 @@ from mercurial import (
     revset,
     scmutil,
     smartset,
+    streamclone,
     templatekw,
     util,
 )
@@ -141,13 +142,6 @@ from . import (
 
 # ensures debug commands are registered
 hgdebugcommands.command
-
-try:
-    from mercurial import streamclone
-    streamclone._walkstreamfiles
-    hasstreamclone = True
-except Exception:
-    hasstreamclone = False
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -305,36 +299,28 @@ def cloneshallow(orig, ui, repo, *args, **opts):
                 else:
                     return orig()
             extensions.wrapfunction(remote, 'stream_out', stream_out_shallow)
-        if hasstreamclone:
-            def stream_wrap(orig, op):
-                setup_streamout(op.repo, op.remote)
-                return orig(op)
-            extensions.wrapfunction(
-                streamclone, 'maybeperformlegacystreamclone', stream_wrap)
+        def stream_wrap(orig, op):
+            setup_streamout(op.repo, op.remote)
+            return orig(op)
+        extensions.wrapfunction(
+            streamclone, 'maybeperformlegacystreamclone', stream_wrap)
 
-            def canperformstreamclone(orig, pullop, bundle2=False):
-                # remotefilelog is currently incompatible with the
-                # bundle2 flavor of streamclones, so force us to use
-                # v1 instead.
-                if 'v2' in pullop.remotebundle2caps.get('stream', []):
-                    pullop.remotebundle2caps['stream'] = [
-                        c for c in pullop.remotebundle2caps['stream']
-                        if c != 'v2']
-                if bundle2:
-                    return False, None
-                supported, requirements = orig(pullop, bundle2=bundle2)
-                if requirements is not None:
-                    requirements.add(constants.SHALLOWREPO_REQUIREMENT)
-                return supported, requirements
-            extensions.wrapfunction(
-                streamclone, 'canperformstreamclone', canperformstreamclone)
-        else:
-            def stream_in_shallow(orig, repo, remote, requirements):
-                setup_streamout(repo, remote)
+        def canperformstreamclone(orig, pullop, bundle2=False):
+            # remotefilelog is currently incompatible with the
+            # bundle2 flavor of streamclones, so force us to use
+            # v1 instead.
+            if 'v2' in pullop.remotebundle2caps.get('stream', []):
+                pullop.remotebundle2caps['stream'] = [
+                    c for c in pullop.remotebundle2caps['stream']
+                    if c != 'v2']
+            if bundle2:
+                return False, None
+            supported, requirements = orig(pullop, bundle2=bundle2)
+            if requirements is not None:
                 requirements.add(constants.SHALLOWREPO_REQUIREMENT)
-                return orig(repo, remote, requirements)
-            extensions.wrapfunction(
-                localrepo.localrepository, 'stream_in', stream_in_shallow)
+            return supported, requirements
+        extensions.wrapfunction(
+            streamclone, 'canperformstreamclone', canperformstreamclone)
 
     try:
         orig(ui, repo, *args, **opts)

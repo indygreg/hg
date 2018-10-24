@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 import itertools
 import os
+import re
 import textwrap
 
 from .i18n import (
@@ -30,6 +31,7 @@ from . import (
     templatefilters,
     templatefuncs,
     templatekw,
+    ui as uimod,
     util,
 )
 from .hgweb import (
@@ -408,6 +410,16 @@ addtopicsymbols('templates', '.. filtersmarker', templatefilters.filters)
 addtopicsymbols('templates', '.. functionsmarker', templatefuncs.funcs)
 addtopicsymbols('hgweb', '.. webcommandsmarker', webcommands.commands,
                 dedent=True)
+
+def inserttweakrc(ui, topic, doc):
+    marker = '.. tweakdefaultsmarker'
+    repl = uimod.tweakrc
+    def sub(m):
+        lines = [m.group(1) + s for s in repl.splitlines()]
+        return '\n'.join(lines)
+    return re.sub(br'( *)%s' % re.escape(marker), sub, doc)
+
+addtopichook('config', inserttweakrc)
 
 def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
           **opts):

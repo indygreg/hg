@@ -2370,6 +2370,10 @@ User interface controls.
     effect if ``HGPLAIN`` is set or ``HGPLAINEXCEPT`` is set and does
     not include ``tweakdefaults``. (default: False)
 
+    It currently means::
+
+      .. tweakdefaultsmarker
+
 ``username``
     The committer of a changeset created when running "commit".
     Typically a person's name and email address, e.g. ``Fred Widget

@@ -1172,7 +1172,7 @@ def debugindexstats(ui, repo):
     if not util.safehasattr(index, 'stats'):
         raise error.Abort(_('debugindexstats only works with native code'))
     for k, v in sorted(index.stats().items()):
-        ui.write('%s: %s\n' % (k, v))
+        ui.write('%s: %d\n' % (k, v))
 
 @command('debuginstall', [] + cmdutil.formatteropts, '', norepo=True)
 def debuginstall(ui, **opts):

@@ -348,6 +348,7 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 static PyObject *index_stats(indexObject *self)
 {
 	PyObject *obj = PyDict_New();
+	PyObject *s = NULL;
 	PyObject *t = NULL;
 
 	if (obj == NULL)
@@ -355,22 +356,26 @@ static PyObject *index_stats(indexObject *self)
 
 #define istat(__n, __d) \
 	do { \
+		s = PyBytes_FromString(__d); \
 		t = PyInt_FromSsize_t(self->__n); \
-		if (!t) \
+		if (!s || !t) \
 			goto bail; \
-		if (PyDict_SetItemString(obj, __d, t) == -1) \
+		if (PyDict_SetItem(obj, s, t) == -1) \
 			goto bail; \
-		Py_DECREF(t); \
+		Py_CLEAR(s); \
+		Py_CLEAR(t); \
 	} while (0)
 
 	if (self->added) {
 		Py_ssize_t len = PyList_GET_SIZE(self->added);
+		s = PyBytes_FromString("index entries added");
 		t = PyInt_FromSsize_t(len);
-		if (!t)
+		if (!s || !t)
 			goto bail;
-		if (PyDict_SetItemString(obj, "index entries added", t) == -1)
+		if (PyDict_SetItem(obj, s, t) == -1)
 			goto bail;
-		Py_DECREF(t);
+		Py_CLEAR(s);
+		Py_CLEAR(t);
 	}
 
 	if (self->raw_length != self->length)
@@ -392,6 +397,7 @@ static PyObject *index_stats(indexObject *self)
 
 bail:
 	Py_XDECREF(obj);
+	Py_XDECREF(s);
 	Py_XDECREF(t);
 	return NULL;
 }

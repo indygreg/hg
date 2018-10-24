@@ -129,7 +129,7 @@ def onetimesetup(ui):
     wireprotov1server.commands['stream_out_shallow'] = (stream_out_shallow, '*')
 
     # don't clone filelogs to shallow clients
-    def _walkstreamfiles(orig, repo):
+    def _walkstreamfiles(orig, repo, matcher=None):
         if state.shallowremote:
             # if we are shallow ourselves, stream our local commits
             if shallowutil.isenabled(repo):
@@ -173,7 +173,7 @@ def onetimesetup(ui):
             raise error.Abort(_("Cannot clone from a shallow repo "
                                 "to a full repo."))
         else:
-            for x in orig(repo):
+            for x in orig(repo, matcher):
                 yield x
 
     extensions.wrapfunction(streamclone, '_walkstreamfiles', _walkstreamfiles)

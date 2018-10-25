@@ -725,7 +725,7 @@ class curseschunkselector(object):
             nextitem = currentitem
         else:
             parent = nextitem.parentitem()
-            if parent.folded:
+            if parent is not None and parent.folded:
                 self.togglefolded(parent)
 
         self.currentselecteditem = nextitem

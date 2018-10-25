@@ -923,7 +923,7 @@ coreconfigitem('profiling', 'statformat',
     default='hotpath',
 )
 coreconfigitem('profiling', 'time-track',
-    default='real',
+    default=dynamicdefault,
 )
 coreconfigitem('profiling', 'type',
     default='stat',

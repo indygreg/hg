@@ -105,7 +105,7 @@ def activepath(repo, remote):
     # use the string given to us
     rpath = remote
     if local:
-        rpath = remote._repo.root
+        rpath = util.pconvert(remote._repo.root)
     elif not isinstance(remote, bytes):
         rpath = remote._url
 
@@ -113,6 +113,11 @@ def activepath(repo, remote):
     for path, url in repo.ui.configitems('paths'):
         # remove auth info from user defined url
         noauthurl = util.removeauth(url)
+
+        # Standardize on unix style paths, otherwise some {remotenames} end up
+        # being an absolute path on Windows.
+        url = util.pconvert(bytes(url))
+        noauthurl = util.pconvert(noauthurl)
         if url == rpath or noauthurl == rpath:
             rpath = path
             break

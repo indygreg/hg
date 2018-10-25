@@ -1715,7 +1715,7 @@ statistical text report generated from the profiling data.
 
 ``time-track``
     Control if the stat profiler track ``cpu`` or ``real`` time.
-    (default: ``cpu``)
+    (default: ``cpu`` on Windows, otherwise ``real``)
 
 ``limit``
     Number of lines to show. Specific to the ``ls`` instrumenting profiler.

@@ -708,14 +708,14 @@ def showp2(context, mapping):
 @templatekeyword('p1rev', requires={'ctx'})
 def showp1rev(context, mapping):
     """Integer. The repository-local revision number of the changeset's
-    first parent, or -1 if the changeset has no parents."""
+    first parent, or -1 if the changeset has no parents. (DEPRECATED)"""
     ctx = context.resource(mapping, 'ctx')
     return ctx.p1().rev()
 
 @templatekeyword('p2rev', requires={'ctx'})
 def showp2rev(context, mapping):
     """Integer. The repository-local revision number of the changeset's
-    second parent, or -1 if the changeset has no second parent."""
+    second parent, or -1 if the changeset has no second parent. (DEPRECATED)"""
     ctx = context.resource(mapping, 'ctx')
     return ctx.p2().rev()
 
@@ -723,7 +723,7 @@ def showp2rev(context, mapping):
 def showp1node(context, mapping):
     """String. The identification hash of the changeset's first parent,
     as a 40 digit hexadecimal string. If the changeset has no parents, all
-    digits are 0."""
+    digits are 0. (DEPRECATED)"""
     ctx = context.resource(mapping, 'ctx')
     return ctx.p1().hex()
 
@@ -731,7 +731,7 @@ def showp1node(context, mapping):
 def showp2node(context, mapping):
     """String. The identification hash of the changeset's second
     parent, as a 40 digit hexadecimal string. If the changeset has no second
-    parent, all digits are 0."""
+    parent, all digits are 0. (DEPRECATED)"""
     ctx = context.resource(mapping, 'ctx')
     return ctx.p2().hex()
 

@@ -153,10 +153,13 @@ def getlogcolumns():
     return dict(zip([s.split(':', 1)[0] for s in columns.splitlines()],
                     i18n._(columns).splitlines(True)))
 
+# basic internal templates
+_changeidtmpl = '{rev}:{node|formatnode}'
+
 # default templates internally used for rendering of lists
 defaulttempl = {
-    'parent': '{rev}:{node|formatnode} ',
-    'manifest': '{rev}:{node|formatnode}',
+    'parent': _changeidtmpl + ' ',
+    'manifest': _changeidtmpl,
     'file_copy': '{name} ({source})',
     'envvar': '{key}={value}',
     'extra': '{key}={value|stringescape}'

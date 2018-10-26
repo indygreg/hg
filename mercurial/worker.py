@@ -250,10 +250,9 @@ def _posixexitstatus(code):
 
 def _windowsworker(ui, func, staticargs, args):
     class Worker(threading.Thread):
-        def __init__(self, taskqueue, resultqueue, func, staticargs,
-                     group=None, target=None, name=None, verbose=None):
-            threading.Thread.__init__(self, group=group, target=target,
-                                      name=name, verbose=verbose)
+        def __init__(self, taskqueue, resultqueue, func, staticargs, *args,
+                     **kwargs):
+            threading.Thread.__init__(self, *args, **kwargs)
             self._taskqueue = taskqueue
             self._resultqueue = resultqueue
             self._func = func

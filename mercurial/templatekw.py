@@ -691,6 +691,20 @@ def showsuccsandmarkers(context, mapping):
 
     return templateutil.mappinglist(data)
 
+@templatekeyword('p1', requires={'ctx'})
+def showp1(context, mapping):
+    """Changeset. The changeset's first parent. ``{p1.rev}`` for the revision
+    number, and ``{p1.node}`` for the identification hash."""
+    ctx = context.resource(mapping, 'ctx')
+    return templateutil.mappingdict({'ctx': ctx.p1()}, tmpl=_changeidtmpl)
+
+@templatekeyword('p2', requires={'ctx'})
+def showp2(context, mapping):
+    """Changeset. The changeset's second parent. ``{p2.rev}`` for the revision
+    number, and ``{p2.node}`` for the identification hash."""
+    ctx = context.resource(mapping, 'ctx')
+    return templateutil.mappingdict({'ctx': ctx.p2()}, tmpl=_changeidtmpl)
+
 @templatekeyword('p1rev', requires={'ctx'})
 def showp1rev(context, mapping):
     """Integer. The repository-local revision number of the changeset's

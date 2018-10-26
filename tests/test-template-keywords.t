@@ -836,6 +836,25 @@ Test index keyword:
   0 default
   1 foo
 
+p1/p2 keywords:
+
+  $ hg log -r4:7 -GT '{rev} p1:{p1} p2:{p2} p1.rev:{p1.rev} p2.node:{p2.node}\n'
+  o  7 p1:-1:000000000000 p2:-1:000000000000 p1.rev:-1 p2.node:0000000000000000000000000000000000000000
+  
+  o    6 p1:5:13207e5a10d9 p2:4:bbe44766e73d p1.rev:5 p2.node:bbe44766e73d5f11ed2177f1838de10c53ef3e74
+  |\
+  | o  5 p1:3:10e46f2dcbf4 p2:-1:000000000000 p1.rev:3 p2.node:0000000000000000000000000000000000000000
+  | |
+  | ~
+  o  4 p1:3:10e46f2dcbf4 p2:-1:000000000000 p1.rev:3 p2.node:0000000000000000000000000000000000000000
+  |
+  ~
+
+TODO: no idea what should be displayed as a JSON representation
+  $ hg log -r6 -T 'p1:{p1|json}\np2:{p2|json}\n'
+  p1:{}
+  p2:{}
+
 ui verbosity:
 
   $ hg log -l1 -T '{verbosity}\n'

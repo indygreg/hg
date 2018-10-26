@@ -88,8 +88,8 @@ custom date format
   >    --config devel.default-date='1334347993 0' --traceback status
   A a
   $ hg blackbox
-  2012-04-13 @ 20:13:13 bob @0000000000000000000000000000000000000000 (5000)> --config 'blackbox.date-format=%Y-%m-%d @ %H:%M:%S' --config 'devel.default-date=1334347993 0' --traceback status
-  2012-04-13 @ 20:13:13 bob @0000000000000000000000000000000000000000 (5000)> --config 'blackbox.date-format=%Y-%m-%d @ %H:%M:%S' --config 'devel.default-date=1334347993 0' --traceback status exited 0 after * seconds (glob)
+  2012-04-13 @ 20:13:13 bob @0000000000000000000000000000000000000000 (5000)> --config *blackbox.date-format=%Y-%m-%d @ %H:%M:%S* --config *devel.default-date=1334347993 0* --traceback status (glob)
+  2012-04-13 @ 20:13:13 bob @0000000000000000000000000000000000000000 (5000)> --config *blackbox.date-format=%Y-%m-%d @ %H:%M:%S* --config *devel.default-date=1334347993 0* --traceback status exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> blackbox
 
 incoming change tracking

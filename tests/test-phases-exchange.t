@@ -1559,3 +1559,194 @@ of phase heads computation)
   |
   o  426ba public
   
+  $ killdaemons.py
+
+
+--publish flag
+--------------
+
+  $ hg init doesnt-publish
+  $ cd doesnt-publish
+  $ cat > .hg/hgrc << EOF
+  > [phases]
+  > publish=0
+  > EOF
+  $ mkcommit orig-root
+  test-debug-phase: new rev 0:  x -> 1
+  $ hg phase --public -r 'all()'
+  test-debug-phase: move rev 0: 1 -> 0
+  $ cd ..
+
+  $ hg clone -q doesnt-publish client
+  $ cd client
+
+pushing nothing
+
+  $ mkcommit new-A
+  test-debug-phase: new rev 1:  x -> 1
+  $ mkcommit new-B
+  test-debug-phase: new rev 2:  x -> 1
+  $ hg push --publish -r null
+  pushing to $TESTTMP/doesnt-publish
+  searching for changes
+  no changes found
+  [1]
+  $ hgph
+  @  2 draft new-B - 89512e87d697
+  |
+  o  1 draft new-A - 4826e44e690e
+  |
+  o  0 public orig-root - c48edaf99a10
+  
+
+pushing a new changeset (selective)
+
+  $ hg push --publish -r 'desc("new-A")'
+  pushing to $TESTTMP/doesnt-publish
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  test-debug-phase: new rev 1:  x -> 0
+  test-debug-phase: move rev 1: 1 -> 0
+  $ hgph
+  @  2 draft new-B - 89512e87d697
+  |
+  o  1 public new-A - 4826e44e690e
+  |
+  o  0 public orig-root - c48edaf99a10
+  
+
+pushing a new changeset (linear)
+
+  $ hg push --publish
+  pushing to $TESTTMP/doesnt-publish
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  test-debug-phase: new rev 2:  x -> 0
+  test-debug-phase: move rev 2: 1 -> 0
+  $ hgph
+  @  2 public new-B - 89512e87d697
+  |
+  o  1 public new-A - 4826e44e690e
+  |
+  o  0 public orig-root - c48edaf99a10
+  
+
+pushing new changesets (different branches)
+
+  $ mkcommit new-C
+  test-debug-phase: new rev 3:  x -> 1
+  $ hg update -q '.^'
+  $ hg branch -q another
+  $ mkcommit new-D
+  test-debug-phase: new rev 4:  x -> 1
+  $ hg push --new-branch --publish
+  pushing to $TESTTMP/doesnt-publish
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 2 changes to 2 files (+1 heads)
+  test-debug-phase: new rev 3:  x -> 0
+  test-debug-phase: new rev 4:  x -> 0
+  test-debug-phase: move rev 3: 1 -> 0
+  test-debug-phase: move rev 4: 1 -> 0
+  $ hgph
+  @  4 public new-D - 5e53dcafd13c
+  |
+  | o  3 public new-C - 1665482cc06d
+  |/
+  o  2 public new-B - 89512e87d697
+  |
+  o  1 public new-A - 4826e44e690e
+  |
+  o  0 public orig-root - c48edaf99a10
+  
+
+pushing a shared changeset
+
+  $ mkcommit new-E
+  test-debug-phase: new rev 5:  x -> 1
+  $ hg push
+  pushing to $TESTTMP/doesnt-publish
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  test-debug-phase: new rev 5:  x -> 1
+  $ hg push --publish
+  pushing to $TESTTMP/doesnt-publish
+  searching for changes
+  no changes found
+  test-debug-phase: move rev 5: 1 -> 0
+  test-debug-phase: move rev 5: 1 -> 0
+  [1]
+  $ hgph
+  @  5 public new-E - 48931ee3529c
+  |
+  o  4 public new-D - 5e53dcafd13c
+  |
+  | o  3 public new-C - 1665482cc06d
+  |/
+  o  2 public new-B - 89512e87d697
+  |
+  o  1 public new-A - 4826e44e690e
+  |
+  o  0 public orig-root - c48edaf99a10
+  
+  $ cd ..
+
+--publish with subrepos (doesn't propagate to subrepos currently)
+
+  $ hg init with-subrepo
+  $ cd with-subrepo
+  $ cat > .hg/hgrc << EOF
+  > [phases]
+  > publish=0
+  > EOF
+  $ hg init subrepo
+  $ cd subrepo
+  $ cat > .hg/hgrc << EOF
+  > [phases]
+  > publish=0
+  > EOF
+  $ echo foo > foo
+  $ hg ci -qAm0
+  test-debug-phase: new rev 0:  x -> 1
+  $ cd ..
+  $ echo 'subrepo = subrepo' > .hgsub
+  $ hg add .hgsub
+  $ hg ci -m 'Adding subrepo'
+  test-debug-phase: new rev 0:  x -> 1
+  $ hgph
+  @  0 draft Adding subrepo - 74d5b62379c0
+  
+  $ hgph -R subrepo
+  @  0 draft 0 - 4b3f578e3344
+  
+  $ cd ..
+  $ hg clone with-subrepo client-with-subrepo
+  updating to branch default
+  cloning subrepo subrepo from $TESTTMP/with-subrepo/subrepo
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd client-with-subrepo
+  $ hg push --publish
+  pushing to $TESTTMP/with-subrepo
+  no changes made to subrepo subrepo since last push to $TESTTMP/with-subrepo/subrepo
+  searching for changes
+  no changes found
+  test-debug-phase: move rev 0: 1 -> 0
+  test-debug-phase: move rev 0: 1 -> 0
+  [1]
+  $ hgph
+  @  0 public Adding subrepo - 74d5b62379c0
+  
+  $ hgph -R subrepo
+  @  0 draft 0 - 4b3f578e3344
+  

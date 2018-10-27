@@ -4497,6 +4497,7 @@ def pull(ui, repo, source="default", **opts):
      _('a specific branch you would like to push'), _('BRANCH')),
     ('', 'new-branch', False, _('allow pushing a new branch')),
     ('', 'pushvars', [], _('variables that can be sent to server (ADVANCED)')),
+    ('', 'publish', False, _('push the changeset as public (EXPERIMENTAL)')),
     ] + remoteopts,
     _('[-f] [-r REV]... [-e CMD] [--remotecmd CMD] [DEST]'),
     helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT,
@@ -4614,6 +4615,7 @@ def push(ui, repo, dest=None, **opts):
     pushop = exchange.push(repo, other, opts.get('force'), revs=revs,
                            newbranch=opts.get('new_branch'),
                            bookmarks=opts.get('bookmark', ()),
+                           publish=opts.get('publish'),
                            opargs=opargs)
 
     result = not pushop.cgresult

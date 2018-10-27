@@ -359,7 +359,7 @@ class pushoperation(object):
     """
 
     def __init__(self, repo, remote, force=False, revs=None, newbranch=False,
-                 bookmarks=(), pushvars=None):
+                 bookmarks=(), publish=False, pushvars=None):
         # repo we push from
         self.repo = repo
         self.ui = repo.ui
@@ -421,6 +421,8 @@ class pushoperation(object):
         self.pkfailcb = {}
         # an iterable of pushvars or None
         self.pushvars = pushvars
+        # publish pushed changesets
+        self.publish = publish
 
     @util.propertycache
     def futureheads(self):
@@ -478,7 +480,7 @@ bookmsgmap = {'update': (_("updating bookmark %s\n"),
 
 
 def push(repo, remote, force=False, revs=None, newbranch=False, bookmarks=(),
-         opargs=None):
+         publish=False, opargs=None):
     '''Push outgoing changesets (limited by revs) from a local
     repository to remote. Return an integer:
       - None means nothing to push
@@ -490,7 +492,7 @@ def push(repo, remote, force=False, revs=None, newbranch=False, bookmarks=(),
     if opargs is None:
         opargs = {}
     pushop = pushoperation(repo, remote, force, revs, newbranch, bookmarks,
-                           **pycompat.strkwargs(opargs))
+                           publish, **pycompat.strkwargs(opargs))
     if pushop.remote.local():
         missing = (set(pushop.repo.requirements)
                    - pushop.remote.local().supported)
@@ -630,7 +632,10 @@ def _pushdiscoveryphase(pushop):
     # XXX Beware that revset break if droots is not strictly
     # XXX root we may want to ensure it is but it is costly
     fallback = list(unfi.set(revset, droots, pushop.fallbackheads))
-    if not outgoing.missing:
+    if not pushop.remotephases.publishing and pushop.publish:
+        future = list(unfi.set('%ln and (not public() or %ln::)',
+                               pushop.futureheads, droots))
+    elif not outgoing.missing:
         future = fallback
     else:
         # adds changeset we are going to push as draft

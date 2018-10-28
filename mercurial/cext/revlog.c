@@ -2314,7 +2314,7 @@ struct rustlazyancestorsObjectStruct {
 /* FFI exposed from Rust code */
 rustlazyancestorsObject *rustlazyancestors_init(
 	indexObject *index,
-	/* to pass index_get_parents() */
+	/* to pass index_get_parents_checked() */
 	int (*)(indexObject *, Py_ssize_t, int*, int),
 	/* intrevs vector */
 	Py_ssize_t initrevslen, long *initrevs,
@@ -2323,6 +2323,16 @@ rustlazyancestorsObject *rustlazyancestors_init(
 void rustlazyancestors_drop(rustlazyancestorsObject *self);
 int rustlazyancestors_next(rustlazyancestorsObject *self);
 int rustlazyancestors_contains(rustlazyancestorsObject *self, long rev);
+
+static int index_get_parents_checked(indexObject *self, Py_ssize_t rev,
+                                     int *ps, int maxrev)
+{
+	if (rev < 0 || rev >= index_length(self)) {
+		PyErr_SetString(PyExc_ValueError, "rev out of range");
+		return -1;
+	}
+	return index_get_parents(self, rev, ps, maxrev);
+}
 
 /* CPython instance methods */
 static int rustla_init(rustlazyancestorsObject *self,
@@ -2364,12 +2374,13 @@ static int rustla_init(rustlazyancestorsObject *self,
 		goto bail;
 
 	self->iter = rustlazyancestors_init(index,
-		                            index_get_parents,
+		                            index_get_parents_checked,
 		                            linit, initrevs,
 		                            stoprev, inclusive);
 	if (self->iter == NULL) {
 		/* if this is because of GraphError::ParentOutOfRange
-		 * index_get_parents() has already set the proper ValueError */
+		 * index_get_parents_checked() has already set the proper
+		 * ValueError */
 		goto bail;
 	}
 

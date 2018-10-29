@@ -559,7 +559,7 @@ class sqlitefilestore(object):
 
     def emitrevisions(self, nodes, nodesorder=None, revisiondata=False,
                       assumehaveparentrevisions=False, deltaprevious=False):
-        if nodesorder not in ('nodes', 'storage', None):
+        if nodesorder not in ('nodes', 'storage', 'linear', None):
             raise error.ProgrammingError('unhandled value for nodesorder: %s' %
                                          nodesorder)
 

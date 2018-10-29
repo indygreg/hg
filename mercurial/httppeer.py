@@ -405,11 +405,15 @@ class httppeer(wireprotov1peer.wirepeer):
         return True
 
     def close(self):
+        try:
+            reqs, sent, recv = (self._urlopener.requestscount,
+                                self._urlopener.sentbytescount,
+                                self._urlopener.receivedbytescount)
+        except AttributeError:
+            return
         self.ui.note(_('(sent %d HTTP requests and %d bytes; '
                        'received %d bytes in responses)\n') %
-                     (self._urlopener.requestscount,
-                      self._urlopener.sentbytescount,
-                      self._urlopener.receivedbytescount))
+                     (reqs, sent, recv))
 
     # End of ipeerconnection interface.
 

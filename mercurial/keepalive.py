@@ -442,7 +442,10 @@ class HTTPResponse(httplib.HTTPResponse):
         data = self._raw_read(amt)
 
         self.receivedbytescount += len(data)
-        self._connection.receivedbytescount += len(data)
+        try:
+            self._connection.receivedbytescount += len(data)
+        except AttributeError:
+            pass
         try:
             self._handler.parent.receivedbytescount += len(data)
         except AttributeError:

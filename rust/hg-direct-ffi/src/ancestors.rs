@@ -139,7 +139,11 @@ pub extern "C" fn rustlazyancestors_next(raw: *mut AncestorsIterator<Index>) -> 
 #[inline]
 fn raw_next<G: Graph>(raw: *mut AncestorsIterator<G>) -> c_long {
     let as_ref = unsafe { &mut *raw };
-    as_ref.next().unwrap_or(NULL_REVISION) as c_long
+    let rev = match as_ref.next() {
+        Some(Ok(rev)) => rev,
+        Some(Err(_)) | None => NULL_REVISION,
+    };
+    rev as c_long
 }
 
 #[no_mangle]
@@ -157,10 +161,10 @@ fn raw_contains<G: Graph>(
     target: c_long,
 ) -> c_int {
     let as_ref = unsafe { &mut *raw };
-    if as_ref.contains(target as Revision) {
-        return 1;
+    match as_ref.contains(target as Revision) {
+        Ok(r) => r as c_int,
+        Err(_) => -1,
     }
-    0
 }
 
 #[cfg(test)]

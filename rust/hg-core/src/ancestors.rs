@@ -77,19 +77,20 @@ impl<G: Graph> AncestorsIterator<G> {
     /// is in the ancestors it emits.
     /// This is meant for iterators actually dedicated to that kind of
     /// purpose
-    pub fn contains(&mut self, target: Revision) -> bool {
+    pub fn contains(&mut self, target: Revision) -> Result<bool, GraphError> {
         if self.seen.contains(&target) && target != NULL_REVISION {
-            return true;
+            return Ok(true);
         }
-        for rev in self {
+        for item in self {
+            let rev = item?;
             if rev == target {
-                return true;
+                return Ok(true);
             }
             if rev < target {
-                return false;
+                return Ok(false);
             }
         }
-        false
+        Ok(false)
     }
 }
 
@@ -117,19 +118,19 @@ impl<G: Graph> AncestorsIterator<G> {
 ///   concrete caller we target, so we shouldn't need a finer error treatment
 ///   for the time being.
 impl<G: Graph> Iterator for AncestorsIterator<G> {
-    type Item = Revision;
+    type Item = Result<Revision, GraphError>;
 
-    fn next(&mut self) -> Option<Revision> {
+    fn next(&mut self) -> Option<Self::Item> {
         let current = match self.visit.peek() {
             None => {
                 return None;
             }
             Some(c) => *c,
         };
-        let (p1, p2) = self
-            .graph
-            .parents(current)
-            .unwrap_or((NULL_REVISION, NULL_REVISION));
+        let (p1, p2) = match self.graph.parents(current) {
+            Ok(ps) => ps,
+            Err(e) => return Some(Err(e)),
+        };
         if p1 < self.stoprev || self.seen.contains(&p1) {
             self.visit.pop();
         } else {
@@ -138,7 +139,7 @@ impl<G: Graph> Iterator for AncestorsIterator<G> {
         };
 
         self.conditionally_push_rev(p2);
-        Some(current)
+        Some(Ok(current))
     }
 }
 

@@ -130,9 +130,11 @@ Help text for fix.
   
   The :command suboption forms the first part of the shell command that will be
   used to fix a file. The content of the file is passed on standard input, and
-  the fixed file content is expected on standard output. If there is any output
-  on standard error, the file will not be affected. Some values may be
-  substituted into the command:
+  the fixed file content is expected on standard output. Any output on standard
+  error will be displayed as a warning. If the exit status is not zero, the file
+  will not be affected. A placeholder warning is displayed if there is a non-
+  zero exit status but no standard error output. Some values may be substituted
+  into the command:
   
     {rootpath}  The path of the file being fixed, relative to the repo root
     {basename}  The name of the file being fixed, without the directory path
@@ -153,7 +155,15 @@ Help text for fix.
   processed by 'hg fix':
   
     [fix]
-    maxfilesize=2MB
+    maxfilesize = 2MB
+  
+  Normally, execution of configured tools will continue after a failure
+  (indicated by a non-zero exit status). It can also be configured to abort
+  after the first such failure, so that no files will be affected if any tool
+  fails. This abort will also cause 'hg fix' to exit with a non-zero status:
+  
+    [fix]
+    failure = abort
   
   list of commands:
   
@@ -508,7 +518,9 @@ fixing if its exit code is zero. Some code formatters might emit error messages
 on stderr and nothing on stdout, which would cause us the clear the file,
 except that they also exit with a non-zero code. We show the user which fixer
 emitted the stderr, and which revision, but we assume that the fixer will print
-the filename if it is relevant (since the issue may be non-specific).
+the filename if it is relevant (since the issue may be non-specific). There is
+also a config to abort (without affecting any files whatsoever) if we see any
+tool with a non-zero exit status.
 
   $ hg init showstderr
   $ cd showstderr
@@ -516,32 +528,51 @@ the filename if it is relevant (since the issue may be non-specific).
   $ printf "hello\n" > hello.txt
   $ hg add
   adding hello.txt
-  $ cat > $TESTTMP/fail.sh <<'EOF'
+  $ cat > $TESTTMP/work.sh <<'EOF'
   > printf 'HELLO\n'
-  > printf "$@: some\nerror" >&2
+  > printf "$@: some\nerror that didn't stop the tool" >&2
   > exit 0 # success despite the stderr output
   > EOF
-  $ hg --config "fix.fail:command=sh $TESTTMP/fail.sh {rootpath}" \
-  >    --config "fix.fail:fileset=hello.txt" \
+  $ hg --config "fix.work:command=sh $TESTTMP/work.sh {rootpath}" \
+  >    --config "fix.work:fileset=hello.txt" \
   >    fix --working-dir
-  [wdir] fail: hello.txt: some
-  [wdir] fail: error
+  [wdir] work: hello.txt: some
+  [wdir] work: error that didn't stop the tool
   $ cat hello.txt
   HELLO
 
   $ printf "goodbye\n" > hello.txt
-  $ cat > $TESTTMP/work.sh <<'EOF'
+  $ printf "foo\n" > foo.whole
+  $ hg add
+  adding foo.whole
+  $ cat > $TESTTMP/fail.sh <<'EOF'
   > printf 'GOODBYE\n'
-  > printf "$@: some\nerror\n" >&2
+  > printf "$@: some\nerror that did stop the tool\n" >&2
   > exit 42 # success despite the stdout output
   > EOF
-  $ hg --config "fix.fail:command=sh $TESTTMP/work.sh {rootpath}" \
+  $ hg --config "fix.fail:command=sh $TESTTMP/fail.sh {rootpath}" \
+  >    --config "fix.fail:fileset=hello.txt" \
+  >    --config "fix.failure=abort" \
+  >    fix --working-dir
+  [wdir] fail: hello.txt: some
+  [wdir] fail: error that did stop the tool
+  abort: no fixes will be applied
+  (use --config fix.failure=continue to apply any successful fixes anyway)
+  [255]
+  $ cat hello.txt
+  goodbye
+  $ cat foo.whole
+  foo
+
+  $ hg --config "fix.fail:command=sh $TESTTMP/fail.sh {rootpath}" \
   >    --config "fix.fail:fileset=hello.txt" \
   >    fix --working-dir
   [wdir] fail: hello.txt: some
-  [wdir] fail: error
+  [wdir] fail: error that did stop the tool
   $ cat hello.txt
   goodbye
+  $ cat foo.whole
+  FOO
 
   $ hg --config "fix.fail:command=exit 42" \
   >    --config "fix.fail:fileset=hello.txt" \

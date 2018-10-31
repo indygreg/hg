@@ -19,9 +19,11 @@ formatting fixes to modified lines in C++ code::
 
 The :command suboption forms the first part of the shell command that will be
 used to fix a file. The content of the file is passed on standard input, and the
-fixed file content is expected on standard output. If there is any output on
-standard error, the file will not be affected. Some values may be substituted
-into the command::
+fixed file content is expected on standard output. Any output on standard error
+will be displayed as a warning. If the exit status is not zero, the file will
+not be affected. A placeholder warning is displayed if there is a non-zero exit
+status but no standard error output. Some values may be substituted into the
+command::
 
   {rootpath}  The path of the file being fixed, relative to the repo root
   {basename}  The name of the file being fixed, without the directory path
@@ -42,7 +44,15 @@ There is also a configurable limit for the maximum size of file that will be
 processed by :hg:`fix`::
 
   [fix]
-  maxfilesize=2MB
+  maxfilesize = 2MB
+
+Normally, execution of configured tools will continue after a failure (indicated
+by a non-zero exit status). It can also be configured to abort after the first
+such failure, so that no files will be affected if any tool fails. This abort
+will also cause :hg:`fix` to exit with a non-zero status::
+
+  [fix]
+  failure = abort
 
 """
 
@@ -99,6 +109,20 @@ for key in FIXER_ATTRS:
 # letting fixer tools choke on huge inputs, which could be surprising to the
 # user.
 configitem('fix', 'maxfilesize', default='2MB')
+
+# Allow fix commands to exit non-zero if an executed fixer tool exits non-zero.
+# This helps users do shell scripts that stop when a fixer tool signals a
+# problem.
+configitem('fix', 'failure', default='continue')
+
+def checktoolfailureaction(ui, message, hint=None):
+    """Abort with 'message' if fix.failure=abort"""
+    action = ui.config('fix', 'failure')
+    if action not in ('continue', 'abort'):
+        raise error.Abort(_('unknown fix.failure action: %s') % (action,),
+                          hint=_('use "continue" or "abort"'))
+    if action == 'abort':
+        raise error.Abort(message, hint=hint)
 
 allopt = ('', 'all', False, _('fix all non-public non-obsolete revisions'))
 baseopt = ('', 'base', [], _('revisions to diff against (overrides automatic '
@@ -465,9 +489,14 @@ def fixfile(ui, opts, fixers, fixctx, path, basectxs):
                 showstderr(ui, fixctx.rev(), fixername, stderr)
             if proc.returncode == 0:
                 newdata = newerdata
-            elif not stderr:
-                showstderr(ui, fixctx.rev(), fixername,
-                           _('exited with status %d\n') % (proc.returncode,))
+            else:
+                if not stderr:
+                    message = _('exited with status %d\n') % (proc.returncode,)
+                    showstderr(ui, fixctx.rev(), fixername, message)
+                checktoolfailureaction(
+                    ui, _('no fixes will be applied'),
+                    hint=_('use --config fix.failure=continue to apply any '
+                           'successful fixes anyway'))
     return newdata
 
 def showstderr(ui, rev, fixername, stderr):

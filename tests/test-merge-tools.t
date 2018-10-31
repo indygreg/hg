@@ -1,6 +1,10 @@
 test merge-tools configuration - mostly exercising filemerge.py
 
   $ unset HGMERGE # make sure HGMERGE doesn't interfere with the test
+  $ cat >> $HGRCPATH << EOF
+  > [ui]
+  > merge=
+  > EOF
   $ hg init repo
   $ cd repo
 

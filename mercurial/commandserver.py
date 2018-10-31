@@ -570,35 +570,34 @@ class unixforkingservice(object):
 
     def _acceptnewconnection(self, sock, selector):
         h = self._servicehandler
-        if True:
-            try:
-                conn, _addr = sock.accept()
-            except socket.error as inst:
-                if inst.args[0] == errno.EINTR:
-                    return
-                raise
+        try:
+            conn, _addr = sock.accept()
+        except socket.error as inst:
+            if inst.args[0] == errno.EINTR:
+                return
+            raise
 
-            pid = os.fork()
-            if pid:
+        pid = os.fork()
+        if pid:
+            try:
+                self.ui.log(b'cmdserver', b'forked worker process (pid=%d)\n',
+                            pid)
+                self._workerpids.add(pid)
+                h.newconnection()
+            finally:
+                conn.close()  # release handle in parent process
+        else:
+            try:
+                selector.close()
+                sock.close()
+                self._runworker(conn)
+                conn.close()
+                os._exit(0)
+            except:  # never return, hence no re-raises
                 try:
-                    self.ui.log(b'cmdserver',
-                                b'forked worker process (pid=%d)\n', pid)
-                    self._workerpids.add(pid)
-                    h.newconnection()
+                    self.ui.traceback(force=True)
                 finally:
-                    conn.close()  # release handle in parent process
-            else:
-                try:
-                    selector.close()
-                    sock.close()
-                    self._runworker(conn)
-                    conn.close()
-                    os._exit(0)
-                except:  # never return, hence no re-raises
-                    try:
-                        self.ui.traceback(force=True)
-                    finally:
-                        os._exit(255)
+                    os._exit(255)
 
     def _sigchldhandler(self, signal, frame):
         self._reapworkers(os.WNOHANG)

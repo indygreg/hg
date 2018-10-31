@@ -1337,6 +1337,20 @@ class lrucachedict(object):
         except KeyError:
             return default
 
+    def peek(self, k, default=_notset):
+        """Get the specified item without moving it to the head
+
+        Unlike get(), this doesn't mutate the internal state. But be aware
+        that it doesn't mean peek() is thread safe.
+        """
+        try:
+            node = self._cache[k]
+            return node.value
+        except KeyError:
+            if default is _notset:
+                raise
+            return default
+
     def clear(self):
         n = self._head
         while n.key is not _notset:

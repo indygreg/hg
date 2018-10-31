@@ -541,7 +541,8 @@ class unixforkingservice(object):
         exiting = False
         h = self._servicehandler
         selector = selectors.DefaultSelector()
-        selector.register(self._sock, selectors.EVENT_READ)
+        selector.register(self._sock, selectors.EVENT_READ,
+                          self._acceptnewconnection)
         while True:
             if not exiting and h.shouldexit():
                 # clients can no longer connect() to the domain socket, so
@@ -552,20 +553,21 @@ class unixforkingservice(object):
                 self._unlinksocket()
                 exiting = True
             try:
-                ready = selector.select(timeout=h.pollinterval)
+                events = selector.select(timeout=h.pollinterval)
             except OSError as inst:
                 # selectors2 raises ETIMEDOUT if timeout exceeded while
                 # handling signal interrupt. That's probably wrong, but
                 # we can easily get around it.
                 if inst.errno != errno.ETIMEDOUT:
                     raise
-                ready = []
-            if not ready:
+                events = []
+            if not events:
                 # only exit if we completed all queued requests
                 if exiting:
                     break
                 continue
-            self._acceptnewconnection(self._sock, selector)
+            for key, _mask in events:
+                key.data(key.fileobj, selector)
         selector.close()
 
     def _acceptnewconnection(self, sock, selector):

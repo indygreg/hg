@@ -3,9 +3,10 @@
 This file focuses mainly on updating largefiles in the working
 directory (and ".hg/largefiles/dirstate")
 
+  $ unset HGMERGE
   $ cat >> $HGRCPATH <<EOF
   > [ui]
-  > merge = internal:fail
+  > merge = internal:merge
   > [extensions]
   > largefiles =
   > [extdiff]

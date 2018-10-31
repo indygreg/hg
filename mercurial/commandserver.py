@@ -565,11 +565,17 @@ class unixforkingservice(object):
                 if exiting:
                     break
                 continue
+            self._acceptnewconnection(self._sock, selector)
+        selector.close()
+
+    def _acceptnewconnection(self, sock, selector):
+        h = self._servicehandler
+        if True:
             try:
-                conn, _addr = self._sock.accept()
+                conn, _addr = sock.accept()
             except socket.error as inst:
                 if inst.args[0] == errno.EINTR:
-                    continue
+                    return
                 raise
 
             pid = os.fork()
@@ -584,7 +590,7 @@ class unixforkingservice(object):
             else:
                 try:
                     selector.close()
-                    self._sock.close()
+                    sock.close()
                     self._runworker(conn)
                     conn.close()
                     os._exit(0)
@@ -593,7 +599,6 @@ class unixforkingservice(object):
                         self.ui.traceback(force=True)
                     finally:
                         os._exit(255)
-        selector.close()
 
     def _sigchldhandler(self, signal, frame):
         self._reapworkers(os.WNOHANG)

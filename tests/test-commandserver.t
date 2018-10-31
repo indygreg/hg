@@ -848,10 +848,10 @@ unix domain socket:
 
   $ cat <<'EOF' > ../earlycrasher.py
   > from mercurial import commandserver, extensions
-  > def _serverequest(orig, ui, repo, conn, createcmdserver):
+  > def _serverequest(orig, ui, repo, conn, createcmdserver, prereposetups):
   >     def createcmdserver(*args, **kwargs):
   >         raise Exception('crash')
-  >     return orig(ui, repo, conn, createcmdserver)
+  >     return orig(ui, repo, conn, createcmdserver, prereposetups)
   > def extsetup(ui):
   >     extensions.wrapfunction(commandserver, b'_serverequest', _serverequest)
   > EOF

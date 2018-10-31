@@ -313,10 +313,11 @@ _iochannels = [
 ]
 
 class chgcmdserver(commandserver.server):
-    def __init__(self, ui, repo, fin, fout, sock, hashstate, baseaddress):
+    def __init__(self, ui, repo, fin, fout, sock, prereposetups,
+                 hashstate, baseaddress):
         super(chgcmdserver, self).__init__(
             _newchgui(ui, channeledsystem(fin, fout, 'S'), self.attachio),
-            repo, fin, fout)
+            repo, fin, fout, prereposetups)
         self.clientsock = sock
         self._ioattached = False
         self._oldios = []  # original (self.ch, ui.fp, fd) before "attachio"
@@ -617,8 +618,8 @@ class chgunixservicehandler(object):
     def newconnection(self):
         self._lastactive = time.time()
 
-    def createcmdserver(self, repo, conn, fin, fout):
-        return chgcmdserver(self.ui, repo, fin, fout, conn,
+    def createcmdserver(self, repo, conn, fin, fout, prereposetups):
+        return chgcmdserver(self.ui, repo, fin, fout, conn, prereposetups,
                             self._hashstate, self._baseaddress)
 
 def chgunixservice(ui, repo, opts):

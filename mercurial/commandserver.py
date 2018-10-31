@@ -196,7 +196,7 @@ class server(object):
     Listens for commands on fin, runs them and writes the output on a channel
     based stream to fout.
     """
-    def __init__(self, ui, repo, fin, fout):
+    def __init__(self, ui, repo, fin, fout, prereposetups=None):
         self.cwd = encoding.getcwd()
 
         if repo:
@@ -208,6 +208,7 @@ class server(object):
         else:
             self.ui = ui
             self.repo = self.repoui = None
+        self._prereposetups = prereposetups
 
         self.cdebug = channeledoutput(fout, 'd')
         self.cerr = channeledoutput(fout, 'e')
@@ -294,7 +295,8 @@ class server(object):
                 ui.setconfig('ui', 'nontty', 'true', 'commandserver')
 
         req = dispatch.request(args[:], copiedui, self.repo, self.cin,
-                               self.cout, self.cerr, self.cmsg)
+                               self.cout, self.cerr, self.cmsg,
+                               prereposetups=self._prereposetups)
 
         try:
             ret = dispatch.dispatch(req) & 255
@@ -420,12 +422,12 @@ def _initworkerprocess():
     # same state inherited from parent.
     random.seed()
 
-def _serverequest(ui, repo, conn, createcmdserver):
+def _serverequest(ui, repo, conn, createcmdserver, prereposetups):
     fin = conn.makefile(r'rb')
     fout = conn.makefile(r'wb')
     sv = None
     try:
-        sv = createcmdserver(repo, conn, fin, fout)
+        sv = createcmdserver(repo, conn, fin, fout, prereposetups)
         try:
             sv.serve()
         # handle exceptions that may be raised by command server. most of
@@ -484,10 +486,10 @@ class unixservicehandler(object):
     def newconnection(self):
         """Called when main process notices new connection"""
 
-    def createcmdserver(self, repo, conn, fin, fout):
+    def createcmdserver(self, repo, conn, fin, fout, prereposetups):
         """Create new command server instance; called in the process that
         serves for the current connection"""
-        return server(self.ui, repo, fin, fout)
+        return server(self.ui, repo, fin, fout, prereposetups)
 
 class unixforkingservice(object):
     """
@@ -619,6 +621,7 @@ class unixforkingservice(object):
         _initworkerprocess()
         h = self._servicehandler
         try:
-            _serverequest(self.ui, self.repo, conn, h.createcmdserver)
+            _serverequest(self.ui, self.repo, conn, h.createcmdserver,
+                          prereposetups=None)  # TODO: pass in hook functions
         finally:
             gc.collect()  # trigger __del__ since worker process uses os._exit

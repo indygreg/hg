@@ -646,6 +646,11 @@ def _refinedgroups(revlog, p1, p2, cachedelta):
         if good is not None:
             break
 
+    # If sparse revlog is enabled, we can try to refine the available deltas
+    if not revlog._sparserevlog:
+        yield None
+        return
+
     # if we have a refinable value, try to refine it
     if good is not None and good not in (p1, p2) and revlog.issnapshot(good):
         # refine snapshot down

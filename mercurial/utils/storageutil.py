@@ -337,11 +337,11 @@ def emitrevisions(store, nodes, nodesorder, resultcls, deltaparentfn=None,
 
     if nodesorder == 'nodes':
         revs = [frev(n) for n in nodes]
-    elif nodesorder == 'storage':
-        revs = sorted(frev(n) for n in nodes)
-    else:
+    elif nodesorder == 'linear':
         revs = set(frev(n) for n in nodes)
         revs = dagop.linearize(revs, store.parentrevs)
+    else: # storage and default
+        revs = sorted(frev(n) for n in nodes)
 
     prevrev = None
 

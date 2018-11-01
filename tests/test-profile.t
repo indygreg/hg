@@ -86,22 +86,22 @@ statistical profiler works
 
 Various statprof formatters work
 
-  $ hg --profile --config profiling.statformat=byline sleep 2>../out
+  $ hg --profile --config profiling.statformat=byline sleep 2>../out || cat ../out
   $ head -n 3 ../out
     %   cumulative      self          
    time    seconds   seconds  name    
    * sleepext.py:*:sleep (glob)
   $ cat ../out | statprofran
 
-  $ hg --profile --config profiling.statformat=bymethod sleep 2>../out
+  $ hg --profile --config profiling.statformat=bymethod sleep 2>../out || cat ../out
   $ head -n 1 ../out
     %   cumulative      self          
   $ cat ../out | statprofran
 
-  $ hg --profile --config profiling.statformat=hotpath sleep 2>../out
+  $ hg --profile --config profiling.statformat=hotpath sleep 2>../out || cat ../out
   $ cat ../out | statprofran
 
-  $ hg --profile --config profiling.statformat=json sleep 2>../out
+  $ hg --profile --config profiling.statformat=json sleep 2>../out || cat ../out
   $ cat ../out
   \[\[-?\d+.* (re)
 

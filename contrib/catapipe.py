@@ -6,6 +6,14 @@
 # GNU General Public License version 2 or any later version.
 """Tool read primitive events from a pipe to produce a catapult trace.
 
+Usage:
+    Terminal 1: $ catapipe.py /tmp/mypipe /tmp/trace.json
+    Terminal 2: $ HGCATAPULTSERVERPIPE=/tmp/mypipe hg root
+    <ctrl-c catapipe.py in Terminal 1>
+    $ catapult/tracing/bin/trace2html /tmp/trace.json  # produce /tmp/trace.html
+    <open trace.html in your browser of choice; the WASD keys are very useful>
+    (catapult is located at https://github.com/catapult-project/catapult)
+
 For now the event stream supports
 
   START $SESSIONID ...
@@ -24,7 +32,7 @@ run-tests.py.
 
 Typically you'll want to place the path to the named pipe in the
 HGCATAPULTSERVERPIPE environment variable, which both run-tests and hg
-understand.
+understand. To trace *only* run-tests, use HGTESTCATAPULTSERVERPIPE instead.
 """
 from __future__ import absolute_import, print_function
 

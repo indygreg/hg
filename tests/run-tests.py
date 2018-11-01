@@ -1084,6 +1084,7 @@ class Test(unittest.TestCase):
         env["HGENCODINGMODE"] = "strict"
         env["HGHOSTNAME"] = "test-hostname"
         env['HGIPV6'] = str(int(self._useipv6))
+        # See contrib/catapipe.py for how to use this functionality.
         if 'HGTESTCATAPULTSERVERPIPE' not in env:
             # If we don't have HGTESTCATAPULTSERVERPIPE explicitly set, pull the
             # non-test one in as a default, otherwise set to devnull

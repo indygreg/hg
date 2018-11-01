@@ -1378,7 +1378,7 @@ class TTest(Test):
                 script.append(b'%s %d 0\n' % (salt, line))
             else:
                 script.append(b'echo %s %d $?\n' % (salt, line))
-        active = []
+        activetrace = []
         session = str(uuid.uuid4())
         if PYTHON3:
             session = session.encode('ascii')
@@ -1387,10 +1387,10 @@ class TTest(Test):
             if not hgcatapult or hgcatapult == os.devnull:
                 return
 
-            if active:
+            if activetrace:
                 script.append(
                     b'echo END %s %s >> "$HGCATAPULTSERVERPIPE"\n' % (
-                        session, active[0]))
+                        session, activetrace[0]))
             if cmd is None:
                 return
 
@@ -1402,7 +1402,7 @@ class TTest(Test):
             script.append(
                 b'echo START %s %s >> "$HGCATAPULTSERVERPIPE"\n' % (
                     session, quoted))
-            active[0:] = [quoted]
+            activetrace[0:] = [quoted]
 
         script = []
 
@@ -1543,7 +1543,7 @@ class TTest(Test):
             after.setdefault(pos, []).append('  !!! missing #endif\n')
         addsalt(n + 1, False)
         # Need to end any current per-command trace
-        if active:
+        if activetrace:
             toggletrace()
         return salt, script, after, expected
 

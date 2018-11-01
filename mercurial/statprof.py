@@ -238,7 +238,7 @@ class CodeSite(object):
             lineno = self.lineno - 1
             fp = None
             try:
-                fp = open(self.path)
+                fp = open(self.path, 'rb')
                 for i, line in enumerate(fp):
                     if i == lineno:
                         self.source = line.strip()
@@ -274,8 +274,10 @@ class Sample(object):
         stack = []
 
         while frame:
-            stack.append(CodeSite.get(frame.f_code.co_filename, frame.f_lineno,
-                                      frame.f_code.co_name))
+            stack.append(CodeSite.get(
+                pycompat.sysbytes(frame.f_code.co_filename),
+                frame.f_lineno,
+                pycompat.sysbytes(frame.f_code.co_name)))
             frame = frame.f_back
 
         return Sample(stack, time)
@@ -372,7 +374,7 @@ def save_data(path):
             file.write("%d\0%s\n" % (time, '\0'.join(sites)))
 
 def load_data(path):
-    lines = open(path, 'r').read().splitlines()
+    lines = open(path, 'rb').read().splitlines()
 
     state.accumulated_time = [float(value) for value in lines[0].split()]
     state.samples = []
@@ -512,9 +514,9 @@ def display_by_line(data, fp):
 
     for stat in stats:
         site = stat.site
-        sitelabel = '%s:%d:%s' % (pycompat.fsencode(site.filename()),
+        sitelabel = '%s:%d:%s' % (site.filename(),
                                   site.lineno,
-                                  pycompat.sysbytes(site.function))
+                                  site.function)
         fp.write(b'%6.2f %9.2f %9.2f  %s\n' % (
             stat.selfpercent(), stat.totalseconds(),
             stat.selfseconds(), sitelabel))
@@ -532,7 +534,7 @@ def display_by_method(data, fp):
 
     grouped = defaultdict(list)
     for stat in stats:
-        grouped[stat.site.filename() + r":" + stat.site.function].append(stat)
+        grouped[stat.site.filename() + b":" + stat.site.function].append(stat)
 
     # compute sums for each function
     functiondata = []
@@ -561,7 +563,7 @@ def display_by_method(data, fp):
             function[3], # total percent
             function[1], # total cum sec
             function[2], # total self sec
-            pycompat.sysbytes(function[0]))) # file:function
+            function[0])) # file:function
 
         function[4].sort(reverse=True, key=lambda i: i.selfseconds())
         for stat in function[4]:
@@ -696,7 +698,7 @@ def display_hotpath(data, fp, limit=0.05, **kwargs):
                           ' %4.1f%%  %s %s'
             liststring = listpattern % (node.count / root.count * 100,
                                         filename, function)
-            codepattern = '%' + str(55 - len(liststring)) + 's %s:  %s'
+            codepattern = '%' + ('%d' % (55 - len(liststring))) + 's %d:  %s'
             codestring = codepattern % ('line', site.lineno, site.getsource(30))
 
             finalstring = liststring + codestring
@@ -777,7 +779,10 @@ def write_to_json(data, fp):
         stack = []
 
         for frame in sample.stack:
-            stack.append((frame.path, frame.lineno, frame.function))
+            stack.append(
+                (pycompat.sysstr(frame.path),
+                 frame.lineno,
+                 pycompat.sysstr(frame.function)))
 
         samples.append((sample.time, stack))
 

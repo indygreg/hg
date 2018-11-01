@@ -696,7 +696,7 @@ def sources(f, modname):
     if py or f.endswith('.t'):
         with open(f, 'rb') as src:
             for script, modname, t, line in embedded(f, modname, src):
-                yield script, modname, t, line
+                yield script, modname.encode('utf8'), t, line
 
 def main(argv):
     if len(argv) < 2 or (argv[1] == '-' and len(argv) > 2):

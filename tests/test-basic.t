@@ -9,6 +9,7 @@ Create a repository:
   lfs.usercache=$TESTTMP/.cache/lfs
   ui.slash=True
   ui.interactive=False
+  ui.merge=internal:merge
   ui.mergemarkers=detailed
   ui.promptecho=True
   web.address=localhost

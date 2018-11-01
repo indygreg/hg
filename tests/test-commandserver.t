@@ -211,6 +211,7 @@ check that local configs for the cached repo aren't inherited when -R is used:
   lfs.usercache=$TESTTMP/.cache/lfs
   ui.slash=True
   ui.interactive=False
+  ui.merge=internal:merge
   ui.mergemarkers=detailed
   ui.foo=bar
   ui.nontty=true
@@ -221,6 +222,7 @@ check that local configs for the cached repo aren't inherited when -R is used:
   *** runcommand -R foo showconfig ui defaults
   ui.slash=True
   ui.interactive=False
+  ui.merge=internal:merge
   ui.mergemarkers=detailed
   ui.nontty=true
 #endif

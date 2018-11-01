@@ -1084,8 +1084,11 @@ class Test(unittest.TestCase):
         env["HGENCODINGMODE"] = "strict"
         env["HGHOSTNAME"] = "test-hostname"
         env['HGIPV6'] = str(int(self._useipv6))
-        if 'HGCATAPULTSERVERPIPE' not in env:
-            env['HGCATAPULTSERVERPIPE'] = os.devnull
+        if 'HGTESTCATAPULTSERVERPIPE' not in env:
+            # If we don't have HGTESTCATAPULTSERVERPIPE explicitly set, pull the
+            # non-test one in as a default, otherwise set to devnull
+            env['HGTESTCATAPULTSERVERPIPE'] = \
+                env.get('HGCATAPULTSERVERPIPE', os.devnull)
 
         extraextensions = []
         for opt in self._extraconfigopts:
@@ -1382,14 +1385,14 @@ class TTest(Test):
         session = str(uuid.uuid4())
         if PYTHON3:
             session = session.encode('ascii')
-        hgcatapult = os.getenv('HGCATAPULTSERVERPIPE')
+        hgcatapult = os.getenv('HGTESTCATAPULTSERVERPIPE')
         def toggletrace(cmd=None):
             if not hgcatapult or hgcatapult == os.devnull:
                 return
 
             if activetrace:
                 script.append(
-                    b'echo END %s %s >> "$HGCATAPULTSERVERPIPE"\n' % (
+                    b'echo END %s %s >> "$HGTESTCATAPULTSERVERPIPE"\n' % (
                         session, activetrace[0]))
             if cmd is None:
                 return
@@ -1400,7 +1403,7 @@ class TTest(Test):
                 quoted = shellquote(cmd.strip().decode('utf8')).encode('utf8')
             quoted = quoted.replace(b'\\', b'\\\\')
             script.append(
-                b'echo START %s %s >> "$HGCATAPULTSERVERPIPE"\n' % (
+                b'echo START %s %s >> "$HGTESTCATAPULTSERVERPIPE"\n' % (
                     session, quoted))
             activetrace[0:] = [quoted]
 
@@ -1438,18 +1441,19 @@ class TTest(Test):
             # loop to exit and closes the pipe. Sigh.
             script.append(
                 b'rtendtracing() {\n'
-                b'  echo END %(session)s %(name)s >> $HGCATAPULTSERVERPIPE\n'
+                b'  echo END %(session)s %(name)s >> %(catapult)s\n'
                 b'  rm -f "$TESTTMP/.still-running"\n'
                 b'}\n'
                 b'trap "rtendtracing" 0\n'
                 b'touch "$TESTTMP/.still-running"\n'
                 b'while [ -f "$TESTTMP/.still-running" ]; do sleep 1; done '
-                b'> $HGCATAPULTSERVERPIPE &\n'
+                b'> %(catapult)s &\n'
                 b'HGCATAPULTSESSION=%(session)s ; export HGCATAPULTSESSION\n'
-                b'echo START %(session)s %(name)s >> $HGCATAPULTSERVERPIPE\n'
+                b'echo START %(session)s %(name)s >> %(catapult)s\n'
                 % {
                     'name': self.name,
                     'session': session,
+                    'catapult': hgcatapult,
                 }
             )
 

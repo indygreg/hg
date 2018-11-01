@@ -511,8 +511,9 @@ def _fullcopytracing(repo, c1, c2, base):
         # unmatched file from topological common ancestors (no DAG rotation)
         # need to recompute this for directory move handling when grafting
         mta = tca.manifest()
-        u1u, u2u = _computenonoverlap(repo, c1, c2, m1.filesnotin(mta),
-                                                    m2.filesnotin(mta),
+        u1u, u2u = _computenonoverlap(repo, c1, c2,
+                                      m1.filesnotin(mta, repo.narrowmatch()),
+                                      m2.filesnotin(mta, repo.narrowmatch()),
                                       baselabel='topological common ancestor')
 
     for f in u1u:

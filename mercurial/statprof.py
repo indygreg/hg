@@ -206,8 +206,10 @@ class CodeSite(object):
     __slots__ = (u'path', u'lineno', u'function', u'source')
 
     def __init__(self, path, lineno, function):
+        assert isinstance(path, bytes)
         self.path = path
         self.lineno = lineno
+        assert isinstance(function, bytes)
         self.function = function
         self.source = None
 

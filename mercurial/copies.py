@@ -219,6 +219,7 @@ def _committedforwardcopies(a, b, match):
 def _forwardcopies(a, b, match=None):
     """find {dst@b: src@a} copy mapping where a is an ancestor of b"""
 
+    match = a.repo().narrowmatch(match)
     # check for working copy
     if b.rev() is None:
         if a == b.p1():

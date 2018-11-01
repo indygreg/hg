@@ -62,5 +62,4 @@ create full repo
   $ hg pull -q
   $ hg --config extensions.rebase= rebase -d tip
   rebasing 3:4f84b666728c "add inside/f4"
-  abort: data/outside/f3.i@54e53435331b: no match found!
-  [255]
+  saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/4f84b666728c-4269b76e-rebase.hg

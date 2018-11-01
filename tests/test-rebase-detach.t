@@ -293,7 +293,7 @@ Ensure --continue restores a correct state (issue3046) and phase:
   $ hg ci -A -m 'B2'
   adding B
   $ hg phase --force --secret .
-  $ hg rebase -s . -d B --config ui.merge=internal:fail
+  $ hg rebase -s . -d B --config ui.merge=internal:merge
   rebasing 3:17b4880d2402 "B2" (tip)
   merging B
   warning: conflicts while merging B! (edit, then use 'hg resolve --mark')

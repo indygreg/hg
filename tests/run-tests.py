@@ -1382,20 +1382,27 @@ class TTest(Test):
         session = str(uuid.uuid4())
         if PYTHON3:
             session = session.encode('ascii')
-        def toggletrace(cmd):
+        hgcatapult = os.getenv('HGCATAPULTSERVERPIPE')
+        def toggletrace(cmd=None):
+            if not hgcatapult or hgcatapult == os.devnull:
+                return
+
+            if active:
+                script.append(
+                    b'echo END %s %s >> "$HGCATAPULTSERVERPIPE"\n' % (
+                        session, active[0]))
+            if cmd is None:
+                return
+
             if isinstance(cmd, str):
                 quoted = shellquote(cmd.strip())
             else:
                 quoted = shellquote(cmd.strip().decode('utf8')).encode('utf8')
             quoted = quoted.replace(b'\\', b'\\\\')
-            if active:
-                script.append(
-                    b'echo END %s %s >> "$HGCATAPULTSERVERPIPE"\n' % (
-                        session, active[0]))
-                script.append(
-                    b'echo START %s %s >> "$HGCATAPULTSERVERPIPE"\n' % (
-                        session, quoted))
-                active[0:] = [quoted]
+            script.append(
+                b'echo START %s %s >> "$HGCATAPULTSERVERPIPE"\n' % (
+                    session, quoted))
+            active[0:] = [quoted]
 
         script = []
 
@@ -1424,7 +1431,6 @@ class TTest(Test):
         if os.getenv('MSYSTEM'):
             script.append(b'alias pwd="pwd -W"\n')
 
-        hgcatapult = os.getenv('HGCATAPULTSERVERPIPE')
         if hgcatapult and hgcatapult != os.devnull:
             # Kludge: use a while loop to keep the pipe from getting
             # closed by our echo commands. The still-running file gets
@@ -1536,6 +1542,9 @@ class TTest(Test):
         if skipping is not None:
             after.setdefault(pos, []).append('  !!! missing #endif\n')
         addsalt(n + 1, False)
+        # Need to end any current per-command trace
+        if active:
+            toggletrace()
         return salt, script, after, expected
 
     def _processoutput(self, exitcode, output, salt, after, expected):

@@ -124,11 +124,11 @@ add some changesets to rename/remove/merge
   created new head
   $ hg rm large normal3
   $ hg commit -q -m"remove large, normal3"
-  $ hg merge
-  merging sub/maybelarge.dat and stuff/maybelarge.dat to stuff/maybelarge.dat
+  $ HGMERGE= hg merge --config ui.merge=internal:merge
+  tool internal:merge (for pattern stuff/maybelarge.dat) can't handle binary
+  no tool found to merge stuff/maybelarge.dat
+  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for stuff/maybelarge.dat? u
   merging sub/normal2 and stuff/normal2 to stuff/normal2
-  warning: stuff/maybelarge.dat looks like a binary file.
-  warning: conflicts while merging stuff/maybelarge.dat! (edit, then use 'hg resolve --mark')
   0 files updated, 1 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]

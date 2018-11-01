@@ -18,10 +18,12 @@ create full repo
   $ echo modified > inside/f2
   $ hg ci -qm 'modify inside/f2'
 
+  $ mkdir outside
+  $ echo new > outside/f3
+  $ hg ci -Aqm 'add outside/f3'
   $ cd ..
 
-  $ hg clone --narrow ssh://user@dummy/master narrow --include inside
-  requesting all changes
+  $ hg clone --narrow ssh://user@dummy/master narrow --include inside -r 2
   adding changesets
   adding manifests
   adding file changes
@@ -55,3 +57,10 @@ create full repo
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     move f2 from outside
   
+  $ echo new > inside/f4
+  $ hg ci -Aqm 'add inside/f4'
+  $ hg pull -q
+  $ hg --config extensions.rebase= rebase -d tip
+  rebasing 3:4f84b666728c "add inside/f4"
+  abort: data/outside/f3.i@54e53435331b: no match found!
+  [255]

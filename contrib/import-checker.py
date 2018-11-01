@@ -674,6 +674,8 @@ def embedded(f, modname, src):
         # "starts" is "line number" (1-origin), but embedded() is
         # expected to return "line offset" (0-origin). Therefore, this
         # yields "starts - 1".
+        if not isinstance(modname, str):
+            modname = modname.decode('utf8')
         yield code, "%s[%d]" % (modname, starts), name, starts - 1
 
 def sources(f, modname):

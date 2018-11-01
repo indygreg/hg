@@ -157,6 +157,12 @@ static const char *index_deref(indexObject *self, Py_ssize_t pos)
 	return (const char *)(self->buf.buf) + pos * v1_hdrsize;
 }
 
+/*
+ * Get parents of the given rev.
+ *
+ * The specified rev must be valid and must not be nullrev. A returned
+ * parent revision may be nullrev, but is guaranteed to be in valid range.
+ */
 static inline int index_get_parents(indexObject *self, Py_ssize_t rev,
 				    int *ps, int maxrev)
 {
@@ -171,7 +177,7 @@ static inline int index_get_parents(indexObject *self, Py_ssize_t rev,
 	}
 	/* If index file is corrupted, ps[] may point to invalid revisions. So
 	 * there is a risk of buffer overflow to trust them unconditionally. */
-	if (ps[0] > maxrev || ps[1] > maxrev) {
+	if (ps[0] < -1 || ps[0] > maxrev || ps[1] < -1 || ps[1] > maxrev) {
 		PyErr_SetString(PyExc_ValueError, "parent out of range");
 		return -1;
 	}

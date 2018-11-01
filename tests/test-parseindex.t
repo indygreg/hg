@@ -133,12 +133,18 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
   $ cd invalidparent
 
   $ hg clone --pull -q --config phases.publish=False ../a limit
+  $ hg clone --pull -q --config phases.publish=False ../a neglimit
   $ hg clone --pull -q --config phases.publish=False ../a segv
-  $ rm -R limit/.hg/cache segv/.hg/cache
+  $ rm -R limit/.hg/cache neglimit/.hg/cache segv/.hg/cache
 
   $ "$PYTHON" <<EOF
   > data = open("limit/.hg/store/00changelog.i", "rb").read()
-  > for n, p in [(b'limit', b'\0\0\0\x02'), (b'segv', b'\0\x01\0\0')]:
+  > poisons = [
+  >     (b'limit', b'\0\0\0\x02'),
+  >     (b'neglimit', b'\xff\xff\xff\xfe'),
+  >     (b'segv', b'\0\x01\0\0'),
+  > ]
+  > for n, p in poisons:
   >     # corrupt p1 at rev0 and p2 at rev1
   >     d = data[:24] + p + data[28:127 + 28] + p + data[127 + 32:]
   >     open(n + b"/.hg/store/00changelog.i", "wb").write(d)
@@ -153,6 +159,11 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
         0       1        1       -1    base         63         62         63   1.01613        63         0    0.00000
         1       2        1       -1    base         66         65         66   1.01538        66         0    0.00000
+
+  $ hg -R neglimit debugrevlogindex -f1 -c
+     rev flag     size   link     p1     p2       nodeid
+       0 0000       62      0     -2     -1 7c31755bf9b5
+       1 0000       65      1      0     -2 26333235a41c
 
   $ hg -R segv debugrevlogindex -f1 -c
      rev flag     size   link     p1     p2       nodeid
@@ -188,6 +199,12 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
   > EOF
 
   $ "$PYTHON" test.py limit/.hg/store
+  reachableroots: parent out of range
+  compute_phases_map_sets: parent out of range
+  index_headrevs: parent out of range
+  find_gca_candidates: parent out of range
+  find_deepest: parent out of range
+  $ "$PYTHON" test.py neglimit/.hg/store
   reachableroots: parent out of range
   compute_phases_map_sets: parent out of range
   index_headrevs: parent out of range

@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import sys
 import unittest
 import zlib
 
@@ -600,5 +601,10 @@ class StreamSettingsTests(unittest.TestCase):
         self.assertEqual(meta[b'data'], response2)
 
 if __name__ == '__main__':
+    if (3, 6, 0) <= sys.version_info <= (3, 6, 3):
+        # Python 3.6.0 through 3.6.3 inclusive shipped with
+        # https://bugs.python.org/issue31825 and we can't run these
+        # tests on those specific versions of Python. Sigh.
+        sys.exit(80)
     import silenttestrunner
     silenttestrunner.main(__name__)

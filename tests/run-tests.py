@@ -482,6 +482,7 @@ def parseargs(args, parser):
             parser.error('--with-hg must specify an executable hg script')
         if os.path.basename(options.with_hg) not in [b'hg', b'hg.exe']:
             sys.stderr.write('warning: --with-hg should specify an hg script\n')
+            sys.stderr.flush()
     if options.local:
         testdir = os.path.dirname(_bytespath(canonpath(sys.argv[0])))
         reporootdir = os.path.dirname(testdir)

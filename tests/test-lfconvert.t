@@ -124,7 +124,7 @@ add some changesets to rename/remove/merge
   created new head
   $ hg rm large normal3
   $ hg commit -q -m"remove large, normal3"
-  $ HGMERGE= hg merge --config ui.merge=internal:merge
+  $ hg merge
   tool internal:merge (for pattern stuff/maybelarge.dat) can't handle binary
   no tool found to merge stuff/maybelarge.dat
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for stuff/maybelarge.dat? u

@@ -1,10 +1,5 @@
 #require symlink execbit
 
-  $ unset HGMERGE
-  $ cat >> $HGRCPATH << EOF
-  > [ui]
-  > merge=:merge
-  > EOF
   $ tellmeabout() {
   > if [ -h $1 ]; then
   >     echo $1 is a symlink:
@@ -41,7 +36,7 @@ Symlink is local parent, executable is other:
    ancestor: c334dc3be0da, local: 521a1e40188f+, remote: 3574f3e69b1c
    preserving a for resolve of a
    a: versions differ -> m (premerge)
-  tool :merge (for pattern a) can't handle symlinks
+  tool internal:merge (for pattern a) can't handle symlinks
   couldn't find merge tool hgmerge
   no tool found to merge a
   picked tool ':prompt' for a (binary False symlink True changedelete False)
@@ -212,7 +207,7 @@ where that was what happened.
   $ ln -s base f
   $ hg ci -qm2
   $ hg merge
-  tool :merge (for pattern f) can't handle symlinks
+  tool internal:merge (for pattern f) can't handle symlinks
   no tool found to merge f
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
@@ -224,7 +219,7 @@ where that was what happened.
 
   $ hg up -Cqr1
   $ hg merge
-  tool :merge (for pattern f) can't handle symlinks
+  tool internal:merge (for pattern f) can't handle symlinks
   no tool found to merge f
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
@@ -251,7 +246,7 @@ Test removed 'x' flag merged with change to symlink
   $ ln -s dangling f
   $ hg ci -qm2
   $ hg merge
-  tool :merge (for pattern f) can't handle symlinks
+  tool internal:merge (for pattern f) can't handle symlinks
   no tool found to merge f
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
@@ -263,7 +258,7 @@ Test removed 'x' flag merged with change to symlink
 
   $ hg up -Cqr1
   $ hg merge
-  tool :merge (for pattern f) can't handle symlinks
+  tool internal:merge (for pattern f) can't handle symlinks
   no tool found to merge f
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
@@ -346,13 +341,13 @@ h: l vs l, different
   merging b
   merging bx
   warning: cannot merge flags for c without common ancestor - keeping local flags
-  tool :merge (for pattern d) can't handle symlinks
+  tool internal:merge (for pattern d) can't handle symlinks
   no tool found to merge d
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for d? u
-  tool :merge (for pattern f) can't handle symlinks
+  tool internal:merge (for pattern f) can't handle symlinks
   no tool found to merge f
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
-  tool :merge (for pattern h) can't handle symlinks
+  tool internal:merge (for pattern h) can't handle symlinks
   no tool found to merge h
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for h? u
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
@@ -408,13 +403,13 @@ h: l vs l, different
   merging b
   merging bx
   warning: cannot merge flags for c without common ancestor - keeping local flags
-  tool :merge (for pattern d) can't handle symlinks
+  tool internal:merge (for pattern d) can't handle symlinks
   no tool found to merge d
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for d? u
-  tool :merge (for pattern f) can't handle symlinks
+  tool internal:merge (for pattern f) can't handle symlinks
   no tool found to merge f
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
-  tool :merge (for pattern h) can't handle symlinks
+  tool internal:merge (for pattern h) can't handle symlinks
   no tool found to merge h
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for h? u
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')

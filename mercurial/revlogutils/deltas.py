@@ -593,7 +593,10 @@ def _candidategroups(revlog, textlen, p1, p2, cachedelta):
         group = []
         for rev in temptative:
             # skip over empty delta (no need to include them in a chain)
-            while not (rev == nullrev or rev in tested or deltalength(rev)):
+            while (revlog._generaldelta
+                   and not (rev == nullrev
+                            or rev in tested
+                            or deltalength(rev))):
                 tested.add(rev)
                 rev = deltaparent(rev)
             # filter out revision we tested already

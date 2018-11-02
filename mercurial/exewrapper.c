@@ -25,7 +25,7 @@ int strcpy_s(char *d, size_t n, const char *s)
 
 #define _tcscpy_s strcpy_s
 #define _tcscat_s strcat_s
-#define _countof(array) (sizeof(array)/sizeof(array[0]))
+#define _countof(array) (sizeof(array) / sizeof(array[0]))
 #endif
 
 static TCHAR pyscript[MAX_PATH + 10];
@@ -43,7 +43,7 @@ int _tmain(int argc, TCHAR *argv[])
 	HANDLE hfind;
 	const char *err;
 	HMODULE pydll;
-	void(__cdecl * Py_SetPythonHome)(TCHAR *home);
+	void(__cdecl * Py_SetPythonHome)(TCHAR * home);
 	int(__cdecl * Py_Main)(int argc, TCHAR *argv[]);
 
 	if (GetModuleFileName(NULL, pyscript, _countof(pyscript)) == 0) {
@@ -86,11 +86,12 @@ int _tmain(int argc, TCHAR *argv[])
 		scenario, so let's load python dll from this dir. */
 		FindClose(hfind);
 		_tcscpy_s(pydllfile, _countof(pydllfile), pyhome);
-		_tcscat_s(pydllfile, _countof(pydllfile), _T("\\") _T(HGPYTHONLIB)
-					_T(".dll"));
+		_tcscat_s(pydllfile, _countof(pydllfile),
+		          _T("\\") _T(HGPYTHONLIB) _T(".dll"));
 		pydll = LoadLibrary(pydllfile);
 		if (pydll == NULL) {
-			err = "failed to load private Python DLL " HGPYTHONLIB ".dll";
+			err = "failed to load private Python DLL " HGPYTHONLIB
+			      ".dll";
 			goto bail;
 		}
 		Py_SetPythonHome =

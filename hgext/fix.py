@@ -157,7 +157,8 @@ def fix(ui, repo, *pats, **opts):
                 # Don't waste memory/time passing unchanged content back, but
                 # produce one result per item either way.
                 yield (rev, path, newdata if newdata != olddata else None)
-        results = worker.worker(ui, 1.0, getfixes, tuple(), workqueue)
+        results = worker.worker(ui, 1.0, getfixes, tuple(), workqueue,
+                                threadsafe=False)
 
         # We have to hold on to the data for each successor revision in memory
         # until all its parents are committed. We ensure this by committing and

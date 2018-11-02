@@ -1691,8 +1691,8 @@ def addpartbundlestream2(bundler, repo, **kwargs):
     includepats = kwargs.get(r'includepats')
     excludepats = kwargs.get(r'excludepats')
 
-    narrowstream = repo.ui.configbool('experimental.server',
-                                      'stream-narrow-clones')
+    narrowstream = repo.ui.configbool('experimental',
+                                      'server.stream-narrow-clones')
 
     if (includepats or excludepats) and not narrowstream:
         raise error.Abort(_('server does not support narrow stream clones'))

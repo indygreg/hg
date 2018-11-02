@@ -168,6 +168,9 @@ from distutils.errors import (
 from distutils.sysconfig import get_python_inc, get_config_var
 from distutils.version import StrictVersion
 
+# Explain to distutils.StrictVersion how our release candidates are versionned
+StrictVersion.version_re = re.compile(r'^(\d+)\.(\d+)(\.(\d+))?-?(rc(\d+))?$')
+
 def write_if_changed(path, content):
     """Write content to a file iff the content hasn't changed."""
     if os.path.exists(path):

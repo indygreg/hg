@@ -132,28 +132,34 @@
    * bookmark: introduce a 'bookmarks' part
    * bookmark: introduce in advance a variant of the exchange test
    * bookmark: run 'pushkey' hooks after bookmark move, not 'prepushkey'
+   * bookmark: use the 'bookmarks' bundle2 part to push bookmark update (Bts:issue5165)
    * bookmarks: add bookmarks to hidden revs if directaccess config is set
    * bookmarks: calculate visibility exceptions only once
    * bookmarks: display the obsfate of hidden revision we create a bookmark on
    * bookmarks: fix pushkey compatibility mode (Bts:issue5777)
    * bookmarks: use context managers for lock and transaction in update()
    * bookmarks: use context managers for locks and transaction in pushbookmark()
+   * branch: add a --rev flag to change branch name of given revisions
    * branch: allow changing branch name to existing name if possible
    * clone: add support for storing remotenames while cloning
    * clone: use utility function to write hgrc
    * clonebundle: make it possible to retrieve the initial bundle through largefile
+   * commands: use the new API to access hidden changesets in various commands
    * commandserver: restore cwd in case of exception
    * commandserver: unblock SIGCHLD
+   * fileset: do not crash by unary negate operation
    * help: deprecate ui.slash in favor of slashpath template filter (Bts:issue5572)
    * log: allow matchfn to be non-null even if both --patch/--stat are off
    * log: build follow-log filematcher at once
    * log: don't expand aliases in revset built from command options
+   * log: follow file history across copies even with -rREV (BC) (Bts:issue4959)
    * log: make "slowpath" condition slightly more readable
    * log: make opt2revset table a module constant
    * log: merge getlogrevs() and getgraphlogrevs()
    * log: remove temporary variable 'date' used only once
    * log: resolve --follow thoroughly in getlogrevs()
    * log: resolve --follow with -rREV in cmdutil.getlogrevs()
+   * log: rewrite --follow-first -rREV like --follow for consistency (BC)
    * log: simplify 'x or ancestors(x)' expression
    * log: translate column labels at once (Bts:issue5750)
    * log: use revsetlang.formatspec() thoroughly
@@ -172,10 +178,23 @@
    * pull: store binary node in pullop.remotebookmarks
    * push: include a 'check:bookmarks' part when possible
    * push: restrict common discovery to the pushed set
+   * revert: do not reverse hunks in interactive when REV is not parent (Bts:issue5096)
    * revert: support reverting to hidden cset if directaccess config is set
   
   === core ===
+   * color: respect HGPLAINEXCEPT=color to allow colors while scripting (Bts:issue5749)
+   * dirstate: add explicit methods for querying directories (API)
+   * dispatch: abort if early boolean options can't be parsed
+   * dispatch: add HGPLAIN=+strictflags to restrict early parsing of global options
+   * dispatch: add option to not strip command args parsed by _earlygetopt()
+   * dispatch: alias --repo to --repository while parsing early options
+   * dispatch: fix early parsing of short option with value like -R=foo
+   * dispatch: handle IOError when writing to stderr
+   * dispatch: stop parsing of early boolean option at "--"
+   * dispatch: verify result of early command parsing
+   * exchange: return bundle info from getbundlechunks() (API)
    * filelog: add the ability to report the user facing name
+   * localrepo: specify optional callback parameter to pathauditor as a keyword
    * revlog: choose between ifh and dfh once for all
    * revlog: don't use slicing to return parents
    * revlog: group delta computation methods under _deltacomputer object
@@ -185,9 +204,21 @@
    * revlog: separate diff computation from the collection of other info
    * revset: evaluate filesets against each revision for 'file()' (Bts:issue5778)
    * revset: parse x^:: as (x^):: (Bts:issue5764)
+   * streamclone: add support for bundle2 based stream clone
+   * streamclone: add support for cloning non append-only file
+   * streamclone: also stream caches to the client
+   * streamclone: define first iteration of version 2 of stream format
+   * streamclone: move wire protocol status code from wireproto command
+   * streamclone: rework canperformstreamclone
+   * streamclone: tests phase exchange during stream clone
+   * streamclone: use readexactly when reading stream v2
+   * templater: fix crash by empty group expression
+   * templater: keep default resources per template engine (API)
    * templater: look up symbols/resources as if they were separated (Bts:issue5699)
    * transaction: register summary callbacks only at start of transaction (BC)
    * util: whitelist NTFS for hardlink creation (Bts:issue4580)
+   * vfs: drop text mode flag (API)
+   * wireproto: drop support for reader interface from streamres (API)
   
   === extensions ===
    * convert: restore the ability to use bzr < 2.6.0 (Bts:issue5733)
@@ -195,7 +226,6 @@
    * largefiles: add a 'debuglfput' command to put largefile into the store
    * largefiles: add support for 'largefiles://' url scheme
    * largefiles: allow to run 'debugupgraderepo' on repo with largefiles
-   * largefiles: convert EOL of hgrc before appending to bytes IO
    * largefiles: explicitly set the source and sink types to 'hg' for lfconvert
    * largefiles: modernize how capabilities are added to the wire protocol
    * largefiles: pay attention to dropped standin files when updating largefiles
@@ -208,6 +238,8 @@
    * rebase: don't run IMM if running rebase in a transaction
    * rebase: don't take out a dirstate guard for in-memory rebase
    * rebase: drop --style option
+   * rebase: enable multidest by default
+   * rebase: exclude descendants of obsoletes w/o a successor in dest (Bts:issue5300)
    * rebase: fix for hgsubversion
    * rebase: pass the wctx object (IMM or on-disk) to merge.update
    * rebase: pass wctx to rebasenode()
@@ -224,21 +256,14 @@
   === unsorted ===
    * archive: add support to specify hidden revs if directaccess config is set
    * atomicupdate: add an experimental option to use atomictemp when updating
+   * bundle2: don't use seekable bundle2 parts by default (Bts:issue5691)
    * bundle: allow bundlerepo to support alternative manifest implementations
    * changelog: introduce a 'tiprev' method
    * changelog: use 'tiprev()' in 'tip()'
    * completion: add support for new "amend" command
+   * crecord: fix revert -ir '.^' crash caused by 3649c3f2cd
    * debugssl: convert port number to int (Bts:issue5757)
    * diff: disable diff.noprefix option for diffstat (Bts:issue5759)
-   * dispatch: abort if early boolean options can't be parsed
-   * dispatch: add HGPLAIN=+strictflags to restrict early parsing of global options
-   * dispatch: add option to not strip command args parsed by _earlygetopt()
-   * dispatch: alias --repo to --repository while parsing early options
-   * dispatch: convert non-list option parsed by _earlygetopt() to string
-   * dispatch: fix early parsing of short option with value like -R=foo
-   * dispatch: handle IOError when writing to stderr
-   * dispatch: stop parsing of early boolean option at "--"
-   * dispatch: verify result of early command parsing
    * evolution: make reporting of new unstable changesets optional
    * extdata: abort if external command exits with non-zero status (BC)
    * fancyopts: add early-options parser compatible with getopt()
@@ -247,7 +272,6 @@
    * httppeer: add support for tracing all http request made by the peer
    * identify: document -r. explicitly how to disable wdir scanning (Bts:issue5622)
    * lfs: register config options
-   * localrepo: specify optional callback parameter to pathauditor as a keyword
    * match: do not weirdly include explicit files excluded by -X option
    * memfilectx: make changectx argument mandatory in constructor (API)
    * morestatus: don't crash with different drive letters for repo.root and CWD
@@ -256,36 +280,38 @@
    * rewriteutil: use precheck() in uncommit and amend commands
    * scmutil: don't try to delete origbackup symlinks to directories (Bts:issue5731)
    * sshpeer: add support for request tracing
-   * streamclone: add support for bundle2 based stream clone
-   * streamclone: add support for cloning non append-only file
-   * streamclone: also stream caches to the client
-   * streamclone: define first iteration of version 2 of stream format
-   * streamclone: move wire protocol status code from wireproto command
-   * streamclone: rework canperformstreamclone
-   * streamclone: tests phase exchange during stream clone
-   * streamclone: use readexactly when reading stream v2
    * subrepo: add config option to reject any subrepo operations (SEC)
    * subrepo: disable git and svn subrepos by default (BC) (SEC)
    * subrepo: extend config option to disable subrepos by type (SEC)
    * subrepo: handle 'C:' style paths on the command line (Bts:issue5770)
    * subrepo: use per-type config options to enable subrepos
    * svnsubrepo: check if subrepo is missing when checking dirty state (Bts:issue5657)
+   * test-bookmarks-pushpull: stabilize for Windows
+   * test-run-tests: stabilize the test (Bts:issue5735)
    * tr-summary: keep a weakref to the unfiltered repository
    * unamend: fix command summary line
    * uncommit: unify functions _uncommitdirstate and _unamenddirstate to one
+   * update: fix crash on bare update when directaccess is enabled
    * update: support updating to hidden cset if directaccess config is set
   
-  === BC ===
+  === Behavior Changes ===
   
    * extdata: abort if external command exits with non-zero status (BC)
    * graphlog: add another graph node type, unstable, using character "*" (BC)
    * hgweb: drop support of browsers that don't understand <canvas> (BC)
    * hgweb: only include graph-related data in jsdata variable on /graph pages (BC)
    * hgweb: stop adding strings to innerHTML of #graphnodes and #nodebgs (BC)
+   * log: follow file history across copies even with -rREV (BC) (Bts:issue4959)
+   * log: rewrite --follow-first -rREV like --follow for consistency (BC)
    * remove: print message for each file in verbose mode only while using '-A' (BC)
    * subrepo: disable git and svn subrepos by default (BC) (SEC)
    * transaction: register summary callbacks only at start of transaction (BC)
   
-  === API Changes ===
+  === Internal API Changes ===
   
+   * dirstate: add explicit methods for querying directories (API)
+   * exchange: return bundle info from getbundlechunks() (API)
    * memfilectx: make changectx argument mandatory in constructor (API)
+   * templater: keep default resources per template engine (API)
+   * vfs: drop text mode flag (API)
+   * wireproto: drop support for reader interface from streamres (API)

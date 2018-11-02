@@ -25,6 +25,14 @@ except ImportError:
     sqlitestore = None
 
 try:
+    import sqlite3
+    if sqlite3.sqlite_version_info < (3, 8, 3):
+        # WITH clause not supported
+        sqlitestore = None
+except ImportError:
+    pass
+
+try:
     from mercurial import zstd
     zstd.__version__
 except ImportError:

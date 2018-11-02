@@ -613,7 +613,7 @@ coreconfigitem('experimental', 'server.filesdata.recommended-batch-size',
 coreconfigitem('experimental', 'server.manifestdata.recommended-batch-size',
     default=100000,
 )
-coreconfigitem('experimental.server', 'stream-narrow-clones',
+coreconfigitem('experimental', 'server.stream-narrow-clones',
     default=False,
 )
 coreconfigitem('experimental', 'single-head-per-branch',
@@ -934,7 +934,7 @@ coreconfigitem('profiling', 'statformat',
     default='hotpath',
 )
 coreconfigitem('profiling', 'time-track',
-    default='real',
+    default=dynamicdefault,
 )
 coreconfigitem('profiling', 'type',
     default='stat',

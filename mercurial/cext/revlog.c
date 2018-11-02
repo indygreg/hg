@@ -2317,7 +2317,7 @@ rustlazyancestorsObject *rustlazyancestors_init(
 	/* to pass index_get_parents() */
 	int (*)(indexObject *, Py_ssize_t, int*, int),
 	/* intrevs vector */
-	int initrevslen, long *initrevs,
+	Py_ssize_t initrevslen, long *initrevs,
 	long stoprev,
 	int inclusive);
 void rustlazyancestors_drop(rustlazyancestorsObject *self);

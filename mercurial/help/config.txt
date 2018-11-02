@@ -1715,7 +1715,7 @@ statistical text report generated from the profiling data.
 
 ``time-track``
     Control if the stat profiler track ``cpu`` or ``real`` time.
-    (default: ``cpu``)
+    (default: ``cpu`` on Windows, otherwise ``real``)
 
 ``limit``
     Number of lines to show. Specific to the ``ls`` instrumenting profiler.
@@ -2369,6 +2369,10 @@ User interface controls.
     Mercurial's behavior over time. This config setting will have no
     effect if ``HGPLAIN`` is set or ``HGPLAINEXCEPT`` is set and does
     not include ``tweakdefaults``. (default: False)
+
+    It currently means::
+
+      .. tweakdefaultsmarker
 
 ``username``
     The committer of a changeset created when running "commit".

@@ -129,11 +129,13 @@ HIDEABLE_FLAG = 32 # Phases that are hideable
 # record phase index
 public, draft, secret = range(3)
 internal = INTERNAL_FLAG | HIDEABLE_FLAG
+archived = HIDEABLE_FLAG
 allphases = range(internal + 1)
 trackedphases = allphases[1:]
 # record phase names
 phasenames = [None] * len(allphases)
 phasenames[:3] = ['public', 'draft', 'secret']
+phasenames[archived] = 'archived'
 phasenames[internal] = 'internal'
 # record phase property
 mutablephases = tuple(allphases[1:])
@@ -446,8 +448,9 @@ class phasecache(object):
     def _retractboundary(self, repo, tr, targetphase, nodes):
         # Be careful to preserve shallow-copied values: do not update
         # phaseroots values, replace them.
-        if targetphase == internal and not supportinternal(repo):
-            msg = 'this repository does not support the internal phase'
+        if targetphase in (archived, internal) and not supportinternal(repo):
+            name = phasenames[targetphase]
+            msg = 'this repository does not support the %s phase' % name
             raise error.ProgrammingError(msg)
 
         repo = repo.unfiltered()

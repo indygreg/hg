@@ -60,15 +60,16 @@ impl Graph for Index {
 pub extern "C" fn rustlazyancestors_init(
     index: IndexPtr,
     parents: IndexParentsFn,
-    initrevslen: usize,
+    initrevslen: ssize_t,
     initrevs: *mut c_long,
     stoprev: c_long,
     inclusive: c_int,
 ) -> *mut AncestorsIterator<Index> {
+    assert!(initrevslen >= 0);
     unsafe {
         raw_init(
             Index::new(index, parents),
-            initrevslen,
+            initrevslen as usize,
             initrevs,
             stoprev,
             inclusive,

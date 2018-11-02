@@ -445,6 +445,19 @@ Test explicitly setting the otion to 'none'
   $ hg resolve -l
   R file1
   R file2
+Test with marking an explicit file as resolved, this should not abort (since
+there's no --force flag, we have no way of combining --all with a filename)
+  $ hg resolve --unmark
+  $ hg resolve -l
+  U file1
+  U file2
+(This downgrades to a warning since an explicit file was specified).
+  $ hg --config commands.resolve.mark-check=abort resolve -m file2
+  warning: the following files still have conflict markers:
+    file2
+  $ hg resolve -l
+  U file1
+  R file2
 Testing the --re-merge flag
   $ hg resolve --unmark file1
   $ hg resolve -l

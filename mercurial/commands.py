@@ -4912,7 +4912,7 @@ def resolve(ui, repo, *pats, **opts):
         if hasconflictmarkers:
             ui.warn(_('warning: the following files still have conflict '
                       'markers:\n  ') + '\n  '.join(hasconflictmarkers) + '\n')
-            if markcheck == 'abort' and not all:
+            if markcheck == 'abort' and not all and not pats:
                 raise error.Abort(_('conflict markers detected'),
                                   hint=_('use --all to mark anyway'))
 

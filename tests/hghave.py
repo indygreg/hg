@@ -791,8 +791,12 @@ def has_repofncache():
 def has_sqlite():
     try:
         import sqlite3
-        sqlite3.sqlite_version
+        version = sqlite3.sqlite_version_info
     except ImportError:
+        return False
+
+    if version < (3, 8, 3):
+        # WITH clause not supported
         return False
 
     return matchoutput('sqlite3 -version', b'^3\.\d+')

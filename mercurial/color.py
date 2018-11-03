@@ -487,11 +487,7 @@ if pycompat.iswindows:
             ansire = re.compile(b'\033\[([^m]*)m([^\033]*)(.*)',
                                 re.MULTILINE | re.DOTALL)
 
-    def win32print(ui, writefunc, *msgs, **opts):
-        for text in msgs:
-            _win32print(ui, text, writefunc, **opts)
-
-    def _win32print(ui, text, writefunc, **opts):
+    def win32print(ui, writefunc, text, **opts):
         label = opts.get(r'label', '')
         attr = origattr
 

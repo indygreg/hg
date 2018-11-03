@@ -960,13 +960,13 @@ class ui(object):
             if self._colormode is not None:
                 label = opts.get(r'label', '')
                 msgs = [self.label(a, label) for a in args]
-            write(*msgs, **opts)
+            write(b''.join(msgs))
 
-    def _write(self, *msgs, **opts):
+    def _write(self, data):
         # opencode timeblockedsection because this is a critical path
         starttime = util.timer()
         try:
-            self.fout.write(''.join(msgs))
+            self.fout.write(data)
         except IOError as err:
             raise error.StdioError(err)
         finally:
@@ -979,13 +979,12 @@ class ui(object):
         else:
             self._writenobuf(self._write_err, *args, **opts)
 
-    def _write_err(self, *msgs, **opts):
+    def _write_err(self, data):
         try:
             with self.timeblockedsection('stdio'):
                 if not getattr(self.fout, 'closed', False):
                     self.fout.flush()
-                for a in msgs:
-                    self.ferr.write(a)
+                self.ferr.write(data)
                 # stderr may be buffered under win32 when redirected to files,
                 # including stdout.
                 if not getattr(self.ferr, 'closed', False):

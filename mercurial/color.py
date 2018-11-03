@@ -529,7 +529,7 @@ if pycompat.iswindows:
                         attr = mapcolor(int(sattr), attr)
                 ui.flush()
                 _kernel32.SetConsoleTextAttribute(stdout, attr)
-                writefunc(m.group(2), **opts)
+                writefunc(m.group(2))
                 m = re.match(ansire, m.group(3))
         finally:
             # Explicitly reset original attributes

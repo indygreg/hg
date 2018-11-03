@@ -962,6 +962,8 @@ class ui(object):
         # opencode timeblockedsection because this is a critical path
         starttime = util.timer()
         try:
+            if dest is self.ferr and not getattr(self.fout, 'closed', False):
+                self.fout.flush()
             if self._colormode == 'win32':
                 # windows color printing is its own can of crab, defer to
                 # the color module and that is it.
@@ -971,15 +973,22 @@ class ui(object):
                     label = opts.get(r'label', '')
                     msg = self.label(msg, label)
                 write(msg)
+            # stderr may be buffered under win32 when redirected to files,
+            # including stdout.
+            if dest is self.ferr and not getattr(self.ferr, 'closed', False):
+                dest.flush()
+        except IOError as err:
+            if (dest is self.ferr
+                and err.errno in (errno.EPIPE, errno.EIO, errno.EBADF)):
+                # no way to report the error, so ignore it
+                return
+            raise error.StdioError(err)
         finally:
             self._blockedtimes['stdio_blocked'] += \
                 (util.timer() - starttime) * 1000
 
     def _write(self, data):
-        try:
-            self.fout.write(data)
-        except IOError as err:
-            raise error.StdioError(err)
+        self.fout.write(data)
 
     def write_err(self, *args, **opts):
         if self._bufferstates and self._bufferstates[-1][0]:
@@ -988,18 +997,7 @@ class ui(object):
             self._writenobuf(self.ferr, *args, **opts)
 
     def _write_err(self, data):
-        try:
-            if True:
-                if not getattr(self.fout, 'closed', False):
-                    self.fout.flush()
-                self.ferr.write(data)
-                # stderr may be buffered under win32 when redirected to files,
-                # including stdout.
-                if not getattr(self.ferr, 'closed', False):
-                    self.ferr.flush()
-        except IOError as inst:
-            if inst.errno not in (errno.EPIPE, errno.EIO, errno.EBADF):
-                raise error.StdioError(inst)
+        self.ferr.write(data)
 
     def flush(self):
         # opencode timeblockedsection because this is a critical path

@@ -950,6 +950,7 @@ class ui(object):
             self._writenobuf(*args, **opts)
 
     def _writenobuf(self, *args, **opts):
+        self._progclear()
         if self._colormode == 'win32':
             # windows color printing is its own can of crab, defer to
             # the color module and that is it.
@@ -962,7 +963,6 @@ class ui(object):
             self._write(*msgs, **opts)
 
     def _write(self, *msgs, **opts):
-        self._progclear()
         # opencode timeblockedsection because this is a critical path
         starttime = util.timer()
         try:
@@ -974,10 +974,11 @@ class ui(object):
                 (util.timer() - starttime) * 1000
 
     def write_err(self, *args, **opts):
-        self._progclear()
         if self._bufferstates and self._bufferstates[-1][0]:
             self.write(*args, **opts)
-        elif self._colormode == 'win32':
+            return
+        self._progclear()
+        if self._colormode == 'win32':
             # windows color printing is its own can of crab, defer to
             # the color module and that is it.
             color.win32print(self, self._write_err, *args, **opts)

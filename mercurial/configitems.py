@@ -1181,6 +1181,9 @@ coreconfigitem('ui', 'mergemarkertemplate',
             '{ifeq(branch, "default", "", "{branch} ")}'
             '- {author|user}: {desc|firstline}')
 )
+coreconfigitem('ui', 'message-output',
+    default='stdio',
+)
 coreconfigitem('ui', 'nontty',
     default=False,
 )

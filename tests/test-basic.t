@@ -102,3 +102,118 @@ Repository root:
 At the end...
 
   $ cd ..
+
+Status message redirection:
+
+  $ hg init empty
+
+ status messages are sent to stdout by default:
+
+  $ hg outgoing -R t empty -Tjson 2>/dev/null
+  comparing with empty
+  searching for changes
+  [
+   {
+    "bookmarks": [],
+    "branch": "default",
+    "date": [0, 0],
+    "desc": "test",
+    "node": "acb14030fe0a21b60322c440ad2d20cf7685a376",
+    "parents": ["0000000000000000000000000000000000000000"],
+    "phase": "draft",
+    "rev": 0,
+    "tags": ["tip"],
+    "user": "test"
+   }
+  ]
+
+ which can be configured to send to stderr, so the output wouldn't be
+ interleaved:
+
+  $ cat <<'EOF' >> "$HGRCPATH"
+  > [ui]
+  > message-output = stderr
+  > EOF
+  $ hg outgoing -R t empty -Tjson 2>/dev/null
+  [
+   {
+    "bookmarks": [],
+    "branch": "default",
+    "date": [0, 0],
+    "desc": "test",
+    "node": "acb14030fe0a21b60322c440ad2d20cf7685a376",
+    "parents": ["0000000000000000000000000000000000000000"],
+    "phase": "draft",
+    "rev": 0,
+    "tags": ["tip"],
+    "user": "test"
+   }
+  ]
+  $ hg outgoing -R t empty -Tjson >/dev/null
+  comparing with empty
+  searching for changes
+
+ this option should be turned off by HGPLAIN= since it may break scripting use:
+
+  $ HGPLAIN= hg outgoing -R t empty -Tjson 2>/dev/null
+  comparing with empty
+  searching for changes
+  [
+   {
+    "bookmarks": [],
+    "branch": "default",
+    "date": [0, 0],
+    "desc": "test",
+    "node": "acb14030fe0a21b60322c440ad2d20cf7685a376",
+    "parents": ["0000000000000000000000000000000000000000"],
+    "phase": "draft",
+    "rev": 0,
+    "tags": ["tip"],
+    "user": "test"
+   }
+  ]
+
+ but still overridden by --config:
+
+  $ HGPLAIN= hg outgoing -R t empty -Tjson --config ui.message-output=stderr \
+  > 2>/dev/null
+  [
+   {
+    "bookmarks": [],
+    "branch": "default",
+    "date": [0, 0],
+    "desc": "test",
+    "node": "acb14030fe0a21b60322c440ad2d20cf7685a376",
+    "parents": ["0000000000000000000000000000000000000000"],
+    "phase": "draft",
+    "rev": 0,
+    "tags": ["tip"],
+    "user": "test"
+   }
+  ]
+
+Invalid ui.message-output option:
+
+  $ hg log -R t --config ui.message-output=bad
+  abort: invalid ui.message-output destination: bad
+  [255]
+
+Underlying message streams should be updated when ui.fout/ferr are set:
+
+  $ cat <<'EOF' > capui.py
+  > from mercurial import pycompat, registrar
+  > cmdtable = {}
+  > command = registrar.command(cmdtable)
+  > @command(b'capui', norepo=True)
+  > def capui(ui):
+  >     out = ui.fout
+  >     ui.fout = pycompat.bytesio()
+  >     ui.status(b'status\n')
+  >     ui.ferr = pycompat.bytesio()
+  >     ui.warn(b'warn\n')
+  >     out.write(b'stdout: %s' % ui.fout.getvalue())
+  >     out.write(b'stderr: %s' % ui.ferr.getvalue())
+  > EOF
+  $ hg --config extensions.capui=capui.py --config ui.message-output=stdio capui
+  stdout: status
+  stderr: warn

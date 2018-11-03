@@ -234,6 +234,8 @@ class ui(object):
             self._fout = src._fout
             self._ferr = src._ferr
             self._fin = src._fin
+            self._fmsgout = src._fmsgout
+            self._fmsgerr = src._fmsgerr
             self._finoutredirected = src._finoutredirected
             self.pageractive = src.pageractive
             self._disablepager = src._disablepager
@@ -259,6 +261,8 @@ class ui(object):
             self._fout = procutil.stdout
             self._ferr = procutil.stderr
             self._fin = procutil.stdin
+            self._fmsgout = self.fout  # configurable
+            self._fmsgerr = self.ferr  # configurable
             self._finoutredirected = False
             self.pageractive = False
             self._disablepager = False
@@ -416,7 +420,7 @@ class ui(object):
 
         if self.plain():
             for k in ('debug', 'fallbackencoding', 'quiet', 'slash',
-                      'logtemplate', 'statuscopies', 'style',
+                      'logtemplate', 'message-output', 'statuscopies', 'style',
                       'traceback', 'verbose'):
                 if k in cfg['ui']:
                     del cfg['ui'][k]
@@ -469,6 +473,7 @@ class ui(object):
 
         if section in (None, 'ui'):
             # update ui options
+            self._fmsgout, self._fmsgerr = _selectmsgdests(self)
             self.debugflag = self.configbool('ui', 'debug')
             self.verbose = self.debugflag or self.configbool('ui', 'verbose')
             self.quiet = not self.debugflag and self.configbool('ui', 'quiet')
@@ -891,6 +896,7 @@ class ui(object):
     @fout.setter
     def fout(self, f):
         self._fout = f
+        self._fmsgout, self._fmsgerr = _selectmsgdests(self)
 
     @property
     def ferr(self):
@@ -899,6 +905,7 @@ class ui(object):
     @ferr.setter
     def ferr(self, f):
         self._ferr = f
+        self._fmsgout, self._fmsgerr = _selectmsgdests(self)
 
     @property
     def fin(self):
@@ -1364,17 +1371,18 @@ class ui(object):
         If ui is not interactive, the default is returned.
         """
         if not self.interactive():
-            self.write(msg, ' ', label='ui.prompt')
-            self.write(default or '', "\n", label='ui.promptecho')
+            self._write(self._fmsgout, msg, ' ', label='ui.prompt')
+            self._write(self._fmsgout, default or '', "\n",
+                        label='ui.promptecho')
             return default
-        self._writenobuf(self._fout, msg, label='ui.prompt')
+        self._writenobuf(self._fmsgout, msg, label='ui.prompt')
         self.flush()
         try:
             r = self._readline()
             if not r:
                 r = default
             if self.configbool('ui', 'promptecho'):
-                self.write(r, "\n", label='ui.promptecho')
+                self._write(self._fmsgout, r, "\n", label='ui.promptecho')
             return r
         except EOFError:
             raise error.ResponseExpected()
@@ -1424,13 +1432,15 @@ class ui(object):
             r = self.prompt(msg, resps[default])
             if r.lower() in resps:
                 return resps.index(r.lower())
-            self.write(_("unrecognized response\n"))
+            # TODO: shouldn't it be a warning?
+            self._write(self._fmsgout, _("unrecognized response\n"))
 
     def getpass(self, prompt=None, default=None):
         if not self.interactive():
             return default
         try:
-            self.write_err(self.label(prompt or _('password: '), 'ui.prompt'))
+            self._write(self._fmsgerr, prompt or _('password: '),
+                        label='ui.prompt')
             # disable getpass() only if explicitly specified. it's still valid
             # to interact with tty even if fin is not a tty.
             with self.timeblockedsection('stdio'):
@@ -1451,7 +1461,7 @@ class ui(object):
         '''
         if not self.quiet:
             opts[r'label'] = opts.get(r'label', '') + ' ui.status'
-            self.write(*msg, **opts)
+            self._write(self._fmsgout, *msg, **opts)
 
     def warn(self, *msg, **opts):
         '''write warning message to output (stderr)
@@ -1459,7 +1469,7 @@ class ui(object):
         This adds an output label of "ui.warning".
         '''
         opts[r'label'] = opts.get(r'label', '') + ' ui.warning'
-        self.write_err(*msg, **opts)
+        self._write(self._fmsgerr, *msg, **opts)
 
     def error(self, *msg, **opts):
         '''write error message to output (stderr)
@@ -1467,7 +1477,7 @@ class ui(object):
         This adds an output label of "ui.error".
         '''
         opts[r'label'] = opts.get(r'label', '') + ' ui.error'
-        self.write_err(*msg, **opts)
+        self._write(self._fmsgerr, *msg, **opts)
 
     def note(self, *msg, **opts):
         '''write note to output (if ui.verbose is True)
@@ -1476,7 +1486,7 @@ class ui(object):
         '''
         if self.verbose:
             opts[r'label'] = opts.get(r'label', '') + ' ui.note'
-            self.write(*msg, **opts)
+            self._write(self._fmsgout, *msg, **opts)
 
     def debug(self, *msg, **opts):
         '''write debug message to output (if ui.debugflag is True)
@@ -1485,7 +1495,7 @@ class ui(object):
         '''
         if self.debugflag:
             opts[r'label'] = opts.get(r'label', '') + ' ui.debug'
-            self.write(*msg, **opts)
+            self._write(self._fmsgout, *msg, **opts)
 
     def edit(self, text, user, extra=None, editform=None, pending=None,
              repopath=None, action=None):
@@ -1939,3 +1949,11 @@ def getprogbar(ui):
 
 def haveprogbar():
     return _progresssingleton is not None
+
+def _selectmsgdests(ui):
+    name = ui.config(b'ui', b'message-output')
+    if name == b'stdio':
+        return ui.fout, ui.ferr
+    if name == b'stderr':
+        return ui.ferr, ui.ferr
+    raise error.Abort(b'invalid ui.message-output destination: %s' % name)

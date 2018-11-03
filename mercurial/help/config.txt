@@ -2246,6 +2246,14 @@ User interface controls.
 
     Can be overridden per-merge-tool, see the ``[merge-tools]`` section.
 
+``message-output``
+    Where to write status and error messages. (default: ``stdio``)
+
+    ``stderr``
+      Everything to stderr.
+    ``stdio``
+      Status to stdout, and error to stderr.
+
 ``origbackuppath``
     The path to a directory used to store generated .orig files. If the path is
     not a directory, one will be created.  If set, files stored in this

@@ -913,6 +913,13 @@ class ui(object):
 
         return "".join(self._buffers.pop())
 
+    def _isbuffered(self, dest):
+        if dest is self.fout:
+            return bool(self._buffers)
+        if dest is self.ferr:
+            return bool(self._bufferstates and self._bufferstates[-1][0])
+        return False
+
     def canwritewithoutlabels(self):
         '''check if write skips the label'''
         if self._buffers and not self._bufferapplylabels:
@@ -940,14 +947,20 @@ class ui(object):
         "cmdname.type" is recommended. For example, status issues
         a label of "status.modified" for modified files.
         '''
-        if self._buffers:
+        self._write(self.fout, *args, **opts)
+
+    def write_err(self, *args, **opts):
+        self._write(self.ferr, *args, **opts)
+
+    def _write(self, dest, *args, **opts):
+        if self._isbuffered(dest):
             if self._bufferapplylabels:
                 label = opts.get(r'label', '')
                 self._buffers[-1].extend(self.label(a, label) for a in args)
             else:
                 self._buffers[-1].extend(args)
         else:
-            self._writenobuf(self.fout, *args, **opts)
+            self._writenobuf(dest, *args, **opts)
 
     def _writenobuf(self, dest, *args, **opts):
         self._progclear()
@@ -980,12 +993,6 @@ class ui(object):
         finally:
             self._blockedtimes['stdio_blocked'] += \
                 (util.timer() - starttime) * 1000
-
-    def write_err(self, *args, **opts):
-        if self._bufferstates and self._bufferstates[-1][0]:
-            self.write(*args, **opts)
-        else:
-            self._writenobuf(self.ferr, *args, **opts)
 
     def flush(self):
         # opencode timeblockedsection because this is a critical path

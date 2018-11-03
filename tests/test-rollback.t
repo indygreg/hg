@@ -278,11 +278,12 @@ I/O errors on stdio are handled properly (issue5658)
   > 
   > def uisetup(ui):
   >     class badui(ui.__class__):
-  >         def write_err(self, *args, **kwargs):
+  >         def _write(self, dest, *args, **kwargs):
   >             olderr = self.ferr
   >             try:
-  >                 self.ferr = fdproxy(self, olderr)
-  >                 return super(badui, self).write_err(*args, **kwargs)
+  >                 if dest is self.ferr:
+  >                     self.ferr = dest = fdproxy(self, olderr)
+  >                 return super(badui, self)._write(dest, *args, **kwargs)
   >             finally:
   >                 self.ferr = olderr
   > 

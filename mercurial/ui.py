@@ -952,6 +952,9 @@ class ui(object):
     def _writenobuf(self, write, *args, **opts):
         self._progclear()
         msg = b''.join(args)
+
+        # opencode timeblockedsection because this is a critical path
+        starttime = util.timer()
         try:
             if self._colormode == 'win32':
                 # windows color printing is its own can of crab, defer to
@@ -963,18 +966,14 @@ class ui(object):
                     msg = self.label(msg, label)
                 write(msg)
         finally:
-            pass
+            self._blockedtimes['stdio_blocked'] += \
+                (util.timer() - starttime) * 1000
 
     def _write(self, data):
-        # opencode timeblockedsection because this is a critical path
-        starttime = util.timer()
         try:
             self.fout.write(data)
         except IOError as err:
             raise error.StdioError(err)
-        finally:
-            self._blockedtimes['stdio_blocked'] += \
-                (util.timer() - starttime) * 1000
 
     def write_err(self, *args, **opts):
         if self._bufferstates and self._bufferstates[-1][0]:
@@ -984,7 +983,7 @@ class ui(object):
 
     def _write_err(self, data):
         try:
-            with self.timeblockedsection('stdio'):
+            if True:
                 if not getattr(self.fout, 'closed', False):
                     self.fout.flush()
                 self.ferr.write(data)

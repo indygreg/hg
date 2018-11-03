@@ -947,10 +947,16 @@ class ui(object):
             else:
                 self._buffers[-1].extend(args)
         else:
-            self._writenobuf(self._write, *args, **opts)
+            self._writenobuf(self.fout, *args, **opts)
 
-    def _writenobuf(self, write, *args, **opts):
+    def _writenobuf(self, dest, *args, **opts):
         self._progclear()
+        if dest is self.fout:
+            write = self._write
+        elif dest is self.ferr:
+            write = self._write_err
+        else:
+            raise error.ProgrammingError('unsupported file to write')
         msg = b''.join(args)
 
         # opencode timeblockedsection because this is a critical path
@@ -979,7 +985,7 @@ class ui(object):
         if self._bufferstates and self._bufferstates[-1][0]:
             self.write(*args, **opts)
         else:
-            self._writenobuf(self._write_err, *args, **opts)
+            self._writenobuf(self.ferr, *args, **opts)
 
     def _write_err(self, data):
         try:
@@ -1343,7 +1349,7 @@ class ui(object):
         if not self.interactive():
             self.write(msg, ' ', default or '', "\n")
             return default
-        self._writenobuf(self._write, msg, label='ui.prompt')
+        self._writenobuf(self.fout, msg, label='ui.prompt')
         self.flush()
         try:
             r = self._readline()

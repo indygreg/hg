@@ -952,15 +952,18 @@ class ui(object):
     def _writenobuf(self, write, *args, **opts):
         self._progclear()
         msg = b''.join(args)
-        if self._colormode == 'win32':
-            # windows color printing is its own can of crab, defer to
-            # the color module and that is it.
-            color.win32print(self, write, msg, **opts)
-        else:
-            if self._colormode is not None:
-                label = opts.get(r'label', '')
-                msg = self.label(msg, label)
-            write(msg)
+        try:
+            if self._colormode == 'win32':
+                # windows color printing is its own can of crab, defer to
+                # the color module and that is it.
+                color.win32print(self, write, msg, **opts)
+            else:
+                if self._colormode is not None:
+                    label = opts.get(r'label', '')
+                    msg = self.label(msg, label)
+                write(msg)
+        finally:
+            pass
 
     def _write(self, data):
         # opencode timeblockedsection because this is a critical path

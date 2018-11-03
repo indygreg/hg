@@ -2543,17 +2543,18 @@ class TestRunner(object):
             os.umask(oldmask)
 
     def _run(self, testdescs):
+        testdir = getcwdb()
         self._testdir = osenvironb[b'TESTDIR'] = getcwdb()
         # assume all tests in same folder for now
         if testdescs:
             pathname = os.path.dirname(testdescs[0]['path'])
             if pathname:
-                osenvironb[b'TESTDIR'] = os.path.join(osenvironb[b'TESTDIR'],
-                                                      pathname)
+                testdir = os.path.join(testdir, pathname)
+        self._testdir = osenvironb[b'TESTDIR'] = testdir
         if self.options.outputdir:
             self._outputdir = canonpath(_bytespath(self.options.outputdir))
         else:
-            self._outputdir = self._testdir
+            self._outputdir = getcwdb()
             if testdescs and pathname:
                 self._outputdir = os.path.join(self._outputdir, pathname)
         previoustimes = {}
@@ -2901,7 +2902,7 @@ class TestRunner(object):
                 testcls = cls
                 break
 
-        refpath = os.path.join(self._testdir, path)
+        refpath = os.path.join(getcwdb(), path)
         tmpdir = os.path.join(self._hgtmp, b'child%d' % count)
 
         # extra keyword parameters. 'case' is used by .t tests

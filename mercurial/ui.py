@@ -947,20 +947,20 @@ class ui(object):
             else:
                 self._buffers[-1].extend(args)
         else:
-            self._writenobuf(*args, **opts)
+            self._writenobuf(self._write, *args, **opts)
 
-    def _writenobuf(self, *args, **opts):
+    def _writenobuf(self, write, *args, **opts):
         self._progclear()
         if self._colormode == 'win32':
             # windows color printing is its own can of crab, defer to
             # the color module and that is it.
-            color.win32print(self, self._write, *args, **opts)
+            color.win32print(self, write, *args, **opts)
         else:
             msgs = args
             if self._colormode is not None:
                 label = opts.get(r'label', '')
                 msgs = [self.label(a, label) for a in args]
-            self._write(*msgs, **opts)
+            write(*msgs, **opts)
 
     def _write(self, *msgs, **opts):
         # opencode timeblockedsection because this is a critical path
@@ -976,18 +976,8 @@ class ui(object):
     def write_err(self, *args, **opts):
         if self._bufferstates and self._bufferstates[-1][0]:
             self.write(*args, **opts)
-            return
-        self._progclear()
-        if self._colormode == 'win32':
-            # windows color printing is its own can of crab, defer to
-            # the color module and that is it.
-            color.win32print(self, self._write_err, *args, **opts)
         else:
-            msgs = args
-            if self._colormode is not None:
-                label = opts.get(r'label', '')
-                msgs = [self.label(a, label) for a in args]
-            self._write_err(*msgs, **opts)
+            self._writenobuf(self._write_err, *args, **opts)
 
     def _write_err(self, *msgs, **opts):
         try:
@@ -1352,7 +1342,7 @@ class ui(object):
         if not self.interactive():
             self.write(msg, ' ', default or '', "\n")
             return default
-        self._writenobuf(msg, label='ui.prompt')
+        self._writenobuf(self._write, msg, label='ui.prompt')
         self.flush()
         try:
             r = self._readline()

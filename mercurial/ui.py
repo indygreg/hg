@@ -951,12 +951,6 @@ class ui(object):
 
     def _writenobuf(self, dest, *args, **opts):
         self._progclear()
-        if dest is self.fout:
-            write = self._write
-        elif dest is self.ferr:
-            write = self._write_err
-        else:
-            raise error.ProgrammingError('unsupported file to write')
         msg = b''.join(args)
 
         # opencode timeblockedsection because this is a critical path
@@ -967,12 +961,12 @@ class ui(object):
             if self._colormode == 'win32':
                 # windows color printing is its own can of crab, defer to
                 # the color module and that is it.
-                color.win32print(self, write, msg, **opts)
+                color.win32print(self, dest.write, msg, **opts)
             else:
                 if self._colormode is not None:
                     label = opts.get(r'label', '')
                     msg = self.label(msg, label)
-                write(msg)
+                dest.write(msg)
             # stderr may be buffered under win32 when redirected to files,
             # including stdout.
             if dest is self.ferr and not getattr(self.ferr, 'closed', False):
@@ -987,17 +981,11 @@ class ui(object):
             self._blockedtimes['stdio_blocked'] += \
                 (util.timer() - starttime) * 1000
 
-    def _write(self, data):
-        self.fout.write(data)
-
     def write_err(self, *args, **opts):
         if self._bufferstates and self._bufferstates[-1][0]:
             self.write(*args, **opts)
         else:
             self._writenobuf(self.ferr, *args, **opts)
-
-    def _write_err(self, data):
-        self.ferr.write(data)
 
     def flush(self):
         # opencode timeblockedsection because this is a critical path

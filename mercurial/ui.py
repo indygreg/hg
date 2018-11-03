@@ -231,9 +231,9 @@ class ui(object):
         self._uninterruptible = False
 
         if src:
-            self.fout = src.fout
-            self.ferr = src.ferr
-            self.fin = src.fin
+            self._fout = src._fout
+            self._ferr = src._ferr
+            self._fin = src._fin
             self._finoutredirected = src._finoutredirected
             self.pageractive = src.pageractive
             self._disablepager = src._disablepager
@@ -256,9 +256,9 @@ class ui(object):
             self.httppasswordmgrdb = src.httppasswordmgrdb
             self._blockedtimes = src._blockedtimes
         else:
-            self.fout = procutil.stdout
-            self.ferr = procutil.stderr
-            self.fin = procutil.stdin
+            self._fout = procutil.stdout
+            self._ferr = procutil.stderr
+            self._fin = procutil.stdin
             self._finoutredirected = False
             self.pageractive = False
             self._disablepager = False
@@ -884,6 +884,30 @@ class ui(object):
     def paths(self):
         return paths(self)
 
+    @property
+    def fout(self):
+        return self._fout
+
+    @fout.setter
+    def fout(self, f):
+        self._fout = f
+
+    @property
+    def ferr(self):
+        return self._ferr
+
+    @ferr.setter
+    def ferr(self, f):
+        self._ferr = f
+
+    @property
+    def fin(self):
+        return self._fin
+
+    @fin.setter
+    def fin(self, f):
+        self._fin = f
+
     def pushbuffer(self, error=False, subproc=False, labeled=False):
         """install a buffer to capture standard output of the ui object
 
@@ -914,9 +938,9 @@ class ui(object):
         return "".join(self._buffers.pop())
 
     def _isbuffered(self, dest):
-        if dest is self.fout:
+        if dest is self._fout:
             return bool(self._buffers)
-        if dest is self.ferr:
+        if dest is self._ferr:
             return bool(self._bufferstates and self._bufferstates[-1][0])
         return False
 
@@ -947,10 +971,10 @@ class ui(object):
         "cmdname.type" is recommended. For example, status issues
         a label of "status.modified" for modified files.
         '''
-        self._write(self.fout, *args, **opts)
+        self._write(self._fout, *args, **opts)
 
     def write_err(self, *args, **opts):
-        self._write(self.ferr, *args, **opts)
+        self._write(self._ferr, *args, **opts)
 
     def _write(self, dest, *args, **opts):
         if self._isbuffered(dest):
@@ -969,8 +993,8 @@ class ui(object):
         # opencode timeblockedsection because this is a critical path
         starttime = util.timer()
         try:
-            if dest is self.ferr and not getattr(self.fout, 'closed', False):
-                self.fout.flush()
+            if dest is self._ferr and not getattr(self._fout, 'closed', False):
+                self._fout.flush()
             if self._colormode == 'win32':
                 # windows color printing is its own can of crab, defer to
                 # the color module and that is it.
@@ -982,10 +1006,10 @@ class ui(object):
                 dest.write(msg)
             # stderr may be buffered under win32 when redirected to files,
             # including stdout.
-            if dest is self.ferr and not getattr(self.ferr, 'closed', False):
+            if dest is self._ferr and not getattr(self._ferr, 'closed', False):
                 dest.flush()
         except IOError as err:
-            if (dest is self.ferr
+            if (dest is self._ferr
                 and err.errno in (errno.EPIPE, errno.EIO, errno.EBADF)):
                 # no way to report the error, so ignore it
                 return
@@ -999,13 +1023,13 @@ class ui(object):
         starttime = util.timer()
         try:
             try:
-                self.fout.flush()
+                self._fout.flush()
             except IOError as err:
                 if err.errno not in (errno.EPIPE, errno.EIO, errno.EBADF):
                     raise error.StdioError(err)
             finally:
                 try:
-                    self.ferr.flush()
+                    self._ferr.flush()
                 except IOError as err:
                     if err.errno not in (errno.EPIPE, errno.EIO, errno.EBADF):
                         raise error.StdioError(err)
@@ -1255,7 +1279,7 @@ class ui(object):
         if i is None:
             # some environments replace stdin without implementing isatty
             # usually those are non-interactive
-            return self._isatty(self.fin)
+            return self._isatty(self._fin)
 
         return i
 
@@ -1293,7 +1317,7 @@ class ui(object):
         if i is None:
             # some environments replace stdout without implementing isatty
             # usually those are non-interactive
-            return self._isatty(self.fout)
+            return self._isatty(self._fout)
 
         return i
 
@@ -1302,9 +1326,9 @@ class ui(object):
         # because they have to be text streams with *no buffering*. Instead,
         # we use rawinput() only if call_readline() will be invoked by
         # PyOS_Readline(), so no I/O will be made at Python layer.
-        usereadline = (self._isatty(self.fin) and self._isatty(self.fout)
-                       and procutil.isstdin(self.fin)
-                       and procutil.isstdout(self.fout))
+        usereadline = (self._isatty(self._fin) and self._isatty(self._fout)
+                       and procutil.isstdin(self._fin)
+                       and procutil.isstdout(self._fout))
         if usereadline:
             try:
                 # magically add command line editing support, where
@@ -1326,9 +1350,9 @@ class ui(object):
                 if pycompat.oslinesep == b'\r\n' and line.endswith(b'\r'):
                     line = line[:-1]
             else:
-                self.fout.write(b' ')
-                self.fout.flush()
-                line = self.fin.readline()
+                self._fout.write(b' ')
+                self._fout.flush()
+                line = self._fin.readline()
                 if not line:
                     raise EOFError
                 line = line.rstrip(pycompat.oslinesep)
@@ -1343,7 +1367,7 @@ class ui(object):
             self.write(msg, ' ', label='ui.prompt')
             self.write(default or '', "\n", label='ui.promptecho')
             return default
-        self._writenobuf(self.fout, msg, label='ui.prompt')
+        self._writenobuf(self._fout, msg, label='ui.prompt')
         self.flush()
         try:
             r = self._readline()
@@ -1411,7 +1435,7 @@ class ui(object):
             # to interact with tty even if fin is not a tty.
             with self.timeblockedsection('stdio'):
                 if self.configbool('ui', 'nontty'):
-                    l = self.fin.readline()
+                    l = self._fin.readline()
                     if not l:
                         raise EOFError
                     return l.rstrip('\n')
@@ -1537,7 +1561,7 @@ class ui(object):
             # the tail end instead
             cmdsuffix = cmd.translate(None, _keepalnum)[-85:]
             blockedtag = 'unknown_system_' + cmdsuffix
-        out = self.fout
+        out = self._fout
         if any(s[1] for s in self._bufferstates):
             out = self
         with self.timeblockedsection(blockedtag):
@@ -1682,7 +1706,7 @@ class ui(object):
         msg = 'devel-warn: ' + msg
         stacklevel += 1 # get in develwarn
         if self.tracebackflag:
-            util.debugstacktrace(msg, stacklevel, self.ferr, self.fout)
+            util.debugstacktrace(msg, stacklevel, self._ferr, self._fout)
             self.log('develwarn', '%s at:\n%s' %
                      (msg, ''.join(util.getstackframes(stacklevel))))
         else:

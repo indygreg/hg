@@ -762,10 +762,15 @@ structured message channel:
   ... def prompt(server):
   ...     readchannel(server)
   ...     interactive = [b'--config', b'ui.interactive=True']
+  ...     runcommand(server, [b'debuggetpass'] + interactive,
+  ...                input=stringio(b'1234\n'))
   ...     runcommand(server, [b'debugprompt'] + interactive,
   ...                input=stringio(b'5678\n'))
   ...     runcommand(server, [b'debugpromptchoice'] + interactive,
   ...                input=stringio(b'n\n'))
+  *** runcommand debuggetpass --config ui.interactive=True
+  message: '\xa3DdataJpassword: Hpassword\xf5DtypeFprompt'
+  1234
   *** runcommand debugprompt --config ui.interactive=True
   message: '\xa3DdataGprompt:GdefaultAyDtypeFprompt'
    5678

@@ -1464,7 +1464,7 @@ class ui(object):
             return default
         try:
             self._writemsg(self._fmsgerr, prompt or _('password: '),
-                           type='prompt')
+                           type='prompt', password=True)
             # disable getpass() only if explicitly specified. it's still valid
             # to interact with tty even if fin is not a tty.
             with self.timeblockedsection('stdio'):

@@ -1320,7 +1320,16 @@ class lrucachedict(object):
         self.insert(k, v)
 
     def __delitem__(self, k):
-        node = self._cache.pop(k)
+        self.pop(k)
+
+    def pop(self, k, default=_notset):
+        try:
+            node = self._cache.pop(k)
+        except KeyError:
+            if default is _notset:
+                raise
+            return default
+        value = node.value
         self.totalcost -= node.cost
         node.markempty()
 
@@ -1328,6 +1337,8 @@ class lrucachedict(object):
         # this node the oldest item.
         self._movetohead(node)
         self._head = node.next
+
+        return value
 
     # Additional dict methods.
 

@@ -94,6 +94,21 @@ class testlrucachedict(unittest.TestCase):
         self.assertEqual(d.peek('a'), 'va')
         self.assertEqual(list(d), ['c', 'b', 'a'])
 
+    def testpop(self):
+        d = util.lrucachedict(4)
+        d['a'] = 'va'
+        d['b'] = 'vb'
+        d['c'] = 'vc'
+
+        with self.assertRaises(KeyError):
+            d.pop('missing')
+        self.assertEqual(list(d), ['c', 'b', 'a'])
+        self.assertIsNone(d.pop('missing', None))
+        self.assertEqual(list(d), ['c', 'b', 'a'])
+
+        self.assertEqual(d.pop('b'), 'vb')
+        self.assertEqual(list(d), ['c', 'a'])
+
     def testcopypartial(self):
         d = util.lrucachedict(4)
         d.insert('a', 'va', cost=4)

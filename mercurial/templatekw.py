@@ -774,7 +774,10 @@ def showrevslist(context, mapping, name, revs):
     """helper to generate a list of revisions in which a mapped template will
     be evaluated"""
     repo = context.resource(mapping, 'repo')
-    f = _showcompatlist(context, mapping, name, ['%d' % r for r in revs])
+    # revs may be a smartset; don't compute it until f() has to be evaluated
+    def f():
+        srevs = ['%d' % r for r in revs]
+        return _showcompatlist(context, mapping, name, srevs)
     return _hybrid(f, revs,
                    lambda x: {name: x, 'ctx': repo[x]},
                    pycompat.identity, keytype=int)

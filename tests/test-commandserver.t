@@ -619,6 +619,10 @@ changelog and manifest would have invalid node:
   > @command(b"debugprompt", norepo=True)
   > def debugprompt(ui):
   >     ui.write(b"%s\n" % ui.prompt(b"prompt:"))
+  > @command(b"debugpromptchoice", norepo=True)
+  > def debugpromptchoice(ui):
+  >     msg = b"promptchoice (y/n)? $$ &Yes $$ &No"
+  >     ui.write(b"%d\n" % ui.promptchoice(msg))
   > @command(b"debugreadstdin", norepo=True)
   > def debugreadstdin(ui):
   >     ui.write(b"read: %r\n" % sys.stdin.read(1))
@@ -750,6 +754,24 @@ structured message channel:
   message: '\xa2DdataX0crosschecking files in changesets and manifests\nDtypeFstatus'
   message: '\xa2DdataOchecking files\nDtypeFstatus'
   message: '\xa2DdataX/checked 0 changesets with 0 changes to 0 files\nDtypeFstatus'
+
+  >>> from hgclient import checkwith, readchannel, runcommand, stringio
+  >>> @checkwith(extraargs=[b'--config', b'ui.message-output=channel',
+  ...                       b'--config', b'cmdserver.message-encodings=cbor',
+  ...                       b'--config', b'extensions.dbgui=dbgui.py'])
+  ... def prompt(server):
+  ...     readchannel(server)
+  ...     interactive = [b'--config', b'ui.interactive=True']
+  ...     runcommand(server, [b'debugprompt'] + interactive,
+  ...                input=stringio(b'5678\n'))
+  ...     runcommand(server, [b'debugpromptchoice'] + interactive,
+  ...                input=stringio(b'n\n'))
+  *** runcommand debugprompt --config ui.interactive=True
+  message: '\xa3DdataGprompt:GdefaultAyDtypeFprompt'
+   5678
+  *** runcommand debugpromptchoice --config ui.interactive=True
+  message: '\xa4Gchoices\x82\x82AyCYes\x82AnBNoDdataTpromptchoice (y/n)? GdefaultAyDtypeFprompt'
+   1
 
 bad message encoding:
 

@@ -1390,12 +1390,16 @@ class ui(object):
         """Prompt user with msg, read response.
         If ui is not interactive, the default is returned.
         """
+        return self._prompt(msg, default=default)
+
+    def _prompt(self, msg, **opts):
+        default = opts[r'default']
         if not self.interactive():
-            self._writemsg(self._fmsgout, msg, ' ', type='prompt')
+            self._writemsg(self._fmsgout, msg, ' ', type='prompt', **opts)
             self._writemsg(self._fmsgout, default or '', "\n",
                            type='promptecho')
             return default
-        self._writemsgnobuf(self._fmsgout, msg, type='prompt')
+        self._writemsgnobuf(self._fmsgout, msg, type='prompt', **opts)
         self.flush()
         try:
             r = self._readline()
@@ -1449,7 +1453,7 @@ class ui(object):
         msg, choices = self.extractchoices(prompt)
         resps = [r for r, t in choices]
         while True:
-            r = self.prompt(msg, resps[default])
+            r = self._prompt(msg, default=resps[default], choices=choices)
             if r.lower() in resps:
                 return resps.index(r.lower())
             # TODO: shouldn't it be a warning?

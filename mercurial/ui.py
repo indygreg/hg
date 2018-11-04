@@ -1675,7 +1675,15 @@ class ui(object):
         All topics should be marked closed by setting pos to None at
         termination.
         '''
-        if self._progbar is not None:
+        if getattr(self._fmsgerr, 'structured', False):
+            # channel for machine-readable output with metadata, just send
+            # raw information
+            # TODO: consider porting some useful information (e.g. estimated
+            # time) from progbar. we might want to support update delay to
+            # reduce the cost of transferring progress messages.
+            self._fmsgerr.write(None, type=b'progress', topic=topic, pos=pos,
+                                item=item, unit=unit, total=total)
+        elif self._progbar is not None:
             self._progbar.progress(topic, pos, item=item, unit=unit,
                                    total=total)
         if pos is None or not self.configbool('progress', 'debug'):

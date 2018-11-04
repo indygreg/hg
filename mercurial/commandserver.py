@@ -93,7 +93,8 @@ class channeledmessage(object):
 
     def write(self, data, **opts):
         opts = pycompat.byteskwargs(opts)
-        opts[b'data'] = data
+        if data is not None:
+            opts[b'data'] = data
         self._cout.write(self._encodefn(opts))
 
     def __getattr__(self, attr):

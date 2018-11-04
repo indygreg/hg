@@ -750,9 +750,13 @@ structured message channel:
   pgid: * (glob)
   *** runcommand -R repo2 verify
   message: '\xa2DdataTchecking changesets\nDtypeFstatus'
+  message: '\xa6Ditem@Cpos\xf6EtopicHcheckingEtotal\xf6DtypeHprogressDunit@'
   message: '\xa2DdataSchecking manifests\nDtypeFstatus'
+  message: '\xa6Ditem@Cpos\xf6EtopicHcheckingEtotal\xf6DtypeHprogressDunit@'
   message: '\xa2DdataX0crosschecking files in changesets and manifests\nDtypeFstatus'
+  message: '\xa6Ditem@Cpos\xf6EtopicMcrosscheckingEtotal\xf6DtypeHprogressDunit@'
   message: '\xa2DdataOchecking files\nDtypeFstatus'
+  message: '\xa6Ditem@Cpos\xf6EtopicHcheckingEtotal\xf6DtypeHprogressDunit@'
   message: '\xa2DdataX/checked 0 changesets with 0 changes to 0 files\nDtypeFstatus'
 
   >>> from hgclient import checkwith, readchannel, runcommand, stringio

@@ -67,9 +67,6 @@ status.relative = yes
 update.check = noconflict
 # Show conflicts information in `hg status`
 status.verbose = True
-# Refuse to perform `hg resolve --mark` on files that still have conflict
-# markers
-resolve.mark-check = abort
 
 [diff]
 git = 1

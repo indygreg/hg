@@ -202,8 +202,6 @@ but "literal:." is not since "." seems not a literal bookmark:
   abort: bookmark 'unknown' does not exist!
   [255]
   $ hg log -r 'bookmark("re:unknown")'
-  abort: no bookmarks exist that match 'unknown'!
-  [255]
   $ hg log -r 'present(bookmark("literal:unknown"))'
   $ hg log -r 'present(bookmark("re:unknown"))'
 

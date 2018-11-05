@@ -669,8 +669,6 @@ matching() should preserve the order of the input set:
   abort: namespace 'unknown' does not exist!
   [255]
   $ log 'named("re:unknown")'
-  abort: no namespace exists that match 'unknown'!
-  [255]
   $ log 'present(named("unknown"))'
   $ log 'present(named("re:unknown"))'
 

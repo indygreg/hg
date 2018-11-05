@@ -466,9 +466,6 @@ def bookmark(repo, subset, x):
             for name, bmrev in repo._bookmarks.iteritems():
                 if matcher(name):
                     matchrevs.add(bmrev)
-            if not matchrevs:
-                raise error.RepoLookupError(_("no bookmarks exist"
-                                              " that match '%s'") % pattern)
             for bmrev in matchrevs:
                 bms.add(repo[bmrev].rev())
     else:
@@ -1330,9 +1327,6 @@ def named(repo, subset, x):
         for name, ns in repo.names.iteritems():
             if matcher(name):
                 namespaces.add(ns)
-        if not namespaces:
-            raise error.RepoLookupError(_("no namespace exists"
-                                          " that match '%s'") % pattern)
 
     names = set()
     for ns in namespaces:

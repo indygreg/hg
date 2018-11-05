@@ -30,6 +30,10 @@ from . import constants
 if not pycompat.iswindows:
     import grp
 
+def isenabled(repo):
+    """returns whether the repository is remotefilelog enabled or not"""
+    return constants.SHALLOWREPO_REQUIREMENT in repo.requirements
+
 def getcachekey(reponame, file, id):
     pathhash = hashlib.sha1(file).hexdigest()
     return os.path.join(reponame, pathhash[:2], pathhash[2:], id)

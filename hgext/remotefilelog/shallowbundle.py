@@ -54,7 +54,7 @@ def shallowgroup(cls, self, nodelist, rlog, lookup, units=None, reorder=None):
 
 class shallowcg1packer(changegroup.cgpacker):
     def generate(self, commonrevs, clnodes, fastpathlinkrev, source):
-        if constants.SHALLOWREPO_REQUIREMENT in self._repo.requirements:
+        if shallowutil.isenabled(self._repo):
             fastpathlinkrev = False
 
         return super(shallowcg1packer, self).generate(commonrevs, clnodes,
@@ -69,7 +69,7 @@ class shallowcg1packer(changegroup.cgpacker):
             linknodes, commonrevs, source = args
         except ValueError:
             commonrevs, source, mfdicts, fastpathlinkrev, fnodes, clrevs = args
-        if constants.SHALLOWREPO_REQUIREMENT in self._repo.requirements:
+        if shallowutil.isenabled(self._repo):
             repo = self._repo
             if isinstance(repo, bundlerepo.bundlerepository):
                 # If the bundle contains filelogs, we can't pull from it, since
@@ -91,7 +91,7 @@ class shallowcg1packer(changegroup.cgpacker):
 
     def shouldaddfilegroups(self, source):
         repo = self._repo
-        if not constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
+        if not shallowutil.isenabled(repo):
             return AllFiles
 
         if source == "push" or source == "bundle":
@@ -139,7 +139,7 @@ class shallowcg1packer(changegroup.cgpacker):
         yield delta
 
 def makechangegroup(orig, repo, outgoing, version, source, *args, **kwargs):
-    if not constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
+    if not shallowutil.isenabled(repo):
         return orig(repo, outgoing, version, source, *args, **kwargs)
 
     original = repo.shallowmatch
@@ -168,7 +168,7 @@ def makechangegroup(orig, repo, outgoing, version, source, *args, **kwargs):
         repo.shallowmatch = original
 
 def addchangegroupfiles(orig, repo, source, revmap, trp, expectedfiles, *args):
-    if not constants.SHALLOWREPO_REQUIREMENT in repo.requirements:
+    if not shallowutil.isenabled(repo):
         return orig(repo, source, revmap, trp, expectedfiles, *args)
 
     files = 0

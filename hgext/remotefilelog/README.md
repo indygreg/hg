@@ -16,8 +16,6 @@ remotefilelog can be installed like any other Mercurial extension. Download the 
     [extensions]
     remotefilelog=path/to/remotefilelog/remotefilelog
 
-The extension currently has a hard dependency on lz4, so the [lz4 python library](https://pypi.python.org/pypi/lz4) must be installed on both servers and clients.
-
 Configuring
 -----------
 

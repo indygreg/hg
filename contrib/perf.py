@@ -1580,6 +1580,7 @@ def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
 
     Possible source values are:
     * `full`: add from a full text (default).
+    * `parent-1`: add from a delta to the first parent
     """
     opts = _byteskwargs(opts)
 
@@ -1591,7 +1592,7 @@ def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
         stoprev = rllen + stoprev
 
     source = opts['source']
-    validsource = (b'full',)
+    validsource = (b'full', b'parent-1')
     if source not in validsource:
         raise error.Abort('invalid source type: %s' % source)
 
@@ -1693,6 +1694,9 @@ def _getrevisionseed(orig, rev, tr, source):
 
     if source == b'full':
         text = orig.revision(rev)
+    elif source == b'parent-1':
+        baserev = orig.rev(p1)
+        cachedelta = (baserev, orig.revdiff(p1, rev))
 
     return ((text, tr, linkrev, p1, p2),
             {'node': node, 'flags': flags, 'cachedelta': cachedelta})

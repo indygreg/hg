@@ -753,8 +753,8 @@ class repackledger(object):
 class repackentry(object):
     """Simple class representing a single revision entry in the repackledger.
     """
-    __slots__ = ['filename', 'node', 'datasource', 'historysource',
-                 'datarepacked', 'historyrepacked', 'gced']
+    __slots__ = (r'filename', r'node', r'datasource', r'historysource',
+                 r'datarepacked', r'historyrepacked', r'gced')
     def __init__(self, filename, node):
         self.filename = filename
         self.node = node

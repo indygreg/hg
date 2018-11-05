@@ -512,8 +512,8 @@ class mutablebasepack(versionmixin):
         self.idxfp.write(struct.pack('!BB', self.VERSION, config))
 
 class indexparams(object):
-    __slots__ = ('fanoutprefix', 'fanoutstruct', 'fanoutcount', 'fanoutsize',
-                 'indexstart')
+    __slots__ = (r'fanoutprefix', r'fanoutstruct', r'fanoutcount',
+                 r'fanoutsize', r'indexstart')
 
     def __init__(self, prefixsize, version):
         self.fanoutprefix = prefixsize

@@ -158,8 +158,8 @@ def _buildpackmeta(metadict):
     return metabuf
 
 _metaitemtypes = {
-    constants.METAKEYFLAG: (int, long),
-    constants.METAKEYSIZE: (int, long),
+    constants.METAKEYFLAG: (int, pycompat.long),
+    constants.METAKEYSIZE: (int, pycompat.long),
 }
 
 def buildpackmeta(metadict):

@@ -1632,10 +1632,11 @@ def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
         ("99%", resultcount * 99 // 100),
         ("max", -1),
     ]
-    for name, idx in relevants:
-        data = results[idx]
-        title = '%s of %d, rev %d' % (name, resultcount, data[0])
-        formatone(fm, data[1], title=title, displayall=displayall)
+    if not ui.quiet:
+        for name, idx in relevants:
+            data = results[idx]
+            title = '%s of %d, rev %d' % (name, resultcount, data[0])
+            formatone(fm, data[1], title=title, displayall=displayall)
 
     # XXX summing that many float will not be very precise, we ignore this fact
     # for now

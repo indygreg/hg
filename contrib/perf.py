@@ -1581,6 +1581,8 @@ def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
     Possible source values are:
     * `full`: add from a full text (default).
     * `parent-1`: add from a delta to the first parent
+    * `parent-2`: add from a delta to the second parent if it exists
+                  (use a delta from the first parent otherwise)
     """
     opts = _byteskwargs(opts)
 
@@ -1592,7 +1594,7 @@ def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
         stoprev = rllen + stoprev
 
     source = opts['source']
-    validsource = (b'full', b'parent-1')
+    validsource = (b'full', b'parent-1', b'parent-2')
     if source not in validsource:
         raise error.Abort('invalid source type: %s' % source)
 
@@ -1685,6 +1687,8 @@ def _timeonewrite(ui, orig, source, startrev, stoprev, runidx=None):
     return timings
 
 def _getrevisionseed(orig, rev, tr, source):
+    from mercurial.node import nullid
+
     linkrev = orig.linkrev(rev)
     node = orig.node(rev)
     p1, p2 = orig.parents(node)
@@ -1697,6 +1701,12 @@ def _getrevisionseed(orig, rev, tr, source):
     elif source == b'parent-1':
         baserev = orig.rev(p1)
         cachedelta = (baserev, orig.revdiff(p1, rev))
+    elif source == b'parent-2':
+        parent = p2
+        if p2 == nullid:
+            parent = p1
+        baserev = orig.rev(parent)
+        cachedelta = (baserev, orig.revdiff(parent, rev))
 
     return ((text, tr, linkrev, p1, p2),
             {'node': node, 'flags': flags, 'cachedelta': cachedelta})

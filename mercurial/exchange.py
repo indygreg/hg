@@ -334,6 +334,34 @@ def _computeoutgoing(repo, heads, common):
         heads = cl.heads()
     return discovery.outgoing(repo, common, heads)
 
+def _checkpublish(pushop):
+    repo = pushop.repo
+    ui = repo.ui
+    behavior = ui.config('experimental', 'auto-publish')
+    if pushop.publish or behavior not in ('warn', 'confirm', 'abort'):
+        return
+    remotephases = listkeys(pushop.remote, 'phases')
+    if not remotephases.get('publishing', False):
+        return
+
+    if pushop.revs is None:
+        published = repo.filtered('served').revs('not public()')
+    else:
+        published = repo.revs('::%ln - public()', pushop.revs)
+    if published:
+        if behavior == 'warn':
+            ui.warn(_('%i changesets about to be published\n')
+                    % len(published))
+        elif behavior == 'confirm':
+            if ui.promptchoice(_('push and publish %i changesets (yn)?'
+                                 '$$ &Yes $$ &No') % len(published)):
+                raise error.Abort(_('user quit'))
+        elif behavior == 'abort':
+            msg = _('push would publish %i changesets') % len(published)
+            hint = _("use --publish or adjust 'experimental.auto-publish'"
+                     " config")
+            raise error.Abort(msg, hint=hint)
+
 def _forcebundle1(op):
     """return true if a pull/push must use bundle1
 
@@ -533,6 +561,7 @@ def push(repo, remote, force=False, revs=None, newbranch=False, bookmarks=(),
             lock or util.nullcontextmanager(), \
             pushop.trmanager or util.nullcontextmanager():
         pushop.repo.checkpush(pushop)
+        _checkpublish(pushop)
         _pushdiscovery(pushop)
         if not _forcebundle1(pushop):
             _pushbundle2(pushop)

@@ -1562,6 +1562,73 @@ of phase heads computation)
   $ killdaemons.py
 
 
+auto-publish config
+-------------------
+
+  $ hg init auto-publish-orig
+  $ hg clone -q auto-publish-orig auto-publish-clone
+  $ cd auto-publish-clone
+  $ mkcommit a-p-A
+  test-debug-phase: new rev 0:  x -> 1
+  $ mkcommit a-p-B
+  test-debug-phase: new rev 1:  x -> 1
+
+abort behavior
+
+  $ hg push --config experimental.auto-publish=abort
+  pushing to $TESTTMP/auto-publish-orig
+  abort: push would publish 2 changesets
+  (use --publish or adjust 'experimental.auto-publish' config)
+  [255]
+  $ hg push -r '.^' --config experimental.auto-publish=abort
+  pushing to $TESTTMP/auto-publish-orig
+  abort: push would publish 1 changesets
+  (use --publish or adjust 'experimental.auto-publish' config)
+  [255]
+
+--publish flag makes push succeed
+
+  $ hg push -r '.^' --publish --config experimental.auto-publish=abort
+  pushing to $TESTTMP/auto-publish-orig
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  test-debug-phase: new rev 0:  x -> 0
+  test-debug-phase: move rev 0: 1 -> 0
+
+warn behavior
+
+  $ hg push --config experimental.auto-publish=warn
+  pushing to $TESTTMP/auto-publish-orig
+  1 changesets about to be published
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  test-debug-phase: new rev 1:  x -> 0
+  test-debug-phase: move rev 1: 1 -> 0
+
+confirm behavior
+
+  $ mkcommit a-p-C
+  test-debug-phase: new rev 2:  x -> 1
+  $ hg push --config experimental.auto-publish=confirm
+  pushing to $TESTTMP/auto-publish-orig
+  push and publish 1 changesets (yn)? y
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  test-debug-phase: new rev 2:  x -> 0
+  test-debug-phase: move rev 2: 1 -> 0
+
+  $ cd ..
+
+
 --publish flag
 --------------
 

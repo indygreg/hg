@@ -449,6 +449,9 @@ coreconfigitem('email', 'to',
 coreconfigitem('experimental', 'archivemetatemplate',
     default=dynamicdefault,
 )
+coreconfigitem('experimental', 'auto-publish',
+    default='publish',
+)
 coreconfigitem('experimental', 'bundle-phases',
     default=False,
 )

@@ -1584,6 +1584,7 @@ def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
     * `parent-2`: add from a delta to the second parent if it exists
                   (use a delta from the first parent otherwise)
     * `parent-smallest`: add from the smallest delta (either p1 or p2)
+    * `storage`: add from the existing precomputed deltas
     """
     opts = _byteskwargs(opts)
 
@@ -1595,7 +1596,8 @@ def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
         stoprev = rllen + stoprev
 
     source = opts['source']
-    validsource = (b'full', b'parent-1', b'parent-2', b'parent-smallest')
+    validsource = (b'full', b'parent-1', b'parent-2', b'parent-smallest',
+                   b'storage')
     if source not in validsource:
         raise error.Abort('invalid source type: %s' % source)
 
@@ -1719,6 +1721,9 @@ def _getrevisionseed(orig, rev, tr, source):
                 diff = p2diff
         baserev = orig.rev(parent)
         cachedelta = (baserev, diff)
+    elif source == b'storage':
+        baserev = orig.deltaparent(rev)
+        cachedelta = (baserev, orig.revdiff(orig.node(baserev), rev))
 
     return ((text, tr, linkrev, p1, p2),
             {'node': node, 'flags': flags, 'cachedelta': cachedelta})

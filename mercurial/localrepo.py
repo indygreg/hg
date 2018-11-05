@@ -451,14 +451,8 @@ def makelocalrepository(baseui, path, intents=None):
     # The .hg/hgrc file may load extensions or contain config options
     # that influence repository construction. Attempt to load it and
     # process any new extensions that it may have pulled in.
-    try:
-        ui.readconfig(hgvfs.join(b'hgrc'), root=wdirvfs.base)
-        # Run this before extensions.loadall() so extensions can be
-        # automatically enabled.
+    if loadhgrc(ui, wdirvfs, hgvfs, requirements):
         afterhgrcload(ui, wdirvfs, hgvfs, requirements)
-    except IOError:
-        pass
-    else:
         extensions.loadall(ui)
 
     # Set of module names of extensions loaded for this repository.
@@ -581,6 +575,24 @@ def makelocalrepository(baseui, path, intents=None):
         cachevfs=cachevfs,
         features=features,
         intents=intents)
+
+def loadhgrc(ui, wdirvfs, hgvfs, requirements):
+    """Load hgrc files/content into a ui instance.
+
+    This is called during repository opening to load any additional
+    config files or settings relevant to the current repository.
+
+    Returns a bool indicating whether any additional configs were loaded.
+
+    Extensions should monkeypatch this function to modify how per-repo
+    configs are loaded. For example, an extension may wish to pull in
+    configs from alternate files or sources.
+    """
+    try:
+        ui.readconfig(hgvfs.join(b'hgrc'), root=wdirvfs.base)
+        return True
+    except IOError:
+        return False
 
 def afterhgrcload(ui, wdirvfs, hgvfs, requirements):
     """Perform additional actions after .hg/hgrc is loaded.

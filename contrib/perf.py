@@ -1573,6 +1573,7 @@ def perfrevlogrevisions(ui, repo, file_=None, startrev=0, reverse=False,
           (b'', b'count', 3, b'last revision to write'),
           (b'', b'details', False, b'print timing for every revisions tested'),
           (b'', b'source', b'full', b'the kind of data feed in the revlog'),
+          (b'', b'lazydeltabase', True, b'try the provided delta first'),
          ],
          b'-c|-m|FILE')
 def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
@@ -1595,6 +1596,7 @@ def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
     if stoprev < 0:
         stoprev = rllen + stoprev
 
+    lazydeltabase = opts['lazydeltabase']
     source = opts['source']
     validsource = (b'full', b'parent-1', b'parent-2', b'parent-smallest',
                    b'storage')
@@ -1607,7 +1609,8 @@ def perfrevlogwrite(ui, repo, file_=None, startrev=1000, stoprev=-1, **opts):
         raise error.Abort('invalide run count: %d' % count)
     allresults = []
     for c in range(count):
-        timing = _timeonewrite(ui, rl, source, startrev, stoprev, c + 1)
+        timing = _timeonewrite(ui, rl, source, startrev, stoprev, c + 1,
+                               lazydeltabase=lazydeltabase)
         allresults.append(timing)
 
     ### consolidate the results in a single list
@@ -1670,10 +1673,12 @@ class _faketr(object):
     def add(s, x, y, z=None):
         return None
 
-def _timeonewrite(ui, orig, source, startrev, stoprev, runidx=None):
+def _timeonewrite(ui, orig, source, startrev, stoprev, runidx=None,
+                  lazydeltabase=True):
     timings = []
     tr = _faketr()
     with _temprevlog(ui, orig, startrev) as dest:
+        dest._lazydeltabase = lazydeltabase
         revs = list(orig.revs(startrev, stoprev))
         total = len(revs)
         topic = 'adding'

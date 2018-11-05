@@ -1553,7 +1553,7 @@ def perfrevlogrevisions(ui, repo, file_=None, startrev=0, reverse=False,
         dist = opts[b'dist']
 
         if reverse:
-            beginrev, endrev = endrev, beginrev
+            beginrev, endrev = endrev - 1, beginrev - 1
             dist = -1 * dist
 
         for x in _xrange(beginrev, endrev, dist):

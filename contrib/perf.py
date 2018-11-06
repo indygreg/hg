@@ -1723,17 +1723,18 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
         inline = r._inline
         iosize = r._io.size
         buffer = util.buffer
-        offset = start(chain[0])
 
         chunks = []
         ladd = chunks.append
-
-        for rev in chain:
-            chunkstart = start(rev)
-            if inline:
-                chunkstart += (rev + 1) * iosize
-            chunklength = length(rev)
-            ladd(buffer(data, chunkstart - offset, chunklength))
+        for idx, item in enumerate(chain):
+            offset = start(item[0])
+            bits = data[idx]
+            for rev in item:
+                chunkstart = start(rev)
+                if inline:
+                    chunkstart += (rev + 1) * iosize
+                chunklength = length(rev)
+                ladd(buffer(bits, chunkstart - offset, chunklength))
 
         return chunks
 
@@ -1745,7 +1746,8 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
     def doread(chain):
         if not cache:
             r.clearcaches()
-        segmentforrevs(chain[0], chain[-1])
+        for item in slicedchain:
+            segmentforrevs(item[0], item[-1])
 
     def dorawchunks(data, chain):
         if not cache:
@@ -1772,9 +1774,19 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
             r.clearcaches()
         r.revision(node)
 
+    try:
+        from mercurial.revlogutils.deltas import slicechunk
+    except ImportError:
+        slicechunk = getattr(revlog, '_slicechunk', None)
+
+    size = r.length(rev)
     chain = r._deltachain(rev)[0]
-    data = segmentforrevs(chain[0], chain[-1])[1]
-    rawchunks = getrawchunks(data, chain)
+    if not getattr(r, '_withsparseread', False):
+        slicedchain = (chain,)
+    else:
+        slicedchain = tuple(slicechunk(r, chain, targetsize=size))
+    data = [segmentforrevs(seg[0], seg[-1])[1] for seg in slicedchain]
+    rawchunks = getrawchunks(data, slicedchain)
     bins = r._chunks(chain)
     text = bytes(bins[0])
     bins = bins[1:]
@@ -1784,7 +1796,7 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
         (lambda: dorevision(), b'full'),
         (lambda: dodeltachain(rev), b'deltachain'),
         (lambda: doread(chain), b'read'),
-        (lambda: dorawchunks(data, chain), b'rawchunks'),
+        (lambda: dorawchunks(data, slicedchain), b'rawchunks'),
         (lambda: dodecompress(rawchunks), b'decompress'),
         (lambda: dopatch(text, bins), b'patch'),
         (lambda: dohash(text), b'hash'),

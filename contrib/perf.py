@@ -1790,10 +1790,10 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
         (lambda: dohash(text), b'hash'),
     ]
 
+    timer, fm = gettimer(ui, opts)
     for fn, title in benches:
-        timer, fm = gettimer(ui, opts)
         timer(fn, title=title)
-        fm.end()
+    fm.end()
 
 @command(b'perfrevset',
          [(b'C', b'clear', False, b'clear volatile cache between each call.'),

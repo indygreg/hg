@@ -36,8 +36,8 @@ Trying to stream clone when the server does not support it
 
 Enable stream clone on the server
 
-  $ echo "[experimental.server]" >> master/.hg/hgrc
-  $ echo "stream-narrow-clones=True" >> master/.hg/hgrc
+  $ echo "[experimental]" >> master/.hg/hgrc
+  $ echo "server.stream-narrow-clones=True" >> master/.hg/hgrc
 
 Cloning a specific file when stream clone is supported
 

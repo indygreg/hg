@@ -24,7 +24,6 @@
 #define PyInt_Check PyLong_Check
 #define PyInt_FromLong PyLong_FromLong
 #define PyInt_FromSsize_t PyLong_FromSsize_t
-#define PyInt_AS_LONG PyLong_AS_LONG
 #define PyInt_AsLong PyLong_AsLong
 #endif
 
@@ -161,10 +160,17 @@ static inline int index_get_parents(indexObject *self, Py_ssize_t rev, int *ps,
                                     int maxrev)
 {
 	if (rev >= self->length) {
+		long tmp;
 		PyObject *tuple =
 		    PyList_GET_ITEM(self->added, rev - self->length);
-		ps[0] = (int)PyInt_AS_LONG(PyTuple_GET_ITEM(tuple, 5));
-		ps[1] = (int)PyInt_AS_LONG(PyTuple_GET_ITEM(tuple, 6));
+		if (!pylong_to_long(PyTuple_GET_ITEM(tuple, 5), &tmp)) {
+			return -1;
+		}
+		ps[0] = (int)tmp;
+		if (!pylong_to_long(PyTuple_GET_ITEM(tuple, 6), &tmp)) {
+			return -1;
+		}
+		ps[1] = (int)tmp;
 	} else {
 		const char *data = index_deref(self, rev);
 		ps[0] = getbe32(data + 24);
@@ -464,7 +470,10 @@ static Py_ssize_t add_roots_get_min(indexObject *self, PyObject *list,
 		if (iter == NULL)
 			return -2;
 		while ((iter_item = PyIter_Next(iter))) {
-			iter_item_long = PyInt_AS_LONG(iter_item);
+			if (!pylong_to_long(iter_item, &iter_item_long)) {
+				Py_DECREF(iter_item);
+				return -2;
+			}
 			Py_DECREF(iter_item);
 			if (iter_item_long < min_idx)
 				min_idx = iter_item_long;
@@ -853,7 +862,11 @@ static inline int index_baserev(indexObject *self, int rev)
 	if (rev >= self->length) {
 		PyObject *tuple =
 		    PyList_GET_ITEM(self->added, rev - self->length);
-		return (int)PyInt_AS_LONG(PyTuple_GET_ITEM(tuple, 3));
+		long ret;
+		if (!pylong_to_long(PyTuple_GET_ITEM(tuple, 3), &ret)) {
+			return -2;
+		}
+		return (int)ret;
 	} else {
 		data = index_deref(self, rev);
 		if (data == NULL) {
@@ -1384,8 +1397,13 @@ static PyObject *index_getitem(indexObject *self, PyObject *value)
 	char *node;
 	int rev;
 
-	if (PyInt_Check(value))
-		return index_get(self, PyInt_AS_LONG(value));
+	if (PyInt_Check(value)) {
+		long idx;
+		if (!pylong_to_long(value, &idx)) {
+			return NULL;
+		}
+		return index_get(self, idx);
+	}
 
 	if (node_check(value, &node) == -1)
 		return NULL;
@@ -1516,7 +1534,10 @@ static int index_contains(indexObject *self, PyObject *value)
 	char *node;
 
 	if (PyInt_Check(value)) {
-		long rev = PyInt_AS_LONG(value);
+		long rev;
+		if (!pylong_to_long(value, &rev)) {
+			return -1;
+		}
 		return rev >= -1 && rev < index_length(self);
 	}
 
@@ -2404,10 +2425,12 @@ static PyObject *rustla_next(rustlazyancestorsObject *self)
 
 static int rustla_contains(rustlazyancestorsObject *self, PyObject *rev)
 {
-	if (!(PyInt_Check(rev))) {
+	long lrev;
+	if (!pylong_to_long(rev, &lrev)) {
+		PyErr_Clear();
 		return 0;
 	}
-	return rustlazyancestors_contains(self->iter, PyInt_AS_LONG(rev));
+	return rustlazyancestors_contains(self->iter, lrev);
 }
 
 static PySequenceMethods rustla_sequence_methods = {

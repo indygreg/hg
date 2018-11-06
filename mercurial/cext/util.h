@@ -58,4 +58,17 @@ static inline PyObject *_dict_new_presized(Py_ssize_t expected_size)
 	return _PyDict_NewPresized(((1 + expected_size) / 2) * 3);
 }
 
+/* Convert a PyInt or PyLong to a long. Returns false if there is an
+   error, in which case an exception will already have been set. */
+static inline bool pylong_to_long(PyObject *pylong, long *out)
+{
+	*out = PyLong_AsLong(pylong);
+	/* Fast path to avoid hitting PyErr_Occurred if the value was obviously
+	 * not an error. */
+	if (*out != -1) {
+		return true;
+	}
+	return PyErr_Occurred() == NULL;
+}
+
 #endif /* _HG_UTIL_H_ */

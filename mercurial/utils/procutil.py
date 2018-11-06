@@ -474,6 +474,9 @@ if pycompat.iswindows:
     # https://msdn.microsoft.com/en-us/library/windows/desktop/ms684863.aspx
     # No stdlib constant exists for this value
     DETACHED_PROCESS = 0x00000008
+    # Following creation flags might create a console GUI window.
+    # Using subprocess.CREATE_NEW_CONSOLE might helps.
+    # See https://phab.mercurial-scm.org/D1701 for discussion
     _creationflags = DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
 
     def runbgcommand(script, env, shell=False, stdout=None, stderr=None):

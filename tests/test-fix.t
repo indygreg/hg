@@ -165,6 +165,26 @@ Help text for fix.
     [fix]
     failure = abort
   
+  When multiple tools are configured to affect a file, they execute in an order
+  defined by the :priority suboption. The priority suboption has a default value
+  of zero for each tool. Tools are executed in order of descending priority. The
+  execution order of tools with equal priority is unspecified. For example, you
+  could use the 'sort' and 'head' utilities to keep only the 10 smallest numbers
+  in a text file by ensuring that 'sort' runs before 'head':
+  
+    [fix]
+    sort:command = sort --numeric-sort
+    head:command = head --lines=10
+    sort:pattern = numbers.txt
+    head:pattern = numbers.txt
+    sort:priority = 2
+    head:priority = 1
+  
+  To account for changes made by each tool, the line numbers used for
+  incremental formatting are recomputed before executing the next tool. So, each
+  tool may see different values for the arguments added by the :linerange
+  suboption.
+  
   list of commands:
   
    fix           rewrite file content in changesets or working directory
@@ -1125,5 +1145,53 @@ warning.
   $ cat bar.txt
   second
   first
+
+  $ cd ..
+
+The execution order of tools can be controlled. This example doesn't work if
+you sort after truncating, but the config defines the correct order while the
+definitions are out of order (which might imply the incorrect order given the
+implementation of fix). The goal is to use multiple tools to select the lowest
+5 numbers in the file.
+
+  $ hg init priorityexample
+  $ cd priorityexample
+
+  $ cat >> .hg/hgrc <<EOF
+  > [fix]
+  > head:command = head --lines=5
+  > head:pattern = numbers.txt
+  > head:priority = 1
+  > sort:command = sort --numeric-sort
+  > sort:pattern = numbers.txt
+  > sort:priority = 2
+  > EOF
+
+  $ printf "8\n2\n3\n6\n7\n4\n9\n5\n1\n0\n" > numbers.txt
+  $ hg add -q
+  $ hg fix -w
+  $ cat numbers.txt
+  0
+  1
+  2
+  3
+  4
+
+And of course we should be able to break this by reversing the execution order.
+Test negative priorities while we're at it.
+
+  $ cat >> .hg/hgrc <<EOF
+  > [fix]
+  > head:priority = -1
+  > sort:priority = -2
+  > EOF
+  $ printf "8\n2\n3\n6\n7\n4\n9\n5\n1\n0\n" > numbers.txt
+  $ hg fix -w
+  $ cat numbers.txt
+  2
+  3
+  6
+  7
+  8
 
   $ cd ..

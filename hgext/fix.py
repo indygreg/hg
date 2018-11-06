@@ -54,6 +54,24 @@ will also cause :hg:`fix` to exit with a non-zero status::
   [fix]
   failure = abort
 
+When multiple tools are configured to affect a file, they execute in an order
+defined by the :priority suboption. The priority suboption has a default value
+of zero for each tool. Tools are executed in order of descending priority. The
+execution order of tools with equal priority is unspecified. For example, you
+could use the 'sort' and 'head' utilities to keep only the 10 smallest numbers
+in a text file by ensuring that 'sort' runs before 'head'::
+
+  [fix]
+  sort:command = sort --numeric-sort
+  head:command = head --lines=10
+  sort:pattern = numbers.txt
+  head:pattern = numbers.txt
+  sort:priority = 2
+  head:priority = 1
+
+To account for changes made by each tool, the line numbers used for incremental
+formatting are recomputed before executing the next tool. So, each tool may see
+different values for the arguments added by the :linerange suboption.
 """
 
 from __future__ import absolute_import
@@ -100,10 +118,16 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 # Register the suboptions allowed for each configured fixer.
-FIXER_ATTRS = ('command', 'linerange', 'fileset', 'pattern')
+FIXER_ATTRS = {
+    'command': None,
+    'linerange': None,
+    'fileset': None,
+    'pattern': None,
+    'priority': 0,
+}
 
-for key in FIXER_ATTRS:
-    configitem('fix', '.*(:%s)?' % key, default=None, generic=True)
+for key, default in FIXER_ATTRS.items():
+    configitem('fix', '.*(:%s)?' % key, default=default, generic=True)
 
 # A good default size allows most source code files to be fixed, but avoids
 # letting fixer tools choke on huge inputs, which could be surprising to the
@@ -602,18 +626,21 @@ def getfixers(ui):
     Each value is a Fixer object with methods that implement the behavior of the
     fixer's config suboptions. Does not validate the config values.
     """
-    result = {}
+    fixers = {}
     for name in fixernames(ui):
-        result[name] = Fixer()
+        fixers[name] = Fixer()
         attrs = ui.configsuboptions('fix', name)[1]
         if 'fileset' in attrs and 'pattern' not in attrs:
             ui.warn(_('the fix.tool:fileset config name is deprecated; '
                       'please rename it to fix.tool:pattern\n'))
             attrs['pattern'] = attrs['fileset']
-        for key in FIXER_ATTRS:
-            setattr(result[name], pycompat.sysstr('_' + key),
-                    attrs.get(key, ''))
-    return result
+        for key, default in FIXER_ATTRS.items():
+            setattr(fixers[name], pycompat.sysstr('_' + key),
+                    attrs.get(key, default))
+        fixers[name]._priority = int(fixers[name]._priority)
+    return collections.OrderedDict(
+        sorted(fixers.items(), key=lambda item: item[1]._priority,
+               reverse=True))
 
 def fixernames(ui):
     """Returns the names of [fix] config options that have suboptions"""

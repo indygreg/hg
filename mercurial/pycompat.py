@@ -403,7 +403,8 @@ else:
 
 isjython = sysplatform.startswith(b'java')
 
-isdarwin = sysplatform == b'darwin'
+isdarwin = sysplatform.startswith(b'darwin')
+islinux = sysplatform.startswith(b'linux')
 isposix = osname == b'posix'
 iswindows = osname == b'nt'
 

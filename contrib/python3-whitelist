@@ -193,6 +193,7 @@ test-execute-bit.t
 test-export.t
 test-extdata.t
 test-extdiff.t
+test-extension-timing.t
 test-extensions-afterloaded.t
 test-extensions-wrapfunction.py
 test-extra-filelog-entry.t
@@ -217,6 +218,7 @@ test-gpg.t
 test-graft.t
 test-grep.t
 test-hardlinks.t
+test-help-hide.t
 test-help.t
 test-hg-parseurl.py
 test-hghave.t

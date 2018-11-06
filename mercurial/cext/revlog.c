@@ -51,7 +51,7 @@ typedef struct {
 } nodetree;
 
 typedef struct {
-	PyObject_HEAD
+	PyObject_HEAD /* ; */
 	nodetree nt;
 } nodetreeObject;
 

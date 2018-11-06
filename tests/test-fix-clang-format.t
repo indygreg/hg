@@ -11,7 +11,7 @@ Test that a simple "hg fix" configuration for clang-format works.
   > [fix]
   > clang-format:command=clang-format --style=Google --assume-filename={rootpath}
   > clang-format:linerange=--lines={first}:{last}
-  > clang-format:fileset=set:**.cpp or **.hpp
+  > clang-format:pattern=set:**.cpp or **.hpp
   > EOF
 
   $ hg init repo

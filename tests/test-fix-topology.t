@@ -23,7 +23,7 @@ relationships. We indicate fixed file content by uppercasing it.
   > fix =
   > [fix]
   > uppercase-whole-file:command="$PYTHON" $UPPERCASEPY
-  > uppercase-whole-file:fileset=set:**
+  > uppercase-whole-file:pattern=set:**
   > EOF
 
 This tests the only behavior that should really be affected by obsolescence, so

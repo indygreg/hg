@@ -15,7 +15,7 @@ formatting fixes to modified lines in C++ code::
   [fix]
   clang-format:command=clang-format --assume-filename={rootpath}
   clang-format:linerange=--lines={first}:{last}
-  clang-format:fileset=set:**.cpp or **.hpp
+  clang-format:pattern=set:**.cpp or **.hpp
 
 The :command suboption forms the first part of the shell command that will be
 used to fix a file. The content of the file is passed on standard input, and the
@@ -36,9 +36,9 @@ substituted into the command::
   {first}   The 1-based line number of the first line in the modified range
   {last}    The 1-based line number of the last line in the modified range
 
-The :fileset suboption determines which files will be passed through each
-configured tool. See :hg:`help fileset` for possible values. If there are file
-arguments to :hg:`fix`, the intersection of these filesets is used.
+The :pattern suboption determines which files will be passed through each
+configured tool. See :hg:`help patterns` for possible values. If there are file
+arguments to :hg:`fix`, the intersection of these patterns is used.
 
 There is also a configurable limit for the maximum size of file that will be
 processed by :hg:`fix`::
@@ -100,7 +100,7 @@ configtable = {}
 configitem = registrar.configitem(configtable)
 
 # Register the suboptions allowed for each configured fixer.
-FIXER_ATTRS = ('command', 'linerange', 'fileset')
+FIXER_ATTRS = ('command', 'linerange', 'fileset', 'pattern')
 
 for key in FIXER_ATTRS:
     configitem('fix', '.*(:%s)?' % key, default=None, generic=True)
@@ -606,6 +606,10 @@ def getfixers(ui):
     for name in fixernames(ui):
         result[name] = Fixer()
         attrs = ui.configsuboptions('fix', name)[1]
+        if 'fileset' in attrs and 'pattern' not in attrs:
+            ui.warn(_('the fix.tool:fileset config name is deprecated; '
+                      'please rename it to fix.tool:pattern\n'))
+            attrs['pattern'] = attrs['fileset']
         for key in FIXER_ATTRS:
             setattr(result[name], pycompat.sysstr('_' + key),
                     attrs.get(key, ''))
@@ -624,7 +628,7 @@ class Fixer(object):
 
     def affects(self, opts, fixctx, path):
         """Should this fixer run on the file at the given path and context?"""
-        return scmutil.match(fixctx, [self._fileset], opts)(path)
+        return scmutil.match(fixctx, [self._pattern], opts)(path)
 
     def command(self, ui, path, rangesfn):
         """A shell command to use to invoke this fixer on the given file/lines

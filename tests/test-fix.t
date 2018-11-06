@@ -66,10 +66,10 @@ choose which behavior to use by naming files.
   > evolution.allowunstable=True
   > [fix]
   > uppercase-whole-file:command="$PYTHON" $UPPERCASEPY all
-  > uppercase-whole-file:fileset=set:**.whole
+  > uppercase-whole-file:pattern=set:**.whole
   > uppercase-changed-lines:command="$PYTHON" $UPPERCASEPY
   > uppercase-changed-lines:linerange={first}-{last}
-  > uppercase-changed-lines:fileset=set:**.changed
+  > uppercase-changed-lines:pattern=set:**.changed
   > EOF
 
 Help text for fix.
@@ -126,7 +126,7 @@ Help text for fix.
     [fix]
     clang-format:command=clang-format --assume-filename={rootpath}
     clang-format:linerange=--lines={first}:{last}
-    clang-format:fileset=set:**.cpp or **.hpp
+    clang-format:pattern=set:**.cpp or **.hpp
   
   The :command suboption forms the first part of the shell command that will be
   used to fix a file. The content of the file is passed on standard input, and
@@ -147,9 +147,9 @@ Help text for fix.
     {first}   The 1-based line number of the first line in the modified range
     {last}    The 1-based line number of the last line in the modified range
   
-  The :fileset suboption determines which files will be passed through each
-  configured tool. See 'hg help fileset' for possible values. If there are file
-  arguments to 'hg fix', the intersection of these filesets is used.
+  The :pattern suboption determines which files will be passed through each
+  configured tool. See 'hg help patterns' for possible values. If there are file
+  arguments to 'hg fix', the intersection of these patterns is used.
   
   There is also a configurable limit for the maximum size of file that will be
   processed by 'hg fix':
@@ -371,7 +371,7 @@ allows fixers to know where deletions are located.
 
   $ hg --config "fix.fail:command=echo" \
   >    --config "fix.fail:linerange={first}:{last}" \
-  >    --config "fix.fail:fileset=foo.txt" \
+  >    --config "fix.fail:pattern=foo.txt" \
   >    fix --working-dir
   $ cat foo.txt
   1:1 4:6 8:8
@@ -534,7 +534,7 @@ tool with a non-zero exit status.
   > exit 0 # success despite the stderr output
   > EOF
   $ hg --config "fix.work:command=sh $TESTTMP/work.sh {rootpath}" \
-  >    --config "fix.work:fileset=hello.txt" \
+  >    --config "fix.work:pattern=hello.txt" \
   >    fix --working-dir
   [wdir] work: hello.txt: some
   [wdir] work: error that didn't stop the tool
@@ -551,7 +551,7 @@ tool with a non-zero exit status.
   > exit 42 # success despite the stdout output
   > EOF
   $ hg --config "fix.fail:command=sh $TESTTMP/fail.sh {rootpath}" \
-  >    --config "fix.fail:fileset=hello.txt" \
+  >    --config "fix.fail:pattern=hello.txt" \
   >    --config "fix.failure=abort" \
   >    fix --working-dir
   [wdir] fail: hello.txt: some
@@ -565,7 +565,7 @@ tool with a non-zero exit status.
   foo
 
   $ hg --config "fix.fail:command=sh $TESTTMP/fail.sh {rootpath}" \
-  >    --config "fix.fail:fileset=hello.txt" \
+  >    --config "fix.fail:pattern=hello.txt" \
   >    fix --working-dir
   [wdir] fail: hello.txt: some
   [wdir] fail: error that did stop the tool
@@ -575,7 +575,7 @@ tool with a non-zero exit status.
   FOO
 
   $ hg --config "fix.fail:command=exit 42" \
-  >    --config "fix.fail:fileset=hello.txt" \
+  >    --config "fix.fail:pattern=hello.txt" \
   >    fix --working-dir
   [wdir] fail: exited with status 42
 
@@ -1027,7 +1027,7 @@ Test all of the available substitution values for fixer commands.
   adding foo/bar
   $ hg --config "fix.fail:command=printf '%s\n' '{rootpath}' '{basename}'" \
   >    --config "fix.fail:linerange='{first}' '{last}'" \
-  >    --config "fix.fail:fileset=foo/bar" \
+  >    --config "fix.fail:pattern=foo/bar" \
   >    fix --working-dir
   $ cat foo/bar
   foo/bar
@@ -1103,5 +1103,27 @@ until we specify the base, but then we do fix unchanged lines.
   BAR
   FOO1
   FOO2
+
+  $ cd ..
+
+The :fileset subconfig was a misnomer, so we renamed it to :pattern. We will
+still accept :fileset by itself as if it were :pattern, but this will issue a
+warning.
+
+  $ hg init filesetispattern
+  $ cd filesetispattern
+
+  $ printf "foo\n" > foo.whole
+  $ printf "first\nsecond\n" > bar.txt
+  $ hg add -q
+  $ hg fix -w --config fix.sometool:fileset=bar.txt \
+  >           --config fix.sometool:command=tac
+  the fix.tool:fileset config name is deprecated; please rename it to fix.tool:pattern
+
+  $ cat foo.whole
+  FOO
+  $ cat bar.txt
+  second
+  first
 
   $ cd ..

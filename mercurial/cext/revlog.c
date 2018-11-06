@@ -508,6 +508,7 @@ static PyObject *reachableroots2(indexObject *self, PyObject *args)
 
 	/* Internal data structure:
 	 * tovisit: array of length len+1 (all revs + nullrev), filled upto lentovisit
+	 *
 	 * revstates: array of length len+1 (all revs + nullrev) */
 	int *tovisit = NULL;
 	long lentovisit = 0;

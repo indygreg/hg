@@ -44,15 +44,15 @@ typedef struct {
 typedef struct {
 	indexObject *index;
 	nodetreenode *nodes;
-	unsigned length;     /* # nodes in use */
-	unsigned capacity;   /* # nodes allocated */
-	int depth;           /* maximum depth of tree */
-	int splits;          /* # splits performed */
+	unsigned length;   /* # nodes in use */
+	unsigned capacity; /* # nodes allocated */
+	int depth;         /* maximum depth of tree */
+	int splits;        /* # splits performed */
 } nodetree;
 
 typedef struct {
 	PyObject_HEAD /* ; */
-	nodetree nt;
+	    nodetree nt;
 } nodetreeObject;
 
 /*
@@ -69,21 +69,21 @@ typedef struct {
  */
 struct indexObjectStruct {
 	PyObject_HEAD
-	/* Type-specific fields go here. */
-	PyObject *data;        /* raw bytes of index */
-	Py_buffer buf;         /* buffer of data */
-	PyObject **cache;      /* cached tuples */
-	const char **offsets;  /* populated on demand */
-	Py_ssize_t raw_length; /* original number of elements */
-	Py_ssize_t length;     /* current number of elements */
-	PyObject *added;       /* populated on demand */
-	PyObject *headrevs;    /* cache, invalidated on changes */
-	PyObject *filteredrevs;/* filtered revs set */
-	nodetree nt;           /* base-16 trie */
-	int ntinitialized;     /* 0 or 1 */
-	int ntrev;             /* last rev scanned */
-	int ntlookups;         /* # lookups */
-	int ntmisses;          /* # lookups that miss the cache */
+	    /* Type-specific fields go here. */
+	    PyObject *data;     /* raw bytes of index */
+	Py_buffer buf;          /* buffer of data */
+	PyObject **cache;       /* cached tuples */
+	const char **offsets;   /* populated on demand */
+	Py_ssize_t raw_length;  /* original number of elements */
+	Py_ssize_t length;      /* current number of elements */
+	PyObject *added;        /* populated on demand */
+	PyObject *headrevs;     /* cache, invalidated on changes */
+	PyObject *filteredrevs; /* filtered revs set */
+	nodetree nt;            /* base-16 trie */
+	int ntinitialized;      /* 0 or 1 */
+	int ntrev;              /* last rev scanned */
+	int ntlookups;          /* # lookups */
+	int ntmisses;           /* # lookups that miss the cache */
 	int inlined;
 };
 
@@ -126,7 +126,7 @@ static void raise_revlog_error(void)
 	errclass = PyDict_GetItemString(dict, "RevlogError");
 	if (errclass == NULL) {
 		PyErr_SetString(PyExc_SystemError,
-				"could not find RevlogError");
+		                "could not find RevlogError");
 		goto cleanup;
 	}
 
@@ -146,7 +146,7 @@ static const char *index_deref(indexObject *self, Py_ssize_t pos)
 	if (self->inlined && pos > 0) {
 		if (self->offsets == NULL) {
 			self->offsets = PyMem_Malloc(self->raw_length *
-					             sizeof(*self->offsets));
+			                             sizeof(*self->offsets));
 			if (self->offsets == NULL)
 				return (const char *)PyErr_NoMemory();
 			inline_scan(self, self->offsets);
@@ -157,11 +157,12 @@ static const char *index_deref(indexObject *self, Py_ssize_t pos)
 	return (const char *)(self->buf.buf) + pos * v1_hdrsize;
 }
 
-static inline int index_get_parents(indexObject *self, Py_ssize_t rev,
-				    int *ps, int maxrev)
+static inline int index_get_parents(indexObject *self, Py_ssize_t rev, int *ps,
+                                    int maxrev)
 {
 	if (rev >= self->length) {
-		PyObject *tuple = PyList_GET_ITEM(self->added, rev - self->length);
+		PyObject *tuple =
+		    PyList_GET_ITEM(self->added, rev - self->length);
 		ps[0] = (int)PyInt_AS_LONG(PyTuple_GET_ITEM(tuple, 5));
 		ps[1] = (int)PyInt_AS_LONG(PyTuple_GET_ITEM(tuple, 6));
 	} else {
@@ -177,7 +178,6 @@ static inline int index_get_parents(indexObject *self, Py_ssize_t rev,
 	}
 	return 0;
 }
-
 
 /*
  * RevlogNG format (all in big endian, data may be inlined):
@@ -248,9 +248,9 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	parent_2 = getbe32(data + 28);
 	c_node_id = data + 32;
 
-	entry = Py_BuildValue(tuple_format, offset_flags, comp_len,
-			      uncomp_len, base_rev, link_rev,
-			      parent_1, parent_2, c_node_id, 20);
+	entry = Py_BuildValue(tuple_format, offset_flags, comp_len, uncomp_len,
+	                      base_rev, link_rev, parent_1, parent_2, c_node_id,
+	                      20);
 
 	if (entry) {
 		PyObject_GC_UnTrack(entry);
@@ -354,16 +354,16 @@ static PyObject *index_stats(indexObject *self)
 	if (obj == NULL)
 		return NULL;
 
-#define istat(__n, __d) \
-	do { \
-		s = PyBytes_FromString(__d); \
-		t = PyInt_FromSsize_t(self->__n); \
-		if (!s || !t) \
-			goto bail; \
-		if (PyDict_SetItem(obj, s, t) == -1) \
-			goto bail; \
-		Py_CLEAR(s); \
-		Py_CLEAR(t); \
+#define istat(__n, __d)                                                        \
+	do {                                                                   \
+		s = PyBytes_FromString(__d);                                   \
+		t = PyInt_FromSsize_t(self->__n);                              \
+		if (!s || !t)                                                  \
+			goto bail;                                             \
+		if (PyDict_SetItem(obj, s, t) == -1)                           \
+			goto bail;                                             \
+		Py_CLEAR(s);                                                   \
+		Py_CLEAR(t);                                                   \
 	} while (0)
 
 	if (self->added) {
@@ -507,7 +507,8 @@ static PyObject *reachableroots2(indexObject *self, PyObject *args)
 	int parents[2];
 
 	/* Internal data structure:
-	 * tovisit: array of length len+1 (all revs + nullrev), filled upto lentovisit
+	 * tovisit: array of length len+1 (all revs + nullrev), filled upto
+	 * lentovisit
 	 *
 	 * revstates: array of length len+1 (all revs + nullrev) */
 	int *tovisit = NULL;
@@ -517,8 +518,8 @@ static PyObject *reachableroots2(indexObject *self, PyObject *args)
 
 	/* Get arguments */
 	if (!PyArg_ParseTuple(args, "lO!O!O!", &minroot, &PyList_Type, &heads,
-			      &PyList_Type, &roots,
-			      &PyBool_Type, &includepatharg))
+	                      &PyList_Type, &roots, &PyBool_Type,
+	                      &includepatharg))
 		goto bail;
 
 	if (includepatharg == Py_True)
@@ -595,8 +596,8 @@ static PyObject *reachableroots2(indexObject *self, PyObject *args)
 		if (r < 0)
 			goto bail;
 		for (i = 0; i < 2; i++) {
-			if (!(revstates[parents[i] + 1] & RS_SEEN)
-			    && parents[i] >= minroot) {
+			if (!(revstates[parents[i] + 1] & RS_SEEN) &&
+			    parents[i] >= minroot) {
 				tovisit[lentovisit++] = parents[i];
 				revstates[parents[i] + 1] |= RS_SEEN;
 			}
@@ -618,8 +619,9 @@ static PyObject *reachableroots2(indexObject *self, PyObject *args)
 			if (r < 0)
 				goto bail;
 			if (((revstates[parents[0] + 1] |
-			      revstates[parents[1] + 1]) & RS_REACHABLE)
-			    && !(revstates[i + 1] & RS_REACHABLE)) {
+			      revstates[parents[1] + 1]) &
+			     RS_REACHABLE) &&
+			    !(revstates[i + 1] & RS_REACHABLE)) {
 				revstates[i + 1] |= RS_REACHABLE;
 				val = PyInt_FromSsize_t(i);
 				if (val == NULL)
@@ -666,13 +668,14 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 		goto done;
 	}
 
-	phases = calloc(len, 1); /* phase per rev: {0: public, 1: draft, 2: secret} */
+	phases = calloc(
+	    len, 1); /* phase per rev: {0: public, 1: draft, 2: secret} */
 	if (phases == NULL) {
 		PyErr_NoMemory();
 		goto done;
 	}
 	/* Put the phase information of all the roots in phases */
-	numphase = PyList_GET_SIZE(roots)+1;
+	numphase = PyList_GET_SIZE(roots) + 1;
 	minrevallphases = len + 1;
 	phasessetlist = PyList_New(numphase);
 	if (phasessetlist == NULL)
@@ -681,18 +684,19 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 	PyList_SET_ITEM(phasessetlist, 0, Py_None);
 	Py_INCREF(Py_None);
 
-	for (i = 0; i < numphase-1; i++) {
+	for (i = 0; i < numphase - 1; i++) {
 		phaseroots = PyList_GET_ITEM(roots, i);
 		phaseset = PySet_New(NULL);
 		if (phaseset == NULL)
 			goto release;
-		PyList_SET_ITEM(phasessetlist, i+1, phaseset);
+		PyList_SET_ITEM(phasessetlist, i + 1, phaseset);
 		if (!PyList_Check(phaseroots)) {
 			PyErr_SetString(PyExc_TypeError,
-					"roots item must be a list");
+			                "roots item must be a list");
 			goto release;
 		}
-		minrevphase = add_roots_get_min(self, phaseroots, i+1, phases);
+		minrevphase =
+		    add_roots_get_min(self, phaseroots, i + 1, phases);
 		if (minrevphase == -2) /* Error from add_roots_get_min */
 			goto release;
 		minrevallphases = MIN(minrevallphases, minrevphase);
@@ -701,10 +705,11 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 	if (minrevallphases != -1) {
 		int parents[2];
 		for (i = minrevallphases; i < len; i++) {
-			if (index_get_parents(self, i, parents,
-					      (int)len - 1) < 0)
+			if (index_get_parents(self, i, parents, (int)len - 1) <
+			    0)
 				goto release;
-			set_phase_from_parents(phases, parents[0], parents[1], i);
+			set_phase_from_parents(phases, parents[0], parents[1],
+			                       i);
 		}
 	}
 	/* Transform phase list to a python list */
@@ -713,8 +718,8 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 		goto release;
 	for (i = 0; i < len; i++) {
 		phase = phases[i];
-		/* We only store the sets of phase for non public phase, the public phase
-		 * is computed as a difference */
+		/* We only store the sets of phase for non public phase, the
+		 * public phase is computed as a difference */
 		if (phase != 0) {
 			phaseset = PyList_GET_ITEM(phasessetlist, phase);
 			rev = PyInt_FromSsize_t(i);
@@ -756,8 +761,9 @@ static PyObject *index_headrevs(indexObject *self, PyObject *args)
 	if (filteredrevs != Py_None) {
 		filter = PyObject_GetAttrString(filteredrevs, "__contains__");
 		if (!filter) {
-			PyErr_SetString(PyExc_TypeError,
-				"filteredrevs has no attribute __contains__");
+			PyErr_SetString(
+			    PyExc_TypeError,
+			    "filteredrevs has no attribute __contains__");
 			goto bail;
 		}
 	}
@@ -785,15 +791,15 @@ static PyObject *index_headrevs(indexObject *self, PyObject *args)
 		int isfiltered;
 		int parents[2];
 
-		/* If nothead[i] == 1, it means we've seen an unfiltered child of this
-		 * node already, and therefore this node is not filtered. So we can skip
-		 * the expensive check_filter step.
+		/* If nothead[i] == 1, it means we've seen an unfiltered child
+		 * of this node already, and therefore this node is not
+		 * filtered. So we can skip the expensive check_filter step.
 		 */
 		if (nothead[i] != 1) {
 			isfiltered = check_filter(filter, i);
 			if (isfiltered == -1) {
 				PyErr_SetString(PyExc_TypeError,
-					"unable to check filter");
+				                "unable to check filter");
 				goto bail;
 			}
 
@@ -845,10 +851,10 @@ static inline int index_baserev(indexObject *self, int rev)
 	const char *data;
 
 	if (rev >= self->length) {
-		PyObject *tuple = PyList_GET_ITEM(self->added, rev - self->length);
+		PyObject *tuple =
+		    PyList_GET_ITEM(self->added, rev - self->length);
 		return (int)PyInt_AS_LONG(PyTuple_GET_ITEM(tuple, 3));
-	}
-	else {
+	} else {
 		data = index_deref(self, rev);
 		if (data == NULL) {
 			return -2;
@@ -876,13 +882,11 @@ static PyObject *index_deltachain(indexObject *self, PyObject *args)
 		if (stoprev == -1 && PyErr_Occurred()) {
 			return NULL;
 		}
-	}
-	else if (stoparg == Py_None) {
+	} else if (stoparg == Py_None) {
 		stoprev = -2;
-	}
-	else {
+	} else {
 		PyErr_SetString(PyExc_ValueError,
-			"stoprev must be integer or None");
+		                "stoprev must be integer or None");
 		return NULL;
 	}
 
@@ -920,8 +924,7 @@ static PyObject *index_deltachain(indexObject *self, PyObject *args)
 
 		if (generaldelta) {
 			iterrev = baserev;
-		}
-		else {
+		} else {
 			iterrev--;
 		}
 
@@ -930,7 +933,8 @@ static PyObject *index_deltachain(indexObject *self, PyObject *args)
 		}
 
 		if (iterrev >= length) {
-			PyErr_SetString(PyExc_IndexError, "revision outside index");
+			PyErr_SetString(PyExc_IndexError,
+			                "revision outside index");
 			return NULL;
 		}
 
@@ -946,8 +950,7 @@ static PyObject *index_deltachain(indexObject *self, PyObject *args)
 
 	if (iterrev == stoprev) {
 		stopped = 1;
-	}
-	else {
+	} else {
 		PyObject *value = PyInt_FromLong(iterrev);
 		if (value == NULL) {
 			goto bail;
@@ -976,7 +979,7 @@ bail:
 
 static inline int nt_level(const char *node, Py_ssize_t level)
 {
-	int v = node[level>>1];
+	int v = node[level >> 1];
 	if (!(level & 1))
 		v >>= 4;
 	return v & 0xf;
@@ -990,7 +993,7 @@ static inline int nt_level(const char *node, Py_ssize_t level)
  * rest: valid rev
  */
 static int nt_find(nodetree *self, const char *node, Py_ssize_t nodelen,
-		   int hex)
+                   int hex)
 {
 	int (*getnybble)(const char *, Py_ssize_t) = hex ? hexdigit : nt_level;
 	int level, maxlevel, off;
@@ -1036,10 +1039,12 @@ static int nt_new(nodetree *self)
 		nodetreenode *newnodes;
 		newcapacity = self->capacity * 2;
 		if (newcapacity >= INT_MAX / sizeof(nodetreenode)) {
-			PyErr_SetString(PyExc_MemoryError, "overflow in nt_new");
+			PyErr_SetString(PyExc_MemoryError,
+			                "overflow in nt_new");
 			return -1;
 		}
-		newnodes = realloc(self->nodes, newcapacity * sizeof(nodetreenode));
+		newnodes =
+		    realloc(self->nodes, newcapacity * sizeof(nodetreenode));
 		if (newnodes == NULL) {
 			PyErr_SetString(PyExc_MemoryError, "out of memory");
 			return -1;
@@ -1070,7 +1075,8 @@ static int nt_insert(nodetree *self, const char *node, int rev)
 			return 0;
 		}
 		if (v < 0) {
-			const char *oldnode = index_node_existing(self->index, -(v + 2));
+			const char *oldnode =
+			    index_node_existing(self->index, -(v + 2));
 			int noff;
 
 			if (oldnode == NULL)
@@ -1119,7 +1125,8 @@ static PyObject *ntobj_insert(nodetreeObject *self, PyObject *args)
 
 static int nt_delete_node(nodetree *self, const char *node)
 {
-	/* rev==-2 happens to get encoded as 0, which is interpreted as not set */
+	/* rev==-2 happens to get encoded as 0, which is interpreted as not set
+	 */
 	return nt_insert(self, node, -2);
 }
 
@@ -1156,11 +1163,10 @@ static int ntobj_init(nodetreeObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "O!I", &indexType, &index, &capacity))
 		return -1;
 	Py_INCREF(index);
-	return nt_init(&self->nt, (indexObject*)index, capacity);
+	return nt_init(&self->nt, (indexObject *)index, capacity);
 }
 
-static int nt_partialmatch(nodetree *self, const char *node,
-			   Py_ssize_t nodelen)
+static int nt_partialmatch(nodetree *self, const char *node, Py_ssize_t nodelen)
 {
 	return nt_find(self, node, nodelen, 1);
 }
@@ -1246,51 +1252,51 @@ static void ntobj_dealloc(nodetreeObject *self)
 }
 
 static PyMethodDef ntobj_methods[] = {
-	{"insert", (PyCFunction)ntobj_insert, METH_VARARGS,
-	 "insert an index entry"},
-	{"shortest", (PyCFunction)ntobj_shortest, METH_VARARGS,
-	 "find length of shortest hex nodeid of a binary ID"},
-	{NULL} /* Sentinel */
+    {"insert", (PyCFunction)ntobj_insert, METH_VARARGS,
+     "insert an index entry"},
+    {"shortest", (PyCFunction)ntobj_shortest, METH_VARARGS,
+     "find length of shortest hex nodeid of a binary ID"},
+    {NULL} /* Sentinel */
 };
 
 static PyTypeObject nodetreeType = {
-	PyVarObject_HEAD_INIT(NULL, 0) /* header */
-	"parsers.nodetree",        /* tp_name */
-	sizeof(nodetreeObject) ,   /* tp_basicsize */
-	0,                         /* tp_itemsize */
-	(destructor)ntobj_dealloc, /* tp_dealloc */
-	0,                         /* tp_print */
-	0,                         /* tp_getattr */
-	0,                         /* tp_setattr */
-	0,                         /* tp_compare */
-	0,                         /* tp_repr */
-	0,                         /* tp_as_number */
-	0,                         /* tp_as_sequence */
-	0,                         /* tp_as_mapping */
-	0,                         /* tp_hash */
-	0,                         /* tp_call */
-	0,                         /* tp_str */
-	0,                         /* tp_getattro */
-	0,                         /* tp_setattro */
-	0,                         /* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,        /* tp_flags */
-	"nodetree",                /* tp_doc */
-	0,                         /* tp_traverse */
-	0,                         /* tp_clear */
-	0,                         /* tp_richcompare */
-	0,                         /* tp_weaklistoffset */
-	0,                         /* tp_iter */
-	0,                         /* tp_iternext */
-	ntobj_methods,             /* tp_methods */
-	0,                         /* tp_members */
-	0,                         /* tp_getset */
-	0,                         /* tp_base */
-	0,                         /* tp_dict */
-	0,                         /* tp_descr_get */
-	0,                         /* tp_descr_set */
-	0,                         /* tp_dictoffset */
-	(initproc)ntobj_init,      /* tp_init */
-	0,                         /* tp_alloc */
+    PyVarObject_HEAD_INIT(NULL, 0) /* header */
+    "parsers.nodetree",            /* tp_name */
+    sizeof(nodetreeObject),        /* tp_basicsize */
+    0,                             /* tp_itemsize */
+    (destructor)ntobj_dealloc,     /* tp_dealloc */
+    0,                             /* tp_print */
+    0,                             /* tp_getattr */
+    0,                             /* tp_setattr */
+    0,                             /* tp_compare */
+    0,                             /* tp_repr */
+    0,                             /* tp_as_number */
+    0,                             /* tp_as_sequence */
+    0,                             /* tp_as_mapping */
+    0,                             /* tp_hash */
+    0,                             /* tp_call */
+    0,                             /* tp_str */
+    0,                             /* tp_getattro */
+    0,                             /* tp_setattro */
+    0,                             /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,            /* tp_flags */
+    "nodetree",                    /* tp_doc */
+    0,                             /* tp_traverse */
+    0,                             /* tp_clear */
+    0,                             /* tp_richcompare */
+    0,                             /* tp_weaklistoffset */
+    0,                             /* tp_iter */
+    0,                             /* tp_iternext */
+    ntobj_methods,                 /* tp_methods */
+    0,                             /* tp_members */
+    0,                             /* tp_getset */
+    0,                             /* tp_base */
+    0,                             /* tp_dict */
+    0,                             /* tp_descr_get */
+    0,                             /* tp_descr_set */
+    0,                             /* tp_dictoffset */
+    (initproc)ntobj_init,          /* tp_init */
+    0,                             /* tp_alloc */
 };
 
 static int index_init_nt(indexObject *self)
@@ -1319,8 +1325,8 @@ static int index_init_nt(indexObject *self)
  *   -2: not found (no exception set)
  * rest: valid rev
  */
-static int index_find_node(indexObject *self,
-			   const char *node, Py_ssize_t nodelen)
+static int index_find_node(indexObject *self, const char *node,
+                           Py_ssize_t nodelen)
 {
 	int rev;
 
@@ -1394,7 +1400,8 @@ static PyObject *index_getitem(indexObject *self, PyObject *value)
 /*
  * Fully populate the radix tree.
  */
-static int index_populate_nt(indexObject *self) {
+static int index_populate_nt(indexObject *self)
+{
 	int rev;
 	if (self->ntrev > 0) {
 		for (rev = self->ntrev - 1; rev >= 0; rev--) {
@@ -1534,7 +1541,7 @@ typedef uint64_t bitmask;
  * "heads(::a and ::b and ...)"
  */
 static PyObject *find_gca_candidates(indexObject *self, const int *revs,
-				     int revcount)
+                                     int revcount)
 {
 	const bitmask allseen = (1ull << revcount) - 1;
 	const bitmask poison = 1ull << revcount;
@@ -1599,8 +1606,7 @@ static PyObject *find_gca_candidates(indexObject *self, const int *revs,
 				if (sp == 0) {
 					seen[p] = sv;
 					interesting++;
-				}
-				else if (sp != sv)
+				} else if (sp != sv)
 					seen[p] |= sv;
 			} else {
 				if (sp && sp < poison)
@@ -1636,8 +1642,8 @@ static PyObject *find_deepest(indexObject *self, PyObject *revs)
 
 	if (revcount > capacity) {
 		PyErr_Format(PyExc_OverflowError,
-			     "bitset size (%ld) > capacity (%ld)",
-			     (long)revcount, (long)capacity);
+		             "bitset size (%ld) > capacity (%ld)",
+		             (long)revcount, (long)capacity);
 		return NULL;
 	}
 
@@ -1711,8 +1717,7 @@ static PyObject *find_deepest(indexObject *self, PyObject *revs)
 							ninteresting -= 1;
 					}
 				}
-			}
-			else if (dv == dp - 1) {
+			} else if (dv == dp - 1) {
 				long nsp = sp | sv;
 				if (nsp == sp)
 					continue;
@@ -1800,7 +1805,7 @@ static PyObject *index_commonancestorsheads(indexObject *self, PyObject *args)
 
 		if (!PyInt_Check(obj)) {
 			PyErr_SetString(PyExc_TypeError,
-					"arguments must all be ints");
+			                "arguments must all be ints");
 			Py_DECREF(obj);
 			goto bail;
 		}
@@ -1811,8 +1816,7 @@ static PyObject *index_commonancestorsheads(indexObject *self, PyObject *args)
 			goto done;
 		}
 		if (val < 0 || val >= len) {
-			PyErr_SetString(PyExc_IndexError,
-					"index out of range");
+			PyErr_SetString(PyExc_IndexError, "index out of range");
 			goto bail;
 		}
 		/* this cheesy bloom filter lets us avoid some more
@@ -1825,12 +1829,12 @@ static PyObject *index_commonancestorsheads(indexObject *self, PyObject *args)
 				if (val == revs[k])
 					goto duplicate;
 			}
-		}
-		else repeat |= x;
+		} else
+			repeat |= x;
 		if (revcount >= capacity) {
 			PyErr_Format(PyExc_OverflowError,
-				     "bitset size (%d) > capacity (%d)",
-				     revcount, capacity);
+			             "bitset size (%d) > capacity (%d)",
+			             revcount, capacity);
 			goto bail;
 		}
 		revs[revcount++] = (int)val;
@@ -1917,11 +1921,11 @@ static int index_slice_del(indexObject *self, PyObject *item)
 
 /* Argument changed from PySliceObject* to PyObject* in Python 3. */
 #ifdef IS_PY3K
-	if (PySlice_GetIndicesEx(item, length,
-				 &start, &stop, &step, &slicelength) < 0)
+	if (PySlice_GetIndicesEx(item, length, &start, &stop, &step,
+	                         &slicelength) < 0)
 #else
-	if (PySlice_GetIndicesEx((PySliceObject*)item, length,
-				 &start, &stop, &step, &slicelength) < 0)
+	if (PySlice_GetIndicesEx((PySliceObject *)item, length, &start, &stop,
+	                         &step, &slicelength) < 0)
 #endif
 		return -1;
 
@@ -1933,19 +1937,19 @@ static int index_slice_del(indexObject *self, PyObject *item)
 
 	if (step < 0) {
 		stop = start + 1;
-		start = stop + step*(slicelength - 1) - 1;
+		start = stop + step * (slicelength - 1) - 1;
 		step = -step;
 	}
 
 	if (step != 1) {
 		PyErr_SetString(PyExc_ValueError,
-				"revlog index delete requires step size of 1");
+		                "revlog index delete requires step size of 1");
 		return -1;
 	}
 
 	if (stop != length - 1) {
 		PyErr_SetString(PyExc_IndexError,
-				"revlog index deletion indices are invalid");
+		                "revlog index deletion indices are invalid");
 		return -1;
 	}
 
@@ -1984,7 +1988,7 @@ static int index_slice_del(indexObject *self, PyObject *item)
 	}
 	if (self->added)
 		ret = PyList_SetSlice(self->added, start - self->length,
-				      PyList_GET_SIZE(self->added), NULL);
+		                      PyList_GET_SIZE(self->added), NULL);
 done:
 	Py_CLEAR(self->headrevs);
 	return ret;
@@ -1998,7 +2002,7 @@ done:
  * string deletion (shrink node->rev mapping)
  */
 static int index_assign_subscript(indexObject *self, PyObject *item,
-				  PyObject *value)
+                                  PyObject *value)
 {
 	char *node;
 	long rev;
@@ -2010,7 +2014,8 @@ static int index_assign_subscript(indexObject *self, PyObject *item,
 		return -1;
 
 	if (value == NULL)
-		return self->ntinitialized ? nt_delete_node(&self->nt, node) : 0;
+		return self->ntinitialized ? nt_delete_node(&self->nt, node)
+		                           : 0;
 	rev = PyInt_AsLong(value);
 	if (rev > INT_MAX || rev < 0) {
 		if (!PyErr_Occurred())
@@ -2060,7 +2065,8 @@ static int index_init(indexObject *self, PyObject *args)
 	PyObject *data_obj, *inlined_obj;
 	Py_ssize_t size;
 
-	/* Initialize before argument-checking to avoid index_dealloc() crash. */
+	/* Initialize before argument-checking to avoid index_dealloc() crash.
+	 */
 	self->raw_length = 0;
 	self->added = NULL;
 	self->cache = NULL;
@@ -2076,7 +2082,7 @@ static int index_init(indexObject *self, PyObject *args)
 		return -1;
 	if (!PyObject_CheckBuffer(data_obj)) {
 		PyErr_SetString(PyExc_TypeError,
-				"data does not support buffer interface");
+		                "data does not support buffer interface");
 		return -1;
 	}
 
@@ -2160,96 +2166,93 @@ static void index_dealloc(indexObject *self)
 }
 
 static PySequenceMethods index_sequence_methods = {
-	(lenfunc)index_length,   /* sq_length */
-	0,                       /* sq_concat */
-	0,                       /* sq_repeat */
-	(ssizeargfunc)index_get, /* sq_item */
-	0,                       /* sq_slice */
-	0,                       /* sq_ass_item */
-	0,                       /* sq_ass_slice */
-	(objobjproc)index_contains, /* sq_contains */
+    (lenfunc)index_length,      /* sq_length */
+    0,                          /* sq_concat */
+    0,                          /* sq_repeat */
+    (ssizeargfunc)index_get,    /* sq_item */
+    0,                          /* sq_slice */
+    0,                          /* sq_ass_item */
+    0,                          /* sq_ass_slice */
+    (objobjproc)index_contains, /* sq_contains */
 };
 
 static PyMappingMethods index_mapping_methods = {
-	(lenfunc)index_length,                 /* mp_length */
-	(binaryfunc)index_getitem,             /* mp_subscript */
-	(objobjargproc)index_assign_subscript, /* mp_ass_subscript */
+    (lenfunc)index_length,                 /* mp_length */
+    (binaryfunc)index_getitem,             /* mp_subscript */
+    (objobjargproc)index_assign_subscript, /* mp_ass_subscript */
 };
 
 static PyMethodDef index_methods[] = {
-	{"ancestors", (PyCFunction)index_ancestors, METH_VARARGS,
-	 "return the gca set of the given revs"},
-	{"commonancestorsheads", (PyCFunction)index_commonancestorsheads,
-	  METH_VARARGS,
-	  "return the heads of the common ancestors of the given revs"},
-	{"clearcaches", (PyCFunction)index_clearcaches, METH_NOARGS,
-	 "clear the index caches"},
-	{"get", (PyCFunction)index_m_get, METH_VARARGS,
-	 "get an index entry"},
-	{"computephasesmapsets", (PyCFunction)compute_phases_map_sets,
-			METH_VARARGS, "compute phases"},
-	{"reachableroots2", (PyCFunction)reachableroots2, METH_VARARGS,
-		"reachableroots"},
-	{"headrevs", (PyCFunction)index_headrevs, METH_VARARGS,
-	 "get head revisions"}, /* Can do filtering since 3.2 */
-	{"headrevsfiltered", (PyCFunction)index_headrevs, METH_VARARGS,
-	 "get filtered head revisions"}, /* Can always do filtering */
-	{"deltachain", (PyCFunction)index_deltachain, METH_VARARGS,
-	 "determine revisions with deltas to reconstruct fulltext"},
-	{"append", (PyCFunction)index_append, METH_O,
-	 "append an index entry"},
-	{"partialmatch", (PyCFunction)index_partialmatch, METH_VARARGS,
-	 "match a potentially ambiguous node ID"},
-	{"shortest", (PyCFunction)index_shortest, METH_VARARGS,
-	 "find length of shortest hex nodeid of a binary ID"},
-	{"stats", (PyCFunction)index_stats, METH_NOARGS,
-	 "stats for the index"},
-	{NULL} /* Sentinel */
+    {"ancestors", (PyCFunction)index_ancestors, METH_VARARGS,
+     "return the gca set of the given revs"},
+    {"commonancestorsheads", (PyCFunction)index_commonancestorsheads,
+     METH_VARARGS,
+     "return the heads of the common ancestors of the given revs"},
+    {"clearcaches", (PyCFunction)index_clearcaches, METH_NOARGS,
+     "clear the index caches"},
+    {"get", (PyCFunction)index_m_get, METH_VARARGS, "get an index entry"},
+    {"computephasesmapsets", (PyCFunction)compute_phases_map_sets, METH_VARARGS,
+     "compute phases"},
+    {"reachableroots2", (PyCFunction)reachableroots2, METH_VARARGS,
+     "reachableroots"},
+    {"headrevs", (PyCFunction)index_headrevs, METH_VARARGS,
+     "get head revisions"}, /* Can do filtering since 3.2 */
+    {"headrevsfiltered", (PyCFunction)index_headrevs, METH_VARARGS,
+     "get filtered head revisions"}, /* Can always do filtering */
+    {"deltachain", (PyCFunction)index_deltachain, METH_VARARGS,
+     "determine revisions with deltas to reconstruct fulltext"},
+    {"append", (PyCFunction)index_append, METH_O, "append an index entry"},
+    {"partialmatch", (PyCFunction)index_partialmatch, METH_VARARGS,
+     "match a potentially ambiguous node ID"},
+    {"shortest", (PyCFunction)index_shortest, METH_VARARGS,
+     "find length of shortest hex nodeid of a binary ID"},
+    {"stats", (PyCFunction)index_stats, METH_NOARGS, "stats for the index"},
+    {NULL} /* Sentinel */
 };
 
 static PyGetSetDef index_getset[] = {
-	{"nodemap", (getter)index_nodemap, NULL, "nodemap", NULL},
-	{NULL} /* Sentinel */
+    {"nodemap", (getter)index_nodemap, NULL, "nodemap", NULL},
+    {NULL} /* Sentinel */
 };
 
 static PyTypeObject indexType = {
-	PyVarObject_HEAD_INIT(NULL, 0) /* header */
-	"parsers.index",           /* tp_name */
-	sizeof(indexObject),       /* tp_basicsize */
-	0,                         /* tp_itemsize */
-	(destructor)index_dealloc, /* tp_dealloc */
-	0,                         /* tp_print */
-	0,                         /* tp_getattr */
-	0,                         /* tp_setattr */
-	0,                         /* tp_compare */
-	0,                         /* tp_repr */
-	0,                         /* tp_as_number */
-	&index_sequence_methods,   /* tp_as_sequence */
-	&index_mapping_methods,    /* tp_as_mapping */
-	0,                         /* tp_hash */
-	0,                         /* tp_call */
-	0,                         /* tp_str */
-	0,                         /* tp_getattro */
-	0,                         /* tp_setattro */
-	0,                         /* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,        /* tp_flags */
-	"revlog index",            /* tp_doc */
-	0,                         /* tp_traverse */
-	0,                         /* tp_clear */
-	0,                         /* tp_richcompare */
-	0,                         /* tp_weaklistoffset */
-	0,                         /* tp_iter */
-	0,                         /* tp_iternext */
-	index_methods,             /* tp_methods */
-	0,                         /* tp_members */
-	index_getset,              /* tp_getset */
-	0,                         /* tp_base */
-	0,                         /* tp_dict */
-	0,                         /* tp_descr_get */
-	0,                         /* tp_descr_set */
-	0,                         /* tp_dictoffset */
-	(initproc)index_init,      /* tp_init */
-	0,                         /* tp_alloc */
+    PyVarObject_HEAD_INIT(NULL, 0) /* header */
+    "parsers.index",               /* tp_name */
+    sizeof(indexObject),           /* tp_basicsize */
+    0,                             /* tp_itemsize */
+    (destructor)index_dealloc,     /* tp_dealloc */
+    0,                             /* tp_print */
+    0,                             /* tp_getattr */
+    0,                             /* tp_setattr */
+    0,                             /* tp_compare */
+    0,                             /* tp_repr */
+    0,                             /* tp_as_number */
+    &index_sequence_methods,       /* tp_as_sequence */
+    &index_mapping_methods,        /* tp_as_mapping */
+    0,                             /* tp_hash */
+    0,                             /* tp_call */
+    0,                             /* tp_str */
+    0,                             /* tp_getattro */
+    0,                             /* tp_setattro */
+    0,                             /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,            /* tp_flags */
+    "revlog index",                /* tp_doc */
+    0,                             /* tp_traverse */
+    0,                             /* tp_clear */
+    0,                             /* tp_richcompare */
+    0,                             /* tp_weaklistoffset */
+    0,                             /* tp_iter */
+    0,                             /* tp_iternext */
+    index_methods,                 /* tp_methods */
+    0,                             /* tp_members */
+    index_getset,                  /* tp_getset */
+    0,                             /* tp_base */
+    0,                             /* tp_dict */
+    0,                             /* tp_descr_get */
+    0,                             /* tp_descr_set */
+    0,                             /* tp_dictoffset */
+    (initproc)index_init,          /* tp_init */
+    0,                             /* tp_alloc */
 };
 
 /*
@@ -2307,27 +2310,26 @@ typedef struct rustlazyancestorsObjectStruct rustlazyancestorsObject;
 
 struct rustlazyancestorsObjectStruct {
 	PyObject_HEAD
-	/* Type-specific fields go here. */
-	indexObject *index;    /* Ref kept to avoid GC'ing the index */
-	void *iter;        /* Rust iterator */
+	    /* Type-specific fields go here. */
+	    indexObject *index; /* Ref kept to avoid GC'ing the index */
+	void *iter;             /* Rust iterator */
 };
 
 /* FFI exposed from Rust code */
-rustlazyancestorsObject *rustlazyancestors_init(
-	indexObject *index,
-	/* to pass index_get_parents() */
-	int (*)(indexObject *, Py_ssize_t, int*, int),
-	/* intrevs vector */
-	Py_ssize_t initrevslen, long *initrevs,
-	long stoprev,
-	int inclusive);
+rustlazyancestorsObject *
+rustlazyancestors_init(indexObject *index,
+                       /* to pass index_get_parents() */
+                       int (*)(indexObject *, Py_ssize_t, int *, int),
+                       /* intrevs vector */
+                       Py_ssize_t initrevslen, long *initrevs, long stoprev,
+                       int inclusive);
 void rustlazyancestors_drop(rustlazyancestorsObject *self);
 int rustlazyancestors_next(rustlazyancestorsObject *self);
 int rustlazyancestors_contains(rustlazyancestorsObject *self, long rev);
 
 /* CPython instance methods */
-static int rustla_init(rustlazyancestorsObject *self,
-                       PyObject *args) {
+static int rustla_init(rustlazyancestorsObject *self, PyObject *args)
+{
 	PyObject *initrevsarg = NULL;
 	PyObject *inclusivearg = NULL;
 	long stoprev = 0;
@@ -2336,12 +2338,10 @@ static int rustla_init(rustlazyancestorsObject *self,
 	Py_ssize_t i;
 
 	indexObject *index;
-	if (!PyArg_ParseTuple(args, "O!O!lO!",
-			      &indexType, &index,
-                              &PyList_Type, &initrevsarg,
-                              &stoprev,
-                              &PyBool_Type, &inclusivearg))
-	return -1;
+	if (!PyArg_ParseTuple(args, "O!O!lO!", &indexType, &index, &PyList_Type,
+	                      &initrevsarg, &stoprev, &PyBool_Type,
+	                      &inclusivearg))
+		return -1;
 
 	Py_INCREF(index);
 	self->index = index;
@@ -2351,23 +2351,21 @@ static int rustla_init(rustlazyancestorsObject *self,
 
 	Py_ssize_t linit = PyList_GET_SIZE(initrevsarg);
 
-	initrevs = (long*)calloc(linit, sizeof(long));
+	initrevs = (long *)calloc(linit, sizeof(long));
 
 	if (initrevs == NULL) {
 		PyErr_NoMemory();
 		goto bail;
 	}
 
-	for (i=0; i<linit; i++) {
+	for (i = 0; i < linit; i++) {
 		initrevs[i] = PyInt_AsLong(PyList_GET_ITEM(initrevsarg, i));
 	}
 	if (PyErr_Occurred())
 		goto bail;
 
-	self->iter = rustlazyancestors_init(index,
-		                            index_get_parents,
-		                            linit, initrevs,
-		                            stoprev, inclusive);
+	self->iter = rustlazyancestors_init(index, index_get_parents, linit,
+	                                    initrevs, stoprev, inclusive);
 	if (self->iter == NULL) {
 		/* if this is because of GraphError::ParentOutOfRange
 		 * index_get_parents() has already set the proper ValueError */
@@ -2391,19 +2389,21 @@ static void rustla_dealloc(rustlazyancestorsObject *self)
 	PyObject_Del(self);
 }
 
-static PyObject *rustla_next(rustlazyancestorsObject *self) {
+static PyObject *rustla_next(rustlazyancestorsObject *self)
+{
 	int res = rustlazyancestors_next(self->iter);
 	if (res == -1) {
 		/* Setting an explicit exception seems unnecessary
-		 * as examples from Python source code (Objects/rangeobjets.c and
-		 * Modules/_io/stringio.c) seem to demonstrate.
+		 * as examples from Python source code (Objects/rangeobjets.c
+		 * and Modules/_io/stringio.c) seem to demonstrate.
 		 */
 		return NULL;
 	}
 	return PyInt_FromLong(res);
 }
 
-static int rustla_contains(rustlazyancestorsObject *self, PyObject *rev) {
+static int rustla_contains(rustlazyancestorsObject *self, PyObject *rev)
+{
 	if (!(PyInt_Check(rev))) {
 		return 0;
 	}
@@ -2411,54 +2411,54 @@ static int rustla_contains(rustlazyancestorsObject *self, PyObject *rev) {
 }
 
 static PySequenceMethods rustla_sequence_methods = {
-	0,                       /* sq_length */
-	0,                       /* sq_concat */
-	0,                       /* sq_repeat */
-	0,                       /* sq_item */
-	0,                       /* sq_slice */
-	0,                       /* sq_ass_item */
-	0,                       /* sq_ass_slice */
-	(objobjproc)rustla_contains, /* sq_contains */
+    0,                           /* sq_length */
+    0,                           /* sq_concat */
+    0,                           /* sq_repeat */
+    0,                           /* sq_item */
+    0,                           /* sq_slice */
+    0,                           /* sq_ass_item */
+    0,                           /* sq_ass_slice */
+    (objobjproc)rustla_contains, /* sq_contains */
 };
 
 static PyTypeObject rustlazyancestorsType = {
-	PyVarObject_HEAD_INIT(NULL, 0) /* header */
-	"parsers.rustlazyancestors",           /* tp_name */
-	sizeof(rustlazyancestorsObject),       /* tp_basicsize */
-	0,                         /* tp_itemsize */
-	(destructor)rustla_dealloc, /* tp_dealloc */
-	0,                         /* tp_print */
-	0,                         /* tp_getattr */
-	0,                         /* tp_setattr */
-	0,                         /* tp_compare */
-	0,                         /* tp_repr */
-	0,                         /* tp_as_number */
-	&rustla_sequence_methods,  /* tp_as_sequence */
-	0,                         /* tp_as_mapping */
-	0,                         /* tp_hash */
-	0,                         /* tp_call */
-	0,                         /* tp_str */
-	0,                         /* tp_getattro */
-	0,                         /* tp_setattro */
-	0,                         /* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,        /* tp_flags */
-	"Iterator over ancestors, implemented in Rust", /* tp_doc */
-	0,                         /* tp_traverse */
-	0,                         /* tp_clear */
-	0,                         /* tp_richcompare */
-	0,                         /* tp_weaklistoffset */
-	0,                         /* tp_iter */
-	(iternextfunc)rustla_next, /* tp_iternext */
-	0,                         /* tp_methods */
-	0,                         /* tp_members */
-	0,                         /* tp_getset */
-	0,                         /* tp_base */
-	0,                         /* tp_dict */
-	0,                         /* tp_descr_get */
-	0,                         /* tp_descr_set */
-	0,                         /* tp_dictoffset */
-	(initproc)rustla_init,     /* tp_init */
-	0,                         /* tp_alloc */
+    PyVarObject_HEAD_INIT(NULL, 0)                  /* header */
+    "parsers.rustlazyancestors",                    /* tp_name */
+    sizeof(rustlazyancestorsObject),                /* tp_basicsize */
+    0,                                              /* tp_itemsize */
+    (destructor)rustla_dealloc,                     /* tp_dealloc */
+    0,                                              /* tp_print */
+    0,                                              /* tp_getattr */
+    0,                                              /* tp_setattr */
+    0,                                              /* tp_compare */
+    0,                                              /* tp_repr */
+    0,                                              /* tp_as_number */
+    &rustla_sequence_methods,                       /* tp_as_sequence */
+    0,                                              /* tp_as_mapping */
+    0,                                              /* tp_hash */
+    0,                                              /* tp_call */
+    0,                                              /* tp_str */
+    0,                                              /* tp_getattro */
+    0,                                              /* tp_setattro */
+    0,                                              /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                             /* tp_flags */
+    "Iterator over ancestors, implemented in Rust", /* tp_doc */
+    0,                                              /* tp_traverse */
+    0,                                              /* tp_clear */
+    0,                                              /* tp_richcompare */
+    0,                                              /* tp_weaklistoffset */
+    0,                                              /* tp_iter */
+    (iternextfunc)rustla_next,                      /* tp_iternext */
+    0,                                              /* tp_methods */
+    0,                                              /* tp_members */
+    0,                                              /* tp_getset */
+    0,                                              /* tp_base */
+    0,                                              /* tp_dict */
+    0,                                              /* tp_descr_get */
+    0,                                              /* tp_descr_set */
+    0,                                              /* tp_dictoffset */
+    (initproc)rustla_init,                          /* tp_init */
+    0,                                              /* tp_alloc */
 };
 #endif /* WITH_RUST */
 
@@ -2477,8 +2477,8 @@ void revlog_module_init(PyObject *mod)
 	PyModule_AddObject(mod, "nodetree", (PyObject *)&nodetreeType);
 
 	if (!nullentry) {
-		nullentry = Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0,
-					  -1, -1, -1, -1, nullid, 20);
+		nullentry = Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0,
+		                          0, -1, -1, -1, -1, nullid, 20);
 	}
 	if (nullentry)
 		PyObject_GC_UnTrack(nullentry);
@@ -2489,7 +2489,6 @@ void revlog_module_init(PyObject *mod)
 		return;
 	Py_INCREF(&rustlazyancestorsType);
 	PyModule_AddObject(mod, "rustlazyancestors",
-		(PyObject *)&rustlazyancestorsType);
+	                   (PyObject *)&rustlazyancestorsType);
 #endif
-
 }

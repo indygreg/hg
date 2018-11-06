@@ -3,7 +3,6 @@
 mercurial/cext/dirs.c
 mercurial/cext/manifest.c
 mercurial/cext/osutil.c
-mercurial/cext/revlog.c
 # Vendored code that we should never format:
 contrib/python-zstandard/c-ext/bufferutil.c
 contrib/python-zstandard/c-ext/compressionchunker.c

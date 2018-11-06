@@ -1692,10 +1692,11 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
     Obtaining a revlog revision consists of roughly the following steps:
 
     1. Compute the delta chain
-    2. Obtain the raw chunks for that delta chain
-    3. Decompress each raw chunk
-    4. Apply binary patches to obtain fulltext
-    5. Verify hash of fulltext
+    2. Slice the delta chain if applicable
+    3. Obtain the raw chunks for that delta chain
+    4. Decompress each raw chunk
+    5. Apply binary patches to obtain fulltext
+    6. Verify hash of fulltext
 
     This command measures the time spent in each of these phases.
     """
@@ -1749,6 +1750,10 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
         for item in slicedchain:
             segmentforrevs(item[0], item[-1])
 
+    def doslice(r, chain, size):
+        for s in slicechunk(r, chain, targetsize=size):
+            pass
+
     def dorawchunks(data, chain):
         if not cache:
             r.clearcaches()
@@ -1796,11 +1801,18 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
         (lambda: dorevision(), b'full'),
         (lambda: dodeltachain(rev), b'deltachain'),
         (lambda: doread(chain), b'read'),
+    ]
+
+    if getattr(r, '_withsparseread', False):
+        slicing = (lambda: doslice(r, chain, size), b'slice-sparse-chain')
+        benches.append(slicing)
+
+    benches.extend([
         (lambda: dorawchunks(data, slicedchain), b'rawchunks'),
         (lambda: dodecompress(rawchunks), b'decompress'),
         (lambda: dopatch(text, bins), b'patch'),
         (lambda: dohash(text), b'hash'),
-    ]
+    ])
 
     timer, fm = gettimer(ui, opts)
     for fn, title in benches:

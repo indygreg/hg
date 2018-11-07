@@ -525,7 +525,7 @@ Test when commands.resolve.confirm config option is not set:
 
 Test when config option is set:
 ==============================
-  $ cat >> $HGRCPATH << EOF
+  $ cat >> .hg/hgrc << EOF
   > [ui]
   > interactive = True
   > [commands]

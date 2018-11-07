@@ -21,6 +21,9 @@ from . import (
     pycompat,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 version = 2
 
@@ -582,8 +585,10 @@ class transaction(util.transactional):
                           self._vfsmap, self._entries, self._backupentries,
                           False, checkambigfiles=self._checkambigfiles)
                 self._report(_("rollback completed\n"))
-            except BaseException:
+            except BaseException as exc:
                 self._report(_("rollback failed - please run hg recover\n"))
+                self._report(_("(failure reason: %s)\n")
+                             % stringutil.forcebytestr(exc))
         finally:
             self._journal = None
             self._releasefn(self, False) # notify failure of transaction

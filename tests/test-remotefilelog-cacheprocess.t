@@ -16,7 +16,9 @@
   $ cd ..
 
   $ cat > cacheprocess-logger.py <<EOF
-  > import sys, os, shutil
+  > import os
+  > import shutil
+  > import sys
   > f = open('$TESTTMP/cachelog.log', 'w')
   > srccache = os.path.join('$TESTTMP', 'oldhgcache')
   > def log(message):

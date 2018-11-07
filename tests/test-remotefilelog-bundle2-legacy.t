@@ -6,8 +6,8 @@
 generaldelta to generaldelta interactions with bundle2 but legacy clients
 without changegroup2 support
   $ cat > testcg2.py << EOF
-  > from mercurial import changegroup, registrar, util
   > import sys
+  > from mercurial import changegroup, registrar, util
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > @command('testcg2', norepo=True)
@@ -22,7 +22,7 @@ without changegroup2 support
   $ hg testcg2 || exit 80
 
   $ cat > disablecg2.py << EOF
-  > from mercurial import changegroup, util, error
+  > from mercurial import changegroup, error, util
   > deleted = False
   > def reposetup(ui, repo):
   >     global deleted

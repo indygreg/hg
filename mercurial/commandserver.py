@@ -320,8 +320,8 @@ class pipeservice(object):
         # redirect stdio to null device so that broken extensions or in-process
         # hooks will never cause corruption of channel protocol.
         with procutil.protectedstdio(ui.fin, ui.fout) as (fin, fout):
+            sv = server(ui, self.repo, fin, fout)
             try:
-                sv = server(ui, self.repo, fin, fout)
                 return sv.serve()
             finally:
                 sv.cleanup()

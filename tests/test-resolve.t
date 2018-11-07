@@ -435,7 +435,7 @@ If the user passes an invalid value, we treat it as 'none'.
   $ hg resolve -l
   R file1
   R file2
-Test explicitly setting the otion to 'none'
+Test explicitly setting the option to 'none'
   $ hg resolve --unmark
   $ hg resolve -l
   U file1
@@ -583,7 +583,7 @@ Test that commands.resolve.confirm respect --mark option (only when no patterns 
   R emp3
 
 Test that commands.resolve.confirm respect --unmark option (only when no patterns args are given):
-===============================================================================================
+=================================================================================================
 
   $ hg resolve -u emp1
 
@@ -613,4 +613,6 @@ Test that commands.resolve.confirm respect --unmark option (only when no pattern
 
   $ hg rebase --abort
   rebase aborted
+
+Done with commands.resolve.confirm tests:
   $ cd ..

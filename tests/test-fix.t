@@ -1,6 +1,11 @@
 A script that implements uppercasing of specific lines in a file. This
 approximates the behavior of code formatters well enough for our tests.
 
+  $ TAC="$TESTTMP/tac.py"
+  $ cat > $TAC <<EOF
+  > import sys
+  > print('\n'.join(sys.stdin.read().splitlines()[::-1]))
+  > EOF
   $ UPPERCASEPY="$TESTTMP/uppercase.py"
   $ cat > $UPPERCASEPY <<EOF
   > import sys
@@ -1117,7 +1122,7 @@ warning.
   $ printf "first\nsecond\n" > bar.txt
   $ hg add -q
   $ hg fix -w --config fix.sometool:fileset=bar.txt \
-  >           --config fix.sometool:command=tac
+  >           --config fix.sometool:command="$PYTHON $TAC"
   the fix.tool:fileset config name is deprecated; please rename it to fix.tool:pattern
 
   $ cat foo.whole

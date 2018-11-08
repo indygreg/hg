@@ -607,7 +607,7 @@ changelog and manifest would have invalid node:
   *** runcommand qqueue --active
   foo
 
-  $ cat <<EOF > dbgui.py
+  $ cat <<'EOF' > ../dbgui.py
   > import os
   > import sys
   > from mercurial import commands, registrar
@@ -615,10 +615,10 @@ changelog and manifest would have invalid node:
   > command = registrar.command(cmdtable)
   > @command(b"debuggetpass", norepo=True)
   > def debuggetpass(ui):
-  >     ui.write(b"%s\\n" % ui.getpass())
+  >     ui.write(b"%s\n" % ui.getpass())
   > @command(b"debugprompt", norepo=True)
   > def debugprompt(ui):
-  >     ui.write(b"%s\\n" % ui.prompt(b"prompt:"))
+  >     ui.write(b"%s\n" % ui.prompt(b"prompt:"))
   > @command(b"debugreadstdin", norepo=True)
   > def debugreadstdin(ui):
   >     ui.write(b"read: %r\n" % sys.stdin.read(1))
@@ -630,7 +630,7 @@ changelog and manifest would have invalid node:
   > EOF
   $ cat <<EOF >> .hg/hgrc
   > [extensions]
-  > dbgui = dbgui.py
+  > dbgui = ../dbgui.py
   > EOF
 
   >>> from hgclient import check, readchannel, runcommand, stringio

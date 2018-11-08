@@ -893,24 +893,24 @@ no ancestors that are replaced.
   $ printf "BAR\n" > bar.whole
   $ hg commit -Aqm "add bar"
 
-  $ hg log --graph --template '{node|shortest} {files}'
-  @  bc05 bar.whole
+  $ hg log --graph --template '{rev} {files}'
+  @  2 bar.whole
   |
-  o  4fd2 foo.whole
+  o  1 foo.whole
   |
-  o  f9ac foo.whole
+  o  0 foo.whole
   
   $ hg fix -r 0:2
-  $ hg log --graph --template '{node|shortest} {files}'
-  o  b4e2 bar.whole
+  $ hg log --graph --template '{rev} {files}'
+  o  4 bar.whole
   |
-  o  59f4
+  o  3
   |
-  | @  bc05 bar.whole
+  | @  2 bar.whole
   | |
-  | x  4fd2 foo.whole
+  | x  1 foo.whole
   |/
-  o  f9ac foo.whole
+  o  0 foo.whole
   
 
   $ cd ..

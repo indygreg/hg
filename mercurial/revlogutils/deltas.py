@@ -275,8 +275,7 @@ def _slicechunktodensity(revlog, revs, targetdensity=0.5,
         return
 
     # Store the gaps in a heap to have them sorted by decreasing size
-    gapsheap = []
-    heapq.heapify(gapsheap)
+    gaps = []
     prevend = None
     for i, rev in enumerate(revs):
         revstart = start(rev)
@@ -290,21 +289,23 @@ def _slicechunktodensity(revlog, revs, targetdensity=0.5,
             gapsize = revstart - prevend
             # only consider holes that are large enough
             if gapsize > mingapsize:
-                heapq.heappush(gapsheap, (-gapsize, i))
+                gaps.append((gapsize, i))
 
         prevend = revstart + revlen
+    # sort the gaps to pop them from largest to small
+    gaps.sort()
 
     # Collect the indices of the largest holes until the density is acceptable
     indicesheap = []
     heapq.heapify(indicesheap)
-    while gapsheap and density < targetdensity:
-        oppgapsize, gapidx = heapq.heappop(gapsheap)
+    while gaps and density < targetdensity:
+        gapsize, gapidx = gaps.pop()
 
         heapq.heappush(indicesheap, gapidx)
 
         # the gap sizes are stored as negatives to be sorted decreasingly
         # by the heap
-        readdata -= (-oppgapsize)
+        readdata -= gapsize
         if readdata > 0:
             density = chainpayload / float(readdata)
         else:

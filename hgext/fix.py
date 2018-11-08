@@ -586,6 +586,17 @@ def replacerev(ui, repo, ctx, filedata, replacements):
     newp1node = replacements.get(p1ctx.node(), p1ctx.node())
     newp2node = replacements.get(p2ctx.node(), p2ctx.node())
 
+    # We don't want to create a revision that has no changes from the original,
+    # but we should if the original revision's parent has been replaced.
+    # Otherwise, we would produce an orphan that needs no actual human
+    # intervention to evolve. We can't rely on commit() to avoid creating the
+    # un-needed revision because the extra field added below produces a new hash
+    # regardless of file content changes.
+    if (not filedata and
+        p1ctx.node() not in replacements and
+        p2ctx.node() not in replacements):
+        return
+
     def filectxfn(repo, memctx, path):
         if path not in ctx:
             return None
@@ -602,6 +613,9 @@ def replacerev(ui, repo, ctx, filedata, replacements):
             isexec=fctx.isexec(),
             copied=copied)
 
+    extra = ctx.extra().copy()
+    extra['fix_source'] = ctx.hex()
+
     memctx = context.memctx(
         repo,
         parents=(newp1node, newp2node),
@@ -610,7 +624,7 @@ def replacerev(ui, repo, ctx, filedata, replacements):
         filectxfn=filectxfn,
         user=ctx.user(),
         date=ctx.date(),
-        extra=ctx.extra(),
+        extra=extra,
         branch=ctx.branch(),
         editor=None)
     sucnode = memctx.commit()

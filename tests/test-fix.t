@@ -1195,3 +1195,37 @@ Test negative priorities while we're at it.
   8
 
   $ cd ..
+
+It's possible for repeated applications of a fixer tool to create cycles in the
+generated content of a file. For example, two users with different versions of
+a code formatter might fight over the formatting when they run hg fix. In the
+absence of other changes, this means we could produce commits with the same
+hash in subsequent runs of hg fix. This is a problem unless we support
+obsolescence cycles well. We avoid this by adding an extra field to the
+successor which forces it to have a new hash. That's why this test creates
+three revisions instead of two.
+
+  $ hg init cyclictool
+  $ cd cyclictool
+
+  $ cat >> .hg/hgrc <<EOF
+  > [fix]
+  > swapletters:command = tr ab ba
+  > swapletters:pattern = foo
+  > EOF
+
+  $ echo ab > foo
+  $ hg commit -Aqm foo
+
+  $ hg fix -r 0
+  $ hg fix -r 1
+
+  $ hg cat -r 0 foo --hidden
+  ab
+  $ hg cat -r 1 foo --hidden
+  ba
+  $ hg cat -r 2 foo
+  ab
+
+  $ cd ..
+

@@ -257,13 +257,13 @@ def _slicechunktodensity(revlog, revs, targetdensity=0.5,
         return
 
     deltachainspan = segmentspan(revlog, revs)
-    chainpayload = sum(length(r) for r in revs)
 
     if deltachainspan < mingapsize:
         yield revs
         return
 
     readdata = deltachainspan
+    chainpayload = sum(length(r) for r in revs)
 
     if deltachainspan:
         density = chainpayload / float(deltachainspan)

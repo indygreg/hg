@@ -10,7 +10,6 @@
 from __future__ import absolute_import
 
 import collections
-import heapq
 import struct
 
 # import stuff from node for others to import from revlog
@@ -296,12 +295,11 @@ def _slicechunktodensity(revlog, revs, targetdensity=0.5,
     gaps.sort()
 
     # Collect the indices of the largest holes until the density is acceptable
-    indicesheap = []
-    heapq.heapify(indicesheap)
+    selected = []
     while gaps and density < targetdensity:
         gapsize, gapidx = gaps.pop()
 
-        heapq.heappush(indicesheap, gapidx)
+        selected.append(gapidx)
 
         # the gap sizes are stored as negatives to be sorted decreasingly
         # by the heap
@@ -310,11 +308,11 @@ def _slicechunktodensity(revlog, revs, targetdensity=0.5,
             density = chainpayload / float(readdata)
         else:
             density = 1.0
+    selected.sort()
 
     # Cut the revs at collected indices
     previdx = 0
-    while indicesheap:
-        idx = heapq.heappop(indicesheap)
+    for idx in selected:
 
         chunk = _trimchunk(revlog, revs, previdx, idx)
         if chunk:

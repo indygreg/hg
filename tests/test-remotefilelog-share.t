@@ -22,3 +22,4 @@
   $ hg share source dest
   updating working directory
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg -R dest unshare

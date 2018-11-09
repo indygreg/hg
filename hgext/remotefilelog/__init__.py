@@ -542,14 +542,17 @@ def onetimeclientsetup(ui):
 
     # close cache miss server connection after the command has finished
     def runcommand(orig, lui, repo, *args, **kwargs):
+        fileservice = None
+        # repo can be None when running in chg:
+        # - at startup, reposetup was called because serve is not norepo
+        # - a norepo command like "help" is called
+        if repo and isenabled(repo):
+            fileservice = repo.fileservice
         try:
             return orig(lui, repo, *args, **kwargs)
         finally:
-            # repo can be None when running in chg:
-            # - at startup, reposetup was called because serve is not norepo
-            # - a norepo command like "help" is called
-            if repo and isenabled(repo):
-                repo.fileservice.close()
+            if fileservice:
+                fileservice.close()
     extensions.wrapfunction(dispatch, 'runcommand', runcommand)
 
     # disappointing hacks below

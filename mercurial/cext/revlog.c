@@ -10,6 +10,7 @@
 #include <Python.h>
 #include <assert.h>
 #include <ctype.h>
+#include <limits.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -217,6 +218,31 @@ static inline int64_t index_get_start(indexObject *self, Py_ssize_t rev)
 		}
 	}
 	return (int64_t)(offset >> 16);
+}
+
+static inline int index_get_length(indexObject *self, Py_ssize_t rev)
+{
+	if (rev >= self->length) {
+		PyObject *tuple;
+		PyObject *pylong;
+		long ret;
+		tuple = PyList_GET_ITEM(self->added, rev - self->length);
+		pylong = PyTuple_GET_ITEM(tuple, 1);
+		ret = PyInt_AsLong(pylong);
+		if (ret == -1 && PyErr_Occurred()) {
+			return -1;
+		}
+		if (ret < 0 || ret > (long)INT_MAX) {
+			PyErr_Format(PyExc_OverflowError,
+			             "revlog entry size out of bound (%ld)",
+			             ret);
+			return -1;
+		}
+		return (int)ret;
+	} else {
+		const char *data = index_deref(self, rev);
+		return (int)getbe32(data + 8);
+	}
 }
 
 /*

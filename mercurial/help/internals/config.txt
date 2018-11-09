@@ -99,10 +99,11 @@ requiring a default value. The existing code passing an explicit default can
 then stay in use until compatibility with Mercurial 4.2 is dropped.
 
 As reminder, here are the default values for each config type:
-- config:      None
-- configbool:  False
-- configbytes: 0
-- configdate:  None
-- configint:   None
-- configlist:  []
-- configpath:  None
+
+    - config:      None
+    - configbool:  False
+    - configbytes: 0
+    - configdate:  None
+    - configint:   None
+    - configlist:  []
+    - configpath:  None

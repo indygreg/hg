@@ -732,11 +732,10 @@ def changebranch(ui, repo, revs, label):
         rewriteutil.precheck(repo, revs, 'change branch of')
 
         root = repo[roots.first()]
-        if not root.p1().branch() == label and label in repo.branchmap():
+        rpb = {parent.branch() for parent in root.parents()}
+        if label not in rpb and label in repo.branchmap():
             raise error.Abort(_("a branch of the same name already exists"))
 
-        if repo.revs('merge() and %ld', revs):
-            raise error.Abort(_("cannot change branch of a merge commit"))
         if repo.revs('obsolete() and %ld', revs):
             raise error.Abort(_("cannot change branch of a obsolete changeset"))
 

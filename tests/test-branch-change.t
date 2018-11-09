@@ -308,24 +308,116 @@ revs is same as the new branch name
   o  18:204d2769eca2 Added a
      stable ()
 
-Testing on merge
+Changing branch of a merge commit
 
-  $ hg merge -r 26
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg branch -q ghi
+  $ echo f > f
+  $ hg ci -qAm 'Added f'
+  $ hg up -q 27
+  $ hg branch -q jkl
+  $ echo g > g
+  $ hg ci -qAm 'Added g'
+  $ hg glog -r 'heads(:)'
+  @  29:6bc1c6c2c9da Added g
+  |  jkl ()
+  ~
+  o  28:2f1019bd29d2 Added f
+  |  ghi (b1)
+  ~
+
+  $ hg branch -q default
+  $ hg merge -r 28
+  4 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
-
   $ hg branch -r . abcd
   abort: outstanding uncommitted merge
   [255]
+
   $ hg ci -m "Merge commit"
-  $ hg branch -r '(.^)::' def
-  abort: cannot change branch of a merge commit
+  $ hg glog -r 'parents(.)::'
+  @    30:4d56e6b1eb6b Merge commit
+  |\   default ()
+  | o  29:6bc1c6c2c9da Added g
+  | |  jkl ()
+  | ~
+  o  28:2f1019bd29d2 Added f
+  |  ghi (b1)
+  ~
+
+  $ hg branch -r . ghi
+  0 files updated, 0 files merged, 4 files removed, 0 files unresolved
+  changed branch on 1 changesets
+  $ hg branch -r . jkl
+  changed branch on 1 changesets
+  $ hg branch -r . default
+  changed branch on 1 changesets
+  $ hg branch -r . stable
+  abort: a branch of the same name already exists
   [255]
 
 Changing branch on public changeset
 
-  $ hg phase -r 27 -p
-  $ hg branch -r 27 def
+  $ hg phase -r . -p
+  $ hg branch -r . def
   abort: cannot change branch of public changesets
   (see 'hg help phases' for details)
   [255]
+
+Merge commit with conflicts, with evolution and without
+
+  $ mklozenge() {
+  >   echo foo > a
+  >   hg ci -qAm foo
+  >   echo bar > a
+  >   hg ci -qm bar
+  >   hg up -q '.^'
+  >   echo baz > a
+  >   hg ci -qm baz
+  >   hg merge -q -t :local
+  >   echo neither > a
+  >   hg ci -qm neither
+  > }
+
+  $ cd ..
+  $ hg init merge-with-evolution
+  $ cd merge-with-evolution
+  $ mklozenge
+
+  $ hg branch -r '(.^)::' abc
+  changed branch on 2 changesets
+  $ hg glog
+  @    5:c07fa8b34d54 neither
+  |\   abc ()
+  | o  4:f2aa51777cc9 baz
+  | |  abc ()
+  o |  1:2e33c4f0856b bar
+  |/   default ()
+  o  0:91cfb6004abf foo
+     default ()
+  $ hg cat a
+  neither
+
+  $ cd ..
+  $ hg init merge-without-evolution
+  $ cd merge-without-evolution
+  $ mklozenge
+  $ cat > .hg/hgrc << EOF
+  > [experimental]
+  > evolution = no
+  > evolution.allowunstable = no
+  > EOF
+
+  $ hg branch -r '(.^)::' abc
+  changed branch on 2 changesets
+  saved backup bundle to $TESTTMP/merge-without-evolution/.hg/strip-backup/9a3a2af368f4-8db1a361-branch-change.hg
+  $ hg glog
+  @    3:c07fa8b34d54 neither
+  |\   abc ()
+  | o  2:f2aa51777cc9 baz
+  | |  abc ()
+  o |  1:2e33c4f0856b bar
+  |/   default ()
+  o  0:91cfb6004abf foo
+     default ()
+  $ hg cat a
+  neither

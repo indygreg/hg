@@ -540,6 +540,12 @@ class wsgiresponse(object):
             yield self._bodybytes
         elif self._bodygen:
             for chunk in self._bodygen:
+                # PEP-3333 says that output must be bytes. And some WSGI
+                # implementations enforce this. We cast bytes-like types here
+                # for convenience.
+                if isinstance(chunk, bytearray):
+                    chunk = bytes(chunk)
+
                 yield chunk
         elif self._bodywillwrite:
             self._bodywritefn = write

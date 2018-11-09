@@ -560,15 +560,16 @@ The newly cloned subrepos contain no working copy:
   update: 4 new changesets (update)
 
 Sharing a local repo without the locally referenced subrepo (i.e. it was never
-updated from null), fails the same as a clone operation.
+updated from null) works, but clone fails.
 
   $ hg --config progress.disable=True clone -U ../empty ../empty2
 
   $ hg --config extensions.share= --config progress.disable=True \
   >    share ../empty2 ../empty_share
   updating working directory
-  abort: repository $TESTTMP/empty2/foo not found!
-  [255]
+  sharing subrepo foo from $TESTTMP/empty/foo
+  sharing subrepo foo/bar from $TESTTMP/empty/foo/bar
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ hg --config progress.disable=True clone ../empty2 ../empty_clone
   updating to branch default

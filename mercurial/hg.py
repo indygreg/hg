@@ -270,6 +270,7 @@ def share(ui, source, dest=None, update=True, bookmarks=True, defaultpath=None,
     })
 
     postshare(srcrepo, r, defaultpath=defaultpath)
+    r = repository(ui, dest)
     _postshareupdate(r, update, checkout=checkout)
     return r
 

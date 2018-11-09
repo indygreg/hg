@@ -219,13 +219,11 @@ configitem('remotefilelog', 'excludepattern', default=None)
 
 configitem('remotefilelog', 'gcrepack', default=False)
 configitem('remotefilelog', 'repackonhggc', default=False)
-configitem('remotefilelog', 'datapackversion', default=0)
 configitem('repack', 'chainorphansbysize', default=True)
 
 configitem('packs', 'maxpacksize', default=0)
 configitem('packs', 'maxchainlen', default=1000)
 
-configitem('remotefilelog', 'historypackv1', default=False)
 #  default TTL limit is 30 days
 _defaultlimit = 60 * 60 * 24 * 30
 configitem('remotefilelog', 'nodettl', default=_defaultlimit)

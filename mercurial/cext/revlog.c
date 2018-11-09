@@ -1078,6 +1078,24 @@ index_segment_span(indexObject *self, Py_ssize_t start_rev, Py_ssize_t end_rev)
 	return (end_offset - start_offset) + (int64_t)end_size;
 }
 
+/* returns revs[startidx:endidx] without empty trailing revs */
+static Py_ssize_t trim_endidx(indexObject *self, const Py_ssize_t *revs,
+                              Py_ssize_t startidx, Py_ssize_t endidx)
+{
+	int length;
+	while (endidx > 1 && endidx > startidx) {
+		length = index_get_length(self, revs[endidx - 1]);
+		if (length < 0) {
+			return -1;
+		}
+		if (length != 0) {
+			break;
+		}
+		endidx -= 1;
+	}
+	return endidx;
+}
+
 static inline int nt_level(const char *node, Py_ssize_t level)
 {
 	int v = node[level >> 1];

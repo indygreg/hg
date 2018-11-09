@@ -3,7 +3,7 @@
 
   $ . "$TESTDIR/remotefilelog-library.sh"
 
-  $ hginit master
+  $ hg init master
   $ grep generaldelta master/.hg/requires
   generaldelta
   $ cd master

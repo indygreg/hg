@@ -60,13 +60,6 @@ publish=False
 EOF
 }
 
-hginit() {
-  local name
-  name=$1
-  shift
-  hg init $name $@
-}
-
 clearcache() {
   rm -rf $CACHEDIR/*
 }

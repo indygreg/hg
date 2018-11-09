@@ -40,7 +40,7 @@ without changegroup2 support
   >     deleted = True
   > EOF
 
-  $ hginit master
+  $ hg init master
   $ grep generaldelta master/.hg/requires
   generaldelta
   $ cd master

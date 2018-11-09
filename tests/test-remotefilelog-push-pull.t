@@ -3,7 +3,7 @@
 
   $ . "$TESTDIR/remotefilelog-library.sh"
 
-  $ hginit master
+  $ hg init master
   $ cd master
   $ cat >> .hg/hgrc <<EOF
   > [remotefilelog]
@@ -182,7 +182,7 @@ the server supports our custom getfiles method.
 # same filenode. Test this by constructing two separate histories of file 'c'
 # that share a file node and verifying that the history works after pushing.
 
-  $ hginit multimf-master
+  $ hg init multimf-master
   $ hgcloneshallow ssh://user@dummy/multimf-master multimf-shallow -q
   $ hgcloneshallow ssh://user@dummy/multimf-master multimf-shallow2 -q
   $ cd multimf-shallow

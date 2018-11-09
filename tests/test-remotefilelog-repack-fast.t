@@ -8,7 +8,7 @@
   > fastdatapack=True
   > EOF
 
-  $ hginit master
+  $ hg init master
   $ cd master
   $ cat >> .hg/hgrc <<EOF
   > [remotefilelog]

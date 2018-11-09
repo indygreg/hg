@@ -18,7 +18,7 @@ non-shallow repositories.
 
 Set up the master repository to pull from.
 
-  $ hginit master
+  $ hg init master
   $ cd master
   $ cat >> .hg/hgrc <<EOF
   > [remotefilelog]

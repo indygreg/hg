@@ -3,7 +3,7 @@
 
   $ . "$TESTDIR/remotefilelog-library.sh"
 
-  $ hginit master
+  $ hg init master
   $ cd master
   $ echo treemanifest >> .hg/requires
   $ cat >> .hg/hgrc <<EOF

@@ -1,6 +1,3 @@
-  $ PYTHONPATH=$TESTDIR/..:$PYTHONPATH
-  $ export PYTHONPATH
-
   $ . "$TESTDIR/remotefilelog-library.sh"
 
   $ cat >> $HGRCPATH <<EOF

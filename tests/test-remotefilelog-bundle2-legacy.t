@@ -1,6 +1,3 @@
-  $ PYTHONPATH=$TESTDIR/..:$PYTHONPATH
-  $ export PYTHONPATH
-
   $ . "$TESTDIR/remotefilelog-library.sh"
 
 generaldelta to generaldelta interactions with bundle2 but legacy clients

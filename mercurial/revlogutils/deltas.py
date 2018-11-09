@@ -79,7 +79,7 @@ def slicechunk(revlog, revs, targetsize=None):
     If individual revisions chunk are larger than this limit, they will still
     be raised individually.
 
-    >>> revlog = _testrevlog([
+    >>> data = [
     ...  5,  #00 (5)
     ...  10, #01 (5)
     ...  12, #02 (2)
@@ -96,7 +96,8 @@ def slicechunk(revlog, revs, targetsize=None):
     ...  85, #13 (11)
     ...  86, #14 (1)
     ...  91, #15 (5)
-    ... ])
+    ... ]
+    >>> revlog = _testrevlog(data, snapshot=range(16))
 
     >>> list(slicechunk(revlog, list(range(16))))
     [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
@@ -133,7 +134,7 @@ def _slicechunktosize(revlog, revs, targetsize=None):
     happens when "minimal gap size" interrupted the slicing or when chain are
     built in a way that create large blocks next to each other.
 
-    >>> revlog = _testrevlog([
+    >>> data = [
     ...  3,  #0 (3)
     ...  5,  #1 (2)
     ...  6,  #2 (1)
@@ -143,7 +144,10 @@ def _slicechunktosize(revlog, revs, targetsize=None):
     ...  12, #6 (1)
     ...  13, #7 (1)
     ...  14, #8 (1)
-    ... ])
+    ... ]
+
+    == All snapshots cases ==
+    >>> revlog = _testrevlog(data, snapshot=range(9))
 
     Cases where chunk is already small enough
     >>> list(_slicechunktosize(revlog, [0], 3))
@@ -178,20 +182,66 @@ def _slicechunktosize(revlog, revs, targetsize=None):
     [[1], [3]]
     >>> list(_slicechunktosize(revlog, [3, 4, 5], 2))
     [[3], [5]]
+
+    == No Snapshot cases ==
+    >>> revlog = _testrevlog(data)
+
+    Cases where chunk is already small enough
+    >>> list(_slicechunktosize(revlog, [0], 3))
+    [[0]]
+    >>> list(_slicechunktosize(revlog, [6, 7], 3))
+    [[6, 7]]
+    >>> list(_slicechunktosize(revlog, [0], None))
+    [[0]]
+    >>> list(_slicechunktosize(revlog, [6, 7], None))
+    [[6, 7]]
+
+    cases where we need actual slicing
+    >>> list(_slicechunktosize(revlog, [0, 1], 3))
+    [[0], [1]]
+    >>> list(_slicechunktosize(revlog, [1, 3], 3))
+    [[1], [3]]
+    >>> list(_slicechunktosize(revlog, [1, 2, 3], 3))
+    [[1], [2, 3]]
+    >>> list(_slicechunktosize(revlog, [3, 5], 3))
+    [[3], [5]]
+    >>> list(_slicechunktosize(revlog, [3, 4, 5], 3))
+    [[3], [4, 5]]
+    >>> list(_slicechunktosize(revlog, [5, 6, 7, 8], 3))
+    [[5], [6, 7, 8]]
+    >>> list(_slicechunktosize(revlog, [0, 1, 2, 3, 4, 5, 6, 7, 8], 3))
+    [[0], [1, 2], [3], [5], [6, 7, 8]]
+
+    Case with too large individual chunk (must return valid chunk)
+    >>> list(_slicechunktosize(revlog, [0, 1], 2))
+    [[0], [1]]
+    >>> list(_slicechunktosize(revlog, [1, 3], 1))
+    [[1], [3]]
+    >>> list(_slicechunktosize(revlog, [3, 4, 5], 2))
+    [[3], [5]]
+
+    == mixed case ==
+    >>> revlog = _testrevlog(data, snapshot=[0, 1, 2])
+    >>> list(_slicechunktosize(revlog, list(range(9)), 5))
+    [[0, 1], [2], [3, 4, 5], [6, 7, 8]]
     """
     assert targetsize is None or 0 <= targetsize
-    if targetsize is None or segmentspan(revlog, revs) <= targetsize:
+    startdata = revlog.start(revs[0])
+    enddata = revlog.end(revs[-1])
+    fullspan = enddata - startdata
+    if targetsize is None or fullspan <= targetsize:
         yield revs
         return
 
     startrevidx = 0
-    startdata = revlog.start(revs[0])
     endrevidx = 0
     iterrevs = enumerate(revs)
     next(iterrevs) # skip first rev.
+    # first step: get snapshots out of the way
     for idx, r in iterrevs:
         span = revlog.end(r) - startdata
-        if span <= targetsize:
+        snapshot = revlog.issnapshot(r)
+        if span <= targetsize and snapshot:
             endrevidx = idx
         else:
             chunk = _trimchunk(revlog, revs, startrevidx, endrevidx + 1)
@@ -200,7 +250,35 @@ def _slicechunktosize(revlog, revs, targetsize=None):
             startrevidx = idx
             startdata = revlog.start(r)
             endrevidx = idx
-    yield _trimchunk(revlog, revs, startrevidx)
+        if not snapshot:
+            break
+
+    # for the others, we use binary slicing to quickly converge toward valid
+    # chunks (otherwise, we might end up looking for start/end of many
+    # revisions). This logic is not looking for the perfect slicing point, it
+    # focuses on quickly converging toward valid chunks.
+    nbitem = len(revs)
+    while (enddata - startdata) > targetsize:
+        endrevidx = nbitem
+        if nbitem - startrevidx <= 1:
+            break # protect against individual chunk larger than limit
+        localenddata = revlog.end(revs[endrevidx - 1])
+        span = localenddata - startdata
+        while (localenddata - startdata) > targetsize:
+            if endrevidx - startrevidx <= 1:
+                break # protect against individual chunk larger than limit
+            endrevidx -= (endrevidx - startrevidx) // 2
+            localenddata = revlog.end(revs[endrevidx - 1])
+            span = localenddata - startdata
+        chunk = _trimchunk(revlog, revs, startrevidx, endrevidx)
+        if chunk:
+            yield chunk
+        startrevidx = endrevidx
+        startdata = revlog.start(revs[startrevidx])
+
+    chunk = _trimchunk(revlog, revs, startrevidx)
+    if chunk:
+        yield chunk
 
 def _slicechunktodensity(revlog, revs, targetdensity=0.5,
                          mingapsize=0):

@@ -452,15 +452,14 @@ def clonewithshare(ui, peeropts, sharepath, source, srcpeer, dest, pull=False,
         defaultpath = source
 
     sharerepo = repository(ui, path=sharepath)
-    share(ui, sharerepo, dest=dest, update=False, bookmarks=False,
-          defaultpath=defaultpath)
+    destrepo = share(ui, sharerepo, dest=dest, update=False, bookmarks=False,
+                     defaultpath=defaultpath)
 
     # We need to perform a pull against the dest repo to fetch bookmarks
     # and other non-store data that isn't shared by default. In the case of
     # non-existing shared repo, this means we pull from the remote twice. This
     # is a bit weird. But at the time it was implemented, there wasn't an easy
     # way to pull just non-changegroup data.
-    destrepo = repository(ui, path=dest)
     exchange.pull(destrepo, srcpeer, heads=revs)
 
     _postshareupdate(destrepo, update)

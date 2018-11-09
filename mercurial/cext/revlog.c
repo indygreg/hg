@@ -1050,6 +1050,34 @@ bail:
 	return NULL;
 }
 
+static inline int64_t
+index_segment_span(indexObject *self, Py_ssize_t start_rev, Py_ssize_t end_rev)
+{
+	int64_t start_offset;
+	int64_t end_offset;
+	int end_size;
+	start_offset = index_get_start(self, start_rev);
+	if (start_offset < 0) {
+		return -1;
+	}
+	end_offset = index_get_start(self, end_rev);
+	if (end_offset < 0) {
+		return -1;
+	}
+	end_size = index_get_length(self, end_rev);
+	if (end_size < 0) {
+		return -1;
+	}
+	if (end_offset < start_offset) {
+		PyErr_Format(PyExc_ValueError,
+		             "corrupted revlog index: inconsistent offset "
+		             "between revisions (%zd) and (%zd)",
+		             start_rev, end_rev);
+		return -1;
+	}
+	return (end_offset - start_offset) + (int64_t)end_size;
+}
+
 static inline int nt_level(const char *node, Py_ssize_t level)
 {
 	int v = node[level >> 1];

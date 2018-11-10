@@ -26,8 +26,10 @@ from .i18n import _
 from . import (
     encoding,
     error,
+    loggingutil,
     pycompat,
     util,
+    vfs as vfsmod,
 )
 from .utils import (
     cborutil,
@@ -223,10 +225,17 @@ class server(object):
             self.ui = ui
             self.repo = self.repoui = None
 
+        self.cdebug = logfile
         self.cerr = channeledoutput(fout, 'e')
         self.cout = channeledoutput(fout, 'o')
         self.cin = channeledinput(fin, fout, 'I')
         self.cresult = channeledoutput(fout, 'r')
+
+        if self.ui.config(b'cmdserver', b'log') == b'-':
+            # switch log stream of server's ui to the 'd' (debug) channel
+            # (don't touch repo.ui as its lifetime is longer than the server)
+            self.ui = self.ui.copy()
+            setuplogging(self.ui, repo=None, fp=self.cdebug)
 
         # TODO: add this to help/config.txt when stabilized
         # ``channel``
@@ -356,23 +365,40 @@ class server(object):
 
         return 0
 
-def setuplogging(ui):
+def setuplogging(ui, repo=None, fp=None):
     """Set up server logging facility
 
-    If cmdserver.log is '-', log messages will be sent to the 'd' channel
-    while a client is connected. Otherwise, messages will be written to
-    the stderr of the server process.
+    If cmdserver.log is '-', log messages will be sent to the given fp.
+    It should be the 'd' channel while a client is connected, and otherwise
+    is the stderr of the server process.
     """
     # developer config: cmdserver.log
     logpath = ui.config(b'cmdserver', b'log')
     if not logpath:
         return
+    tracked = {b'cmdserver'}
 
     global logfile
     if logpath == b'-':
         logfile = ui.ferr
     else:
         logfile = open(logpath, 'ab')
+
+    if logpath == b'-' and fp:
+        logger = loggingutil.fileobjectlogger(fp, tracked)
+    elif logpath == b'-':
+        logger = loggingutil.fileobjectlogger(ui.ferr, tracked)
+    else:
+        logpath = os.path.abspath(logpath)
+        vfs = vfsmod.vfs(os.path.dirname(logpath))
+        logger = loggingutil.filelogger(vfs, os.path.basename(logpath), tracked)
+
+    targetuis = {ui}
+    if repo:
+        targetuis.add(repo.baseui)
+        targetuis.add(repo.ui)
+    for u in targetuis:
+        u.setlogger(b'cmdserver', logger)
 
 class pipeservice(object):
     def __init__(self, ui, repo, opts):

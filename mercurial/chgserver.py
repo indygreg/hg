@@ -219,7 +219,7 @@ def _newchgui(srcui, csystem, attachio):
 
     return chgui(srcui)
 
-def _loadnewui(srcui, args):
+def _loadnewui(srcui, args, cdebug):
     from . import dispatch  # avoid cycle
 
     newui = srcui.__class__.load()
@@ -247,8 +247,10 @@ def _loadnewui(srcui, args):
     path, newlui = dispatch._getlocal(newui, rpath, wd=cwd)
 
     extensions.populateui(newui)
+    commandserver.setuplogging(newui, fp=cdebug)
     if newui is not newlui:
         extensions.populateui(newlui)
+        commandserver.setuplogging(newlui, fp=cdebug)
 
     return (newui, newlui)
 
@@ -423,7 +425,7 @@ class chgcmdserver(commandserver.server):
 
         args = self._readlist()
         try:
-            self.ui, lui = _loadnewui(self.ui, args)
+            self.ui, lui = _loadnewui(self.ui, args, self.cdebug)
         except error.ParseError as inst:
             dispatch._formatparse(self.ui.warn, inst)
             self.ui.flush()

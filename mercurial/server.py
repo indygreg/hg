@@ -158,7 +158,7 @@ def _createcmdservice(ui, repo, opts):
         servicefn = _cmdservicemap[mode]
     except KeyError:
         raise error.Abort(_('unknown mode %s') % mode)
-    commandserver.setuplogging(ui)
+    commandserver.setuplogging(ui, repo)
     return servicefn(ui, repo, opts)
 
 def _createhgwebservice(ui, repo, opts):

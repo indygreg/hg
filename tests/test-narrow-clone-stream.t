@@ -1,4 +1,4 @@
-#testcases tree flat
+#testcases tree flat-fncache flat-nofncache
 
 Tests narrow stream clones
 
@@ -8,6 +8,13 @@ Tests narrow stream clones
   $ cat << EOF >> $HGRCPATH
   > [experimental]
   > treemanifest = 1
+  > EOF
+#endif
+
+#if flat-nofncache
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > usefncache = 0
   > EOF
 #endif
 
@@ -54,8 +61,8 @@ Cloning a specific file when stream clone is supported
 Making sure we have the correct set of requirements
 
   $ cat .hg/requires
-  dotencode
-  fncache
+  dotencode (tree flat-fncache !)
+  fncache (tree flat-fncache !)
   generaldelta
   narrowhg-experimental
   revlogv1
@@ -67,8 +74,8 @@ Making sure store has the required files
   $ ls .hg/store/
   00changelog.i
   00manifest.i
-  data
-  fncache
+  data (tree flat-fncache !)
+  fncache (tree flat-fncache !)
   meta (tree !)
   narrowspec
   undo
@@ -77,6 +84,22 @@ Making sure store has the required files
 
 Checking that repository has all the required data and not broken
 
+#if flat-nofncache
+  $ hg verify
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+   warning: revlog 'data/dir/src/F10.i' not in fncache!
+   9: empty or missing dir/src/F10
+   dir/src/F10@9: manifest refers to unknown revision 419ee72d626b
+  checked 40 changesets with 0 changes to 1 files
+  1 warnings encountered!
+  hint: run "hg debugrebuildfncache" to recover from corrupt fncache
+  2 integrity errors encountered!
+  (first damaged changeset appears to be 9)
+  [1]
+#else
   $ hg verify
   checking changesets
   checking manifests
@@ -84,3 +107,4 @@ Checking that repository has all the required data and not broken
   crosschecking files in changesets and manifests
   checking files
   checked 40 changesets with 1 changes to 1 files
+#endif

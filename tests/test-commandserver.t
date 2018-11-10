@@ -846,9 +846,18 @@ unix domain socket:
  if server crashed before hello, traceback will be sent to 'e' channel as
  last ditch:
 
+  $ cat <<'EOF' > ../earlycrasher.py
+  > from mercurial import commandserver, extensions
+  > def _serverequest(orig, ui, repo, conn, createcmdserver):
+  >     def createcmdserver(*args, **kwargs):
+  >         raise Exception('crash')
+  >     return orig(ui, repo, conn, createcmdserver)
+  > def extsetup(ui):
+  >     extensions.wrapfunction(commandserver, b'_serverequest', _serverequest)
+  > EOF
   $ cat <<EOF >> .hg/hgrc
-  > [cmdserver]
-  > log = inexistent/path.log
+  > [extensions]
+  > earlycrasher = ../earlycrasher.py
   > EOF
   >>> from hgclient import bprint, check, readchannel, unixserver
   >>> server = unixserver(b'.hg/server.sock', b'.hg/server.log')
@@ -863,13 +872,13 @@ unix domain socket:
   ...             break
   >>> check(earlycrash, server.connect)
   e, 'Traceback (most recent call last):\n'
-  e, "(IOError|FileNotFoundError): .*" (re)
+  e, 'Exception: crash\n'
   >>> server.shutdown()
 
   $ cat .hg/server.log | grep -v '^  '
   listening at .hg/server.sock
   Traceback (most recent call last):
-  (IOError|FileNotFoundError): .* (re)
+  Exception: crash
   killed!
 #endif
 #if no-unix-socket

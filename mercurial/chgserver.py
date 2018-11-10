@@ -66,8 +66,6 @@ from .utils import (
     procutil,
 )
 
-_log = commandserver.log
-
 def _hashlist(items):
     """return sha1 hexdigest for a list"""
     return node.hex(hashlib.sha1(str(items)).digest())
@@ -186,7 +184,8 @@ class hashstate(object):
             mtimepaths = _getmtimepaths(ui)
         confighash = _confighash(ui)
         mtimehash = _mtimehash(mtimepaths)
-        _log('confighash = %s mtimehash = %s\n' % (confighash, mtimehash))
+        ui.log('cmdserver', 'confighash = %s mtimehash = %s\n',
+               confighash, mtimehash)
         return hashstate(confighash, mtimehash, mtimepaths)
 
 def _newchgui(srcui, csystem, attachio):
@@ -300,7 +299,6 @@ class channeledsystem(object):
                 if not cmd:
                     break
                 if cmdtable and cmd in cmdtable:
-                    _log('pager subcommand: %s' % cmd)
                     cmdtable[cmd]()
                 else:
                     raise error.Abort(_('unexpected command: %s') % cmd)
@@ -344,7 +342,7 @@ class chgcmdserver(commandserver.server):
         # distinctive from "attachio\n" command consumed by client.read()
         self.clientsock.sendall(struct.pack('>cI', 'I', 1))
         clientfds = util.recvfds(self.clientsock.fileno())
-        _log('received fds: %r\n' % clientfds)
+        self.ui.log('chgserver', 'received fds: %r\n', clientfds)
 
         ui = self.ui
         ui.flush()
@@ -450,7 +448,7 @@ class chgcmdserver(commandserver.server):
         if newhash.confighash != self.hashstate.confighash:
             addr = _hashaddress(self.baseaddress, newhash.confighash)
             insts.append('redirect %s' % addr)
-        _log('validate: %s\n' % insts)
+        self.ui.log('chgserver', 'validate: %s\n', insts)
         self.cresult.write('\0'.join(insts) or '\0')
 
     def chdir(self):
@@ -462,7 +460,7 @@ class chgcmdserver(commandserver.server):
         path = self._readstr()
         if not path:
             return
-        _log('chdir to %r\n' % path)
+        self.ui.log('chgserver', 'chdir to %r\n', path)
         os.chdir(path)
 
     def setumask(self):
@@ -480,7 +478,7 @@ class chgcmdserver(commandserver.server):
 
     def _setumask(self, data):
         mask = struct.unpack('>I', data)[0]
-        _log('setumask %r\n' % mask)
+        self.ui.log('chgserver', 'setumask %r\n', mask)
         os.umask(mask)
 
     def runcommand(self):
@@ -505,7 +503,7 @@ class chgcmdserver(commandserver.server):
             newenv = dict(s.split('=', 1) for s in l)
         except ValueError:
             raise ValueError('unexpected value in setenv request')
-        _log('setenv: %r\n' % sorted(newenv.keys()))
+        self.ui.log('chgserver', 'setenv: %r\n', sorted(newenv.keys()))
         encoding.environ.clear()
         encoding.environ.update(newenv)
 
@@ -521,7 +519,7 @@ class chgcmdserver(commandserver.server):
         def setprocname(self):
             """Change process title"""
             name = self._readstr()
-            _log('setprocname: %r\n' % name)
+            self.ui.log('chgserver', 'setprocname: %r\n', name)
             procutil.setprocname(name)
         capabilities['setprocname'] = setprocname
 

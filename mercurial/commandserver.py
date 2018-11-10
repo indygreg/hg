@@ -36,17 +36,6 @@ from .utils import (
     procutil,
 )
 
-logfile = None
-
-def log(*args):
-    if not logfile:
-        return
-
-    for a in args:
-        logfile.write(str(a))
-
-    logfile.flush()
-
 class channeledoutput(object):
     """
     Write data to out in the following format:
@@ -210,11 +199,6 @@ class server(object):
     def __init__(self, ui, repo, fin, fout):
         self.cwd = encoding.getcwd()
 
-        if ui.config("cmdserver", "log") == '-':
-            global logfile
-            # switch log stream to the 'd' (debug) channel
-            logfile = channeledoutput(fout, 'd')
-
         if repo:
             # the ui here is really the repo ui so take its baseui so we don't
             # end up with its local configuration
@@ -225,7 +209,7 @@ class server(object):
             self.ui = ui
             self.repo = self.repoui = None
 
-        self.cdebug = logfile
+        self.cdebug = channeledoutput(fout, 'd')
         self.cerr = channeledoutput(fout, 'e')
         self.cout = channeledoutput(fout, 'o')
         self.cin = channeledinput(fin, fout, 'I')
@@ -376,13 +360,7 @@ def setuplogging(ui, repo=None, fp=None):
     logpath = ui.config(b'cmdserver', b'log')
     if not logpath:
         return
-    tracked = {b'cmdserver'}
-
-    global logfile
-    if logpath == b'-':
-        logfile = ui.ferr
-    else:
-        logfile = open(logpath, 'ab')
+    tracked = {b'chgserver', b'cmdserver'}
 
     if logpath == b'-' and fp:
         logger = loggingutil.fileobjectlogger(fp, tracked)

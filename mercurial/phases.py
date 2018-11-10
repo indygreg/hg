@@ -133,8 +133,9 @@ archived = HIDEABLE_FLAG
 allphases = range(internal + 1)
 trackedphases = allphases[1:]
 # record phase names
+cmdphasenames = ['public', 'draft', 'secret']  # known to `hg phase` command
 phasenames = [None] * len(allphases)
-phasenames[:3] = ['public', 'draft', 'secret']
+phasenames[:len(cmdphasenames)] = cmdphasenames
 phasenames[archived] = 'archived'
 phasenames[internal] = 'internal'
 # record phase property

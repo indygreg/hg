@@ -208,15 +208,10 @@ class server(object):
     def __init__(self, ui, repo, fin, fout):
         self.cwd = encoding.getcwd()
 
-        # developer config: cmdserver.log
-        logpath = ui.config("cmdserver", "log")
-        if logpath:
+        if ui.config("cmdserver", "log") == '-':
             global logfile
-            if logpath == '-':
-                # write log on a special 'd' (debug) channel
-                logfile = channeledoutput(fout, 'd')
-            else:
-                logfile = open(logpath, 'a')
+            # switch log stream to the 'd' (debug) channel
+            logfile = channeledoutput(fout, 'd')
 
         if repo:
             # the ui here is really the repo ui so take its baseui so we don't
@@ -360,6 +355,24 @@ class server(object):
             return 1
 
         return 0
+
+def setuplogging(ui):
+    """Set up server logging facility
+
+    If cmdserver.log is '-', log messages will be sent to the 'd' channel
+    while a client is connected. Otherwise, messages will be written to
+    the stderr of the server process.
+    """
+    # developer config: cmdserver.log
+    logpath = ui.config(b'cmdserver', b'log')
+    if not logpath:
+        return
+
+    global logfile
+    if logpath == b'-':
+        logfile = ui.ferr
+    else:
+        logfile = open(logpath, 'ab')
 
 class pipeservice(object):
     def __init__(self, ui, repo, opts):

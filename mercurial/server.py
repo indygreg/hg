@@ -155,9 +155,11 @@ _cmdservicemap = {
 def _createcmdservice(ui, repo, opts):
     mode = opts['cmdserver']
     try:
-        return _cmdservicemap[mode](ui, repo, opts)
+        servicefn = _cmdservicemap[mode]
     except KeyError:
         raise error.Abort(_('unknown mode %s') % mode)
+    commandserver.setuplogging(ui)
+    return servicefn(ui, repo, opts)
 
 def _createhgwebservice(ui, repo, opts):
     # this way we can check if something was given in the command-line

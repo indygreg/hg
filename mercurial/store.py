@@ -427,12 +427,12 @@ class encodedstore(basicstore):
 
     def datafiles(self, matcher=None):
         for a, b, size in super(encodedstore, self).datafiles():
-            if not _matchtrackedpath(a, matcher):
-                continue
             try:
                 a = decodefilename(a)
             except KeyError:
                 a = None
+            if a is not None and not _matchtrackedpath(a, matcher):
+                continue
             yield a, b, size
 
     def join(self, f):

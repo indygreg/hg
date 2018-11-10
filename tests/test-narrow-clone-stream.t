@@ -84,22 +84,6 @@ Making sure store has the required files
 
 Checking that repository has all the required data and not broken
 
-#if flat-nofncache
-  $ hg verify
-  checking changesets
-  checking manifests
-  crosschecking files in changesets and manifests
-  checking files
-   warning: revlog 'data/dir/src/F10.i' not in fncache!
-   9: empty or missing dir/src/F10
-   dir/src/F10@9: manifest refers to unknown revision 419ee72d626b
-  checked 40 changesets with 0 changes to 1 files
-  1 warnings encountered!
-  hint: run "hg debugrebuildfncache" to recover from corrupt fncache
-  2 integrity errors encountered!
-  (first damaged changeset appears to be 9)
-  [1]
-#else
   $ hg verify
   checking changesets
   checking manifests
@@ -107,4 +91,3 @@ Checking that repository has all the required data and not broken
   crosschecking files in changesets and manifests
   checking files
   checked 40 changesets with 1 changes to 1 files
-#endif

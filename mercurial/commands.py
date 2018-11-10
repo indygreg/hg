@@ -4268,8 +4268,8 @@ def phase(ui, repo, *revs, **opts):
     opts = pycompat.byteskwargs(opts)
     # search for a unique phase argument
     targetphase = None
-    for idx, name in enumerate(phases.phasenames):
-        if opts.get(name, False):
+    for idx, name in enumerate(phases.cmdphasenames):
+        if opts[name]:
             if targetphase is not None:
                 raise error.Abort(_('only one phase can be specified'))
             targetphase = idx

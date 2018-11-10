@@ -18,17 +18,17 @@ Server setup
   $ mkdir dir
   $ mkdir dir/src
   $ cd dir/src
-  $ for x in `$TESTDIR/seq.py 20`; do echo $x > "f$x"; hg add "f$x"; hg commit -m "Commit src $x"; done
+  $ for x in `$TESTDIR/seq.py 20`; do echo $x > "F$x"; hg add "F$x"; hg commit -m "Commit src $x"; done
 
   $ cd ..
   $ mkdir tests
   $ cd tests
-  $ for x in `$TESTDIR/seq.py 20`; do echo $x > "f$x"; hg add "f$x"; hg commit -m "Commit src $x"; done
+  $ for x in `$TESTDIR/seq.py 20`; do echo $x > "F$x"; hg add "F$x"; hg commit -m "Commit src $x"; done
   $ cd ../../..
 
 Trying to stream clone when the server does not support it
 
-  $ hg clone --narrow ssh://user@dummy/master narrow --noupdate --include "dir/src/f10" --stream
+  $ hg clone --narrow ssh://user@dummy/master narrow --noupdate --include "dir/src/F10" --stream
   streaming all changes
   remote: abort: server does not support narrow stream clones
   abort: pull failed on remote
@@ -41,7 +41,7 @@ Enable stream clone on the server
 
 Cloning a specific file when stream clone is supported
 
-  $ hg clone --narrow ssh://user@dummy/master narrow --noupdate --include "dir/src/f10" --stream
+  $ hg clone --narrow ssh://user@dummy/master narrow --noupdate --include "dir/src/F10" --stream
   streaming all changes
   * files to transfer, * KB of data (glob)
   transferred * KB in * seconds (* */sec) (glob)
@@ -49,7 +49,7 @@ Cloning a specific file when stream clone is supported
   $ cd narrow
   $ ls
   $ hg tracked
-  I path:dir/src/f10
+  I path:dir/src/F10
 
 Making sure we have the correct set of requirements
 

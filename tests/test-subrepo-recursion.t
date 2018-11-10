@@ -559,8 +559,9 @@ The newly cloned subrepos contain no working copy:
   commit: (clean)
   update: 4 new changesets (update)
 
-Sharing a local repo without the locally referenced subrepo (i.e. it was never
-updated from null) works, but clone fails.
+Sharing a local repo with missing local subrepos (i.e. it was never updated
+from null) works because the default path is copied from the source repo,
+whereas clone should fail.
 
   $ hg --config progress.disable=True clone -U ../empty ../empty2
 

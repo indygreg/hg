@@ -1,6 +1,6 @@
 #require chg
 
-  $ cat <<EOF >> $HGRCPATH
+  $ cat <<'EOF' >> $HGRCPATH
   > [cmdserver]
   > log = $TESTTMP/server.log
   > EOF

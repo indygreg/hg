@@ -367,7 +367,7 @@ def setuplogging(ui, repo=None, fp=None):
     elif logpath == b'-':
         logger = loggingutil.fileobjectlogger(ui.ferr, tracked)
     else:
-        logpath = os.path.abspath(logpath)
+        logpath = os.path.abspath(util.expandpath(logpath))
         vfs = vfsmod.vfs(os.path.dirname(logpath))
         logger = loggingutil.filelogger(vfs, os.path.basename(logpath), tracked)
 

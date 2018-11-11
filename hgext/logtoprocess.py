@@ -36,9 +36,6 @@ from __future__ import absolute_import
 
 import os
 
-from mercurial import (
-    pycompat,
-)
 from mercurial.utils import (
     procutil,
 )
@@ -70,7 +67,7 @@ class processlogger(object):
         }
         # keyword arguments get prefixed with OPT_ and uppercased
         env.update((b'OPT_%s' % key.upper(), value)
-                   for key, value in pycompat.byteskwargs(opts).items())
+                   for key, value in opts.items())
         fullenv = procutil.shellenviron(env)
         procutil.runbgcommand(script, fullenv, shell=True)
 

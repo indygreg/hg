@@ -1742,6 +1742,7 @@ class ui(object):
         if not activeloggers:
             return
         msg = msgfmt % msgargs
+        opts = pycompat.byteskwargs(opts)
         # guard against recursion from e.g. ui.debug()
         registeredloggers = self._loggers
         self._loggers = {}

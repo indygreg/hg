@@ -53,7 +53,6 @@ from mercurial import (
     pycompat,
     registrar,
     ui as uimod,
-    util,
 )
 from mercurial.utils import (
     dateutil,
@@ -147,9 +146,6 @@ class blackboxlogger(object):
 
     def log(self, ui, event, msg, opts):
         global _lastlogger
-        if not self.tracked(event):
-            return
-
         if self._bbvfs:
             _lastlogger = self
         elif _lastlogger and _lastlogger._bbvfs:
@@ -201,32 +197,19 @@ class blackboxlogger(object):
 
 def wrapui(ui):
     class blackboxui(ui.__class__):
-        def __init__(self, src=None):
-            super(blackboxui, self).__init__(src)
-            if src and r'_bblogger' in src.__dict__:
-                self._bblogger = src._bblogger
-
-        # trick to initialize logger after configuration is loaded, which
-        # can be replaced later with blackboxlogger(ui) in uisetup(), where
-        # both user and repo configurations should be available.
-        @util.propertycache
-        def _bblogger(self):
-            return blackboxlogger(self)
-
         def debug(self, *msg, **opts):
             super(blackboxui, self).debug(*msg, **opts)
             if self.debugflag:
                 self.log('debug', '%s', ''.join(msg))
-
-        def log(self, event, *msg, **opts):
-            super(blackboxui, self).log(event, *msg, **opts)
-            self._bblogger.log(self, event, msg, opts)
 
     ui.__class__ = blackboxui
     uimod.ui = blackboxui
 
 def uisetup(ui):
     wrapui(ui)
+
+def uipopulate(ui):
+    ui.setlogger(b'blackbox', blackboxlogger(ui))
 
 def reposetup(ui, repo):
     # During 'hg pull' a httppeer repo is created to represent the remote repo.
@@ -235,7 +218,10 @@ def reposetup(ui, repo):
     if not repo.local():
         return
 
-    logger = getattr(ui, '_bblogger', None)
+    # Since blackbox.log is stored in the repo directory, the logger should be
+    # instantiated per repository.
+    logger = blackboxlogger(ui)
+    ui.setlogger(b'blackbox', logger)
     if logger:
         logger.setrepo(repo)
 

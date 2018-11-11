@@ -235,6 +235,7 @@ class ui(object):
             self._fmsgout = src._fmsgout
             self._fmsgerr = src._fmsgerr
             self._finoutredirected = src._finoutredirected
+            self._loggers = src._loggers.copy()
             self.pageractive = src.pageractive
             self._disablepager = src._disablepager
             self._tweaked = src._tweaked
@@ -263,6 +264,7 @@ class ui(object):
             self._fmsgout = self.fout  # configurable
             self._fmsgerr = self.ferr  # configurable
             self._finoutredirected = False
+            self._loggers = {}
             self.pageractive = False
             self._disablepager = False
             self._tweaked = False
@@ -1709,6 +1711,18 @@ class ui(object):
         '''exists only so low-level modules won't need to import scmutil'''
         return scmutil.progress(self, topic, unit, total)
 
+    def getlogger(self, name):
+        """Returns a logger of the given name; or None if not registered"""
+        return self._loggers.get(name)
+
+    def setlogger(self, name, logger):
+        """Install logger which can be identified later by the given name
+
+        More than one loggers can be registered. Use extension or module
+        name to uniquely identify the logger instance.
+        """
+        self._loggers[name] = logger
+
     def log(self, event, *msg, **opts):
         '''hook for logging facility extensions
 
@@ -1720,6 +1734,14 @@ class ui(object):
 
         **opts currently has no defined meanings.
         '''
+        if not self._loggers:
+            return
+        activeloggers = [l for l in self._loggers.itervalues()
+                         if l.tracked(event)]
+        if not activeloggers:
+            return
+        for logger in activeloggers:
+            logger.log(self, event, msg, opts)
 
     def label(self, msg, label):
         '''style msg based on supplied label

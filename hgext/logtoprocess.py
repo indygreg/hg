@@ -38,7 +38,6 @@ import os
 
 from mercurial import (
     pycompat,
-    util,
 )
 from mercurial.utils import (
     procutil,
@@ -63,9 +62,7 @@ class processlogger(object):
         return bool(self._scripts.get(event))
 
     def log(self, ui, event, msg, opts):
-        script = self._scripts.get(event)
-        if not script:
-            return
+        script = self._scripts[event]
         env = {
             b'EVENT': event,
             b'HGPID': os.getpid(),
@@ -77,24 +74,5 @@ class processlogger(object):
         fullenv = procutil.shellenviron(env)
         procutil.runbgcommand(script, fullenv, shell=True)
 
-def uisetup(ui):
-
-    class logtoprocessui(ui.__class__):
-        def __init__(self, src=None):
-            super(logtoprocessui, self).__init__(src)
-            if src and r'_ltplogger' in src.__dict__:
-                self._ltplogger = src._ltplogger
-
-        # trick to initialize logger after configuration is loaded, which
-        # can be replaced later with processlogger(ui) in uisetup(), where
-        # both user and repo configurations should be available.
-        @util.propertycache
-        def _ltplogger(self):
-            return processlogger(self)
-
-        def log(self, event, *msg, **opts):
-            self._ltplogger.log(self, event, msg, opts)
-            return super(logtoprocessui, self).log(event, *msg, **opts)
-
-    # Replace the class for this instance and all clones created from it:
-    ui.__class__ = logtoprocessui
+def uipopulate(ui):
+    ui.setlogger(b'logtoprocess', processlogger(ui))

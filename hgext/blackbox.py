@@ -131,7 +131,7 @@ class blackboxlogger(object):
     def __init__(self, ui):
         self._repo = None
         self._inlog = False
-        self.track = ui.configlist('blackbox', 'track')
+        self._trackedevents = set(ui.configlist('blackbox', 'track'))
 
     @property
     def _bbvfs(self):
@@ -142,9 +142,12 @@ class blackboxlogger(object):
                 vfs = None
         return vfs
 
+    def tracked(self, event):
+        return b'*' in self._trackedevents or event in self._trackedevents
+
     def log(self, ui, event, msg, opts):
         global _lastlogger
-        if not '*' in self.track and not event in self.track:
+        if not self.tracked(event):
             return
 
         if self._bbvfs:

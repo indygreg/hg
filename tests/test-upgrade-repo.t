@@ -67,18 +67,18 @@ An upgrade of a repository created with recommended settings only suggests optim
   sparserevlog:    no     no      no
   plain-cl-delta: yes    yes     yes
   compression:    zlib   zlib    zlib
-  $ hg debugformat --verbose --config format.usegfncache=no
+  $ hg debugformat --verbose --config format.usefncache=no
   format-variant repo config default
-  fncache:        yes    yes     yes
-  dotencode:      yes    yes     yes
+  fncache:        yes     no     yes
+  dotencode:      yes     no     yes
   generaldelta:   yes    yes     yes
   sparserevlog:    no     no      no
   plain-cl-delta: yes    yes     yes
   compression:    zlib   zlib    zlib
-  $ hg debugformat --verbose --config format.usegfncache=no --color=debug
+  $ hg debugformat --verbose --config format.usefncache=no --color=debug
   format-variant repo config default
-  [formatvariant.name.uptodate|fncache:       ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|dotencode:     ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.mismatchconfig|fncache:       ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
+  [formatvariant.name.mismatchconfig|dotencode:     ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
   [formatvariant.name.uptodate|generaldelta:  ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|sparserevlog:  ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|plain-cl-delta:][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]

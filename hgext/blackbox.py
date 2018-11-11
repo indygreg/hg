@@ -130,6 +130,7 @@ def _openlogfile(ui, vfs):
 class blackboxlogger(object):
     def __init__(self, ui):
         self._repo = None
+        self._inlog = False
         self.track = ui.configlist('blackbox', 'track')
 
     @property
@@ -158,10 +159,10 @@ class blackboxlogger(object):
         _lastlogger._log(ui, event, msg, opts)
 
     def _log(self, ui, event, msg, opts):
-        if getattr(self, '_bbinlog', False):
+        if self._inlog:
             # recursion and failure guard
             return
-        self._bbinlog = True
+        self._inlog = True
         default = ui.configdate('devel', 'default-date')
         date = dateutil.datestr(default, ui.config('blackbox', 'date-format'))
         user = procutil.getuser()
@@ -187,10 +188,10 @@ class blackboxlogger(object):
         except (IOError, OSError) as err:
             ui.debug('warning: cannot write to blackbox.log: %s\n' %
                      encoding.strtolocal(err.strerror))
-            # do not restore _bbinlog intentionally to avoid failed
+            # do not restore _inlog intentionally to avoid failed
             # logging again
         else:
-            self._bbinlog = False
+            self._inlog = False
 
     def setrepo(self, repo):
         self._repo = repo

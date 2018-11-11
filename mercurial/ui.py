@@ -1709,10 +1709,10 @@ class ui(object):
         '''exists only so low-level modules won't need to import scmutil'''
         return scmutil.progress(self, topic, unit, total)
 
-    def log(self, service, *msg, **opts):
+    def log(self, event, *msg, **opts):
         '''hook for logging facility extensions
 
-        service should be a readily-identifiable subsystem, which will
+        event should be a readily-identifiable subsystem, which will
         allow filtering.
 
         *msg should be a newline-terminated format string to log, and

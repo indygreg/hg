@@ -165,9 +165,6 @@ def wrapui(ui):
             else:
                 return
 
-            vfs = ui._bbvfs
-            repo = ui._bbrepo
-
             if getattr(ui, '_bbinlog', False):
                 # recursion and failure guard
                 return
@@ -180,7 +177,7 @@ def wrapui(ui):
             formattedmsg = msg[0] % msg[1:]
             rev = '(unknown)'
             changed = ''
-            ctx = repo[None]
+            ctx = ui._bbrepo[None]
             parents = ctx.parents()
             rev = ('+'.join([hex(p.node()) for p in parents]))
             if (ui.configbool('blackbox', 'dirty') and
@@ -193,7 +190,7 @@ def wrapui(ui):
             try:
                 fmt = '%s %s @%s%s (%s)%s> %s'
                 args = (date, user, rev, changed, pid, src, formattedmsg)
-                with _openlogfile(ui, vfs) as fp:
+                with _openlogfile(ui, ui._bbvfs) as fp:
                     fp.write(fmt % args)
             except (IOError, OSError) as err:
                 self.debug('warning: cannot write to blackbox.log: %s\n' %

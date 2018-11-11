@@ -178,6 +178,7 @@ packaging_targets := \
   docker-fedora20 \
   docker-fedora21 \
   docker-fedora28 \
+  docker-fedora29 \
   docker-ubuntu-trusty \
   docker-ubuntu-trusty-ppa \
   docker-ubuntu-xenial \
@@ -189,6 +190,7 @@ packaging_targets := \
   fedora20 \
   fedora21 \
   fedora28 \
+  fedora29 \
   linux-wheels \
   linux-wheels-x86_64 \
   linux-wheels-i686 \

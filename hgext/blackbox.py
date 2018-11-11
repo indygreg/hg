@@ -89,8 +89,6 @@ configitem('blackbox', 'date-format',
     default='%Y/%m/%d %H:%M:%S',
 )
 
-_lastlogger = None
-
 def _openlogfile(ui, vfs):
     def rotate(oldpath, newpath):
         try:
@@ -125,6 +123,21 @@ def _openlogfile(ui, vfs):
                        newpath=maxfiles > 0 and path + '.1')
     return vfs(name, 'a')
 
+class proxylogger(object):
+    """Forward log events to another logger to be set later"""
+
+    def __init__(self):
+        self.logger = None
+
+    def tracked(self, event):
+        return self.logger is not None and self.logger.tracked(event)
+
+    def log(self, ui, event, msg, opts):
+        assert self.logger is not None
+        self.logger.log(ui, event, msg, opts)
+
+_lastlogger = proxylogger()
+
 class blackboxlogger(object):
     def __init__(self, ui):
         self._repo = None
@@ -143,19 +156,11 @@ class blackboxlogger(object):
         return b'*' in self._trackedevents or event in self._trackedevents
 
     def log(self, ui, event, msg, opts):
-        global _lastlogger
         if self._bbvfs:
-            _lastlogger = self
-        elif _lastlogger and _lastlogger._bbvfs:
-            # certain logger instances exist outside the context of
-            # a repo, so just default to the last blackbox logger that
-            # was seen.
-            pass
+            _lastlogger.logger = self
         else:
             return
-        _lastlogger._log(ui, event, msg, opts)
 
-    def _log(self, ui, event, msg, opts):
         default = ui.configdate('devel', 'default-date')
         date = dateutil.datestr(default, ui.config('blackbox', 'date-format'))
         user = procutil.getuser()
@@ -187,7 +192,7 @@ class blackboxlogger(object):
         self._repo = repo
 
 def uipopulate(ui):
-    ui.setlogger(b'blackbox', blackboxlogger(ui))
+    ui.setlogger(b'blackbox', _lastlogger)
 
 def reposetup(ui, repo):
     # During 'hg pull' a httppeer repo is created to represent the remote repo.
@@ -200,14 +205,12 @@ def reposetup(ui, repo):
     # instantiated per repository.
     logger = blackboxlogger(ui)
     ui.setlogger(b'blackbox', logger)
-    if logger:
-        logger.setrepo(repo)
+    logger.setrepo(repo)
 
-        # Set _lastlogger even if ui.log is not called. This gives blackbox a
-        # fallback place to log.
-        global _lastlogger
-        if _lastlogger is None:
-            _lastlogger = logger
+    # Set _lastlogger even if ui.log is not called. This gives blackbox a
+    # fallback place to log
+    if _lastlogger.logger is None:
+        _lastlogger.logger = logger
 
     repo._wlockfreeprefix.add('blackbox.log')
 

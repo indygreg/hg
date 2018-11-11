@@ -91,7 +91,7 @@ configitem('blackbox', 'date-format',
     default='%Y/%m/%d %H:%M:%S',
 )
 
-lastui = None
+_lastlogger = None
 
 def _openlogfile(ui, vfs):
     def rotate(oldpath, newpath):
@@ -149,31 +149,31 @@ def wrapui(ui):
                 self.log('debug', '%s', ''.join(msg))
 
         def log(self, event, *msg, **opts):
-            global lastui
+            global _lastlogger
             super(blackboxui, self).log(event, *msg, **opts)
 
             if not '*' in self.track and not event in self.track:
                 return
 
             if self._bbvfs:
-                lastui = self
-            elif lastui and lastui._bbvfs:
-                # certain ui instances exist outside the context of
-                # a repo, so just default to the last blackbox that
+                _lastlogger = self
+            elif _lastlogger and _lastlogger._bbvfs:
+                # certain logger instances exist outside the context of
+                # a repo, so just default to the last blackbox logger that
                 # was seen.
                 pass
             else:
                 return
-            lastui._log(event, msg, opts)
+            _lastlogger._log(self, event, msg, opts)
 
-        def _log(self, event, msg, opts):
+        def _log(self, ui, event, msg, opts):
             if getattr(self, '_bbinlog', False):
                 # recursion and failure guard
                 return
             self._bbinlog = True
-            default = self.configdate('devel', 'default-date')
+            default = ui.configdate('devel', 'default-date')
             date = dateutil.datestr(default,
-                                    self.config('blackbox', 'date-format'))
+                                    ui.config('blackbox', 'date-format'))
             user = procutil.getuser()
             pid = '%d' % procutil.getpid()
             formattedmsg = msg[0] % msg[1:]
@@ -182,21 +182,21 @@ def wrapui(ui):
             ctx = self._bbrepo[None]
             parents = ctx.parents()
             rev = ('+'.join([hex(p.node()) for p in parents]))
-            if (self.configbool('blackbox', 'dirty') and
+            if (ui.configbool('blackbox', 'dirty') and
                 ctx.dirty(missing=True, merge=False, branch=False)):
                 changed = '+'
-            if self.configbool('blackbox', 'logsource'):
+            if ui.configbool('blackbox', 'logsource'):
                 src = ' [%s]' % event
             else:
                 src = ''
             try:
                 fmt = '%s %s @%s%s (%s)%s> %s'
                 args = (date, user, rev, changed, pid, src, formattedmsg)
-                with _openlogfile(self, self._bbvfs) as fp:
+                with _openlogfile(ui, self._bbvfs) as fp:
                     fp.write(fmt % args)
             except (IOError, OSError) as err:
-                self.debug('warning: cannot write to blackbox.log: %s\n' %
-                           encoding.strtolocal(err.strerror))
+                ui.debug('warning: cannot write to blackbox.log: %s\n' %
+                         encoding.strtolocal(err.strerror))
                 # do not restore _bbinlog intentionally to avoid failed
                 # logging again
             else:
@@ -219,13 +219,14 @@ def reposetup(ui, repo):
         return
 
     if util.safehasattr(ui, 'setrepo'):
-        ui.setrepo(repo)
+        logger = ui
+        logger.setrepo(repo)
 
-        # Set lastui even if ui.log is not called. This gives blackbox a
+        # Set _lastlogger even if ui.log is not called. This gives blackbox a
         # fallback place to log.
-        global lastui
-        if lastui is None:
-            lastui = ui
+        global _lastlogger
+        if _lastlogger is None:
+            _lastlogger = logger
 
     repo._wlockfreeprefix.add('blackbox.log')
 

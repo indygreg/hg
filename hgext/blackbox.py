@@ -169,9 +169,9 @@ def wrapui(ui):
             if not vfs:
                 return
 
-            repo = getattr(ui, '_bbrepo', None)
-            if not lastui or repo:
-                lastui = ui
+            repo = ui._bbrepo
+            lastui = ui
+
             if getattr(ui, '_bbinlog', False):
                 # recursion and failure guard
                 return
@@ -184,13 +184,12 @@ def wrapui(ui):
             formattedmsg = msg[0] % msg[1:]
             rev = '(unknown)'
             changed = ''
-            if repo:
-                ctx = repo[None]
-                parents = ctx.parents()
-                rev = ('+'.join([hex(p.node()) for p in parents]))
-                if (ui.configbool('blackbox', 'dirty') and
-                    ctx.dirty(missing=True, merge=False, branch=False)):
-                    changed = '+'
+            ctx = repo[None]
+            parents = ctx.parents()
+            rev = ('+'.join([hex(p.node()) for p in parents]))
+            if (ui.configbool('blackbox', 'dirty') and
+                ctx.dirty(missing=True, merge=False, branch=False)):
+                changed = '+'
             if ui.configbool('blackbox', 'logsource'):
                 src = ' [%s]' % event
             else:

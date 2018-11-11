@@ -38,6 +38,7 @@ import os
 
 from mercurial import (
     pycompat,
+    util,
 )
 from mercurial.utils import (
     procutil,
@@ -49,27 +50,50 @@ from mercurial.utils import (
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
+class processlogger(object):
+    """Map log events to external commands
+
+    Arguments are passed on as environment variables.
+    """
+
+    def __init__(self, ui):
+        self._scripts = dict(ui.configitems(b'logtoprocess'))
+
+    def tracked(self, event):
+        return bool(self._scripts.get(event))
+
+    def log(self, ui, event, msg, opts):
+        script = self._scripts.get(event)
+        if not script:
+            return
+        env = {
+            b'EVENT': event,
+            b'HGPID': os.getpid(),
+            b'MSG1': msg[0] % msg[1:],
+        }
+        # keyword arguments get prefixed with OPT_ and uppercased
+        env.update((b'OPT_%s' % key.upper(), value)
+                   for key, value in pycompat.byteskwargs(opts).items())
+        fullenv = procutil.shellenviron(env)
+        procutil.runbgcommand(script, fullenv, shell=True)
+
 def uisetup(ui):
 
     class logtoprocessui(ui.__class__):
+        def __init__(self, src=None):
+            super(logtoprocessui, self).__init__(src)
+            if src and r'_ltplogger' in src.__dict__:
+                self._ltplogger = src._ltplogger
+
+        # trick to initialize logger after configuration is loaded, which
+        # can be replaced later with processlogger(ui) in uisetup(), where
+        # both user and repo configurations should be available.
+        @util.propertycache
+        def _ltplogger(self):
+            return processlogger(self)
+
         def log(self, event, *msg, **opts):
-            """Map log events to external commands
-
-            Arguments are passed on as environment variables.
-
-            """
-            script = self.config('logtoprocess', event)
-            if script:
-                env = {
-                    b'EVENT': event,
-                    b'HGPID': os.getpid(),
-                    b'MSG1': msg[0] % msg[1:],
-                }
-                # keyword arguments get prefixed with OPT_ and uppercased
-                env.update((b'OPT_%s' % key.upper(), value)
-                           for key, value in pycompat.byteskwargs(opts).items())
-                fullenv = procutil.shellenviron(env)
-                procutil.runbgcommand(script, fullenv, shell=True)
+            self._ltplogger.log(self, event, msg, opts)
             return super(logtoprocessui, self).log(event, *msg, **opts)
 
     # Replace the class for this instance and all clones created from it:

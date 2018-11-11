@@ -142,6 +142,7 @@ def vcrcommand(name, flags, spec):
                         return fn(*args, **kwargs)
             return fn(*args, **kwargs)
         inner.__name__ = fn.__name__
+        inner.__doc__ = fn.__doc__
         return command(name, fullflags, spec)(inner)
     return decorate
 

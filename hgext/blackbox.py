@@ -129,14 +129,14 @@ def _openlogfile(ui, vfs):
 
 class blackboxlogger(object):
     def __init__(self, ui):
+        self._repo = None
         self.track = ui.configlist('blackbox', 'track')
 
     @property
     def _bbvfs(self):
         vfs = None
-        repo = getattr(self, '_bbrepo', None)
-        if repo:
-            vfs = repo.vfs
+        if self._repo:
+            vfs = self._repo.vfs
             if not vfs.isdir('.'):
                 vfs = None
         return vfs
@@ -169,7 +169,7 @@ class blackboxlogger(object):
         formattedmsg = msg[0] % msg[1:]
         rev = '(unknown)'
         changed = ''
-        ctx = self._bbrepo[None]
+        ctx = self._repo[None]
         parents = ctx.parents()
         rev = ('+'.join([hex(p.node()) for p in parents]))
         if (ui.configbool('blackbox', 'dirty') and
@@ -193,7 +193,7 @@ class blackboxlogger(object):
             self._bbinlog = False
 
     def setrepo(self, repo):
-        self._bbrepo = repo
+        self._repo = repo
 
 def wrapui(ui):
     class blackboxui(ui.__class__):

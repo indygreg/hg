@@ -160,7 +160,6 @@ class blackboxlogger(object):
         date = dateutil.datestr(default, ui.config('blackbox', 'date-format'))
         user = procutil.getuser()
         pid = '%d' % procutil.getpid()
-        formattedmsg = msg[0] % msg[1:]
         rev = '(unknown)'
         changed = ''
         ctx = self._repo[None]
@@ -175,7 +174,7 @@ class blackboxlogger(object):
             src = ''
         try:
             fmt = '%s %s @%s%s (%s)%s> %s'
-            args = (date, user, rev, changed, pid, src, formattedmsg)
+            args = (date, user, rev, changed, pid, src, msg)
             with _openlogfile(ui, self._bbvfs) as fp:
                 fp.write(fmt % args)
         except (IOError, OSError) as err:

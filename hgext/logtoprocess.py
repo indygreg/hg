@@ -66,7 +66,7 @@ class processlogger(object):
         env = {
             b'EVENT': event,
             b'HGPID': os.getpid(),
-            b'MSG1': msg[0] % msg[1:],
+            b'MSG1': msg,
         }
         # keyword arguments get prefixed with OPT_ and uppercased
         env.update((b'OPT_%s' % key.upper(), value)

@@ -1724,14 +1724,14 @@ class ui(object):
         """
         self._loggers[name] = logger
 
-    def log(self, event, *msg, **opts):
+    def log(self, event, msgfmt, *msgargs, **opts):
         '''hook for logging facility extensions
 
         event should be a readily-identifiable subsystem, which will
         allow filtering.
 
-        *msg should be a newline-terminated format string to log, and
-        then any values to %-format into that format string.
+        msgfmt should be a newline-terminated format string to log, and
+        *msgargs are %-formatted into it.
 
         **opts currently has no defined meanings.
         '''
@@ -1741,6 +1741,7 @@ class ui(object):
                          if l.tracked(event)]
         if not activeloggers:
             return
+        msg = msgfmt % msgargs
         # guard against recursion from e.g. ui.debug()
         registeredloggers = self._loggers
         self._loggers = {}

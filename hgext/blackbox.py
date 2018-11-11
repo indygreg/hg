@@ -139,17 +139,15 @@ class proxylogger(object):
 _lastlogger = proxylogger()
 
 class blackboxlogger(object):
-    def __init__(self, ui):
-        self._repo = None
+    def __init__(self, ui, repo):
+        self._repo = repo
         self._trackedevents = set(ui.configlist('blackbox', 'track'))
 
     @property
     def _bbvfs(self):
-        vfs = None
-        if self._repo:
-            vfs = self._repo.vfs
-            if not vfs.isdir('.'):
-                vfs = None
+        vfs = self._repo.vfs
+        if not vfs.isdir('.'):
+            vfs = None
         return vfs
 
     def tracked(self, event):
@@ -188,9 +186,6 @@ class blackboxlogger(object):
             ui.debug('warning: cannot write to blackbox.log: %s\n' %
                      encoding.strtolocal(err.strerror))
 
-    def setrepo(self, repo):
-        self._repo = repo
-
 def uipopulate(ui):
     ui.setlogger(b'blackbox', _lastlogger)
 
@@ -203,9 +198,8 @@ def reposetup(ui, repo):
 
     # Since blackbox.log is stored in the repo directory, the logger should be
     # instantiated per repository.
-    logger = blackboxlogger(ui)
+    logger = blackboxlogger(ui, repo)
     ui.setlogger(b'blackbox', logger)
-    logger.setrepo(repo)
 
     # Set _lastlogger even if ui.log is not called. This gives blackbox a
     # fallback place to log

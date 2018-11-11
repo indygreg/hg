@@ -127,75 +127,73 @@ def _openlogfile(ui, vfs):
                        newpath=maxfiles > 0 and path + '.1')
     return vfs(name, 'a')
 
-if True:
-    class blackboxlogger(object):
-        def __init__(self, ui):
-            self.track = ui.configlist('blackbox', 'track')
+class blackboxlogger(object):
+    def __init__(self, ui):
+        self.track = ui.configlist('blackbox', 'track')
 
-        @property
-        def _bbvfs(self):
-            vfs = None
-            repo = getattr(self, '_bbrepo', None)
-            if repo:
-                vfs = repo.vfs
-                if not vfs.isdir('.'):
-                    vfs = None
-            return vfs
+    @property
+    def _bbvfs(self):
+        vfs = None
+        repo = getattr(self, '_bbrepo', None)
+        if repo:
+            vfs = repo.vfs
+            if not vfs.isdir('.'):
+                vfs = None
+        return vfs
 
-        def log(self, ui, event, msg, opts):
-            global _lastlogger
-            if not '*' in self.track and not event in self.track:
-                return
+    def log(self, ui, event, msg, opts):
+        global _lastlogger
+        if not '*' in self.track and not event in self.track:
+            return
 
-            if self._bbvfs:
-                _lastlogger = self
-            elif _lastlogger and _lastlogger._bbvfs:
-                # certain logger instances exist outside the context of
-                # a repo, so just default to the last blackbox logger that
-                # was seen.
-                pass
-            else:
-                return
-            _lastlogger._log(ui, event, msg, opts)
+        if self._bbvfs:
+            _lastlogger = self
+        elif _lastlogger and _lastlogger._bbvfs:
+            # certain logger instances exist outside the context of
+            # a repo, so just default to the last blackbox logger that
+            # was seen.
+            pass
+        else:
+            return
+        _lastlogger._log(ui, event, msg, opts)
 
-        def _log(self, ui, event, msg, opts):
-            if getattr(self, '_bbinlog', False):
-                # recursion and failure guard
-                return
-            self._bbinlog = True
-            default = ui.configdate('devel', 'default-date')
-            date = dateutil.datestr(default,
-                                    ui.config('blackbox', 'date-format'))
-            user = procutil.getuser()
-            pid = '%d' % procutil.getpid()
-            formattedmsg = msg[0] % msg[1:]
-            rev = '(unknown)'
-            changed = ''
-            ctx = self._bbrepo[None]
-            parents = ctx.parents()
-            rev = ('+'.join([hex(p.node()) for p in parents]))
-            if (ui.configbool('blackbox', 'dirty') and
-                ctx.dirty(missing=True, merge=False, branch=False)):
-                changed = '+'
-            if ui.configbool('blackbox', 'logsource'):
-                src = ' [%s]' % event
-            else:
-                src = ''
-            try:
-                fmt = '%s %s @%s%s (%s)%s> %s'
-                args = (date, user, rev, changed, pid, src, formattedmsg)
-                with _openlogfile(ui, self._bbvfs) as fp:
-                    fp.write(fmt % args)
-            except (IOError, OSError) as err:
-                ui.debug('warning: cannot write to blackbox.log: %s\n' %
-                         encoding.strtolocal(err.strerror))
-                # do not restore _bbinlog intentionally to avoid failed
-                # logging again
-            else:
-                self._bbinlog = False
+    def _log(self, ui, event, msg, opts):
+        if getattr(self, '_bbinlog', False):
+            # recursion and failure guard
+            return
+        self._bbinlog = True
+        default = ui.configdate('devel', 'default-date')
+        date = dateutil.datestr(default, ui.config('blackbox', 'date-format'))
+        user = procutil.getuser()
+        pid = '%d' % procutil.getpid()
+        formattedmsg = msg[0] % msg[1:]
+        rev = '(unknown)'
+        changed = ''
+        ctx = self._bbrepo[None]
+        parents = ctx.parents()
+        rev = ('+'.join([hex(p.node()) for p in parents]))
+        if (ui.configbool('blackbox', 'dirty') and
+            ctx.dirty(missing=True, merge=False, branch=False)):
+            changed = '+'
+        if ui.configbool('blackbox', 'logsource'):
+            src = ' [%s]' % event
+        else:
+            src = ''
+        try:
+            fmt = '%s %s @%s%s (%s)%s> %s'
+            args = (date, user, rev, changed, pid, src, formattedmsg)
+            with _openlogfile(ui, self._bbvfs) as fp:
+                fp.write(fmt % args)
+        except (IOError, OSError) as err:
+            ui.debug('warning: cannot write to blackbox.log: %s\n' %
+                     encoding.strtolocal(err.strerror))
+            # do not restore _bbinlog intentionally to avoid failed
+            # logging again
+        else:
+            self._bbinlog = False
 
-        def setrepo(self, repo):
-            self._bbrepo = repo
+    def setrepo(self, repo):
+        self._bbrepo = repo
 
 def wrapui(ui):
     class blackboxui(ui.__class__):

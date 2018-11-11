@@ -157,18 +157,15 @@ def wrapui(ui):
 
             if self._bbvfs:
                 ui = self
-            else:
+            elif lastui and lastui._bbvfs:
                 # certain ui instances exist outside the context of
                 # a repo, so just default to the last blackbox that
                 # was seen.
                 ui = lastui
-
-            if not ui:
+            else:
                 return
+
             vfs = ui._bbvfs
-            if not vfs:
-                return
-
             repo = ui._bbrepo
             lastui = ui
 

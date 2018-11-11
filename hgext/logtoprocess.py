@@ -73,16 +73,16 @@ def uisetup(ui):
                 # positional arguments are listed as MSG[N] keys in the
                 # environment
                 msgpairs = (
-                    ('MSG{0:d}'.format(i), str(m))
+                    ('MSG{0:d}'.format(i), m)
                     for i, m in enumerate(messages, 1))
                 # keyword arguments get prefixed with OPT_ and uppercased
                 optpairs = (
-                    ('OPT_{0}'.format(key.upper()), str(value))
+                    ('OPT_{0}'.format(key.upper()), value)
                     for key, value in opts.iteritems())
-                env = dict(itertools.chain(procutil.shellenviron().items(),
-                                           msgpairs, optpairs),
-                           EVENT=event, HGPID=str(os.getpid()))
-                procutil.runbgcommand(script, env, shell=True)
+                env = dict(itertools.chain(msgpairs, optpairs),
+                           EVENT=event, HGPID=os.getpid())
+                fullenv = procutil.shellenviron(env)
+                procutil.runbgcommand(script, fullenv, shell=True)
             return super(logtoprocessui, self).log(event, *msg, **opts)
 
     # Replace the class for this instance and all clones created from it:

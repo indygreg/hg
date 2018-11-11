@@ -29,18 +29,14 @@ Test if logtoprocess correctly captures command-related log calls.
   > [logtoprocess]
   > command=(echo 'logtoprocess command output:';
   >     echo "\$EVENT";
-  >     echo "\$MSG1";
-  >     echo "\$MSG2") > $TESTTMP/command.log
+  >     echo "\$MSG1") > $TESTTMP/command.log
   > commandfinish=(echo 'logtoprocess commandfinish output:';
   >     echo "\$EVENT";
   >     echo "\$MSG1";
-  >     echo "\$MSG2";
-  >     echo "\$MSG3";
   >     echo "canonical: \$OPT_CANONICAL_COMMAND") > $TESTTMP/commandfinish.log
   > foo=(echo 'logtoprocess foo output:';
   >     echo "\$EVENT";
-  >     echo "\$MSG1";
-  >     echo "\$MSG2") > $TESTTMP/foo.log
+  >     echo "\$MSG1") > $TESTTMP/foo.log
   > EOF
 
 Running a command triggers both a ui.log('command') and a
@@ -53,16 +49,13 @@ Use sort to avoid ordering issues between the various processes we spawn:
   
   command
   fooba
-  fooba
   logtoprocess command output:
 
 #if no-chg
   $ cat $TESTTMP/commandfinish.log | sort
   
-  0
   canonical: foobar
   commandfinish
-  fooba
   fooba exited 0 after * seconds (glob)
   logtoprocess commandfinish output:
   $ cat $TESTTMP/foo.log | sort
@@ -70,7 +63,6 @@ Use sort to avoid ordering issues between the various processes we spawn:
   a message: spam
   foo
   logtoprocess foo output:
-  spam
 #endif
 
 Confirm that logging blocked time catches stdio properly:

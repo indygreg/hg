@@ -316,6 +316,7 @@ test-log-exthook.t
 test-log-linerange.t
 test-log.t
 test-logexchange.t
+test-logtoprocess.t
 test-lrucachedict.py
 test-mactext.t
 test-mailmap.t

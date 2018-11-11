@@ -14,12 +14,12 @@ Test if logtoprocess correctly captures command-related log calls.
   > command = registrar.command(cmdtable)
   > configtable = {}
   > configitem = registrar.configitem(configtable)
-  > configitem('logtoprocess', 'foo',
+  > configitem(b'logtoprocess', b'foo',
   >     default=None,
   > )
   > @command(b'foobar', [])
   > def foo(ui, repo):
-  >     ui.log('foo', 'a message: %s\n', 'spam')
+  >     ui.log(b'foo', b'a message: %s\n', b'spam')
   > EOF
   $ cp $HGRCPATH $HGRCPATH.bak
   $ cat >> $HGRCPATH << EOF

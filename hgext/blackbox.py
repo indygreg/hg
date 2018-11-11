@@ -127,8 +127,11 @@ def _openlogfile(ui, vfs):
                        newpath=maxfiles > 0 and path + '.1')
     return vfs(name, 'a')
 
-def wrapui(ui):
-    class blackboxui(ui.__class__):
+if True:
+    class blackboxlogger(object):
+        def __init__(self, ui):
+            self.track = ui.configlist('blackbox', 'track')
+
         @property
         def _bbvfs(self):
             vfs = None
@@ -139,19 +142,8 @@ def wrapui(ui):
                     vfs = None
             return vfs
 
-        @util.propertycache
-        def track(self):
-            return self.configlist('blackbox', 'track')
-
-        def debug(self, *msg, **opts):
-            super(blackboxui, self).debug(*msg, **opts)
-            if self.debugflag:
-                self.log('debug', '%s', ''.join(msg))
-
-        def log(self, event, *msg, **opts):
+        def log(self, ui, event, msg, opts):
             global _lastlogger
-            super(blackboxui, self).log(event, *msg, **opts)
-
             if not '*' in self.track and not event in self.track:
                 return
 
@@ -164,7 +156,7 @@ def wrapui(ui):
                 pass
             else:
                 return
-            _lastlogger._log(self, event, msg, opts)
+            _lastlogger._log(ui, event, msg, opts)
 
         def _log(self, ui, event, msg, opts):
             if getattr(self, '_bbinlog', False):
@@ -205,6 +197,29 @@ def wrapui(ui):
         def setrepo(self, repo):
             self._bbrepo = repo
 
+def wrapui(ui):
+    class blackboxui(ui.__class__):
+        def __init__(self, src=None):
+            super(blackboxui, self).__init__(src)
+            if src and r'_bblogger' in src.__dict__:
+                self._bblogger = src._bblogger
+
+        # trick to initialize logger after configuration is loaded, which
+        # can be replaced later with blackboxlogger(ui) in uisetup(), where
+        # both user and repo configurations should be available.
+        @util.propertycache
+        def _bblogger(self):
+            return blackboxlogger(self)
+
+        def debug(self, *msg, **opts):
+            super(blackboxui, self).debug(*msg, **opts)
+            if self.debugflag:
+                self.log('debug', '%s', ''.join(msg))
+
+        def log(self, event, *msg, **opts):
+            super(blackboxui, self).log(event, *msg, **opts)
+            self._bblogger.log(self, event, msg, opts)
+
     ui.__class__ = blackboxui
     uimod.ui = blackboxui
 
@@ -218,8 +233,8 @@ def reposetup(ui, repo):
     if not repo.local():
         return
 
-    if util.safehasattr(ui, 'setrepo'):
-        logger = ui
+    logger = getattr(ui, '_bblogger', None)
+    if logger:
         logger.setrepo(repo)
 
         # Set _lastlogger even if ui.log is not called. This gives blackbox a

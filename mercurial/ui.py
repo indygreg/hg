@@ -1521,6 +1521,7 @@ class ui(object):
         '''
         if self.debugflag:
             self._writemsg(self._fmsgout, type='debug', *msg, **opts)
+            self.log(b'debug', b'%s', b''.join(msg))
 
     def edit(self, text, user, extra=None, editform=None, pending=None,
              repopath=None, action=None):
@@ -1740,8 +1741,14 @@ class ui(object):
                          if l.tracked(event)]
         if not activeloggers:
             return
-        for logger in activeloggers:
-            logger.log(self, event, msg, opts)
+        # guard against recursion from e.g. ui.debug()
+        registeredloggers = self._loggers
+        self._loggers = {}
+        try:
+            for logger in activeloggers:
+                logger.log(self, event, msg, opts)
+        finally:
+            self._loggers = registeredloggers
 
     def label(self, msg, label):
         '''style msg based on supplied label

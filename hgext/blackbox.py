@@ -52,7 +52,6 @@ from mercurial import (
     encoding,
     pycompat,
     registrar,
-    ui as uimod,
 )
 from mercurial.utils import (
     dateutil,
@@ -129,7 +128,6 @@ def _openlogfile(ui, vfs):
 class blackboxlogger(object):
     def __init__(self, ui):
         self._repo = None
-        self._inlog = False
         self._trackedevents = set(ui.configlist('blackbox', 'track'))
 
     @property
@@ -158,10 +156,6 @@ class blackboxlogger(object):
         _lastlogger._log(ui, event, msg, opts)
 
     def _log(self, ui, event, msg, opts):
-        if self._inlog:
-            # recursion guard
-            return
-        self._inlog = True
         default = ui.configdate('devel', 'default-date')
         date = dateutil.datestr(default, ui.config('blackbox', 'date-format'))
         user = procutil.getuser()
@@ -189,24 +183,9 @@ class blackboxlogger(object):
             self._repo = None
             ui.debug('warning: cannot write to blackbox.log: %s\n' %
                      encoding.strtolocal(err.strerror))
-        else:
-            self._inlog = False
 
     def setrepo(self, repo):
         self._repo = repo
-
-def wrapui(ui):
-    class blackboxui(ui.__class__):
-        def debug(self, *msg, **opts):
-            super(blackboxui, self).debug(*msg, **opts)
-            if self.debugflag:
-                self.log('debug', '%s', ''.join(msg))
-
-    ui.__class__ = blackboxui
-    uimod.ui = blackboxui
-
-def uisetup(ui):
-    wrapui(ui)
 
 def uipopulate(ui):
     ui.setlogger(b'blackbox', blackboxlogger(ui))

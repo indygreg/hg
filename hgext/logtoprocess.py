@@ -34,9 +34,11 @@ not ensure that they exit cleanly.
 
 from __future__ import absolute_import
 
-import itertools
 import os
 
+from mercurial import (
+    pycompat,
+)
 from mercurial.utils import (
     procutil,
 )
@@ -70,17 +72,16 @@ def uisetup(ui):
                     messages = (formatted,) + msg[1:]
                 else:
                     messages = msg
+                env = {
+                    b'EVENT': event,
+                    b'HGPID': os.getpid(),
+                }
                 # positional arguments are listed as MSG[N] keys in the
                 # environment
-                msgpairs = (
-                    ('MSG{0:d}'.format(i), m)
-                    for i, m in enumerate(messages, 1))
+                env.update((b'MSG%d' % i, m) for i, m in enumerate(messages, 1))
                 # keyword arguments get prefixed with OPT_ and uppercased
-                optpairs = (
-                    ('OPT_{0}'.format(key.upper()), value)
-                    for key, value in opts.iteritems())
-                env = dict(itertools.chain(msgpairs, optpairs),
-                           EVENT=event, HGPID=os.getpid())
+                env.update((b'OPT_%s' % key.upper(), value)
+                           for key, value in pycompat.byteskwargs(opts).items())
                 fullenv = procutil.shellenviron(env)
                 procutil.runbgcommand(script, fullenv, shell=True)
             return super(logtoprocessui, self).log(event, *msg, **opts)

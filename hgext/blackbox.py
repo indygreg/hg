@@ -156,7 +156,7 @@ def wrapui(ui):
                 return
 
             if self._bbvfs:
-                ui = self
+                ui = lastui = self
             elif lastui and lastui._bbvfs:
                 # certain ui instances exist outside the context of
                 # a repo, so just default to the last blackbox that
@@ -167,7 +167,6 @@ def wrapui(ui):
 
             vfs = ui._bbvfs
             repo = ui._bbrepo
-            lastui = ui
 
             if getattr(ui, '_bbinlog', False):
                 # recursion and failure guard

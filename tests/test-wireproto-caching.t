@@ -1,9 +1,3 @@
-TRANSITIONAL CONFIG
-  $ cat << EOF >> $HGRCPATH
-  > [format]
-  > sparse-revlog = yes
-  > EOF
-
   $ . $TESTDIR/wireprotohelpers.sh
   $ cat >> $HGRCPATH << EOF
   > [extensions]

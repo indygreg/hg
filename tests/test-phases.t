@@ -1,9 +1,3 @@
-TRANSITIONAL CONFIG
-  $ cat << EOF >> $HGRCPATH
-  > [format]
-  > sparse-revlog = yes
-  > EOF
-
   $ cat > $TESTTMP/hook.sh << 'EOF'
   > echo "test-hook-close-phase: $HG_NODE:  $HG_OLDPHASE -> $HG_PHASE"
   > EOF

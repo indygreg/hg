@@ -1,9 +1,3 @@
-TRANSITIONAL CONFIG
-  $ cat << EOF >> $HGRCPATH
-  > [format]
-  > sparse-revlog = yes
-  > EOF
-
 This test tries to exercise the ssh functionality with a dummy script
 
   $ checknewrepo()

@@ -1,9 +1,3 @@
-TRANSITIONAL CONFIG
-  $ cat << EOF >> $HGRCPATH
-  > [format]
-  > sparse-revlog = yes
-  > EOF
-
 This test is a duplicate of 'test-http.t' feel free to factor out
 parts that are not bundle1/bundle2 specific.
 

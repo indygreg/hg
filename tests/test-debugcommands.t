@@ -1,9 +1,3 @@
-TRANSITIONAL CONFIG
-  $ cat << EOF >> $HGRCPATH
-  > [format]
-  > sparse-revlog = yes
-  > EOF
-
   $ cat << EOF >> $HGRCPATH
   > [ui]
   > interactive=yes

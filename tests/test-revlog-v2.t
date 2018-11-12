@@ -1,9 +1,3 @@
-TRANSITIONAL CONFIG
-  $ cat << EOF >> $HGRCPATH
-  > [format]
-  > sparse-revlog = yes
-  > EOF
-
 #require reporevlogstore
 
 A repo with unknown revlogv2 requirement string cannot be opened

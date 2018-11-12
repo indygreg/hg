@@ -1,9 +1,3 @@
-TRANSITIONAL CONFIG
-  $ cat << EOF >> $HGRCPATH
-  > [format]
-  > sparse-revlog = yes
-  > EOF
-
   $ USERCACHE="$TESTTMP/cache"; export USERCACHE
   $ mkdir "${USERCACHE}"
   $ cat >> $HGRCPATH <<EOF

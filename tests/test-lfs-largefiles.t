@@ -1,9 +1,3 @@
-TRANSITIONAL CONFIG
-  $ cat << EOF >> $HGRCPATH
-  > [format]
-  > sparse-revlog = yes
-  > EOF
-
 #require no-reposimplestore no-chg
 
 This tests the interaction between the largefiles and lfs extensions, and

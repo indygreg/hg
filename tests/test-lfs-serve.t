@@ -1,9 +1,3 @@
-TRANSITIONAL CONFIG
-  $ cat << EOF >> $HGRCPATH
-  > [format]
-  > sparse-revlog = yes
-  > EOF
-
 #testcases lfsremote-on lfsremote-off
 #require serve no-reposimplestore no-chg
 

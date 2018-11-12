@@ -1,9 +1,3 @@
-TRANSITIONAL CONFIG
-  $ cat << EOF >> $HGRCPATH
-  > [format]
-  > sparse-revlog = yes
-  > EOF
-
   $ cat > hgrc-sshv2 << EOF
   > %include $HGRCPATH
   > [experimental]

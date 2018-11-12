@@ -311,6 +311,8 @@ internalstable = sorted([
      loaddoc('changegroups', subdir='internals')),
     (['config'], _('Config Registrar'),
      loaddoc('config', subdir='internals')),
+    (['extensions', 'extension'], _('Extension API'),
+     loaddoc('extensions', subdir='internals')),
     (['requirements'], _('Repository Requirements'),
      loaddoc('requirements', subdir='internals')),
     (['revlogs'], _('Revision Logs'),

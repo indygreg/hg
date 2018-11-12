@@ -1066,6 +1066,7 @@ internals topic renders index of available sub-topics
        censor        Censor
        changegroups  Changegroups
        config        Config Registrar
+       extensions    Extension API
        requirements  Repository Requirements
        revlogs       Revision Logs
        wireprotocol  Wire Protocol
@@ -3402,6 +3403,13 @@ Sub-topic indexes rendered properly
   </a>
   </td><td>
   Config Registrar
+  </td></tr>
+  <tr><td>
+  <a href="/help/internals.extensions">
+  extensions
+  </a>
+  </td><td>
+  Extension API
   </td></tr>
   <tr><td>
   <a href="/help/internals.requirements">

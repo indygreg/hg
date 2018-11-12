@@ -159,13 +159,21 @@ There are two callbacks to be called when extensions are loaded, named
 then ``extsetup`` is called. This means ``extsetup`` can be useful in case
 one extension optionally depends on another extension.
 
-Both ``uisetup`` and ``extsetup`` receive a ui object::
+Both ``uisetup`` and ``extsetup`` receive a ui object with the local
+repository configuration::
 
     def uisetup(ui):
         # ...
 
     def extsetup(ui):
         # ...
+
+Be aware that ``uisetup`` in NOT the function to configure a ``ui`` instance.
+It's called only once per process, not per ``ui`` instance. Also, any changes
+to the ``ui`` may be discarded because the ``ui`` here temporarily loaded
+local configuration. So, it's generally wrong to do `ui.setconfig()` in
+these callbacks. Notable exception is setting ``pre/post-<command>`` hooks
+and extending ``ui.__class__``.
 
 In Mercurial 1.3.1 or earlier, ``extsetup`` takes no argument.
 

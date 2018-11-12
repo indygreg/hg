@@ -1,3 +1,9 @@
+TRANSITIONAL CONFIG
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > sparse-revlog = yes
+  > EOF
+
 #require no-reposimplestore no-chg
 
 Set up a server
@@ -295,7 +301,7 @@ Stream clone bundles are supported
 
   $ hg -R server debugcreatestreamclonebundle packed.hg
   writing 613 bytes for 4 files
-  bundle requirements: generaldelta, revlogv1
+  bundle requirements: generaldelta, revlogv1, sparserevlog
 
 No bundle spec should work
 

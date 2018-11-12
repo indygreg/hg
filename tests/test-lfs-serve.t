@@ -1,3 +1,9 @@
+TRANSITIONAL CONFIG
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > sparse-revlog = yes
+  > EOF
+
 #testcases lfsremote-on lfsremote-off
 #require serve no-reposimplestore no-chg
 
@@ -131,7 +137,7 @@ non-lfs content, and the extension enabled.
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
   
   beginning upgrade...
   repository locked and read-only

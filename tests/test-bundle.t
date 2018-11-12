@@ -1,3 +1,9 @@
+TRANSITIONAL CONFIG
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > sparse-revlog = yes
+  > EOF
+
 Setting up test
 
   $ hg init test
@@ -275,17 +281,17 @@ packed1 is produced properly
 
   $ hg -R test debugcreatestreamclonebundle packed.hg
   writing 2664 bytes for 6 files
-  bundle requirements: generaldelta, revlogv1
+  bundle requirements: generaldelta, revlogv1, sparserevlog
 
   $ f -B 64 --size --sha1 --hexdump packed.hg
-  packed.hg: size=2827, sha1=9d14cb90c66a21462d915ab33656f38b9deed686
+  packed.hg: size=2840, sha1=12bf3eee3eb8a04c503ce2d29b48f0135c7edff5
   0000: 48 47 53 31 55 4e 00 00 00 00 00 00 00 06 00 00 |HGS1UN..........|
-  0010: 00 00 00 00 0a 68 00 16 67 65 6e 65 72 61 6c 64 |.....h..generald|
-  0020: 65 6c 74 61 2c 72 65 76 6c 6f 67 76 31 00 64 61 |elta,revlogv1.da|
-  0030: 74 61 2f 61 64 69 66 66 65 72 65 6e 74 66 69 6c |ta/adifferentfil|
+  0010: 00 00 00 00 0a 68 00 23 67 65 6e 65 72 61 6c 64 |.....h.#generald|
+  0020: 65 6c 74 61 2c 72 65 76 6c 6f 67 76 31 2c 73 70 |elta,revlogv1,sp|
+  0030: 61 72 73 65 72 65 76 6c 6f 67 00 64 61 74 61 2f |arserevlog.data/|
 
   $ hg debugbundle --spec packed.hg
-  none-packed1;requirements%3Dgeneraldelta%2Crevlogv1
+  none-packed1;requirements%3Dgeneraldelta%2Crevlogv1%2Csparserevlog
 
 generaldelta requirement is not listed in stream clone bundles unless used
 
@@ -320,7 +326,7 @@ Warning emitted when packed bundles contain secret changesets
   $ hg -R testsecret debugcreatestreamclonebundle packedsecret.hg
   (warning: stream clone bundle will contain secret revisions)
   writing 301 bytes for 3 files
-  bundle requirements: generaldelta, revlogv1
+  bundle requirements: generaldelta, revlogv1, sparserevlog
 
 Unpacking packed1 bundles with "hg unbundle" isn't allowed
 

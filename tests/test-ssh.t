@@ -1,3 +1,9 @@
+TRANSITIONAL CONFIG
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > sparse-revlog = yes
+  > EOF
+
 #testcases sshv1 sshv2
 
 #if sshv2
@@ -513,9 +519,9 @@ debug output
   devel-peer-request:   pairs: 81 bytes
   sending hello command
   sending between command
-  remote: 427 (sshv1 !)
+  remote: 440 (sshv1 !)
   protocol upgraded to exp-ssh-v2-0003 (sshv2 !)
-  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   remote: 1 (sshv1 !)
   devel-peer-request: protocaps
   devel-peer-request:   caps: * bytes (glob)

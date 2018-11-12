@@ -11,6 +11,8 @@ version so behavior is deterministic.
   $ cat >> $HGRCPATH << EOF
   > [extensions]
   > fakeversion = `pwd`/fakeversion.py
+  > [format]
+  > sparse-revlog = no
   > [devel]
   > legacy.exchange = phases
   > EOF

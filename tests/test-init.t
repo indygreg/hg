@@ -1,3 +1,9 @@
+TRANSITIONAL CONFIG
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > sparse-revlog = yes
+  > EOF
+
 This test tries to exercise the ssh functionality with a dummy script
 
   $ checknewrepo()
@@ -22,6 +28,7 @@ creating 'local'
   fncache
   generaldelta
   revlogv1
+  sparserevlog
   store
   testonly-simplestore (reposimplestore !)
   $ echo this > local/foo
@@ -60,6 +67,7 @@ creating repo with format.usestore=false
   generaldelta
   revlogv1
   testonly-simplestore (reposimplestore !)
+  sparserevlog
 
 creating repo with format.usefncache=false
 
@@ -69,6 +77,7 @@ creating repo with format.usefncache=false
   00changelog.i created
   generaldelta
   revlogv1
+  sparserevlog
   store
   testonly-simplestore (reposimplestore !)
 
@@ -81,12 +90,13 @@ creating repo with format.dotencode=false
   fncache
   generaldelta
   revlogv1
+  sparserevlog
   store
   testonly-simplestore (reposimplestore !)
 
 creating repo with format.dotencode=false
 
-  $ hg --config format.generaldelta=false --config format.usegeneraldelta=false init old4
+  $ hg --config format.generaldelta=false --config format.usegeneraldelta=false --config format.sparse-revlog=no init old4
   $ checknewrepo old4
   store created
   00changelog.i created
@@ -210,6 +220,7 @@ creating 'local/sub/repo'
   fncache
   generaldelta
   revlogv1
+  sparserevlog
   store
   testonly-simplestore (reposimplestore !)
 
@@ -229,6 +240,7 @@ init should (for consistency with clone) expand the url
   fncache
   generaldelta
   revlogv1
+  sparserevlog
   store
   testonly-simplestore (reposimplestore !)
 
@@ -244,6 +256,7 @@ verify that clone also expand urls
   fncache
   generaldelta
   revlogv1
+  sparserevlog
   store
   testonly-simplestore (reposimplestore !)
 

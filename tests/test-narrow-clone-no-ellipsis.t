@@ -1,3 +1,9 @@
+TRANSITIONAL CONFIG
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > sparse-revlog = yes
+  > EOF
+
   $ . "$TESTDIR/narrow-library.sh"
 
   $ hg init master
@@ -27,6 +33,7 @@ narrow clone a file, f10
   fncache
   narrowhg-experimental
   revlogv1
+  sparserevlog
   store
   testonly-simplestore (reposimplestore !)
 

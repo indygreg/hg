@@ -2906,11 +2906,11 @@ def newreporequirements(ui, createopts):
 
     if scmutil.gdinitconfig(ui):
         requirements.add('generaldelta')
+        # experimental config: format.sparse-revlog
+        if ui.configbool('format', 'sparse-revlog'):
+            requirements.add(SPARSEREVLOG_REQUIREMENT)
     if ui.configbool('experimental', 'treemanifest'):
         requirements.add('treemanifest')
-    # experimental config: format.sparse-revlog
-    if ui.configbool('format', 'sparse-revlog'):
-        requirements.add(SPARSEREVLOG_REQUIREMENT)
 
     revlogv2 = ui.config('experimental', 'revlogv2')
     if revlogv2 == 'enable-unstable-format-and-corrupt-my-data':

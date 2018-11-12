@@ -1450,8 +1450,7 @@ def gdinitconfig(ui):
     """
     # experimental config: format.generaldelta
     return (ui.configbool('format', 'generaldelta')
-            or ui.configbool('format', 'usegeneraldelta')
-            or ui.configbool('format', 'sparse-revlog'))
+            or ui.configbool('format', 'usegeneraldelta'))
 
 def gddeltaconfig(ui):
     """helper function to know if incoming delta should be optimised

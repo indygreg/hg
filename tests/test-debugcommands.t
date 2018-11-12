@@ -1,3 +1,9 @@
+TRANSITIONAL CONFIG
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > sparse-revlog = yes
+  > EOF
+
   $ cat << EOF >> $HGRCPATH
   > [ui]
   > interactive=yes
@@ -195,10 +201,10 @@ debugdelta chain basic output
 
 #if reporevlogstore no-pure
   $ hg debugdeltachain -m
-      rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
-        0       1        1       -1    base         44         43         44   1.02326        44         0    0.00000
-        1       2        1       -1    base          0          0          0   0.00000         0         0    0.00000
-        2       3        1       -1    base         44         43         44   1.02326        44         0    0.00000
+      rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity srchunks
+        0       1        1       -1    base         44         43         44   1.02326        44         0    0.00000         44         44   1.00000        1
+        1       2        1       -1    base          0          0          0   0.00000         0         0    0.00000          0          0   1.00000        1
+        2       3        1       -1    base         44         43         44   1.02326        44         0    0.00000         44         44   1.00000        1
 
   $ hg debugdeltachain -m -T '{rev} {chainid} {chainlen}\n'
   0 1 1
@@ -217,9 +223,13 @@ debugdelta chain basic output
     "deltatype": "base",
     "extradist": 0,
     "extraratio": 0.0,
+    "largestblock": 44,
     "lindist": 44,
     "prevrev": -1,
+    "readdensity": 1.0,
+    "readsize": 44,
     "rev": 0,
+    "srchunks": 1,
     "uncompsize": 43
    },
    {
@@ -231,9 +241,13 @@ debugdelta chain basic output
     "deltatype": "base",
     "extradist": 0,
     "extraratio": 0,
+    "largestblock": 0,
     "lindist": 0,
     "prevrev": -1,
+    "readdensity": 1,
+    "readsize": 0,
     "rev": 1,
+    "srchunks": 1,
     "uncompsize": 0
    },
    {
@@ -246,9 +260,13 @@ debugdelta chain basic output
     "deltatype": "base",
     "extradist": 0,
     "extraratio": 0.0,
+    "largestblock": 44,
     "lindist": 44,
     "prevrev": -1,
+    "readdensity": 1.0,
+    "readsize": 44,
     "rev": 2,
+    "srchunks": 1,
     "uncompsize": 43
    }
   ]
@@ -631,8 +649,8 @@ Test debugpeer
   devel-peer-request:   pairs: 81 bytes
   sending hello command
   sending between command
-  remote: 427
-  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  remote: 440
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   remote: 1
   devel-peer-request: protocaps
   devel-peer-request:   caps: * bytes (glob)

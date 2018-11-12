@@ -1,3 +1,9 @@
+TRANSITIONAL CONFIG
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > sparse-revlog = yes
+  > EOF
+
 #require no-windows
 
   $ . "$TESTDIR/remotefilelog-library.sh"
@@ -31,6 +37,7 @@ Shallow clone from full
   fncache
   generaldelta
   revlogv1
+  sparserevlog
   store
 
   $ hg update

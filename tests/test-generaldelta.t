@@ -5,6 +5,11 @@ regular equivalent. Test would fail if generaldelta was naive
 implementation of parentdelta: third manifest revision would be fully
 inserted due to big distance from its paren revision (zero).
 
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > sparse-revlog = no
+  > EOF
+
   $ hg init repo --config format.generaldelta=no --config format.usegeneraldelta=no
   $ cd repo
   $ echo foo > foo

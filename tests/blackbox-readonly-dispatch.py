@@ -2,6 +2,7 @@ from __future__ import absolute_import
 import os
 from mercurial import (
     dispatch,
+    extensions,
     ui as uimod,
 )
 
@@ -11,6 +12,7 @@ def testdispatch(cmd):
     Prints command and result value, but does not handle quoting.
     """
     ui = uimod.ui.load()
+    extensions.populateui(ui)
     ui.status(b"running: %s\n" % cmd)
     req = dispatch.request(cmd.split(), ui)
     result = dispatch.dispatch(req)

@@ -405,6 +405,25 @@ def afterloaded(extension, callback):
     else:
         _aftercallbacks.setdefault(extension, []).append(callback)
 
+def populateui(ui):
+    """Run extension hooks on the given ui to populate additional members,
+    extend the class dynamically, etc.
+
+    This will be called after the configuration is loaded, and/or extensions
+    are loaded. In general, it's once per ui instance, but in command-server
+    and hgweb, this may be called more than once with the same ui.
+    """
+    for name, mod in extensions(ui):
+        hook = getattr(mod, 'uipopulate', None)
+        if not hook:
+            continue
+        try:
+            hook(ui)
+        except Exception as inst:
+            ui.traceback(force=True)
+            ui.warn(_('*** failed to populate ui by extension %s: %s\n')
+                    % (name, stringutil.forcebytestr(inst)))
+
 def bind(func, *args):
     '''Partial function application
 

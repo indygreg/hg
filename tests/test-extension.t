@@ -24,6 +24,9 @@ Test basic extension support
   >     ui.write(b"uisetup called\\n")
   >     ui.status(b"uisetup called [status]\\n")
   >     ui.flush()
+  > def uipopulate(ui):
+  >     ui._populatecnt = getattr(ui, "_populatecnt", 0) + 1
+  >     ui.write(b"uipopulate called (%d times)\n" % ui._populatecnt)
   > def reposetup(ui, repo):
   >     ui.write(b"reposetup called for %s\\n" % os.path.basename(repo.root))
   >     ui.write(b"ui %s= repo.ui\\n" % (ui == repo.ui and b"=" or b"!"))
@@ -54,13 +57,26 @@ Test basic extension support
   $ hg foo
   uisetup called
   uisetup called [status]
+  uipopulate called (1 times)
+  uipopulate called (1 times)
+  uipopulate called (1 times)
   reposetup called for a
   ui == repo.ui
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
   reposetup called for a (chg !)
   ui == repo.ui (chg !)
   Foo
   $ hg foo --quiet
   uisetup called (no-chg !)
+  uipopulate called (1 times)
+  uipopulate called (1 times)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
   reposetup called for a (chg !)
   ui == repo.ui
   Foo
@@ -68,6 +84,11 @@ Test basic extension support
   uisetup called [debug] (no-chg !)
   uisetup called (no-chg !)
   uisetup called [status] (no-chg !)
+  uipopulate called (1 times)
+  uipopulate called (1 times)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
   reposetup called for a (chg !)
   ui == repo.ui
   Foo
@@ -76,8 +97,12 @@ Test basic extension support
   $ hg clone a b
   uisetup called (no-chg !)
   uisetup called [status] (no-chg !)
+  uipopulate called (1 times)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
   reposetup called for a
   ui == repo.ui
+  uipopulate called (1 times)
   reposetup called for b
   ui == repo.ui
   updating to branch default
@@ -86,6 +111,8 @@ Test basic extension support
   $ hg bar
   uisetup called (no-chg !)
   uisetup called [status] (no-chg !)
+  uipopulate called (1 times)
+  uipopulate called (1 times) (chg !)
   Bar
   $ echo 'foobar = !' >> $HGRCPATH
 
@@ -96,8 +123,16 @@ module/__init__.py-style
   $ hg foo
   uisetup called
   uisetup called [status]
+  uipopulate called (1 times)
+  uipopulate called (1 times)
+  uipopulate called (1 times)
   reposetup called for a
   ui == repo.ui
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
+  uipopulate called (1 times) (chg !)
   reposetup called for a (chg !)
   ui == repo.ui (chg !)
   Foo
@@ -114,8 +149,10 @@ Check that extensions are loaded in phases:
   >     print("2) %s uisetup" % name, flush=True)
   > def extsetup():
   >     print("3) %s extsetup" % name, flush=True)
+  > def uipopulate(ui):
+  >     print("4) %s uipopulate" % name, flush=True)
   > def reposetup(ui, repo):
-  >    print("4) %s reposetup" % name, flush=True)
+  >     print("5) %s reposetup" % name, flush=True)
   > 
   > bytesname = name.encode('utf-8')
   > # custom predicate to check registration of functions at loading
@@ -143,8 +180,14 @@ Check normal command's load order of extensions and registration of functions
   2) bar uisetup
   3) foo extsetup
   3) bar extsetup
-  4) foo reposetup
-  4) bar reposetup
+  4) foo uipopulate
+  4) bar uipopulate
+  4) foo uipopulate
+  4) bar uipopulate
+  4) foo uipopulate
+  4) bar uipopulate
+  5) foo reposetup
+  5) bar reposetup
   0:c24b9ac61126
 
 Check hgweb's load order of extensions and registration of functions
@@ -167,8 +210,12 @@ Check hgweb's load order of extensions and registration of functions
   2) bar uisetup
   3) foo extsetup
   3) bar extsetup
-  4) foo reposetup
-  4) bar reposetup
+  4) foo uipopulate
+  4) bar uipopulate
+  4) foo uipopulate
+  4) bar uipopulate
+  5) foo reposetup
+  5) bar reposetup
 
 (check that revset predicate foo() and bar() are available)
 

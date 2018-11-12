@@ -454,6 +454,7 @@ def makelocalrepository(baseui, path, intents=None):
     if loadhgrc(ui, wdirvfs, hgvfs, requirements):
         afterhgrcload(ui, wdirvfs, hgvfs, requirements)
         extensions.loadall(ui)
+        extensions.populateui(ui)
 
     # Set of module names of extensions loaded for this repository.
     extensionmodulenames = {m.__name__ for n, m in extensions.extensions(ui)}

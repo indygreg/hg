@@ -246,6 +246,10 @@ def _loadnewui(srcui, args):
     rpath = options['repository']
     path, newlui = dispatch._getlocal(newui, rpath, wd=cwd)
 
+    extensions.populateui(newui)
+    if newui is not newlui:
+        extensions.populateui(newlui)
+
     return (newui, newlui)
 
 class channeledsystem(object):

@@ -183,6 +183,29 @@ Command table setup
 After ``extsetup``, the ``cmdtable`` is copied into the global command table
 in Mercurial.
 
+Ui instance setup
+-----------------
+
+The optional ``uipopulate`` is called for each ``ui`` instance after
+configuration is loaded, where extensions can set up additional ui members,
+update configuration by ``ui.setconfig()``, and extend the class dynamically.
+
+Typically there are three ``ui`` instances involved in command execution:
+
+``req.ui`` (or ``repo.baseui``)
+    Only system and user configurations are loaded into it.
+``lui``
+    Local repository configuration is loaded as well. This will be used at
+    early dispatching stage where a repository isn't available.
+``repo.ui``
+    The fully-loaded ``ui`` used after a repository is instantiated. This
+    will be created from the ``req.ui`` per repository.
+
+In command server and hgweb, this may be called more than once for the same
+``ui`` instance.
+
+(New in Mercurial 4.9)
+
 Repository setup
 ----------------
 
@@ -304,7 +327,8 @@ uisetup
   a change made here will be visible by other extensions during ``extsetup``.
 * Monkeypatches or function wraps (``extensions.wrapfunction``) of ``dispatch``
   module members
-* Setup of ``pre-*`` and ``post-*`` hooks
+* Set up ``pre-*`` and ``post-*`` hooks. (DEPRECATED. ``uipopulate`` is
+  preferred on Mercurial 4.9 and later.)
 * ``pushkey`` setup
 
 extsetup
@@ -314,9 +338,17 @@ extsetup
 * Add a global option to all commands
 * Extend revsets
 
+uipopulate
+----------
+
+* Modify ``ui`` instance attributes and configuration variables.
+* Changes to ``ui.__class__`` per instance.
+* Set up all hooks per scoped configuration.
+
 reposetup
 ---------
 
-* All hooks but ``pre-*`` and ``post-*``
+* Set up all hooks but ``pre-*`` and ``post-*``. (DEPRECATED. ``uipopulate`` is
+  preferred on Mercurial 4.9 and later.)
 * Modify configuration variables
 * Changes to ``repo.__class__``, ``repo.dirstate.__class__``

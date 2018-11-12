@@ -272,6 +272,7 @@ class hgwebdir(object):
         if not baseui:
             # set up environment for new ui
             extensions.loadall(self.ui)
+            extensions.populateui(self.ui)
 
     def refresh(self):
         if self.ui:
@@ -308,6 +309,7 @@ class hgwebdir(object):
             paths = self.conf
         elif isinstance(self.conf, dict):
             paths = self.conf.items()
+        extensions.populateui(u)
 
         repos = findrepos(paths)
         for prefix, root in u.configitems('collections'):

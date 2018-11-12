@@ -866,6 +866,9 @@ def _dispatch(req):
         # Check abbreviation/ambiguity of shell alias.
         shellaliasfn = _checkshellalias(lui, ui, args)
         if shellaliasfn:
+            # no additional configs will be set, set up the ui instances
+            for ui_ in uis:
+                extensions.populateui(ui_)
             return shellaliasfn()
 
         # check for fallback encoding
@@ -947,6 +950,10 @@ def _dispatch(req):
         elif options['pager'] != 'auto':
             for ui_ in uis:
                 ui_.disablepager()
+
+        # configs are fully loaded, set up the ui instances
+        for ui_ in uis:
+            extensions.populateui(ui_)
 
         if options['version']:
             return commands.version_(ui)

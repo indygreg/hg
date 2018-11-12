@@ -29,6 +29,7 @@ hgrc.close()
 
 u = uimod.ui.load()
 extensions.loadall(u)
+extensions.populateui(u)
 
 globalshort = set()
 globallong = set()

@@ -574,6 +574,7 @@ iterable in addbranchrevs()
   > from mercurial import extensions, hg, ui as uimod
   > myui = uimod.ui.load()
   > extensions.loadall(myui)
+  > extensions.populateui(myui)
   > repo = hg.repository(myui, b'a')
   > hg.clone(myui, {}, repo, dest=b"ua", branch=[b"stable",])
   > EOF

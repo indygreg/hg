@@ -214,6 +214,7 @@ class hgweb(object):
             else:
                 u = uimod.ui.load()
                 extensions.loadall(u)
+                extensions.populateui(u)
             r = hg.repository(u, repo)
         else:
             # we trust caller to give us a private copy

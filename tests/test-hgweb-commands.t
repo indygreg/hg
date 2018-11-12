@@ -1,3 +1,9 @@
+TRANSITIONAL CONFIG
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > sparse-revlog = yes
+  > EOF
+
 #require serve
 
 An attempt at more fully testing the hgweb web interface.
@@ -2193,7 +2199,7 @@ capabilities
   lookup
   pushkey
   stream-preferred
-  streamreqs=generaldelta,revlogv1
+  streamreqs=generaldelta,revlogv1,sparserevlog
   unbundle=HG10GZ,HG10BZ,HG10UN
   unbundlehash
 

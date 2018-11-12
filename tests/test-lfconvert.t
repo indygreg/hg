@@ -1,3 +1,9 @@
+TRANSITIONAL CONFIG
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > sparse-revlog = yes
+  > EOF
+
   $ USERCACHE="$TESTTMP/cache"; export USERCACHE
   $ mkdir "${USERCACHE}"
   $ cat >> $HGRCPATH <<EOF
@@ -100,6 +106,7 @@ Test link+rename largefile codepath
   generaldelta
   largefiles
   revlogv1
+  sparserevlog
   store
   testonly-simplestore (reposimplestore !)
 

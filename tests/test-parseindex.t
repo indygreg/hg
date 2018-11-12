@@ -132,9 +132,9 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
   $ mkdir invalidparent
   $ cd invalidparent
 
-  $ hg clone --pull -q --config phases.publish=False ../a limit
-  $ hg clone --pull -q --config phases.publish=False ../a neglimit
-  $ hg clone --pull -q --config phases.publish=False ../a segv
+  $ hg clone --pull -q --config phases.publish=False ../a limit --config format.sparse-revlog=no
+  $ hg clone --pull -q --config phases.publish=False ../a neglimit --config format.sparse-revlog=no
+  $ hg clone --pull -q --config phases.publish=False ../a segv --config format.sparse-revlog=no
   $ rm -R limit/.hg/cache neglimit/.hg/cache segv/.hg/cache
 
   $ "$PYTHON" <<EOF

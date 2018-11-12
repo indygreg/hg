@@ -330,7 +330,7 @@ Upgrading a repository to generaldelta works
   $ touch f2
   $ hg -q commit -A -m 'add f2'
 
-  $ hg debugupgraderepo --run
+  $ hg debugupgraderepo --run --config format.sparse-revlog=false
   upgrade will perform the following actions:
   
   requirements
@@ -720,7 +720,7 @@ repository config is taken in account
 Check upgrading a sparse-revlog repository
 ---------------------------------------
 
-  $ hg init sparserevlogrepo
+  $ hg init sparserevlogrepo --config format.sparse-revlog=no
   $ cd sparserevlogrepo
   $ touch foo
   $ hg add foo

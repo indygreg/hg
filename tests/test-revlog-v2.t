@@ -1,3 +1,9 @@
+TRANSITIONAL CONFIG
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > sparse-revlog = yes
+  > EOF
+
 #require reporevlogstore
 
 A repo with unknown revlogv2 requirement string cannot be opened
@@ -24,6 +30,7 @@ Can create and open repo with revlog v2 requirement
   dotencode
   exp-revlogv2.0
   fncache
+  sparserevlog
   store
 
   $ hg log

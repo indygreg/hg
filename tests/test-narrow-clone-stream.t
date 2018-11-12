@@ -1,3 +1,9 @@
+TRANSITIONAL CONFIG
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > sparse-revlog = yes
+  > EOF
+
 #testcases tree flat-fncache flat-nofncache
 
 Tests narrow stream clones
@@ -66,6 +72,7 @@ Making sure we have the correct set of requirements
   generaldelta
   narrowhg-experimental
   revlogv1
+  sparserevlog
   store
   treemanifest (tree !)
 

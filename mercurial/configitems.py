@@ -694,7 +694,7 @@ coreconfigitem('format', 'obsstore-version',
     default=None,
 )
 coreconfigitem('format', 'sparse-revlog',
-    default=False,
+    default=True,
 )
 coreconfigitem('format', 'usefncache',
     default=True,

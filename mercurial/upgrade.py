@@ -269,7 +269,7 @@ class sparserevlog(requirementformatvariant):
 
     _requirement = localrepo.SPARSEREVLOG_REQUIREMENT
 
-    default = False
+    default = True
 
     description = _('in order to limit disk reading and memory usage on older '
                     'version, the span of a delta chain from its root to its '

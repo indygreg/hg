@@ -1,3 +1,9 @@
+TRANSITIONAL CONFIG
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > sparse-revlog = yes
+  > EOF
+
   $ . $TESTDIR/wireprotohelpers.sh
   $ cat >> $HGRCPATH << EOF
   > [extensions]
@@ -432,7 +438,8 @@ A non-cacheable command does not instantiate cacher
       ]),
       b'rawrepoformats': [
         b'generaldelta',
-        b'revlogv1'
+        b'revlogv1',
+        b'sparserevlog'
       ]
     }
   ]

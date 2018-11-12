@@ -151,30 +151,23 @@ before the next phase begins. In the first phase, all extension modules are
 loaded and registered with Mercurial. This means that you can find all enabled
 extensions with ``extensions.find`` in the following phases.
 
-ui setup
---------
+Extension setup
+---------------
 
-Extensions can implement an optional callback named ``uisetup``. ``uisetup``
-is called when the extension is first loaded and receives a ui object::
+There are two callbacks to be called when extensions are loaded, named
+``uisetup`` and ``extsetup``. ``uisetup`` is called first for each extension,
+then ``extsetup`` is called. This means ``extsetup`` can be useful in case
+one extension optionally depends on another extension.
+
+Both ``uisetup`` and ``extsetup`` receive a ui object::
 
     def uisetup(ui):
         # ...
 
-Extension setup
----------------
-
-Extensions can implement an optional callback named ``extsetup``. It is
-called after all the extension are loaded, and can be useful in case one
-extension optionally depends on another extension. Signature::
-
-    def extsetup():
-        # ...
-
-Mercurial version 8e6019b16a7d and later (that is post-1.3.1) will pass
-a ``ui``` argument to ``extsetup``::
-
     def extsetup(ui):
         # ...
+
+In Mercurial 1.3.1 or earlier, ``extsetup`` takes no argument.
 
 Command table setup
 -------------------

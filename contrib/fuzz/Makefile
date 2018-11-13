@@ -72,7 +72,7 @@ xdiff_fuzzer: xdiff.cc fuzz-xdiffi.o fuzz-xprepare.o fuzz-xutils.o fuzzutil-oss-
 
 # TODO use the $OUT env var instead of hardcoding /out
 /out/sanpy/bin/python:
-	cd /Python-2.7.15/ && ./configure --without-pymalloc --prefix=$$OUT/sanpy CFLAGS='-O1 -fno-omit-frame-pointer -g -fwrapv -fstack-protector-strong' LDFLAGS=-lasan  && ASAN_OPTIONS=detect_leaks=0 make && make install
+	cd /Python-2.7.15/ && ./configure --without-pymalloc --prefix=$$OUT/sanpy CFLAGS="$(CFLAGS)" LDFLAGS=$$PYLDFLAGS && ASAN_OPTIONS=detect_leaks=0 make && make install
 
 sanpy: /out/sanpy/bin/python
 

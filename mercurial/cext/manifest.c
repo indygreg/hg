@@ -38,6 +38,7 @@ typedef struct {
 #define MANIFEST_OOM -1
 #define MANIFEST_NOT_SORTED -2
 #define MANIFEST_MALFORMED -3
+#define MANIFEST_BOGUS_FILENAME -4
 
 /* get the length of the path for a line */
 static size_t pathlen(line *l)
@@ -115,7 +116,13 @@ static int find_lines(lazymanifest *self, char *data, Py_ssize_t len)
 	char *prev = NULL;
 	while (len > 0) {
 		line *l;
-		char *next = memchr(data, '\n', len);
+		char *next;
+		if (*data == '\0') {
+			/* It's implausible there's no filename, don't
+			 * even bother looking for the newline. */
+			return MANIFEST_BOGUS_FILENAME;
+		}
+		next = memchr(data, '\n', len);
 		if (!next) {
 			return MANIFEST_MALFORMED;
 		}
@@ -189,6 +196,11 @@ static int lazymanifest_init(lazymanifest *self, PyObject *args)
 	case MANIFEST_MALFORMED:
 		PyErr_Format(PyExc_ValueError,
 			     "Manifest did not end in a newline.");
+		break;
+	case MANIFEST_BOGUS_FILENAME:
+		PyErr_Format(
+			PyExc_ValueError,
+			"Manifest had an entry with a zero-length filename.");
 		break;
 	default:
 		PyErr_Format(PyExc_ValueError,

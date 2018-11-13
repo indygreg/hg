@@ -15,6 +15,7 @@ from mercurial.i18n import _
 from mercurial import (
     error,
     filelog,
+    node as nodemod,
     revlog,
 )
 from . import (
@@ -52,7 +53,7 @@ def debugremotefilelog(ui, path, **opts):
 
 def buildtemprevlog(repo, file):
     # get filename key
-    filekey = hashlib.sha1(file).hexdigest()
+    filekey = nodemod.hex(hashlib.sha1(file).digest())
     filedir = os.path.join(repo.path, 'store/data', filekey)
 
     # sort all entries based on linkrev
@@ -344,7 +345,7 @@ def dumpdeltachain(ui, deltachain, **opts):
         ui.write("%s  %s  %s  %s\n" % (
             hashformatter(node),
             hashformatter(deltabasenode),
-            hashlib.sha1(delta).hexdigest(),
+            nodemod.hex(hashlib.sha1(delta).digest()),
             len(delta)))
 
 def debughistorypack(ui, path):

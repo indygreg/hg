@@ -188,7 +188,8 @@ Call function which takes named arguments by filter syntax:
 
   $ hg debugtemplate '{" "|separate}'
   $ hg debugtemplate '{("not", "an", "argument", "list")|separate}'
-  hg: parse error: unknown method 'list'
+  hg: parse error: can't use a list in this context
+  (check place of comma and parens)
   [255]
 
 Second branch starting at nullrev:

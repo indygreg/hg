@@ -374,9 +374,7 @@ def compileexp(exp, context, curmethods):
     if not exp:
         raise error.ParseError(_("missing argument"))
     t = exp[0]
-    if t in curmethods:
-        return curmethods[t](exp, context)
-    raise error.ParseError(_("unknown method '%s'") % t)
+    return curmethods[t](exp, context)
 
 # template evaluation
 
@@ -496,6 +494,10 @@ def _buildfuncargs(exp, context, curmethods, funcname, argspec):
 def buildkeyvaluepair(exp, content):
     raise error.ParseError(_("can't use a key-value pair in this context"))
 
+def buildlist(exp, context):
+    raise error.ParseError(_("can't use a list in this context"),
+                           hint=_('check place of comma and parens'))
+
 # methods to interpret function arguments or inner expressions (e.g. {_(x)})
 exprmethods = {
     "integer": lambda e, c: (templateutil.runinteger, e[1]),
@@ -508,6 +510,7 @@ exprmethods = {
     "%": buildmap,
     "func": buildfunc,
     "keyvalue": buildkeyvaluepair,
+    "list": buildlist,
     "+": lambda e, c: buildarithmetic(e, c, lambda a, b: a + b),
     "-": lambda e, c: buildarithmetic(e, c, lambda a, b: a - b),
     "negate": buildnegate,

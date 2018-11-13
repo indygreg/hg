@@ -38,6 +38,8 @@ def _matchtrackedpath(path, matcher):
     elif path.startswith('meta/'):
         return matcher.visitdir(path[len('meta/'):-len('/00manifest.i')] or '.')
 
+    raise error.ProgrammingError("cannot decode path %s" % path)
+
 # This avoids a collision between a file named foo and a dir named
 # foo.i or foo.d
 def _encodedir(path):

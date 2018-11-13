@@ -137,12 +137,12 @@ static int find_lines(lazymanifest *self, char *data, Py_ssize_t len)
 			return MANIFEST_TOO_SHORT_LINE;
 		}
 		next++; /* advance past newline */
-		if (!realloc_if_full(self)) {
-			return MANIFEST_OOM; /* no memory */
-		}
 		if (prev && strcmp(prev, data) > -1) {
 			/* This data isn't sorted, so we have to abort. */
 			return MANIFEST_NOT_SORTED;
+		}
+		if (!realloc_if_full(self)) {
+			return MANIFEST_OOM; /* no memory */
 		}
 		l = self->lines + ((self->numlines)++);
 		l->start = data;

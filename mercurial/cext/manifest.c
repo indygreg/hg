@@ -39,6 +39,7 @@ typedef struct {
 #define MANIFEST_NOT_SORTED -2
 #define MANIFEST_MALFORMED -3
 #define MANIFEST_BOGUS_FILENAME -4
+#define MANIFEST_TOO_SHORT_LINE -5
 
 /* get the length of the path for a line */
 static size_t pathlen(line *l)
@@ -126,6 +127,15 @@ static int find_lines(lazymanifest *self, char *data, Py_ssize_t len)
 		if (!next) {
 			return MANIFEST_MALFORMED;
 		}
+		if ((next - data) < 22) {
+			/* We should have at least 22 bytes in a line:
+			   1 byte filename
+			   1 NUL
+			   20 bytes of hash
+			   so we can give up here.
+			*/
+			return MANIFEST_TOO_SHORT_LINE;
+		}
 		next++; /* advance past newline */
 		if (!realloc_if_full(self)) {
 			return MANIFEST_OOM; /* no memory */
@@ -201,6 +211,11 @@ static int lazymanifest_init(lazymanifest *self, PyObject *args)
 		PyErr_Format(
 			PyExc_ValueError,
 			"Manifest had an entry with a zero-length filename.");
+		break;
+	case MANIFEST_TOO_SHORT_LINE:
+		PyErr_Format(
+			PyExc_ValueError,
+			"Manifest had implausibly-short line.");
 		break;
 	default:
 		PyErr_Format(PyExc_ValueError,

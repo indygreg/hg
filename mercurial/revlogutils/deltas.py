@@ -38,11 +38,12 @@ LIMIT_DELTA2TEXT = 2
 class _testrevlog(object):
     """minimalist fake revlog to use in doctests"""
 
-    def __init__(self, data, density=0.5, mingap=0):
+    def __init__(self, data, density=0.5, mingap=0, snapshot=()):
         """data is an list of revision payload boundaries"""
         self._data = data
         self._srdensitythreshold = density
         self._srmingapsize = mingap
+        self._snapshot = set(snapshot)
 
     def start(self, rev):
         if rev == 0:
@@ -57,6 +58,9 @@ class _testrevlog(object):
 
     def __len__(self):
         return len(self._data)
+
+    def issnapshot(self, rev):
+        return rev in self._snapshot
 
 def slicechunk(revlog, revs, targetsize=None):
     """slice revs to reduce the amount of unrelated data to be read from disk.

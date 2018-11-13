@@ -375,6 +375,9 @@ class revlog(object):
         # custom flags.
         self._flagprocessors = dict(_flagprocessors)
 
+        # 2-tuple of file handles being used for active writing.
+        self._writinghandles = None
+
         mmapindexthreshold = None
         v = REVLOG_DEFAULT_VERSION
         opts = getattr(opener, 'options', None)
@@ -505,8 +508,21 @@ class revlog(object):
     @contextlib.contextmanager
     def _datareadfp(self, existingfp=None):
         """file object suitable to read data"""
+        # Use explicit file handle, if given.
         if existingfp is not None:
             yield existingfp
+
+        # Use a file handle being actively used for writes, if available.
+        # There is some danger to doing this because reads will seek the
+        # file. However, _writeentry() performs a SEEK_END before all writes,
+        # so we should be safe.
+        elif self._writinghandles:
+            if self._inline:
+                yield self._writinghandles[0]
+            else:
+                yield self._writinghandles[1]
+
+        # Otherwise open a new file handle.
         else:
             if self._inline:
                 func = self._indexfp
@@ -1750,6 +1766,9 @@ class revlog(object):
         if fp:
             fp.flush()
             fp.close()
+            # We can't use the cached file handle after close(). So prevent
+            # its usage.
+            self._writinghandles = None
 
         with self._indexfp('r') as ifh, self._datafp('w') as dfh:
             for r in self:
@@ -1996,7 +2015,9 @@ class revlog(object):
         # if the file was seeked to before the end. See issue4943 for more.
         #
         # We work around this issue by inserting a seek() before writing.
-        # Note: This is likely not necessary on Python 3.
+        # Note: This is likely not necessary on Python 3. However, because
+        # the file handle is reused for reads and may be seeked there, we need
+        # to be careful before changing this.
         ifh.seek(0, os.SEEK_END)
         if dfh:
             dfh.seek(0, os.SEEK_END)
@@ -2029,6 +2050,9 @@ class revlog(object):
         this revlog and the node that was added.
         """
 
+        if self._writinghandles:
+            raise error.ProgrammingError('cannot nest addgroup() calls')
+
         nodes = []
 
         r = len(self)
@@ -2048,6 +2072,9 @@ class revlog(object):
             if dfh:
                 dfh.flush()
             ifh.flush()
+
+        self._writinghandles = (ifh, dfh)
+
         try:
             deltacomputer = deltautil.deltacomputer(self)
             # loop through our set of deltas
@@ -2109,7 +2136,10 @@ class revlog(object):
                     ifh.close()
                     dfh = self._datafp("a+")
                     ifh = self._indexfp("a+")
+                    self._writinghandles = (ifh, dfh)
         finally:
+            self._writinghandles = None
+
             if dfh:
                 dfh.close()
             ifh.close()

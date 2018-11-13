@@ -1342,6 +1342,8 @@ class revlog(object):
         original seek position will NOT be restored.
 
         Returns a str or buffer of raw byte data.
+
+        Raises if the requested number of bytes could not be read.
         """
         # Cache data both forward and backward around the requested
         # data, in a fixed size window. This helps speed up operations
@@ -1353,9 +1355,26 @@ class revlog(object):
         with self._datareadfp(df) as df:
             df.seek(realoffset)
             d = df.read(reallength)
+
         self._cachesegment(realoffset, d)
         if offset != realoffset or reallength != length:
-            return util.buffer(d, offset - realoffset, length)
+            startoffset = offset - realoffset
+            if len(d) - startoffset < length:
+                raise error.RevlogError(
+                    _('partial read of revlog %s; expected %d bytes from '
+                      'offset %d, got %d') %
+                    (self.indexfile if self._inline else self.datafile,
+                     length, realoffset, len(d) - startoffset))
+
+            return util.buffer(d, startoffset, length)
+
+        if len(d) < length:
+            raise error.RevlogError(
+                _('partial read of revlog %s; expected %d bytes from offset '
+                  '%d, got %d') %
+                (self.indexfile if self._inline else self.datafile,
+                 length, offset, len(d)))
+
         return d
 
     def _getsegment(self, offset, length, df=None):

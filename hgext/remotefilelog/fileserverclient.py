@@ -482,7 +482,7 @@ class fileserverclient(object):
 
     def close(self):
         if fetches:
-            msg = ("%s files fetched over %d fetches - " +
+            msg = ("%d files fetched over %d fetches - " +
                    "(%d misses, %0.2f%% hit ratio) over %0.2fs\n") % (
                        fetched,
                        fetches,

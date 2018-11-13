@@ -234,7 +234,7 @@ def _loadfileblob(repo, cachepath, path, node):
 
             f = None
             try:
-                f = util.atomictempfile(filecachepath, "w")
+                f = util.atomictempfile(filecachepath, "wb")
                 f.write(text)
             except (IOError, OSError):
                 # Don't abort if the user only has permission to read,
@@ -246,7 +246,7 @@ def _loadfileblob(repo, cachepath, path, node):
         finally:
             os.umask(oldumask)
     else:
-        with open(filecachepath, "r") as f:
+        with open(filecachepath, "rb") as f:
             text = f.read()
     return text
 

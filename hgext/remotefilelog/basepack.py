@@ -373,8 +373,8 @@ class mutablebasepack(versionmixin):
             suffix=self.PACKSUFFIX + '-tmp')
         self.idxfp, self.idxpath = opener.mkstemp(
             suffix=self.INDEXSUFFIX + '-tmp')
-        self.packfp = os.fdopen(self.packfp, r'w+')
-        self.idxfp = os.fdopen(self.idxfp, r'w+')
+        self.packfp = os.fdopen(self.packfp, r'wb+')
+        self.idxfp = os.fdopen(self.idxfp, r'wb+')
         self.sha = hashlib.sha1()
         self._closed = False
 

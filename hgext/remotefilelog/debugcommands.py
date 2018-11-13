@@ -176,7 +176,7 @@ def _decompressblob(raw):
 
 def parsefileblob(path, decompress):
     raw = None
-    f = open(path, "r")
+    f = open(path, "rb")
     try:
         raw = f.read()
     finally:

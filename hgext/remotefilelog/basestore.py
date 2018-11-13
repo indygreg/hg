@@ -255,7 +255,7 @@ class basestore(object):
         they want to be kept alive in the store.
         """
         repospath = os.path.join(self._path, "repos")
-        with open(repospath, 'a') as reposfile:
+        with open(repospath, 'ab') as reposfile:
             reposfile.write(os.path.dirname(path) + "\n")
 
         repospathstat = os.stat(repospath)
@@ -270,7 +270,7 @@ class basestore(object):
             return True
 
         if self._validatecachelog:
-            with open(self._validatecachelog, 'a+') as f:
+            with open(self._validatecachelog, 'ab+') as f:
                 f.write("corrupt %s during %s\n" % (path, action))
 
         os.rename(path, path + ".corrupt")

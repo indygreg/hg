@@ -507,7 +507,7 @@ class repacker(object):
                         total=len(byfile))
 
             ancestors = {}
-            nodes = list(node for node in entries.iterkeys())
+            nodes = list(node for node in entries)
             nohistory = []
             for i, node in enumerate(nodes):
                 if node in ancestors:
@@ -643,7 +643,7 @@ class repacker(object):
         count = 0
         for filename, entries in sorted(byfile.iteritems()):
             ancestors = {}
-            nodes = list(node for node in entries.iterkeys())
+            nodes = list(node for node in entries)
 
             for node in nodes:
                 if node in ancestors:

@@ -468,7 +468,7 @@ class mutablebasepack(versionmixin):
         # Precompute the location of each entry
         locations = {}
         count = 0
-        for node in sorted(self.entries.iterkeys()):
+        for node in sorted(self.entries):
             location = count * self.INDEXENTRYLENGTH
             locations[node] = location
             count += 1

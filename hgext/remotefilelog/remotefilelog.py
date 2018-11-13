@@ -419,7 +419,7 @@ class remotefilelog(object):
         # Breadth first traversal to build linkrev graph
         parentrevs = collections.defaultdict(list)
         revmap = {}
-        queue = collections.deque(((None, n) for n in parentsmap.iterkeys()
+        queue = collections.deque(((None, n) for n in parentsmap
                  if n not in allparents))
         while queue:
             prevrev, current = queue.pop()

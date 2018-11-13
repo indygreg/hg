@@ -340,7 +340,7 @@ class fileserverclient(object):
             missingid = cache.receiveline()
             if not missingid:
                 missedset = set(missed)
-                for missingid in idmap.iterkeys():
+                for missingid in idmap:
                     if not missingid in missedset:
                         missed.append(missingid)
                 self.ui.warn(_("warning: cache connection closed early - " +

@@ -11,12 +11,12 @@ class unionmetadatastore(basestore.baseunionstore):
         super(unionmetadatastore, self).__init__(*args, **kwargs)
 
         self.stores = args
-        self.writestore = kwargs.get('writestore')
+        self.writestore = kwargs.get(r'writestore')
 
         # If allowincomplete==True then the union store can return partial
         # ancestor lists, otherwise it will throw a KeyError if a full
         # history can't be found.
-        self.allowincomplete = kwargs.get('allowincomplete', False)
+        self.allowincomplete = kwargs.get(r'allowincomplete', False)
 
     def getancestors(self, name, node, known=None):
         """Returns as many ancestors as we're aware of.

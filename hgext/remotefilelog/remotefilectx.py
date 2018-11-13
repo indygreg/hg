@@ -15,6 +15,7 @@ from mercurial import (
     context,
     error,
     phases,
+    pycompat,
     util,
 )
 from . import shallowutil
@@ -218,11 +219,11 @@ class remotefilectx(context.filectx):
             return linknode
 
         commonlogkwargs = {
-            'revs': ' '.join([hex(cl.node(rev)) for rev in revs]),
-            'fnode': hex(fnode),
-            'filepath': path,
-            'user': shallowutil.getusername(repo.ui),
-            'reponame': shallowutil.getreponame(repo.ui),
+            r'revs': ' '.join([hex(cl.node(rev)) for rev in revs]),
+            r'fnode': hex(fnode),
+            r'filepath': path,
+            r'user': shallowutil.getusername(repo.ui),
+            r'reponame': shallowutil.getreponame(repo.ui),
         }
 
         repo.ui.log('linkrevfixup', 'adjusting linknode', **commonlogkwargs)
@@ -315,7 +316,7 @@ class remotefilectx(context.filectx):
         finally:
             elapsed = time.time() - start
             repo.ui.log('linkrevfixup', logmsg, elapsed=elapsed * 1000,
-                        **commonlogkwargs)
+                        **pycompat.strkwargs(commonlogkwargs))
 
     def _verifylinknode(self, revs, linknode):
         """
@@ -408,7 +409,7 @@ class remotefilectx(context.filectx):
 
     def annotate(self, *args, **kwargs):
         introctx = self
-        prefetchskip = kwargs.pop('prefetchskip', None)
+        prefetchskip = kwargs.pop(r'prefetchskip', None)
         if prefetchskip:
             # use introrev so prefetchskip can be accurately tested
             introrev = self.introrev()

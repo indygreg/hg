@@ -18,6 +18,7 @@ from mercurial.i18n import _
 from mercurial.node import bin, hex, nullid
 from mercurial import (
     error,
+    pycompat,
     revlog,
     sshpeer,
     util,
@@ -119,7 +120,7 @@ def peersetup(ui, peer):
         def _callstream(self, command, **opts):
             supertype = super(remotefilepeer, self)
             if not util.safehasattr(supertype, '_sendrequest'):
-                self._updatecallstreamopts(command, opts)
+                self._updatecallstreamopts(command, pycompat.byteskwargs(opts))
             return super(remotefilepeer, self)._callstream(command, **opts)
 
     peer.__class__ = remotefilepeer

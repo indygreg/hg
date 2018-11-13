@@ -36,12 +36,12 @@ class unioncontentstore(basestore.baseunionstore):
         super(unioncontentstore, self).__init__(*args, **kwargs)
 
         self.stores = args
-        self.writestore = kwargs.get('writestore')
+        self.writestore = kwargs.get(r'writestore')
 
         # If allowincomplete==True then the union store can return partial
         # delta chains, otherwise it will throw a KeyError if a full
         # deltachain can't be found.
-        self.allowincomplete = kwargs.get('allowincomplete', False)
+        self.allowincomplete = kwargs.get(r'allowincomplete', False)
 
     def get(self, name, node):
         """Fetches the full text revision contents of the given name+node pair.

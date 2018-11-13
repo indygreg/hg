@@ -392,10 +392,10 @@ class baseunionstore(object):
         # throw a KeyError, try this many times with a full refresh between
         # attempts. A repack operation may have moved data from one store to
         # another while we were running.
-        self.numattempts = kwargs.get('numretries', 0) + 1
+        self.numattempts = kwargs.get(r'numretries', 0) + 1
         # If not-None, call this function on every retry and if the attempts are
         # exhausted.
-        self.retrylog = kwargs.get('retrylog', None)
+        self.retrylog = kwargs.get(r'retrylog', None)
 
     def markforrefresh(self):
         for store in self.stores:

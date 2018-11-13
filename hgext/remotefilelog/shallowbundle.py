@@ -146,7 +146,7 @@ def makechangegroup(orig, repo, outgoing, version, source, *args, **kwargs):
     try:
         # if serving, only send files the clients has patterns for
         if source == 'serve':
-            bundlecaps = kwargs.get('bundlecaps')
+            bundlecaps = kwargs.get(r'bundlecaps')
             includepattern = None
             excludepattern = None
             for cap in (bundlecaps or []):

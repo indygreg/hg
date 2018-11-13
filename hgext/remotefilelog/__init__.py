@@ -151,6 +151,7 @@ from mercurial import (
     merge,
     node as nodemod,
     patch,
+    pycompat,
     registrar,
     repair,
     repoview,
@@ -272,7 +273,7 @@ def uisetup(ui):
 
     # Prevent 'hg manifest --all'
     def _manifest(orig, ui, repo, *args, **opts):
-        if (isenabled(repo) and opts.get('all')):
+        if (isenabled(repo) and opts.get(r'all')):
             raise error.Abort(_("--all is not supported in a shallow repo"))
 
         return orig(ui, repo, *args, **opts)
@@ -294,7 +295,7 @@ def uisetup(ui):
     extensions.wrapcommand(commands.table, 'debugdata', debugdatashallow)
 
 def cloneshallow(orig, ui, repo, *args, **opts):
-    if opts.get('shallow'):
+    if opts.get(r'shallow'):
         repos = []
         def pull_shallow(orig, self, *args, **kwargs):
             if not isenabled(self):
@@ -327,9 +328,9 @@ def cloneshallow(orig, ui, repo, *args, **opts):
                 if constants.NETWORK_CAP_LEGACY_SSH_GETFILES in caps:
                     opts = {}
                     if repo.includepattern:
-                        opts['includepattern'] = '\0'.join(repo.includepattern)
+                        opts[r'includepattern'] = '\0'.join(repo.includepattern)
                     if repo.excludepattern:
-                        opts['excludepattern'] = '\0'.join(repo.excludepattern)
+                        opts[r'excludepattern'] = '\0'.join(repo.excludepattern)
                     return remote._callstream('stream_out_shallow', **opts)
                 else:
                     return orig()
@@ -360,7 +361,7 @@ def cloneshallow(orig, ui, repo, *args, **opts):
     try:
         orig(ui, repo, *args, **opts)
     finally:
-        if opts.get('shallow'):
+        if opts.get(r'shallow'):
             for r in repos:
                 if util.safehasattr(r, 'fileservice'):
                     r.fileservice.close()
@@ -888,19 +889,20 @@ def log(orig, ui, repo, *pats, **opts):
     if not isenabled(repo):
         return orig(ui, repo, *pats, **opts)
 
-    follow = opts.get('follow')
-    revs = opts.get('rev')
+    follow = opts.get(r'follow')
+    revs = opts.get(r'rev')
     if pats:
         # Force slowpath for non-follow patterns and follows that start from
         # non-working-copy-parent revs.
         if not follow or revs:
             # This forces the slowpath
-            opts['removed'] = True
+            opts[r'removed'] = True
 
         # If this is a non-follow log without any revs specified, recommend that
         # the user add -f to speed it up.
         if not follow and not revs:
-            match, pats = scmutil.matchandpats(repo['.'], pats, opts)
+            match, pats = scmutil.matchandpats(repo['.'], pats,
+                                               pycompat.byteskwargs(opts))
             isfile = not match.anypats()
             if isfile:
                 for file in match.files():
@@ -1104,6 +1106,7 @@ def prefetch(ui, repo, *pats, **opts):
 
     Return 0 on success.
     """
+    opts = pycompat.byteskwargs(opts)
     if not isenabled(repo):
         raise error.Abort(_("repo is not shallow"))
 
@@ -1121,15 +1124,15 @@ def prefetch(ui, repo, *pats, **opts):
      ('', 'packsonly', None, _('only repack packs (skip loose objects)'), None),
     ], _('hg repack [OPTIONS]'))
 def repack_(ui, repo, *pats, **opts):
-    if opts.get('background'):
-        repackmod.backgroundrepack(repo, incremental=opts.get('incremental'),
-                                   packsonly=opts.get('packsonly', False))
+    if opts.get(r'background'):
+        repackmod.backgroundrepack(repo, incremental=opts.get(r'incremental'),
+                                   packsonly=opts.get(r'packsonly', False))
         return
 
-    options = {'packsonly': opts.get('packsonly')}
+    options = {'packsonly': opts.get(r'packsonly')}
 
     try:
-        if opts.get('incremental'):
+        if opts.get(r'incremental'):
             repackmod.incrementalrepack(repo, options=options)
         else:
             repackmod.fullrepack(repo, options=options)

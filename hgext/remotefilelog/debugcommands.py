@@ -28,7 +28,7 @@ from . import (
 )
 
 def debugremotefilelog(ui, path, **opts):
-    decompress = opts.get('decompress')
+    decompress = opts.get(r'decompress')
 
     size, firstnode, mapping = parsefileblob(path, decompress)
 
@@ -89,9 +89,9 @@ def buildtemprevlog(repo, file):
 
 def debugindex(orig, ui, repo, file_=None, **opts):
     """dump the contents of an index file"""
-    if (opts.get('changelog') or
-        opts.get('manifest') or
-        opts.get('dir') or
+    if (opts.get(r'changelog') or
+        opts.get(r'manifest') or
+        opts.get(r'dir') or
         not shallowutil.isenabled(repo) or
         not repo.shallowmatch(file_)):
         return orig(ui, repo, file_, **opts)
@@ -154,7 +154,7 @@ def debugindexdot(orig, ui, repo, file_):
     ui.write("}\n")
 
 def verifyremotefilelog(ui, path, **opts):
-    decompress = opts.get('decompress')
+    decompress = opts.get(r'decompress')
 
     for root, dirs, files in os.walk(path):
         for file in files:
@@ -213,13 +213,13 @@ def debugdatapack(ui, *paths, **opts):
             path = path[:path.index('.data')]
         ui.write("%s:\n" % path)
         dpack = datapack.datapack(path)
-        node = opts.get('node')
+        node = opts.get(r'node')
         if node:
             deltachain = dpack.getdeltachain('', bin(node))
             dumpdeltachain(ui, deltachain, **opts)
             return
 
-        if opts.get('long'):
+        if opts.get(r'long'):
             hashformatter = hex
             hashlen = 42
         else:

@@ -1,3 +1,11 @@
+#testcases lfs-on lfs-off
+
+#if lfs-on
+  $ cat >> $HGRCPATH <<EOF
+  > [extensions]
+  > lfs =
+  > EOF
+#endif
 
   $ . "$TESTDIR/narrow-library.sh"
 
@@ -201,10 +209,17 @@ not also in narrower repo
   (run 'hg update' to get a working copy)
 TODO: this should tell the user that their narrow clone does not have the
 necessary content to be able to push to the target
-  $ hg push ssh://user@dummy/narrow2
+
+TODO: lfs shouldn't abort like this
+  $ hg push ssh://user@dummy/narrow2 || true
   pushing to ssh://user@dummy/narrow2
   searching for changes
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
   remote: added 1 changesets with 0 changes to 0 files
+  remote: error: pretxnchangegroup.lfs hook raised an exception: data/inside2/f.i@f59b4e021835: no match found (lfs-on !)
+  remote: transaction abort! (lfs-on !)
+  remote: rollback completed (lfs-on !)
+  remote: abort: data/inside2/f.i@f59b4e021835: no match found! (lfs-on !)
+  abort: stream ended unexpectedly (got 0 bytes, expected 4) (lfs-on !)

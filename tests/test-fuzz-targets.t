@@ -2,11 +2,20 @@
 
   $ cd $TESTDIR/../contrib/fuzz
 
+which(1) could exit nonzero, but that's fine because we'll still end
+up without a valid executable, so we don't need to check $? here.
+
+  $ if which gmake >/dev/null 2>&1; then
+  >     MAKE=gmake
+  > else
+  >     MAKE=make
+  > fi
+
 #if clang-libfuzzer
-  $ make -s clean all
+  $ $MAKE -s clean all
 #endif
 #if no-clang-libfuzzer clang-6.0
-  $ make -s clean all CC=clang-6.0 CXX=clang++-6.0
+  $ $MAKE -s clean all CC=clang-6.0 CXX=clang++-6.0
 #endif
 #if no-clang-libfuzzer no-clang-6.0
   $ exit 80

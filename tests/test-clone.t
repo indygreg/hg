@@ -87,47 +87,47 @@ No update, with debug option:
 
 #if hardlink
   $ hg --debug clone -U . ../c --config progress.debug=true
-  linking: 1
-  linking: 2
-  linking: 3
-  linking: 4
-  linking: 5
-  linking: 6
-  linking: 7
-  linking: 8
+  linking: 1 files
+  linking: 2 files
+  linking: 3 files
+  linking: 4 files
+  linking: 5 files
+  linking: 6 files
+  linking: 7 files
+  linking: 8 files
   linked 8 files (reporevlogstore !)
-  linking: 9 (reposimplestore !)
-  linking: 10 (reposimplestore !)
-  linking: 11 (reposimplestore !)
-  linking: 12 (reposimplestore !)
-  linking: 13 (reposimplestore !)
-  linking: 14 (reposimplestore !)
-  linking: 15 (reposimplestore !)
-  linking: 16 (reposimplestore !)
-  linking: 17 (reposimplestore !)
-  linking: 18 (reposimplestore !)
+  linking: 9 files (reposimplestore !)
+  linking: 10 files (reposimplestore !)
+  linking: 11 files (reposimplestore !)
+  linking: 12 files (reposimplestore !)
+  linking: 13 files (reposimplestore !)
+  linking: 14 files (reposimplestore !)
+  linking: 15 files (reposimplestore !)
+  linking: 16 files (reposimplestore !)
+  linking: 17 files (reposimplestore !)
+  linking: 18 files (reposimplestore !)
   linked 18 files (reposimplestore !)
 #else
   $ hg --debug clone -U . ../c --config progress.debug=true
-  linking: 1
-  copying: 2
-  copying: 3
-  copying: 4
-  copying: 5
-  copying: 6
-  copying: 7
-  copying: 8
+  linking: 1 files
+  copying: 2 files
+  copying: 3 files
+  copying: 4 files
+  copying: 5 files
+  copying: 6 files
+  copying: 7 files
+  copying: 8 files
   copied 8 files (reporevlogstore !)
-  copying: 9 (reposimplestore !)
-  copying: 10 (reposimplestore !)
-  copying: 11 (reposimplestore !)
-  copying: 12 (reposimplestore !)
-  copying: 13 (reposimplestore !)
-  copying: 14 (reposimplestore !)
-  copying: 15 (reposimplestore !)
-  copying: 16 (reposimplestore !)
-  copying: 17 (reposimplestore !)
-  copying: 18 (reposimplestore !)
+  copying: 9 files (reposimplestore !)
+  copying: 10 files (reposimplestore !)
+  copying: 11 files (reposimplestore !)
+  copying: 12 files (reposimplestore !)
+  copying: 13 files (reposimplestore !)
+  copying: 14 files (reposimplestore !)
+  copying: 15 files (reposimplestore !)
+  copying: 16 files (reposimplestore !)
+  copying: 17 files (reposimplestore !)
+  copying: 18 files (reposimplestore !)
   copied 18 files (reposimplestore !)
 #endif
   $ cd ../c

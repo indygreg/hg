@@ -365,7 +365,7 @@ def copystore(ui, srcrepo, destpath):
     try:
         hardlink = None
         topic = _('linking') if hardlink else _('copying')
-        with ui.makeprogress(topic) as progress:
+        with ui.makeprogress(topic, unit=_('files')) as progress:
             num = 0
             srcpublishing = srcrepo.publishing()
             srcvfs = vfsmod.vfs(srcrepo.sharedpath)

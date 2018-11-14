@@ -1166,7 +1166,7 @@ def dirstatecopy(ui, repo, wctx, src, dst, dryrun=False, cwd=None):
             wctx.copy(origsrc, dst)
 
 def writerequires(opener, requirements):
-    with opener('requires', 'w') as fp:
+    with opener('requires', 'w', atomictemp=True) as fp:
         for r in sorted(requirements):
             fp.write("%s\n" % r)
 

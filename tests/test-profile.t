@@ -90,7 +90,7 @@ Various statprof formatters work
   $ head -n 3 ../out
     %   cumulative      self          
    time    seconds   seconds  name    
-   * sleepext.py:*:sleep (glob)
+  * sleepext.py:*:sleep (glob)
   $ cat ../out | statprofran
 
   $ hg --profile --config profiling.statformat=bymethod sleep 2>../out

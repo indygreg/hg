@@ -430,8 +430,12 @@ def _shelvecreatedcommit(repo, node, name):
     shelvedfile(repo, name, 'shelve').writeinfo(info)
     bases = list(mutableancestors(repo[node]))
     shelvedfile(repo, name, 'hg').writebundle(bases, node)
+    # Create a matcher so that prefetch doesn't attempt to fetch the entire
+    # repository pointlessly.
+    match = scmutil.matchfiles(repo, repo[node].files())
     with shelvedfile(repo, name, patchextension).opener('wb') as fp:
-        cmdutil.exportfile(repo, [node], fp, opts=mdiff.diffopts(git=True))
+        cmdutil.exportfile(repo, [node], fp, opts=mdiff.diffopts(git=True),
+                           match=match)
 
 def _includeunknownfiles(repo, pats, opts, extra):
     s = repo.status(match=scmutil.match(repo[None], pats, opts),

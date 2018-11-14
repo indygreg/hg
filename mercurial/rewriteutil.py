@@ -27,10 +27,10 @@ def precheck(repo, revs, action='rewrite'):
         hint = _("no changeset checked out")
         raise error.Abort(msg, hint=hint)
 
-    publicrevs = repo.revs('%ld and public()', revs)
     if len(repo[None].parents()) > 1:
         raise error.Abort(_("cannot %s while merging") % action)
 
+    publicrevs = repo.revs('%ld and public()', revs)
     if publicrevs:
         msg = _("cannot %s public changesets") % (action)
         hint = _("see 'hg help phases' for details")

@@ -183,11 +183,17 @@ unexpectedly::
 
 from __future__ import absolute_import
 
-import fcntl
+# chistedit dependencies that are not available everywhere
+try:
+    import fcntl
+    import termios
+except ImportError:
+    fcntl = None
+    termios = None
+
 import functools
 import os
 import struct
-import termios
 
 from mercurial.i18n import _
 from mercurial import (

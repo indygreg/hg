@@ -44,6 +44,7 @@ class _testrevlog(object):
         self._srdensitythreshold = density
         self._srmingapsize = mingap
         self._snapshot = set(snapshot)
+        self.index = None
 
     def start(self, rev):
         if rev == 0:
@@ -120,9 +121,12 @@ def slicechunk(revlog, revs, targetsize=None):
         targetsize = max(targetsize, revlog._srmingapsize)
     # targetsize should not be specified when evaluating delta candidates:
     # * targetsize is used to ensure we stay within specification when reading,
-    for chunk in _slicechunktodensity(revlog, revs,
-                                      revlog._srdensitythreshold,
-                                      revlog._srmingapsize):
+    densityslicing = getattr(revlog.index, 'slicechunktodensity', None)
+    if densityslicing is None:
+        densityslicing = lambda x, y, z: _slicechunktodensity(revlog, x, y, z)
+    for chunk in densityslicing(revs,
+                                revlog._srdensitythreshold,
+                                revlog._srmingapsize):
         for subchunk in _slicechunktosize(revlog, chunk, targetsize):
             yield subchunk
 

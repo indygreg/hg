@@ -17,6 +17,7 @@ import socket
 from mercurial.i18n import _
 
 from mercurial import (
+    encoding,
     error,
     pathutil,
     pycompat,
@@ -24,6 +25,10 @@ from mercurial import (
     util,
     vfs as vfsmod,
     worker,
+)
+
+from mercurial.utils import (
+    stringutil,
 )
 
 from ..largefiles import lfutil
@@ -231,6 +236,30 @@ class local(object):
         False otherwise."""
         return self.cachevfs.exists(oid) or self.vfs.exists(oid)
 
+def _urlerrorreason(urlerror):
+    '''Create a friendly message for the given URLError to be used in an
+    LfsRemoteError message.
+    '''
+    inst = urlerror
+
+    if isinstance(urlerror.reason, Exception):
+        inst = urlerror.reason
+
+    if util.safehasattr(inst, 'reason'):
+        try: # usually it is in the form (errno, strerror)
+            reason = inst.reason.args[1]
+        except (AttributeError, IndexError):
+            # it might be anything, for example a string
+            reason = inst.reason
+        if isinstance(reason, pycompat.unicode):
+            # SSLError of Python 2.7.9 contains a unicode
+            reason = encoding.unitolocal(reason)
+        return reason
+    elif getattr(inst, "strerror", None):
+        return encoding.strtolocal(inst.strerror)
+    else:
+        return stringutil.forcebytestr(urlerror)
+
 class _gitlfsremote(object):
 
     def __init__(self, repo, url):
@@ -279,6 +308,11 @@ class _gitlfsremote(object):
             }
             hint = hints.get(ex.code, _('api=%s, action=%s') % (url, action))
             raise LfsRemoteError(_('LFS HTTP error: %s') % ex, hint=hint)
+        except util.urlerr.urlerror as ex:
+            hint = (_('the "lfs.url" config may be used to override %s')
+                    % self.baseurl)
+            raise LfsRemoteError(_('LFS error: %s') % _urlerrorreason(ex),
+                                 hint=hint)
         try:
             response = json.loads(rawjson)
         except ValueError:
@@ -409,6 +443,11 @@ class _gitlfsremote(object):
                 self.ui.debug('%s: %s\n' % (oid, ex.read()))
             raise LfsRemoteError(_('HTTP error: %s (oid=%s, action=%s)')
                                  % (ex, oid, action))
+        except util.urlerr.urlerror as ex:
+            hint = (_('attempted connection to %s')
+                    % util.urllibcompat.getfullurl(request))
+            raise LfsRemoteError(_('LFS error: %s') % _urlerrorreason(ex),
+                                 hint=hint)
 
     def _batch(self, pointers, localstore, action):
         if action not in ['upload', 'download']:

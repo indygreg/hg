@@ -81,6 +81,11 @@ Reasonable hint for a misconfigured blob server
   (the "lfs.url" config may be used to override http://localhost:$HGPORT/missing)
   [255]
 
+  $ hg -R httpclone update default --config lfs.url=http://localhost:$HGPORT2/missing
+  abort: LFS error: *onnection *refused*! (glob)
+  (the "lfs.url" config may be used to override http://localhost:$HGPORT2/missing)
+  [255]
+
 Blob URIs are correct when --prefix is used
 
   $ hg clone --debug http://localhost:$HGPORT/subdir/mount/point cloned2

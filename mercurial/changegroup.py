@@ -1043,18 +1043,25 @@ class cgpacker(object):
 
         while tmfnodes:
             tree, nodes = tmfnodes.popitem()
+
+            should_visit = self._matcher.visitdir(tree[:-1] or '.')
+            if tree and not should_visit:
+                continue
+
             store = mfl.getstorage(tree)
 
-            if not self._matcher.visitdir(store.tree[:-1] or '.'):
+            if not should_visit:
                 # No nodes to send because this directory is out of
                 # the client's view of the repository (probably
-                # because of narrow clones).
+                # because of narrow clones). Do this even for the root
+                # directory (tree=='')
                 prunednodes = []
             else:
                 # Avoid sending any manifest nodes we can prove the
                 # client already has by checking linkrevs. See the
                 # related comment in generatefiles().
                 prunednodes = self._prunemanifests(store, nodes, commonrevs)
+
             if tree and not prunednodes:
                 continue
 

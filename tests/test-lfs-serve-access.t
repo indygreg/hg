@@ -30,7 +30,7 @@ Uploads fail...
   pushing to http://localhost:$HGPORT/
   searching for changes
   abort: LFS HTTP error: HTTP Error 400: no such method: .git!
-  (api=http://localhost:$HGPORT/.git/info/lfs/objects/batch, action=upload)
+  (check that lfs serving is enabled on http://localhost:$HGPORT/.git/info/lfs and "upload" is supported)
   [255]
 
 ... so do a local push to make the data available.  Remove the blob from the
@@ -52,7 +52,7 @@ Downloads fail...
   new changesets 525251863cad
   updating to branch default
   abort: LFS HTTP error: HTTP Error 400: no such method: .git!
-  (api=http://localhost:$HGPORT/.git/info/lfs/objects/batch, action=download)
+  (check that lfs serving is enabled on http://localhost:$HGPORT/.git/info/lfs and "download" is supported)
   [255]
 
   $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
@@ -68,13 +68,20 @@ Downloads fail...
   $LOCALIP - - [$LOGDATE$] "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%252C03%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Aphases%253Dheads%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=525251863cad618e55d483555f3d00a2ca99597e&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   $LOCALIP - - [$LOGDATE$] "POST /.git/info/lfs/objects/batch HTTP/1.1" 400 - (glob)
 
-Blob URIs are correct when --prefix is used
-
   $ rm -f $TESTTMP/access.log $TESTTMP/errors.log
   $ hg --config "lfs.usercache=$TESTTMP/servercache" -R server serve -d \
   >    -p $HGPORT --pid-file=hg.pid --prefix=subdir/mount/point \
   >    -A $TESTTMP/access.log -E $TESTTMP/errors.log
   $ cat hg.pid >> $DAEMON_PIDS
+
+Reasonable hint for a misconfigured blob server
+
+  $ hg -R httpclone update default --config lfs.url=http://localhost:$HGPORT/missing
+  abort: LFS HTTP error: HTTP Error 404: Not Found!
+  (the "lfs.url" config may be used to override http://localhost:$HGPORT/missing)
+  [255]
+
+Blob URIs are correct when --prefix is used
 
   $ hg clone --debug http://localhost:$HGPORT/subdir/mount/point cloned2
   using http://localhost:$HGPORT/subdir/mount/point
@@ -148,6 +155,7 @@ Blob URIs are correct when --prefix is used
   $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
 
   $ cat $TESTTMP/access.log $TESTTMP/errors.log
+  $LOCALIP - - [$LOGDATE$] "POST /missing/objects/batch HTTP/1.1" 404 - (glob)
   $LOCALIP - - [$LOGDATE$] "GET /subdir/mount/point?cmd=capabilities HTTP/1.1" 200 - (glob)
   $LOCALIP - - [$LOGDATE$] "GET /subdir/mount/point?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   $LOCALIP - - [$LOGDATE$] "GET /subdir/mount/point?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%252C03%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Aphases%253Dheads%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=525251863cad618e55d483555f3d00a2ca99597e&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)

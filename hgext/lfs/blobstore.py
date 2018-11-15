@@ -271,9 +271,14 @@ class _gitlfsremote(object):
             rsp = self.urlopener.open(batchreq)
             rawjson = rsp.read()
         except util.urlerr.httperror as ex:
-            raise LfsRemoteError(_('LFS HTTP error: %s') % ex,
-                                 hint=_('api=%s, action=%s')
-                                 % (url, action))
+            hints = {
+                400: _('check that lfs serving is enabled on %s and "%s" is '
+                       'supported') % (self.baseurl, action),
+                404: _('the "lfs.url" config may be used to override %s')
+                       % self.baseurl,
+            }
+            hint = hints.get(ex.code, _('api=%s, action=%s') % (url, action))
+            raise LfsRemoteError(_('LFS HTTP error: %s') % ex, hint=hint)
         try:
             response = json.loads(rawjson)
         except ValueError:

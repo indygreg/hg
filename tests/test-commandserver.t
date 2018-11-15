@@ -747,7 +747,7 @@ structured message channel:
   encoding: ascii
   message-encoding: cbor
   pid: * (glob)
-  pgid: * (glob)
+  pgid: * (glob) (no-windows !)
   *** runcommand -R repo2 verify
   message: '\xa2DdataTchecking changesets\nDtypeFstatus'
   message: '\xa6Ditem@Cpos\xf6EtopicHcheckingEtotal\xf6DtypeHprogressDunit@'

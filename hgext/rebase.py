@@ -404,7 +404,9 @@ class rebaseruntime(object):
         else:
             self.wctx = self.repo[None]
             self.repo.ui.debug("rebasing on disk\n")
-        self.repo.ui.log("rebase", "", rebase_imm_used=self.inmemory)
+        self.repo.ui.log("rebase",
+                         "using in-memory rebase: %r\n", self.inmemory,
+                         rebase_imm_used=self.inmemory)
 
     def _performrebase(self, tr):
         self._assignworkingcopy()
@@ -1076,7 +1078,8 @@ def _definedestmap(ui, repo, inmemory, destf=None, srcf=None, basef=None,
             return None
 
     rebasingwcp = repo['.'].rev() in rebaseset
-    ui.log("rebase", "", rebase_rebasing_wcp=rebasingwcp)
+    ui.log("rebase", "rebasing working copy parent: %r\n", rebasingwcp,
+           rebase_rebasing_wcp=rebasingwcp)
     if inmemory and rebasingwcp:
         # Check these since we did not before.
         cmdutil.checkunfinished(repo)

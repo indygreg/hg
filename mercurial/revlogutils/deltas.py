@@ -234,7 +234,7 @@ def _slicechunktosize(revlog, revs, targetsize=None):
         return
 
     startrevidx = 0
-    endrevidx = 0
+    endrevidx = 1
     iterrevs = enumerate(revs)
     next(iterrevs) # skip first rev.
     # first step: get snapshots out of the way
@@ -242,14 +242,14 @@ def _slicechunktosize(revlog, revs, targetsize=None):
         span = revlog.end(r) - startdata
         snapshot = revlog.issnapshot(r)
         if span <= targetsize and snapshot:
-            endrevidx = idx
+            endrevidx = idx + 1
         else:
-            chunk = _trimchunk(revlog, revs, startrevidx, endrevidx + 1)
+            chunk = _trimchunk(revlog, revs, startrevidx, endrevidx)
             if chunk:
                 yield chunk
             startrevidx = idx
             startdata = revlog.start(r)
-            endrevidx = idx
+            endrevidx = idx + 1
         if not snapshot:
             break
 

@@ -1045,7 +1045,7 @@ def makefilematcher(repo, pathfilter):
 
     # Requested patterns could include files not in the local store. So
     # filter those out.
-    return matchmod.intersectmatchers(repo.narrowmatch(), matcher)
+    return repo.narrowmatch(matcher)
 
 @wireprotocommand(
     'filedata',

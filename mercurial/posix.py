@@ -182,7 +182,7 @@ def checkexec(path):
     try:
         EXECFLAGS = stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
         basedir = os.path.join(path, '.hg')
-        cachedir = os.path.join(basedir, 'cache')
+        cachedir = os.path.join(basedir, 'wcache')
         storedir = os.path.join(basedir, 'store')
         if not os.path.exists(cachedir):
             try:
@@ -255,7 +255,7 @@ def checklink(path):
     # mktemp is not racy because symlink creation will fail if the
     # file already exists
     while True:
-        cachedir = os.path.join(path, '.hg', 'cache')
+        cachedir = os.path.join(path, '.hg', 'wcache')
         checklink = os.path.join(cachedir, 'checklink')
         # try fast path, read only
         if os.path.islink(checklink):

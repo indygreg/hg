@@ -42,7 +42,7 @@ just in case somebody has a strange $TMPDIR
   $ hg init repo
   $ cd repo
 
-  $ chmod 0770 .hg/store .hg/cache
+  $ chmod 0770 .hg/store .hg/cache .hg/wcache
 
 before commit
 store can be written by the group, other files cannot
@@ -54,6 +54,7 @@ store is setgid
   00770 ./.hg/cache/
   00600 ./.hg/requires
   00770 ./.hg/store/
+  00770 ./.hg/wcache/
 
   $ mkdir dir
   $ touch foo dir/bar
@@ -120,6 +121,7 @@ group can write everything
   00770 ../push/.hg/cache/
   00660 ../push/.hg/requires
   00770 ../push/.hg/store/
+  00770 ../push/.hg/wcache/
 
   $ umask 077
   $ hg -q push ../push
@@ -155,6 +157,7 @@ group can still write everything
   00660 ../push/.hg/undo.branch
   00660 ../push/.hg/undo.desc
   00660 ../push/.hg/undo.dirstate
+  00770 ../push/.hg/wcache/
 
 
 Test that we don't lose the setgid bit when we call chmod.

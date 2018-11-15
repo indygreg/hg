@@ -23,6 +23,7 @@ Check the basic files created:
   cache
   requires
   store
+  wcache
 
 Should be empty:
 

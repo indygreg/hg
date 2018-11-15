@@ -1242,6 +1242,7 @@ Check that share works with subrepo
   ../shared/subrepo-1/.hg/hgrc
   ../shared/subrepo-1/.hg/requires
   ../shared/subrepo-1/.hg/sharedpath
+  ../shared/subrepo-1/.hg/wcache
   ../shared/subrepo-2
   ../shared/subrepo-2/.hg
   ../shared/subrepo-2/.hg/branch

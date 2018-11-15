@@ -212,6 +212,7 @@ Make sure bundlerepo doesn't leak tempfiles (issue2491)
   cache
   requires
   store
+  wcache
 
 Pull ../full.hg into empty (with hook)
 

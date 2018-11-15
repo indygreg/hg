@@ -68,17 +68,20 @@ Redirect targets advertised when configured
   s>     Content-Length: 2259\r\n
   s>     \r\n
   s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0003\xa5Hcommands\xacIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa2Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionIrevisions\xa2Hrequired\xf5DtypeDlistKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x83HlinknodeGparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullIfilesdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84NfirstchangesetHlinknodeGparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolJpathfilter\xa3Gdefault\xf6Hrequired\xf4DtypeDdictIrevisions\xa2Hrequired\xf5DtypeDlistKpermissions\x81DpullTrecommendedbatchsize\x19\xc3PEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushPrawstorefiledata\xa2Dargs\xa2Efiles\xa2Hrequired\xf5DtypeDlistJpathfilter\xa3Gdefault\xf6Hrequired\xf4DtypeDlistKpermissions\x81DpullQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x82LgeneraldeltaHrevlogv1Hredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81\xa5DnameHtarget-aHprotocolDhttpKsnirequired\xf4Ktlsversions\x82C1.2C1.3Duris\x81Shttp://example.com/Nv1capabilitiesY\x01\xd3batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  (remote redirect target target-a is compatible)
+  (remote redirect target target-a is compatible) (tls1.2 !)
+  (remote redirect target target-a requires unsupported TLS versions: 1.2, 1.3) (no-tls1.2 !)
   sending capabilities command
   s>     POST /api/exp-http-v2-0003/ro/capabilities HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-exp-framing-0006\r\n
   s>     content-type: application/mercurial-exp-framing-0006\r\n
-  s>     content-length: 111\r\n
+  s>     content-length: 111\r\n (tls1.2 !)
+  s>     content-length: 102\r\n (no-tls1.2 !)
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
   s>     \r\n
-  s>     \x1c\x00\x00\x01\x00\x01\x01\x82\xa1Pcontentencodings\x81HidentityC\x00\x00\x01\x00\x01\x00\x11\xa2DnameLcapabilitiesHredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81Htarget-a
+  s>     \x1c\x00\x00\x01\x00\x01\x01\x82\xa1Pcontentencodings\x81HidentityC\x00\x00\x01\x00\x01\x00\x11\xa2DnameLcapabilitiesHredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x81Htarget-a (tls1.2 !)
+  s>     \x1c\x00\x00\x01\x00\x01\x01\x82\xa1Pcontentencodings\x81Hidentity:\x00\x00\x01\x00\x01\x00\x11\xa2DnameLcapabilitiesHredirect\xa2Fhashes\x82Fsha256Dsha1Gtargets\x80 (no-tls1.2 !)
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n

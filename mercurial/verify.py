@@ -302,7 +302,8 @@ class verifier(object):
         ui.status(_("crosschecking files in changesets and manifests\n"))
 
         total = len(filelinkrevs) + len(filenodes)
-        progress = ui.makeprogress(_('crosschecking'), total=total)
+        progress = ui.makeprogress(_('crosschecking'), unit=_('files'),
+                                   total=total)
         if self.havemf:
             for f in sorted(filelinkrevs):
                 progress.increment()

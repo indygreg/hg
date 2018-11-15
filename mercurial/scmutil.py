@@ -212,6 +212,8 @@ def callcatch(ui, func):
         ui.error(_("abort: file censored %s!\n") % inst)
     except error.StorageError as inst:
         ui.error(_("abort: %s!\n") % inst)
+        if inst.hint:
+            ui.error(_("(%s)\n") % inst.hint)
     except error.InterventionRequired as inst:
         ui.error("%s\n" % inst)
         if inst.hint:

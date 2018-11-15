@@ -2478,10 +2478,11 @@ def _dograft(ui, repo, *revs, **opts):
                     revs.remove(ids[n])
             elif ctx.hex() in ids:
                 r = ids[ctx.hex()]
-                ui.warn(_('skipping already grafted revision %d:%s '
-                          '(was grafted from %d:%s)\n') %
-                        (r, repo[r], rev, ctx))
-                revs.remove(r)
+                if r in revs:
+                    ui.warn(_('skipping already grafted revision %d:%s '
+                              '(was grafted from %d:%s)\n') %
+                            (r, repo[r], rev, ctx))
+                    revs.remove(r)
         if not revs:
             return -1
 

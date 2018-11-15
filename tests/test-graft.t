@@ -1390,6 +1390,52 @@ also detecting that both 3 and 5 should be skipped:
 
   $ cd ..
 
+Grafted revision should be warned and skipped only once. (issue6024)
+
+  $ mkdir issue6024
+  $ cd issue6024
+
+  $ hg init base
+  $ cd base
+  $ touch x
+  $ hg commit -qAminit
+  $ echo a > x
+  $ hg commit -mchange
+  $ hg update -q 0
+  $ hg graft -r 1
+  grafting 1:a0b923c546aa "change" (tip)
+  $ cd ..
+
+  $ hg clone -qr 2 base clone
+  $ cd clone
+  $ hg pull -q
+  $ hg merge -q 2
+  $ hg commit -mmerge
+  $ hg update -q 0
+  $ hg graft -r 1
+  grafting 1:04fc6d444368 "change"
+  $ hg update -q 3
+  $ hg log -G -T '{rev}:{node|shortest} <- {extras.source|shortest}\n'
+  o  4:4e16 <- a0b9
+  |
+  | @    3:f0ac <-
+  | |\
+  +---o  2:a0b9 <-
+  | |
+  | o  1:04fc <- a0b9
+  |/
+  o  0:7848 <-
+  
+
+ the source of rev 4 is an ancestor of the working parent, and was also
+ grafted as rev 1. it should be stripped from the target revisions only once.
+
+  $ hg graft -r 4
+  skipping already grafted revision 4:4e16bab40c9c (1:04fc6d444368 also has origin 2:a0b923c546aa)
+  [255]
+
+  $ cd ../..
+
 Testing the reading of old format graftstate file with newer mercurial
 
   $ hg init oldgraft

@@ -441,7 +441,7 @@ class _gitlfsremote(object):
         except util.urlerr.httperror as ex:
             if self.ui.debugflag:
                 self.ui.debug('%s: %s\n' % (oid, ex.read()))
-            raise LfsRemoteError(_('HTTP error: %s (oid=%s, action=%s)')
+            raise LfsRemoteError(_('LFS HTTP error: %s (oid=%s, action=%s)')
                                  % (ex, oid, action))
         except util.urlerr.urlerror as ex:
             hint = (_('attempted connection to %s')

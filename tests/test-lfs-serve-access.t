@@ -282,7 +282,7 @@ Test a bad checksum sent by the client in the transfer API
   $ hg -R client push http://localhost:$HGPORT1
   pushing to http://localhost:$HGPORT1/
   searching for changes
-  abort: HTTP error: HTTP Error 422: corrupt blob (oid=b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c, action=upload)!
+  abort: LFS HTTP error: HTTP Error 422: corrupt blob (oid=b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c, action=upload)!
   [255]
 
   $ echo 'test lfs file' > server/lfs3.bin
@@ -294,14 +294,14 @@ Test an I/O error during the processing of the GET request
 
   $ hg --config lfs.url=http://localhost:$HGPORT1/.git/info/lfs \
   >    -R client update -r tip
-  abort: HTTP error: HTTP Error 500: Internal Server Error (oid=276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d, action=download)!
+  abort: LFS HTTP error: HTTP Error 500: Internal Server Error (oid=276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d, action=download)!
   [255]
 
 Test a checksum failure during the processing of the GET request
 
   $ hg --config lfs.url=http://localhost:$HGPORT1/.git/info/lfs \
   >    -R client update -r tip
-  abort: HTTP error: HTTP Error 422: corrupt blob (oid=276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d, action=download)!
+  abort: LFS HTTP error: HTTP Error 422: corrupt blob (oid=276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d, action=download)!
   [255]
 
   $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS

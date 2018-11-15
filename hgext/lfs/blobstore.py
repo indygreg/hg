@@ -263,16 +263,17 @@ class _gitlfsremote(object):
             'objects': objects,
             'operation': action,
         })
-        batchreq = util.urlreq.request('%s/objects/batch' % self.baseurl,
-                                       data=requestdata)
+        url = '%s/objects/batch' % self.baseurl
+        batchreq = util.urlreq.request(url, data=requestdata)
         batchreq.add_header('Accept', 'application/vnd.git-lfs+json')
         batchreq.add_header('Content-Type', 'application/vnd.git-lfs+json')
         try:
             rsp = self.urlopener.open(batchreq)
             rawjson = rsp.read()
         except util.urlerr.httperror as ex:
-            raise LfsRemoteError(_('LFS HTTP error: %s (action=%s)')
-                                 % (ex, action))
+            raise LfsRemoteError(_('LFS HTTP error: %s') % ex,
+                                 hint=_('api=%s, action=%s')
+                                 % (url, action))
         try:
             response = json.loads(rawjson)
         except ValueError:

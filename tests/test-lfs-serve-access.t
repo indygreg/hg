@@ -29,7 +29,8 @@ Uploads fail...
   $ hg -R client push http://localhost:$HGPORT
   pushing to http://localhost:$HGPORT/
   searching for changes
-  abort: LFS HTTP error: HTTP Error 400: no such method: .git (action=upload)!
+  abort: LFS HTTP error: HTTP Error 400: no such method: .git!
+  (api=http://localhost:$HGPORT/.git/info/lfs/objects/batch, action=upload)
   [255]
 
 ... so do a local push to make the data available.  Remove the blob from the
@@ -50,7 +51,8 @@ Downloads fail...
   added 1 changesets with 1 changes to 1 files
   new changesets 525251863cad
   updating to branch default
-  abort: LFS HTTP error: HTTP Error 400: no such method: .git (action=download)!
+  abort: LFS HTTP error: HTTP Error 400: no such method: .git!
+  (api=http://localhost:$HGPORT/.git/info/lfs/objects/batch, action=download)
   [255]
 
   $ "$PYTHON" $RUNTESTDIR/killdaemons.py $DAEMON_PIDS

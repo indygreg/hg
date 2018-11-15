@@ -508,6 +508,8 @@ def makelocalrepository(baseui, path, intents=None):
     else:
         storebasepath = hgvfs.base
         cachepath = hgvfs.join(b'cache')
+    wcachepath = hgvfs.join(b'wcache')
+
 
     # The store has changed over time and the exact layout is dictated by
     # requirements. The store interface abstracts differences across all
@@ -522,6 +524,9 @@ def makelocalrepository(baseui, path, intents=None):
     # The cache vfs is used to manage cache files.
     cachevfs = vfsmod.vfs(cachepath, cacheaudited=True)
     cachevfs.createmode = store.createmode
+    # The cache vfs is used to manage cache files related to the working copy
+    wcachevfs = vfsmod.vfs(wcachepath, cacheaudited=True)
+    wcachevfs.createmode = store.createmode
 
     # Now resolve the type for the repository object. We do this by repeatedly
     # calling a factory function to produces types for specific aspects of the
@@ -544,6 +549,7 @@ def makelocalrepository(baseui, path, intents=None):
                  storevfs=storevfs,
                  storeoptions=storevfs.options,
                  cachevfs=cachevfs,
+                 wcachevfs=wcachevfs,
                  extensionmodulenames=extensionmodulenames,
                  extrastate=extrastate,
                  baseclasses=bases)
@@ -574,6 +580,7 @@ def makelocalrepository(baseui, path, intents=None):
         sharedpath=storebasepath,
         store=store,
         cachevfs=cachevfs,
+        wcachevfs=wcachevfs,
         features=features,
         intents=intents)
 
@@ -889,7 +896,7 @@ class localrepository(object):
     }
 
     def __init__(self, baseui, ui, origroot, wdirvfs, hgvfs, requirements,
-                 supportedrequirements, sharedpath, store, cachevfs,
+                 supportedrequirements, sharedpath, store, cachevfs, wcachevfs,
                  features, intents=None):
         """Create a new local repository instance.
 
@@ -932,6 +939,9 @@ class localrepository(object):
         cachevfs
            ``vfs.vfs`` used for cache files.
 
+        wcachevfs
+           ``vfs.vfs`` used for cache files related to the working copy.
+
         features
            ``set`` of bytestrings defining features/capabilities of this
            instance.
@@ -954,6 +964,7 @@ class localrepository(object):
         self.sharedpath = sharedpath
         self.store = store
         self.cachevfs = cachevfs
+        self.wcachevfs = wcachevfs
         self.features = features
 
         self.filtername = None

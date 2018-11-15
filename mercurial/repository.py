@@ -1435,6 +1435,12 @@ class ilocalrepositorymain(interfaceutil.Interface):
         Typically .hg/cache.
         """)
 
+    wcachevfs = interfaceutil.Attribute(
+        """A VFS used to access the cache directory dedicated to working copy
+
+        Typically .hg/wcache.
+        """)
+
     filteredrevcache = interfaceutil.Attribute(
         """Holds sets of revisions to be filtered.""")
 

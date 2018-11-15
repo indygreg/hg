@@ -264,7 +264,7 @@ def _slicechunktosize(revlog, revs, targetsize=None):
             break # protect against individual chunk larger than limit
         localenddata = revlog.end(revs[endrevidx - 1])
         span = localenddata - startdata
-        while (localenddata - startdata) > targetsize:
+        while span > targetsize:
             if endrevidx - startrevidx <= 1:
                 break # protect against individual chunk larger than limit
             endrevidx -= (endrevidx - startrevidx) // 2

@@ -42,7 +42,7 @@ just in case somebody has a strange $TMPDIR
   $ hg init repo
   $ cd repo
 
-  $ chmod 0770 .hg/store
+  $ chmod 0770 .hg/store .hg/cache
 
 before commit
 store can be written by the group, other files cannot
@@ -51,6 +51,7 @@ store is setgid
   $ "$PYTHON" ../printmodes.py .
   00700 ./.hg/
   00600 ./.hg/00changelog.i
+  00770 ./.hg/cache/
   00600 ./.hg/requires
   00770 ./.hg/store/
 
@@ -116,6 +117,7 @@ group can write everything
   $ "$PYTHON" ../printmodes.py ../push
   00770 ../push/.hg/
   00660 ../push/.hg/00changelog.i
+  00770 ../push/.hg/cache/
   00660 ../push/.hg/requires
   00770 ../push/.hg/store/
 

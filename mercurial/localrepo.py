@@ -3010,6 +3010,8 @@ def createrepository(ui, path, createopts=None):
         wdirvfs.makedirs()
 
     hgvfs.makedir(notindexed=True)
+    if 'sharedrepo' not in createopts:
+        hgvfs.mkdir(b'cache')
 
     if b'store' in requirements and 'sharedrepo' not in createopts:
         hgvfs.mkdir(b'store')

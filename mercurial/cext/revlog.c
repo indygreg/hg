@@ -12,6 +12,7 @@
 #include <ctype.h>
 #include <limits.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "bitmanipulation.h"
@@ -1094,6 +1095,229 @@ static Py_ssize_t trim_endidx(indexObject *self, const Py_ssize_t *revs,
 		endidx -= 1;
 	}
 	return endidx;
+}
+
+struct Gap {
+	int64_t size;
+	Py_ssize_t idx;
+};
+
+static int gap_compare(const void *left, const void *right)
+{
+	const struct Gap *l_left = ((const struct Gap *)left);
+	const struct Gap *l_right = ((const struct Gap *)right);
+	if (l_left->size < l_right->size) {
+		return -1;
+	} else if (l_left->size > l_right->size) {
+		return 1;
+	}
+	return 0;
+}
+static int Py_ssize_t_compare(const void *left, const void *right)
+{
+	const Py_ssize_t l_left = *(const Py_ssize_t *)left;
+	const Py_ssize_t l_right = *(const Py_ssize_t *)right;
+	if (l_left < l_right) {
+		return -1;
+	} else if (l_left > l_right) {
+		return 1;
+	}
+	return 0;
+}
+
+static PyObject *index_slicechunktodensity(indexObject *self, PyObject *args)
+{
+	/* method arguments */
+	PyObject *list_revs = NULL; /* revisions in the chain */
+	double targetdensity = 0;   /* min density to achieve */
+	Py_ssize_t mingapsize = 0;  /* threshold to ignore gaps */
+
+	/* other core variables */
+	Py_ssize_t idxlen = index_length(self);
+	Py_ssize_t i;            /* used for various iteration */
+	PyObject *result = NULL; /* the final return of the function */
+
+	/* generic information about the delta chain being slice */
+	Py_ssize_t num_revs = 0;    /* size of the full delta chain */
+	Py_ssize_t *revs = NULL;    /* native array of revision in the chain */
+	int64_t chainpayload = 0;   /* sum of all delta in the chain */
+	int64_t deltachainspan = 0; /* distance from first byte to last byte */
+
+	/* variable used for slicing the delta chain */
+	int64_t readdata = 0; /* amount of data currently planned to be read */
+	double density = 0;   /* ration of payload data compared to read ones */
+	int64_t previous_end;
+	struct Gap *gaps = NULL; /* array of notable gap in the chain */
+	Py_ssize_t num_gaps =
+	    0; /* total number of notable gap recorded so far */
+	Py_ssize_t *selected_indices = NULL; /* indices of gap skipped over */
+	Py_ssize_t num_selected = 0;         /* number of gaps skipped */
+	PyObject *chunk = NULL;              /* individual slice */
+	PyObject *allchunks = NULL;          /* all slices */
+	Py_ssize_t previdx;
+
+	/* parsing argument */
+	if (!PyArg_ParseTuple(args, "O!dn", &PyList_Type, &list_revs,
+	                      &targetdensity, &mingapsize)) {
+		goto bail;
+	}
+
+	/* If the delta chain contains a single element, we do not need slicing
+	 */
+	num_revs = PyList_GET_SIZE(list_revs);
+	if (num_revs <= 1) {
+		result = PyTuple_Pack(1, list_revs);
+		goto done;
+	}
+
+	/* Turn the python list into a native integer array (for efficiency) */
+	revs = (Py_ssize_t *)calloc(num_revs, sizeof(Py_ssize_t));
+	if (revs == NULL) {
+		PyErr_NoMemory();
+		goto bail;
+	}
+	for (i = 0; i < num_revs; i++) {
+		Py_ssize_t revnum = PyInt_AsLong(PyList_GET_ITEM(list_revs, i));
+		if (revnum == -1 && PyErr_Occurred()) {
+			goto bail;
+		}
+		if (revnum < 0 || revnum >= idxlen) {
+			PyErr_SetString(PyExc_IndexError, "index out of range");
+			goto bail;
+		}
+		revs[i] = revnum;
+	}
+
+	/* Compute and check various property of the unsliced delta chain */
+	deltachainspan = index_segment_span(self, revs[0], revs[num_revs - 1]);
+	if (deltachainspan < 0) {
+		goto bail;
+	}
+
+	if (deltachainspan <= mingapsize) {
+		result = PyTuple_Pack(1, list_revs);
+		goto done;
+	}
+	chainpayload = 0;
+	for (i = 0; i < num_revs; i++) {
+		int tmp = index_get_length(self, revs[i]);
+		if (tmp < 0) {
+			goto bail;
+		}
+		chainpayload += tmp;
+	}
+
+	readdata = deltachainspan;
+	density = 1.0;
+
+	if (0 < deltachainspan) {
+		density = (double)chainpayload / (double)deltachainspan;
+	}
+
+	if (density >= targetdensity) {
+		result = PyTuple_Pack(1, list_revs);
+		goto done;
+	}
+
+	/* if chain is too sparse, look for relevant gaps */
+	gaps = (struct Gap *)calloc(num_revs, sizeof(struct Gap));
+	if (gaps == NULL) {
+		PyErr_NoMemory();
+		goto bail;
+	}
+
+	previous_end = -1;
+	for (i = 0; i < num_revs; i++) {
+		int64_t revstart;
+		int revsize;
+		revstart = index_get_start(self, revs[i]);
+		if (revstart < 0) {
+			goto bail;
+		};
+		revsize = index_get_length(self, revs[i]);
+		if (revsize < 0) {
+			goto bail;
+		};
+		if (revsize == 0) {
+			continue;
+		}
+		if (previous_end >= 0) {
+			int64_t gapsize = revstart - previous_end;
+			if (gapsize > mingapsize) {
+				gaps[num_gaps].size = gapsize;
+				gaps[num_gaps].idx = i;
+				num_gaps += 1;
+			}
+		}
+		previous_end = revstart + revsize;
+	}
+	if (num_gaps == 0) {
+		result = PyTuple_Pack(1, list_revs);
+		goto done;
+	}
+	qsort(gaps, num_gaps, sizeof(struct Gap), &gap_compare);
+
+	/* Slice the largest gap first, they improve the density the most */
+	selected_indices =
+	    (Py_ssize_t *)malloc((num_gaps + 1) * sizeof(Py_ssize_t));
+	if (selected_indices == NULL) {
+		PyErr_NoMemory();
+		goto bail;
+	}
+
+	for (i = num_gaps - 1; i >= 0; i--) {
+		selected_indices[num_selected] = gaps[i].idx;
+		readdata -= gaps[i].size;
+		num_selected += 1;
+		if (readdata <= 0) {
+			density = 1.0;
+		} else {
+			density = (double)chainpayload / (double)readdata;
+		}
+		if (density >= targetdensity) {
+			break;
+		}
+	}
+	qsort(selected_indices, num_selected, sizeof(Py_ssize_t),
+	      &Py_ssize_t_compare);
+
+	/* create the resulting slice */
+	allchunks = PyList_New(0);
+	if (allchunks == NULL) {
+		goto bail;
+	}
+	previdx = 0;
+	selected_indices[num_selected] = num_revs;
+	for (i = 0; i <= num_selected; i++) {
+		Py_ssize_t idx = selected_indices[i];
+		Py_ssize_t endidx = trim_endidx(self, revs, previdx, idx);
+		if (endidx < 0) {
+			goto bail;
+		}
+		if (previdx < endidx) {
+			chunk = PyList_GetSlice(list_revs, previdx, endidx);
+			if (chunk == NULL) {
+				goto bail;
+			}
+			if (PyList_Append(allchunks, chunk) == -1) {
+				goto bail;
+			}
+			Py_DECREF(chunk);
+			chunk = NULL;
+		}
+		previdx = idx;
+	}
+	result = allchunks;
+	goto done;
+
+bail:
+	Py_XDECREF(allchunks);
+	Py_XDECREF(chunk);
+done:
+	free(revs);
+	free(gaps);
+	free(selected_indices);
+	return result;
 }
 
 static inline int nt_level(const char *node, Py_ssize_t level)
@@ -2328,6 +2552,8 @@ static PyMethodDef index_methods[] = {
      "get filtered head revisions"}, /* Can always do filtering */
     {"deltachain", (PyCFunction)index_deltachain, METH_VARARGS,
      "determine revisions with deltas to reconstruct fulltext"},
+    {"slicechunktodensity", (PyCFunction)index_slicechunktodensity,
+     METH_VARARGS, "determine revisions with deltas to reconstruct fulltext"},
     {"append", (PyCFunction)index_append, METH_O, "append an index entry"},
     {"partialmatch", (PyCFunction)index_partialmatch, METH_VARARGS,
      "match a potentially ambiguous node ID"},

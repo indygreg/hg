@@ -250,9 +250,17 @@ def dispatch(req):
                 req.ui._blockedtimes['command_duration'] = duration * 1000
                 req.ui.log('uiblocked', 'ui blocked ms',
                            **pycompat.strkwargs(req.ui._blockedtimes))
-            req.ui.log("commandfinish", "%s exited %d after %0.2f seconds\n",
-                       msg, ret & 255, duration,
-                       canonical_command=req.canonical_command)
+            return_code = ret & 255
+            req.ui.log(
+                "commandfinish",
+                "%s exited %d after %0.2f seconds\n",
+                msg,
+                return_code,
+                duration,
+                return_code=return_code,
+                duration=duration,
+                canonical_command=req.canonical_command,
+            )
             try:
                 req._runexithandlers()
             except: # exiting, so no re-raises

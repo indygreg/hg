@@ -567,11 +567,13 @@ updated from null), fails the same as a clone operation.
   $ hg --config extensions.share= --config progress.disable=True \
   >    share ../empty2 ../empty_share
   updating working directory
+  sharing subrepo foo from $TESTTMP/empty2/foo
   abort: repository $TESTTMP/empty2/foo not found!
   [255]
 
   $ hg --config progress.disable=True clone ../empty2 ../empty_clone
   updating to branch default
+  cloning subrepo foo from $TESTTMP/empty2/foo
   abort: repository $TESTTMP/empty2/foo not found!
   [255]
 

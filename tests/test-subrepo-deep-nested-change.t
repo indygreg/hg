@@ -108,6 +108,7 @@ are also available as siblings of 'main'.
   added 1 changesets with 3 changes to 3 files
   new changesets 7f491f53a367
   updating to branch default
+  cloning subrepo sub1 from http://localhost:$HGPORT/../sub1
   abort: HTTP Error 404: Not Found
   [255]
 

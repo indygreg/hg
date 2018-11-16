@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import contextlib
 import errno
 import hashlib
 import json
@@ -297,8 +298,8 @@ class _gitlfsremote(object):
         batchreq.add_header('Accept', 'application/vnd.git-lfs+json')
         batchreq.add_header('Content-Type', 'application/vnd.git-lfs+json')
         try:
-            rsp = self.urlopener.open(batchreq)
-            rawjson = rsp.read()
+            with contextlib.closing(self.urlopener.open(batchreq)) as rsp:
+                rawjson = rsp.read()
         except util.urlerr.httperror as ex:
             hints = {
                 400: _('check that lfs serving is enabled on %s and "%s" is '
@@ -419,25 +420,27 @@ class _gitlfsremote(object):
 
         response = b''
         try:
-            req = self.urlopener.open(request)
+            with contextlib.closing(self.urlopener.open(request)) as req:
+                ui = self.ui  # Shorten debug lines
+                if self.ui.debugflag:
+                    ui.debug('Status: %d\n' % req.status)
+                    # lfs-test-server and hg serve return headers in different
+                    # order
+                    ui.debug('%s\n'
+                             % '\n'.join(sorted(str(req.info()).splitlines())))
 
-            if self.ui.debugflag:
-                self.ui.debug('Status: %d\n' % req.status)
-                # lfs-test-server and hg serve return headers in different order
-                self.ui.debug('%s\n'
-                              % '\n'.join(sorted(str(req.info()).splitlines())))
-
-            if action == 'download':
-                # If downloading blobs, store downloaded data to local blobstore
-                localstore.download(oid, req)
-            else:
-                while True:
-                    data = req.read(1048576)
-                    if not data:
-                        break
-                    response += data
-                if response:
-                    self.ui.debug('lfs %s response: %s' % (action, response))
+                if action == 'download':
+                    # If downloading blobs, store downloaded data to local
+                    # blobstore
+                    localstore.download(oid, req)
+                else:
+                    while True:
+                        data = req.read(1048576)
+                        if not data:
+                            break
+                        response += data
+                    if response:
+                        ui.debug('lfs %s response: %s' % (action, response))
         except util.urlerr.httperror as ex:
             if self.ui.debugflag:
                 self.ui.debug('%s: %s\n' % (oid, ex.read()))

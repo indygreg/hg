@@ -190,6 +190,27 @@ CFG: {b'x.password': b'xpassword', b'x.prefix': b'http://example.org/foo/bar', b
 URI: http://y@example.org/foo/bar
      ('y', 'xpassword')
 
+*** Test user matching with name in prefix
+
+CFG: {b'x.password': b'xpassword', b'x.prefix': b'https://example.org/foo', b'x.username': None, b'y.password': b'ypassword', b'y.prefix': b'http://y@example.org/foo', b'y.username': b'y'}
+URI: http://y@example.org/foo
+     ('y', 'ypassword')
+CFG: {b'y.password': b'ypassword', b'y.prefix': b'http://z@example.org/foo', b'y.username': b'y'}
+URI: http://y@example.org/foo
+     abort
+CFG: {b'y.password': b'ypassword', b'y.prefix': b'http://z@example.org/foo'}
+URI: http://y@example.org/foo
+     abort
+CFG: {b'y.password': b'ypassword', b'y.prefix': b'http://y@example.org/foo', b'y.username': b'z'}
+URI: http://y@example.org/foo
+     abort
+CFG: {b'y.password': b'ypassword', b'y.prefix': b'http://y@example.org/foo'}
+URI: http://y@example.org/foo
+     ('y', 'ypassword')
+CFG: {b'y.password': b'ypassword', b'y.prefix': b'http://y@example.org/foo'}
+URI: http://example.org/foo
+     abort
+
 *** Test urllib2 and util.url
 
 URIs: http://user@example.com:8080/foo http://example.com:8080/foo

@@ -92,6 +92,18 @@ def readauthforuri(ui, uri, user):
         prefix = auth.get('prefix')
         if not prefix:
             continue
+
+        prefixurl = util.url(prefix)
+        if prefixurl.user and prefixurl.user != user:
+            # If a username was set in the prefix, it must match the username in
+            # the URI.
+            continue
+
+        # The URI passed in has been stripped of credentials, so erase the user
+        # here to allow simpler matching.
+        prefixurl.user = None
+        prefix = bytes(prefixurl)
+
         p = prefix.split('://', 1)
         if len(p) > 1:
             schemes, prefix = [p[0]], p[1]

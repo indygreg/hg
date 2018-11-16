@@ -104,6 +104,39 @@ test({'x.prefix': 'http://example.org/foo/bar',
       'y.password': 'ypassword'},
      urls=['http://y@example.org/foo/bar'])
 
+print('\n*** Test user matching with name in prefix\n')
+
+# prefix, username and URL have the same user
+test({'x.prefix': 'https://example.org/foo',
+      'x.username': None,
+      'x.password': 'xpassword',
+      'y.prefix': 'http://y@example.org/foo',
+      'y.username': 'y',
+      'y.password': 'ypassword'},
+     urls=['http://y@example.org/foo'])
+# Prefix has a different user from username and URL
+test({'y.prefix': 'http://z@example.org/foo',
+      'y.username': 'y',
+      'y.password': 'ypassword'},
+     urls=['http://y@example.org/foo'])
+# Prefix has a different user from URL; no username
+test({'y.prefix': 'http://z@example.org/foo',
+      'y.password': 'ypassword'},
+     urls=['http://y@example.org/foo'])
+# Prefix and URL have same user, but doesn't match username
+test({'y.prefix': 'http://y@example.org/foo',
+      'y.username': 'z',
+      'y.password': 'ypassword'},
+     urls=['http://y@example.org/foo'])
+# Prefix and URL have the same user; no username
+test({'y.prefix': 'http://y@example.org/foo',
+      'y.password': 'ypassword'},
+     urls=['http://y@example.org/foo'])
+# Prefix user, but no URL user or username
+test({'y.prefix': 'http://y@example.org/foo',
+      'y.password': 'ypassword'},
+     urls=['http://example.org/foo'])
+
 def testauthinfo(fullurl, authurl):
     print('URIs:', fullurl, authurl)
     pm = urlreq.httppasswordmgrwithdefaultrealm()

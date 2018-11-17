@@ -22,6 +22,7 @@ from .common import (
 from .. import (
     encoding,
     error,
+    extensions,
     formatter,
     hg,
     hook,
@@ -212,6 +213,7 @@ class hgweb(object):
                 u = baseui.copy()
             else:
                 u = uimod.ui.load()
+                extensions.loadall(u)
             r = hg.repository(u, repo)
         else:
             # we trust caller to give us a private copy

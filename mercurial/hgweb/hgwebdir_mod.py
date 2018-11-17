@@ -30,6 +30,7 @@ from .. import (
     configitems,
     encoding,
     error,
+    extensions,
     hg,
     profiling,
     pycompat,
@@ -268,6 +269,9 @@ class hgwebdir(object):
         self.lastrefresh = 0
         self.motd = None
         self.refresh()
+        if not baseui:
+            # set up environment for new ui
+            extensions.loadall(self.ui)
 
     def refresh(self):
         if self.ui:

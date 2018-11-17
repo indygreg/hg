@@ -327,6 +327,29 @@ Test log recursion from dirty status check
 cleanup
   $ cd ..
 
+Test missing log directory, which shouldn't be created automatically
+
+  $ cat <<'EOF' > closeremove.py
+  > def reposetup(ui, repo):
+  >     class rmrepo(repo.__class__):
+  >         def close(self):
+  >             super(rmrepo, self).close()
+  >             self.ui.debug(b'removing %s\n' % self.vfs.base)
+  >             self.vfs.rmtree()
+  >     repo.__class__ = rmrepo
+  > EOF
+
+  $ hg init gone
+  $ cd gone
+  $ cat <<'EOF' > .hg/hgrc
+  > [extensions]
+  > closeremove = ../closeremove.py
+  > EOF
+  $ hg log --debug
+  removing $TESTTMP/gone/.hg
+  warning: cannot write to blackbox.log: $ENOENT$
+  $ cd ..
+
 #if chg
 
 when using chg, blackbox.log should get rotated correctly

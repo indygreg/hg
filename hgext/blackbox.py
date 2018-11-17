@@ -121,7 +121,7 @@ def _openlogfile(ui, vfs):
                            newpath='%s.%d' % (path, i))
                 rotate(oldpath=path,
                        newpath=maxfiles > 0 and path + '.1')
-    return vfs(name, 'a')
+    return vfs(name, 'a', makeparentdirs=False)
 
 class proxylogger(object):
     """Forward log events to another logger to be set later"""
@@ -143,22 +143,10 @@ class blackboxlogger(object):
         self._repo = repo
         self._trackedevents = set(ui.configlist('blackbox', 'track'))
 
-    @property
-    def _bbvfs(self):
-        vfs = self._repo.vfs
-        if not vfs.isdir('.'):
-            vfs = None
-        return vfs
-
     def tracked(self, event):
         return b'*' in self._trackedevents or event in self._trackedevents
 
     def log(self, ui, event, msg, opts):
-        if self._bbvfs:
-            _lastlogger.logger = self
-        else:
-            return
-
         default = ui.configdate('devel', 'default-date')
         date = dateutil.datestr(default, ui.config('blackbox', 'date-format'))
         user = procutil.getuser()
@@ -178,13 +166,15 @@ class blackboxlogger(object):
         try:
             fmt = '%s %s @%s%s (%s)%s> %s'
             args = (date, user, rev, changed, pid, src, msg)
-            with _openlogfile(ui, self._bbvfs) as fp:
+            with _openlogfile(ui, self._repo.vfs) as fp:
                 fp.write(fmt % args)
         except (IOError, OSError) as err:
             # deactivate this to avoid failed logging again
             self._trackedevents.clear()
             ui.debug('warning: cannot write to blackbox.log: %s\n' %
                      encoding.strtolocal(err.strerror))
+            return
+        _lastlogger.logger = self
 
 def uipopulate(ui):
     ui.setlogger(b'blackbox', _lastlogger)

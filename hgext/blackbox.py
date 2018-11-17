@@ -159,7 +159,7 @@ class blackboxlogger(object):
 
     def _log(self, ui, event, msg, opts):
         if self._inlog:
-            # recursion and failure guard
+            # recursion guard
             return
         self._inlog = True
         default = ui.configdate('devel', 'default-date')
@@ -185,10 +185,10 @@ class blackboxlogger(object):
             with _openlogfile(ui, self._bbvfs) as fp:
                 fp.write(fmt % args)
         except (IOError, OSError) as err:
+            # deactivate this to avoid failed logging again
+            self._repo = None
             ui.debug('warning: cannot write to blackbox.log: %s\n' %
                      encoding.strtolocal(err.strerror))
-            # do not restore _inlog intentionally to avoid failed
-            # logging again
         else:
             self._inlog = False
 

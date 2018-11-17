@@ -184,7 +184,7 @@ class blackboxlogger(object):
                 fp.write(fmt % args)
         except (IOError, OSError) as err:
             # deactivate this to avoid failed logging again
-            self._repo = None
+            self._trackedevents.clear()
             ui.debug('warning: cannot write to blackbox.log: %s\n' %
                      encoding.strtolocal(err.strerror))
 

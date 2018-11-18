@@ -89,7 +89,7 @@ configitem('blackbox', 'date-format',
     default='%Y/%m/%d %H:%M:%S',
 )
 
-def _openlogfile(ui, vfs):
+def _openlogfile(ui, vfs, name, maxfiles=0, maxsize=0):
     def rotate(oldpath, newpath):
         try:
             vfs.unlink(newpath)
@@ -105,8 +105,6 @@ def _openlogfile(ui, vfs):
                 ui.debug("warning: cannot rename '%s' to '%s': %s\n" %
                          (newpath, oldpath, err.strerror))
 
-    maxsize = ui.configbytes('blackbox', 'maxsize')
-    name = 'blackbox.log'
     if maxsize > 0:
         try:
             st = vfs.stat(name)
@@ -115,7 +113,6 @@ def _openlogfile(ui, vfs):
         else:
             if st.st_size >= maxsize:
                 path = vfs.join(name)
-                maxfiles = ui.configint('blackbox', 'maxfiles')
                 for i in pycompat.xrange(maxfiles - 1, 1, -1):
                     rotate(oldpath='%s.%d' % (path, i - 1),
                            newpath='%s.%d' % (path, i))
@@ -142,6 +139,8 @@ class blackboxlogger(object):
     def __init__(self, ui, repo):
         self._repo = repo
         self._trackedevents = set(ui.configlist('blackbox', 'track'))
+        self._maxfiles = ui.configint('blackbox', 'maxfiles')
+        self._maxsize = ui.configbytes('blackbox', 'maxsize')
 
     def tracked(self, event):
         return b'*' in self._trackedevents or event in self._trackedevents
@@ -166,7 +165,9 @@ class blackboxlogger(object):
         try:
             fmt = '%s %s @%s%s (%s)%s> %s'
             args = (date, user, rev, changed, pid, src, msg)
-            with _openlogfile(ui, self._repo.vfs) as fp:
+            with _openlogfile(ui, self._repo.vfs, name='blackbox.log',
+                              maxfiles=self._maxfiles,
+                              maxsize=self._maxsize) as fp:
                 fp.write(fmt % args)
         except (IOError, OSError) as err:
             # deactivate this to avoid failed logging again

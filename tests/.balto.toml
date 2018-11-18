@@ -1,0 +1,13 @@
+# Balto (https://bitbucket.org/lothiraldan/balto/src) is a test orchestrator
+# which is compatible with all test runner that can emit the LITF
+# (https://github.com/lothiraldan/litf) test format.
+
+# The plugin for the Mercurial test runner is mercurial-litf
+# (https://pypi.org/project/mercurial-litf/). Make sure to follow the
+# instruction and configuration instructions here:
+# https://bitbucket.org/lothiraldan/mercurial_litf/src/default/
+
+# You can launch Balto with `balto /path/to/mercurial/tests/`
+
+name = "Mercurial Test Suite"
+tool = "mercurial"

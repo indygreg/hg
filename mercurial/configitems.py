@@ -173,8 +173,17 @@ coreconfigitem('chgserver', 'skiphash',
 coreconfigitem('cmdserver', 'log',
     default=None,
 )
+coreconfigitem('cmdserver', 'max-log-files',
+    default=7,
+)
+coreconfigitem('cmdserver', 'max-log-size',
+    default='1 MB',
+)
 coreconfigitem('cmdserver', 'message-encodings',
     default=list,
+)
+coreconfigitem('cmdserver', 'track-log',
+    default=lambda: ['chgserver', 'cmdserver'],
 )
 coreconfigitem('color', '.*',
     default=None,

@@ -360,7 +360,8 @@ def setuplogging(ui, repo=None, fp=None):
     logpath = ui.config(b'cmdserver', b'log')
     if not logpath:
         return
-    tracked = {b'chgserver', b'cmdserver'}
+    # developer config: cmdserver.track-log
+    tracked = set(ui.configlist(b'cmdserver', b'track-log'))
 
     if logpath == b'-' and fp:
         logger = loggingutil.fileobjectlogger(fp, tracked)
@@ -368,8 +369,13 @@ def setuplogging(ui, repo=None, fp=None):
         logger = loggingutil.fileobjectlogger(ui.ferr, tracked)
     else:
         logpath = os.path.abspath(util.expandpath(logpath))
+        # developer config: cmdserver.max-log-files
+        maxfiles = ui.configint(b'cmdserver', b'max-log-files')
+        # developer config: cmdserver.max-log-size
+        maxsize = ui.configbytes(b'cmdserver', b'max-log-size')
         vfs = vfsmod.vfs(os.path.dirname(logpath))
-        logger = loggingutil.filelogger(vfs, os.path.basename(logpath), tracked)
+        logger = loggingutil.filelogger(vfs, os.path.basename(logpath), tracked,
+                                        maxfiles=maxfiles, maxsize=maxsize)
 
     targetuis = {ui}
     if repo:

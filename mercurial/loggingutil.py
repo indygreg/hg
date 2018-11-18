@@ -15,6 +15,10 @@ from . import (
 )
 
 def openlogfile(ui, vfs, name, maxfiles=0, maxsize=0):
+    """Open log file in append mode, with optional rotation
+
+    If maxsize > 0, the log file will be rotated up to maxfiles.
+    """
     def rotate(oldpath, newpath):
         try:
             vfs.unlink(newpath)

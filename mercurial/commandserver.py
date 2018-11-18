@@ -573,7 +573,8 @@ class unixforkingservice(object):
             pid = os.fork()
             if pid:
                 try:
-                    self.ui.debug('forked worker process (pid=%d)\n' % pid)
+                    self.ui.log(b'cmdserver',
+                                b'forked worker process (pid=%d)\n', pid)
                     self._workerpids.add(pid)
                     h.newconnection()
                 finally:
@@ -610,7 +611,7 @@ class unixforkingservice(object):
             if pid == 0:
                 # no waitable child processes
                 return
-            self.ui.debug('worker process exited (pid=%d)\n' % pid)
+            self.ui.log(b'cmdserver', b'worker process exited (pid=%d)\n', pid)
             self._workerpids.discard(pid)
 
     def _runworker(self, conn):

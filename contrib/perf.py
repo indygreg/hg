@@ -275,7 +275,7 @@ def gettimer(ui, opts=None):
     displayall = ui.configbool(b"perf", b"all-timing", False)
     return functools.partial(_timer, fm, displayall=displayall), fm
 
-def stub_timer(fm, func, title=None):
+def stub_timer(fm, func, setup=None, title=None):
     func()
 
 @contextlib.contextmanager
@@ -289,12 +289,14 @@ def timeone():
     a, b = ostart, ostop
     r.append((cstop - cstart, b[0] - a[0], b[1]-a[1]))
 
-def _timer(fm, func, title=None, displayall=False):
+def _timer(fm, func, setup=None, title=None, displayall=False):
     gc.collect()
     results = []
     begin = util.timer()
     count = 0
     while True:
+        if setup is not None:
+            setup()
         with timeone() as item:
             r = func()
         count += 1

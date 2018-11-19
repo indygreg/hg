@@ -28,6 +28,7 @@ from .. import (
 # which was part of Python 3.7.
 _respecial = pycompat.bytestr(b'()[]{}?*+-|^$\\.&~# \t\n\r\v\f')
 _regexescapemap = {ord(i): (b'\\' + i).decode('latin1') for i in _respecial}
+regexbytesescapemap = {i: (b'\\' + i) for i in _respecial}
 
 def reescape(pat):
     """Drop-in replacement for re.escape."""

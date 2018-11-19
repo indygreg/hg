@@ -1057,14 +1057,14 @@ def _globre(pat):
     i, n = 0, len(pat)
     res = ''
     group = 0
-    escape = util.stringutil.reescape
+    escape = util.stringutil.regexbytesescapemap.get
     def peek():
         return i < n and pat[i:i + 1]
     while i < n:
         c = pat[i:i + 1]
         i += 1
         if c not in '*?[{},\\':
-            res += escape(c)
+            res += escape(c, c)
         elif c == '*':
             if peek() == '*':
                 i += 1
@@ -1105,11 +1105,11 @@ def _globre(pat):
             p = peek()
             if p:
                 i += 1
-                res += escape(p)
+                res += escape(p, p)
             else:
-                res += escape(c)
+                res += escape(c, c)
         else:
-            res += escape(c)
+            res += escape(c, c)
     return res
 
 def _regex(kind, pat, globsuffix):

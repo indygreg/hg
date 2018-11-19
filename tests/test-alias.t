@@ -623,9 +623,9 @@ invalid character in user-specified help
   >>> with open('.hg/hgrc', 'ab') as f:
   ...     f.write(b'[alias]\n'
   ...             b'invaliddoc = log\n'
-  ...             b'invaliddoc:doc = \xc0\n'
+  ...             b'invaliddoc:doc = \xc3\xa9\n'
   ...             b'invalidhelp = log\n'
-  ...             b'invalidhelp:help = \xc0\n') and None
+  ...             b'invalidhelp:help = \xc3\xa9\n') and None
   $ hg help invaliddoc
   non-ASCII character in alias definition 'invaliddoc:doc'
   $ hg help invalidhelp

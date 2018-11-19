@@ -33,7 +33,7 @@ def debugremotefilelog(ui, path, **opts):
 
     size, firstnode, mapping = parsefileblob(path, decompress)
 
-    ui.status(_("size: %s bytes\n") % (size))
+    ui.status(_("size: %d bytes\n") % (size))
     ui.status(_("path: %s \n") % (path))
     ui.status(_("key: %s \n") % (short(firstnode)))
     ui.status(_("\n"))

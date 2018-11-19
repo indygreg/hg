@@ -518,6 +518,15 @@ test-releasenotes-formatting.t
 test-releasenotes-merging.t
 test-releasenotes-parsing.t
 test-relink.t
+test-remotefilelog-bad-configs.t
+test-remotefilelog-blame.t
+test-remotefilelog-clone-tree.t
+test-remotefilelog-clone.t
+test-remotefilelog-keepset.t
+test-remotefilelog-partial-shallow.t
+test-remotefilelog-prefetch.t
+test-remotefilelog-share.t
+test-remotefilelog-tags.t
 test-remove.t
 test-removeemptydirs.t
 test-rename-after-merge.t

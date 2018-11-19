@@ -1404,7 +1404,7 @@ def perfdiffwd(ui, repo, **opts):
             ui.popbuffer()
         diffopt = diffopt.encode('ascii')
         title = b'diffopts: %s' % (diffopt and (b'-' + diffopt) or b'none')
-        timer(d, title)
+        timer(d, title=title)
     fm.end()
 
 @command(b'perfrevlogindex', revlogopts + formatteropts,

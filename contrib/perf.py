@@ -576,10 +576,12 @@ def perfbookmarks(ui, repo, **opts):
     """benchmark parsing bookmarks from disk to memory"""
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
-    def d():
+
+    def s():
         clearfilecache(repo, b'_bookmarks')
+    def d():
         repo._bookmarks
-    timer(d)
+    timer(d, setup=s)
     fm.end()
 
 @command(b'perfbundleread', formatteropts, b'BUNDLE')

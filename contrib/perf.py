@@ -1153,6 +1153,54 @@ def perftemplating(ui, repo, testedtemplate=None, **opts):
     timer(format)
     fm.end()
 
+@command(b'perfhelper-tracecopies', formatteropts +
+         [
+          (b'r', b'revs', [], b'restrict search to these revisions'),
+         ])
+def perfhelpertracecopies(ui, repo, revs=[], **opts):
+    """find statistic about potential parameters for the `perftracecopies`
+
+    This command find source-destination pair relevant for copytracing testing.
+    It report value for some of the parameters that impact copy tracing time.
+    """
+    opts = _byteskwargs(opts)
+    fm = ui.formatter(b'perf', opts)
+    header = '%12s %12s %12s %12s\n'
+    output = ("%(source)12s %(destination)12s "
+              "%(nbrevs)12d %(nbmissingfiles)12d\n")
+    fm.plain(header % ("source", "destination", "nb-revs", "nb-files"))
+
+    if not revs:
+        revs = ['all()']
+    revs = scmutil.revrange(repo, revs)
+
+    roi = repo.revs('merge() and %ld', revs)
+    for r in roi:
+        ctx = repo[r]
+        p1 = ctx.p1().rev()
+        p2 = ctx.p2().rev()
+        bases = repo.changelog._commonancestorsheads(p1, p2)
+        for p in (p1, p2):
+            for b in bases:
+                base = repo[b]
+                parent = repo[p]
+                missing = copies._computeforwardmissing(base, parent)
+                if not missing:
+                    continue
+                fm.startitem()
+                data = {
+                    b'source': base.hex(),
+                    b'destination': parent.hex(),
+                    b'nbrevs': len(repo.revs('%d::%d', b, p)),
+                    b'nbmissingfiles': len(missing),
+                }
+                fm.data(**data)
+                out = data.copy()
+                out['source'] = fm.hexfunc(base.node())
+                out['destination'] = fm.hexfunc(parent.node())
+                fm.plain(output % out)
+    fm.end()
+
 @command(b'perfcca', formatteropts)
 def perfcca(ui, repo, **opts):
     opts = _byteskwargs(opts)

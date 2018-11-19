@@ -1331,8 +1331,13 @@ def readpatternfile(filepath, warn, sourceinfo=False):
     (pattern, lineno, originalline). This is useful to debug ignore patterns.
     '''
 
-    syntaxes = {'re': 'relre:', 'regexp': 'relre:', 'glob': 'relglob:',
-                'include': 'include', 'subinclude': 'subinclude'}
+    syntaxes = {
+        're': 'relre:',
+        'regexp': 'relre:',
+        'glob': 'relglob:',
+        'include': 'include',
+        'subinclude': 'subinclude',
+    }
     syntax = 'relre:'
     patterns = []
 

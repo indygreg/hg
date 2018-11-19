@@ -240,7 +240,7 @@ def _lfconvert_addchangeset(rsrc, rdst, ctx, revmap, lfiles, normalfiles,
                 # largefile was modified, update standins
                 m = hashlib.sha1('')
                 m.update(ctx[f].data())
-                hash = m.hexdigest()
+                hash = node.hex(m.digest())
                 if f not in lfiletohash or lfiletohash[f] != hash:
                     rdst.wwrite(f, ctx[f].data(), ctx[f].flags())
                     executable = 'x' in ctx[f].flags()

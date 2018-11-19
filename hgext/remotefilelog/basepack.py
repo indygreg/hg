@@ -10,6 +10,7 @@ import time
 
 from mercurial.i18n import _
 from mercurial import (
+    node as nodemod,
     policy,
     pycompat,
     util,
@@ -412,7 +413,7 @@ class mutablebasepack(versionmixin):
             return
 
         try:
-            sha = self.sha.hexdigest()
+            sha = nodemod.hex(self.sha.digest())
             self.packfp.close()
             self.writeindex()
 

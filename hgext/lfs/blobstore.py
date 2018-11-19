@@ -20,6 +20,7 @@ from mercurial.i18n import _
 from mercurial import (
     encoding,
     error,
+    node,
     pathutil,
     pycompat,
     url as urlmod,
@@ -156,7 +157,7 @@ class local(object):
                 fp.write(chunk)
                 sha256.update(chunk)
 
-            realoid = sha256.hexdigest()
+            realoid = node.hex(sha256.digest())
             if realoid != oid:
                 raise LfsCorruptionError(_('corrupt remote lfs object: %s')
                                          % oid)
@@ -206,7 +207,7 @@ class local(object):
             # Don't abort if corruption is detected, because `hg verify` will
             # give more useful info about the corruption- simply don't add the
             # hardlink.
-            if verify or hashlib.sha256(blob).hexdigest() == oid:
+            if verify or node.hex(hashlib.sha256(blob).digest()) == oid:
                 self.ui.note(_('lfs: found %s in the usercache\n') % oid)
                 lfutil.link(self.cachevfs.join(oid), self.vfs.join(oid))
         else:
@@ -230,7 +231,7 @@ class local(object):
             for chunk in util.filechunkiter(fp, size=1048576):
                 sha256.update(chunk)
 
-        return oid == sha256.hexdigest()
+        return oid == node.hex(sha256.digest())
 
     def has(self, oid):
         """Returns True if the local blobstore contains the requested blob,
@@ -587,7 +588,7 @@ def _deduplicate(pointers):
     return reduced.values()
 
 def _verify(oid, content):
-    realoid = hashlib.sha256(content).hexdigest()
+    realoid = node.hex(hashlib.sha256(content).digest())
     if realoid != oid:
         raise LfsCorruptionError(_('detected corrupt lfs object: %s') % oid,
                                  hint=_('run hg verify'))

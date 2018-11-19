@@ -138,7 +138,7 @@ def hashdiffopts(diffopts):
         (k, getattr(diffopts, k))
         for k in mdiff.diffopts.defaults
     ))
-    return hashlib.sha1(diffoptstr).hexdigest()[:6]
+    return node.hex(hashlib.sha1(diffoptstr).digest())[:6]
 
 _defaultdiffopthash = hashdiffopts(mdiff.defaultopts)
 

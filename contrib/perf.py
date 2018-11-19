@@ -457,11 +457,13 @@ def repocleartagscachefunc(repo):
 
 # utilities to clear cache
 
-def clearfilecache(repo, attrname):
-    unfi = repo.unfiltered()
-    if attrname in vars(unfi):
-        delattr(unfi, attrname)
-    unfi._filecache.pop(attrname, None)
+def clearfilecache(obj, attrname):
+    unfiltered = getattr(obj, 'unfiltered', None)
+    if unfiltered is not None:
+        obj = obj.unfiltered()
+    if attrname in vars(obj):
+        delattr(obj, attrname)
+    obj._filecache.pop(attrname, None)
 
 # perf commands
 

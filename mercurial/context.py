@@ -763,8 +763,10 @@ class basefilectx(object):
     def isintroducedafter(self, changelogrev):
         """True if a filectx has been introduced after a given floor revision
         """
-        return (self.linkrev() >= changelogrev
-                or self._introrev() >= changelogrev)
+        if self.linkrev() >= changelogrev:
+            return True
+        introrev = self._introrev()
+        return introrev >= changelogrev
 
     def introrev(self):
         """return the rev of the changeset which introduced this file revision

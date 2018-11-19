@@ -156,6 +156,7 @@ class annotateopts(object):
     }
 
     def __init__(self, **opts):
+        opts = pycompat.byteskwargs(opts)
         for k, v in self.defaults.iteritems():
             setattr(self, k, opts.get(k, v))
 

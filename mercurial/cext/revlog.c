@@ -185,6 +185,40 @@ static inline int index_get_parents(indexObject *self, Py_ssize_t rev, int *ps,
 	return 0;
 }
 
+static inline int64_t index_get_start(indexObject *self, Py_ssize_t rev)
+{
+	uint64_t offset;
+	if (rev >= self->length) {
+		PyObject *tuple;
+		PyObject *pylong;
+		PY_LONG_LONG tmp;
+		tuple = PyList_GET_ITEM(self->added, rev - self->length);
+		pylong = PyTuple_GET_ITEM(tuple, 0);
+		tmp = PyLong_AsLongLong(pylong);
+		if (tmp == -1 && PyErr_Occurred()) {
+			return -1;
+		}
+		if (tmp < 0) {
+			PyErr_Format(PyExc_OverflowError,
+			             "revlog entry size out of bound (%lld)",
+			             (long long)tmp);
+			return -1;
+		}
+		offset = (uint64_t)tmp;
+	} else {
+		const char *data = index_deref(self, rev);
+		offset = getbe32(data + 4);
+		if (rev == 0) {
+			/* mask out version number for the first entry */
+			offset &= 0xFFFF;
+		} else {
+			uint32_t offset_high = getbe32(data);
+			offset |= ((uint64_t)offset_high) << 32;
+		}
+	}
+	return (int64_t)(offset >> 16);
+}
+
 /*
  * RevlogNG format (all in big endian, data may be inlined):
  *    6 bytes: offset

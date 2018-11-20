@@ -28,15 +28,16 @@ share shouldn't have a full cache dir, original repo should
   default                        0:d3873e73d99e
   $ hg tags
   tip                                0:d3873e73d99e
-  $ ls -1 .hg/cache
-  checkisexec
-  checklink
-  checklink-target
+  $ ls -1 .hg/cache || true
+  ls: .hg/cache: $ENOENT$ (no-execbit no-symlink !)
+  checkisexec (execbit !)
+  checklink (symlink !)
+  checklink-target (symlink !)
   $ ls -1 ../repo1/.hg/cache
   branch2-served
-  checkisexec
-  checklink
-  checklink-target
+  checkisexec (execbit !)
+  checklink (symlink !)
+  checklink-target (symlink !)
   manifestfulltextcache (reporevlogstore !)
   rbc-names-v1
   rbc-revs-v1

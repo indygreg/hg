@@ -537,14 +537,15 @@ def perftags(ui, repo, **opts):
     timer, fm = gettimer(ui, opts)
     svfs = getsvfs(repo)
     repocleartagscache = repocleartagscachefunc(repo)
-    def t():
+    def s():
         repo.changelog = mercurial.changelog.changelog(svfs)
         rootmanifest = mercurial.manifest.manifestrevlog(svfs)
         repo.manifestlog = mercurial.manifest.manifestlog(svfs, repo,
                                                           rootmanifest)
         repocleartagscache()
+    def t():
         return len(repo.tags())
-    timer(t)
+    timer(t, setup=s)
     fm.end()
 
 @command(b'perfancestors', formatteropts)

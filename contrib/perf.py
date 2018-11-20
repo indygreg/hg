@@ -540,7 +540,7 @@ def perfheads(ui, repo, **opts):
 
 @command(b'perftags', formatteropts+
         [
-            (b'', b'clear-revlogs', True, b'refresh changelog and manifest'),
+            (b'', b'clear-revlogs', False, b'refresh changelog and manifest'),
         ])
 def perftags(ui, repo, **opts):
     opts = _byteskwargs(opts)

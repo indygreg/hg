@@ -562,9 +562,7 @@ class basefilectx(object):
 
     @propertycache
     def _changeid(self):
-        if r'_changeid' in self.__dict__:
-            return self._changeid
-        elif r'_changectx' in self.__dict__:
+        if r'_changectx' in self.__dict__:
             return self._changectx.rev()
         elif r'_descendantrev' in self.__dict__:
             # this file context was created from a revision with a known

@@ -345,12 +345,14 @@ class vfs(abstractvfs):
             self.audit(path, mode=mode)
 
     def __call__(self, path, mode="r", atomictemp=False, notindexed=False,
-                 backgroundclose=False, checkambig=False, auditpath=True):
+                 backgroundclose=False, checkambig=False, auditpath=True,
+                 makeparentdirs=True):
         '''Open ``path`` file, which is relative to vfs root.
 
-        Newly created directories are marked as "not to be indexed by
-        the content indexing service", if ``notindexed`` is specified
-        for "write" mode access.
+        By default, parent directories are created as needed. Newly created
+        directories are marked as "not to be indexed by the content indexing
+        service", if ``notindexed`` is specified for "write" mode access.
+        Set ``makeparentdirs=False`` to not create directories implicitly.
 
         If ``backgroundclose`` is passed, the file may be closed asynchronously.
         It can only be used if the ``self.backgroundclosing()`` context manager
@@ -389,7 +391,8 @@ class vfs(abstractvfs):
             # to a directory. Let the posixfile() call below raise IOError.
             if basename:
                 if atomictemp:
-                    util.makedirs(dirname, self.createmode, notindexed)
+                    if makeparentdirs:
+                        util.makedirs(dirname, self.createmode, notindexed)
                     return util.atomictempfile(f, mode, self.createmode,
                                                checkambig=checkambig)
                 try:
@@ -407,7 +410,8 @@ class vfs(abstractvfs):
                     if e.errno != errno.ENOENT:
                         raise
                     nlink = 0
-                    util.makedirs(dirname, self.createmode, notindexed)
+                    if makeparentdirs:
+                        util.makedirs(dirname, self.createmode, notindexed)
                 if nlink > 0:
                     if self._trustnlink is None:
                         self._trustnlink = nlink > 1 or util.checknlink(f)

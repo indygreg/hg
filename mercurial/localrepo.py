@@ -1417,10 +1417,11 @@ class localrepository(object):
             tags, tt = self._findtags()
         else:
             tags = self._tagscache.tags
+        rev = self.changelog.rev
         for k, v in tags.iteritems():
             try:
                 # ignore tags to unknown nodes
-                self.changelog.rev(v)
+                rev(v)
                 t[k] = v
             except (error.LookupError, ValueError):
                 pass

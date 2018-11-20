@@ -538,14 +538,19 @@ def perfheads(ui, repo, **opts):
     timer(d)
     fm.end()
 
-@command(b'perftags', formatteropts)
+@command(b'perftags', formatteropts+
+        [
+            (b'', b'clear-revlogs', True, b'refresh changelog and manifest'),
+        ])
 def perftags(ui, repo, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     repocleartagscache = repocleartagscachefunc(repo)
+    clearrevlogs = opts[b'clear_revlogs']
     def s():
-        clearchangelog(repo)
-        clearfilecache(repo.unfiltered(), 'manifest')
+        if clearrevlogs:
+            clearchangelog(repo)
+            clearfilecache(repo.unfiltered(), 'manifest')
         repocleartagscache()
     def t():
         return len(repo.tags())

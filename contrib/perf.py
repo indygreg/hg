@@ -581,13 +581,19 @@ def perfancestorset(ui, repo, revset, **opts):
     timer(d)
     fm.end()
 
-@command(b'perfbookmarks', formatteropts)
+@command(b'perfbookmarks', formatteropts +
+        [
+            (b'', b'clear-revlogs', False, b'refresh changelog and manifest'),
+        ])
 def perfbookmarks(ui, repo, **opts):
     """benchmark parsing bookmarks from disk to memory"""
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
 
+    clearrevlogs = opts[b'clear_revlogs']
     def s():
+        if clearrevlogs:
+            clearchangelog(repo)
         clearfilecache(repo, b'_bookmarks')
     def d():
         repo._bookmarks

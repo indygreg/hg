@@ -279,8 +279,7 @@ Test path auditing (issue5818)
   created new head
   $ hg rebase -s 1 -d .
   rebasing 1:* "b" (glob)
-  abort: path '*/lib/b' traverses symbolic link '*/lib' (glob)
-  [255]
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/*-rebase.hg (glob)
   $ cd ..
 
 Test dry-run rebasing

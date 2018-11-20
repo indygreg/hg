@@ -1848,8 +1848,8 @@ class overlayworkingctx(committablectx):
                 fail(path, component)
 
         # Test the other direction -- that this path from p2 isn't a directory
-        # in p1 (test that p1 doesn't any paths matching `path/*`).
-        match = matchmod.match('/', '', [path + '/'], default=b'relpath')
+        # in p1 (test that p1 doesn't have any paths matching `path/*`).
+        match = self.match(pats=[path + '/'], default=b'path')
         matches = self.p1().manifest().matches(match)
         mfiles = matches.keys()
         if len(mfiles) > 0:

@@ -260,10 +260,12 @@ def list_stdlib_modules():
                 break
         else:
             stdlib_prefixes.add(dirname)
+    sourceroot = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
     for libpath in sys.path:
-        # We want to walk everything in sys.path that starts with
-        # something in stdlib_prefixes.
-        if not any(libpath.startswith(p) for p in stdlib_prefixes):
+        # We want to walk everything in sys.path that starts with something in
+        # stdlib_prefixes, but not directories from the hg sources.
+        if (os.path.abspath(libpath).startswith(sourceroot)
+            or not any(libpath.startswith(p) for p in stdlib_prefixes)):
             continue
         for top, dirs, files in os.walk(libpath):
             for i, d in reversed(list(enumerate(dirs))):

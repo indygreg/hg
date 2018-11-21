@@ -622,7 +622,11 @@ class hgsubrepo(abstractsubrepo):
                 return True
         self._repo._subsource = source
         srcurl = _abssource(self._repo)
-        other = hg.peer(self._repo, {}, srcurl)
+
+        # Defer creating the peer until after the status message is logged, in
+        # case there are network problems.
+        getpeer = lambda: hg.peer(self._repo, {}, srcurl)
+
         if len(self._repo) == 0:
             # use self._repo.vfs instead of self.wvfs to remove .hg only
             self._repo.vfs.rmtree()
@@ -636,7 +640,7 @@ class hgsubrepo(abstractsubrepo):
                 self.ui.status(_('sharing subrepo %s from %s\n')
                                % (subrelpath(self), srcurl))
                 shared = hg.share(self._repo._subparent.baseui,
-                                  other, self._repo.root,
+                                  getpeer(), self._repo.root,
                                   update=False, bookmarks=False)
                 self._repo = shared.local()
             else:
@@ -657,7 +661,7 @@ class hgsubrepo(abstractsubrepo):
                 self.ui.status(_('cloning subrepo %s from %s\n')
                                % (subrelpath(self), util.hidepassword(srcurl)))
                 other, cloned = hg.clone(self._repo._subparent.baseui, {},
-                                         other, self._repo.root,
+                                         getpeer(), self._repo.root,
                                          update=False, shareopts=shareopts)
                 self._repo = cloned.local()
             self._initrepo(parentrepo, source, create=True)
@@ -666,7 +670,7 @@ class hgsubrepo(abstractsubrepo):
             self.ui.status(_('pulling subrepo %s from %s\n')
                            % (subrelpath(self), util.hidepassword(srcurl)))
             cleansub = self.storeclean(srcurl)
-            exchange.pull(self._repo, other)
+            exchange.pull(self._repo, getpeer())
             if cleansub:
                 # keep the repo clean after pull
                 self._cachestorehash(srcurl)

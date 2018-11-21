@@ -574,6 +574,7 @@ whereas clone should fail.
 
   $ hg --config progress.disable=True clone ../empty2 ../empty_clone
   updating to branch default
+  cloning subrepo foo from $TESTTMP/empty2/foo
   abort: repository $TESTTMP/empty2/foo not found!
   [255]
 

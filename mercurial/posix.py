@@ -181,7 +181,22 @@ def checkexec(path):
 
     try:
         EXECFLAGS = stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
-        cachedir = os.path.join(path, '.hg', 'cache')
+        basedir = os.path.join(path, '.hg')
+        cachedir = os.path.join(basedir, 'cache')
+        storedir = os.path.join(basedir, 'store')
+        if not os.path.exists(cachedir):
+            try:
+                # we want to create the 'cache' directory, not the '.hg' one.
+                # Automatically creating '.hg' directory could silently spawn
+                # invalid Mercurial repositories. That seems like a bad idea.
+                os.mkdir(cachedir)
+                if os.path.exists(storedir):
+                    copymode(storedir, cachedir)
+                else:
+                    copymode(basedir, cachedir)
+            except (IOError, OSError):
+                # we other fallback logic triggers
+                pass
         if os.path.isdir(cachedir):
             checkisexec = os.path.join(cachedir, 'checkisexec')
             checknoexec = os.path.join(cachedir, 'checknoexec')

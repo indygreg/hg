@@ -22,16 +22,22 @@ share shouldn't have a store dir
   $ test -d .hg/store
   [1]
 
-share shouldn't have a cache dir, original repo should
+share shouldn't have a full cache dir, original repo should
 
   $ hg branches
   default                        0:d3873e73d99e
   $ hg tags
   tip                                0:d3873e73d99e
-  $ test -d .hg/cache
-  [1]
+  $ ls -1 .hg/cache || true
+  ls: .hg/cache: $ENOENT$ (no-execbit no-symlink !)
+  checkisexec (execbit !)
+  checklink (symlink !)
+  checklink-target (symlink !)
   $ ls -1 ../repo1/.hg/cache
   branch2-served
+  checkisexec (execbit !)
+  checklink (symlink !)
+  checklink-target (symlink !)
   manifestfulltextcache (reporevlogstore !)
   rbc-names-v1
   rbc-revs-v1

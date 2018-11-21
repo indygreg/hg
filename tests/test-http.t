@@ -417,6 +417,7 @@ clone of serve with repo in root and unserved subrepo (issue2970)
   added 3 changesets with 7 changes to 7 files
   new changesets 8b6053c928fe:56f9bc90cce6
   updating to branch default
+  cloning subrepo sub from http://localhost:$HGPORT/sub
   abort: HTTP Error 404: Not Found
   [255]
   $ hg clone http://localhost:$HGPORT/ slash-clone
@@ -427,6 +428,7 @@ clone of serve with repo in root and unserved subrepo (issue2970)
   added 3 changesets with 7 changes to 7 files
   new changesets 8b6053c928fe:56f9bc90cce6
   updating to branch default
+  cloning subrepo sub from http://localhost:$HGPORT/sub
   abort: HTTP Error 404: Not Found
   [255]
 

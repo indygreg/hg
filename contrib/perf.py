@@ -2347,8 +2347,22 @@ def perfbranchmapupdate(ui, repo, base=(), target=(), **opts):
         baserepo = repo.filtered(b'__perf_branchmap_update_base')
         targetrepo = repo.filtered(b'__perf_branchmap_update_target')
 
-        base = branchmap.branchcache()
-        base.update(baserepo, allbaserevs)
+        # try to find an existing branchmap to reuse
+        subsettable = getbranchmapsubsettable()
+        candidatefilter = subsettable.get(None)
+        while candidatefilter is not None:
+            candidatebm = repo.filtered(candidatefilter).branchmap()
+            if candidatebm.validfor(baserepo):
+                filtered = repoview.filterrevs(repo, candidatefilter)
+                missing = [r for r in allbaserevs if r in filtered]
+                base = candidatebm.copy()
+                base.update(baserepo, missing)
+                break
+            candidatefilter = subsettable.get(candidatefilter)
+        else:
+            # no suitable subset where found
+            base = branchmap.branchcache()
+            base.update(baserepo, allbaserevs)
 
         def setup():
             x[0] = base.copy()

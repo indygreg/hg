@@ -397,15 +397,18 @@ class revbranchcache(object):
             self._names = []
         self._rbcnamescount = len(self._names) # number of names read at
                                                # _rbcsnameslen
-        self._namesreverse = dict((b, r) for r, b in enumerate(self._names))
 
     def _clear(self):
         self._rbcsnameslen = 0
         del self._names[:]
         self._rbcnamescount = 0
-        self._namesreverse.clear()
         self._rbcrevslen = len(self._repo.changelog)
         self._rbcrevs = bytearray(self._rbcrevslen * _rbcrecsize)
+        util.clearcachedproperty(self, '_namesreverse')
+
+    @util.propertycache
+    def _namesreverse(self):
+        return dict((b, r) for r, b in enumerate(self._names))
 
     def branchinfo(self, rev):
         """Return branch name and close flag for rev, using and updating

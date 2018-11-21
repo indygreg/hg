@@ -2282,6 +2282,61 @@ def perfbranchmap(ui, repo, *filternames, **opts):
         branchcachewrite.restore()
     fm.end()
 
+@command(b'perfbranchmapupdate', [
+     (b'', b'base', [], b'subset of revision to start from'),
+     (b'', b'target', [], b'subset of revision to end with'),
+    ] + formatteropts)
+def perfbranchmapupdate(ui, repo, base=(), target=(), **opts):
+    """benchmark branchmap update from for <base> revs to <target> revs
+
+    Examples:
+
+       # update for the one last revision
+       $ hg perfbranchmapupdate --base 'not tip' --target 'tip'
+
+       $ update for change coming with a new branch
+       $ hg perfbranchmapupdate --base 'stable' --target 'default'
+    """
+    from mercurial import branchmap
+    opts = _byteskwargs(opts)
+    timer, fm = gettimer(ui, opts)
+    x = [None] # used to pass data between closure
+
+    # we use a `list` here to avoid possible side effect from smartset
+    baserevs = list(scmutil.revrange(repo, base))
+    targetrevs = list(scmutil.revrange(repo, target))
+    if not baserevs:
+        raise error.Abort(b'no revisions selected for --base')
+    if not targetrevs:
+        raise error.Abort(b'no revisions selected for --target')
+
+    # make sure the target branchmap also contains the one in the base
+    targetrevs = list(set(baserevs) | set(targetrevs))
+    targetrevs.sort()
+
+    cl = repo.changelog
+    allbaserevs = list(cl.ancestors(baserevs, inclusive=True))
+    allbaserevs.sort()
+    alltargetrevs = frozenset(cl.ancestors(targetrevs, inclusive=True))
+
+    newrevs = list(alltargetrevs.difference(allbaserevs))
+    newrevs.sort()
+
+    msg = b'benchmark of branchmap with %d revisions with %d new ones\n'
+    ui.status(msg % (len(allbaserevs), len(newrevs)))
+
+    base = branchmap.branchcache()
+    base.update(repo, allbaserevs)
+
+    def setup():
+        x[0] = base.copy()
+
+    def bench():
+        x[0].update(repo, newrevs)
+
+    timer(bench, setup=setup)
+    fm.end()
+
 @command(b'perfbranchmapload', [
      (b'f', b'filter', b'', b'Specify repoview filter'),
      (b'', b'list', False, b'List brachmap filter caches'),

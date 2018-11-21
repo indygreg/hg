@@ -57,6 +57,9 @@ perfstatus
                  benchmark the update of a branchmap
    perfbranchmapload
                  benchmark reading the branchmap
+   perfbranchmapupdate
+                 benchmark branchmap update from for <base> revs to <target>
+                 revs
    perfbundleread
                  Benchmark reading of bundle files.
    perfcca       (no help text available)
@@ -145,6 +148,8 @@ perfstatus
   $ hg perfbookmarks
   $ hg perfbranchmap
   $ hg perfbranchmapload
+  $ hg perfbranchmapupdate --base "not tip" --target "tip"
+  benchmark of branchmap with 3 revisions with 1 new ones
   $ hg perfcca
   $ hg perfchangegroupchangelog
   $ hg perfchangegroupchangelog --cgversion 01

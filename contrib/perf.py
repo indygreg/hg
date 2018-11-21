@@ -2325,17 +2325,18 @@ def perfbranchmapupdate(ui, repo, base=(), target=(), **opts):
     msg = b'benchmark of branchmap with %d revisions with %d new ones\n'
     ui.status(msg % (len(allbaserevs), len(newrevs)))
 
-    base = branchmap.branchcache()
-    base.update(repo, allbaserevs)
+    if True:
+        base = branchmap.branchcache()
+        base.update(repo, allbaserevs)
 
-    def setup():
-        x[0] = base.copy()
+        def setup():
+            x[0] = base.copy()
 
-    def bench():
-        x[0].update(repo, newrevs)
+        def bench():
+            x[0].update(repo, newrevs)
 
-    timer(bench, setup=setup)
-    fm.end()
+        timer(bench, setup=setup)
+        fm.end()
 
 @command(b'perfbranchmapload', [
      (b'f', b'filter', b'', b'Specify repoview filter'),

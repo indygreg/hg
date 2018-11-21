@@ -2298,8 +2298,10 @@ def perfbranchmapupdate(ui, repo, base=(), target=(), **opts):
        $ hg perfbranchmapupdate --base 'stable' --target 'default'
     """
     from mercurial import branchmap
+    from mercurial import repoview
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
+    unfi = repo.unfiltered()
     x = [None] # used to pass data between closure
 
     # we use a `list` here to avoid possible side effect from smartset
@@ -2322,21 +2324,43 @@ def perfbranchmapupdate(ui, repo, base=(), target=(), **opts):
     newrevs = list(alltargetrevs.difference(allbaserevs))
     newrevs.sort()
 
+    allrevs = frozenset(unfi.changelog.revs())
+    basefilterrevs = frozenset(allrevs.difference(allbaserevs))
+    targetfilterrevs = frozenset(allrevs.difference(alltargetrevs))
+
+    def basefilter(repo, visibilityexceptions=None):
+        return basefilterrevs
+
+    def targetfilter(repo, visibilityexceptions=None):
+        return targetfilterrevs
+
     msg = b'benchmark of branchmap with %d revisions with %d new ones\n'
     ui.status(msg % (len(allbaserevs), len(newrevs)))
+    if targetfilterrevs:
+        msg = b'(%d revisions still filtered)\n'
+        ui.status(msg % len(targetfilterrevs))
 
-    if True:
+    try:
+        repoview.filtertable[b'__perf_branchmap_update_base'] = basefilter
+        repoview.filtertable[b'__perf_branchmap_update_target'] = targetfilter
+
+        baserepo = repo.filtered(b'__perf_branchmap_update_base')
+        targetrepo = repo.filtered(b'__perf_branchmap_update_target')
+
         base = branchmap.branchcache()
-        base.update(repo, allbaserevs)
+        base.update(baserepo, allbaserevs)
 
         def setup():
             x[0] = base.copy()
 
         def bench():
-            x[0].update(repo, newrevs)
+            x[0].update(targetrepo, newrevs)
 
         timer(bench, setup=setup)
         fm.end()
+    finally:
+        repoview.filtertable.pop(b'__perf_branchmap_update_base', None)
+        repoview.filtertable.pop(b'__perf_branchmap_update_target', None)
 
 @command(b'perfbranchmapload', [
      (b'f', b'filter', b'', b'Specify repoview filter'),

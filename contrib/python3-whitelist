@@ -306,8 +306,11 @@ test-largefiles-misc.t
 test-largefiles-small-disk.t
 test-largefiles-update.t
 test-largefiles.t
+test-lfconvert.t
+test-lfs-bundle.t
 test-lfs-largefiles.t
 test-lfs-pointer.py
+test-lfs.t
 test-linelog.py
 test-linerange.py
 test-locate.t

@@ -2244,7 +2244,7 @@ def perfbranchmapread(ui, repo, filter=b'', list=False, **opts):
         repo = repo.unfiltered()
     # try once without timer, the filter may not be cached
     if branchmap.read(repo) is None:
-        raise error.Abort(b'No brachmap cached for %s repo'
+        raise error.Abort(b'No branchmap cached for %s repo'
                           % (filter or b'unfiltered'))
     timer, fm = gettimer(ui, opts)
     timer(lambda: branchmap.read(repo) and None)

@@ -276,6 +276,8 @@ def gettimer(ui, opts=None):
     return functools.partial(_timer, fm, displayall=displayall), fm
 
 def stub_timer(fm, func, setup=None, title=None):
+    if setup is not None:
+        setup()
     func()
 
 @contextlib.contextmanager

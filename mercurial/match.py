@@ -1184,13 +1184,15 @@ def _buildmatch(kindpats, globsuffix, listsubrepos, root):
     else:
         return regex, lambda f: any(mf(f) for mf in matchfuncs)
 
+MAX_RE_SIZE = 20000
+
 def _buildregexmatch(kindpats, globsuffix):
     """Build a match function from a list of kinds and kindpats,
     return regexp string and a matcher function."""
     try:
         regex = '(?:%s)' % '|'.join([_regex(k, p, globsuffix)
                                      for (k, p, s) in kindpats])
-        if len(regex) <= 20000:
+        if len(regex) <= MAX_RE_SIZE:
             return regex, _rematcher(regex)
         # We're using a Python with a tiny regex engine and we
         # made it explode, so we'll divide the pattern list in two

@@ -1185,6 +1185,7 @@ def _buildmatch(kindpats, globsuffix, listsubrepos, root):
         return regex, lambda f: any(mf(f) for mf in matchfuncs)
 
 MAX_RE_SIZE = 20000
+_BASE_SIZE = len('(?:)') - 1
 
 def _joinregexes(regexps):
     """gather multiple regular expressions into a single one"""
@@ -1203,20 +1204,31 @@ def _buildregexmatch(kindpats, globsuffix):
     OverflowError
     """
     try:
-        regex = _joinregexes([_regex(k, p, globsuffix)
-                                     for (k, p, s) in kindpats])
-        if len(regex) <= MAX_RE_SIZE:
-            return regex, _rematcher(regex)
-        # We're using a Python with a tiny regex engine and we
-        # made it explode, so we'll divide the pattern list in two
-        # until it works
-        l = len(kindpats)
-        if l < 2:
-            # TODO: raise error.Abort here
-            raise OverflowError
-        regexa, a = _buildregexmatch(kindpats[:l//2], globsuffix)
-        regexb, b = _buildregexmatch(kindpats[l//2:], globsuffix)
-        return regex, lambda s: a(s) or b(s)
+        allgroups = []
+        regexps = [_regex(k, p, globsuffix) for (k, p, s) in kindpats]
+        fullregexp = _joinregexes(regexps)
+
+        startidx = 0
+        groupsize = _BASE_SIZE
+        for idx, r in enumerate(regexps):
+            piecesize = len(r)
+            if (piecesize + 4) > MAX_RE_SIZE:
+                raise OverflowError
+            elif (groupsize + 1 + piecesize) > MAX_RE_SIZE:
+                group = regexps[startidx:idx]
+                allgroups.append(_joinregexes(group))
+                startidx = idx
+                groupsize = _BASE_SIZE
+            groupsize += piecesize + 1
+
+        if startidx == 0:
+            func = _rematcher(fullregexp)
+        else:
+            group = regexps[startidx:]
+            allgroups.append(_joinregexes(group))
+            allmatchers = [_rematcher(g) for g in allgroups]
+            func = lambda s: any(m(s) for m in allmatchers)
+        return fullregexp, func
     except re.error:
         for k, p, s in kindpats:
             try:

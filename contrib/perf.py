@@ -712,9 +712,9 @@ def perfbundleread(ui, repo, bundlepath, **opts):
         fm.end()
 
 @command(b'perfchangegroupchangelog', formatteropts +
-         [(b'', b'version', b'02', b'changegroup version'),
+         [(b'', b'cgversion', b'02', b'changegroup version'),
           (b'r', b'rev', b'', b'revisions to add to changegroup')])
-def perfchangegroupchangelog(ui, repo, version=b'02', rev=None, **opts):
+def perfchangegroupchangelog(ui, repo, cgversion=b'02', rev=None, **opts):
     """Benchmark producing a changelog group for a changegroup.
 
     This measures the time spent processing the changelog during a
@@ -727,7 +727,7 @@ def perfchangegroupchangelog(ui, repo, version=b'02', rev=None, **opts):
     opts = _byteskwargs(opts)
     cl = repo.changelog
     nodes = [cl.lookup(r) for r in repo.revs(rev or b'all()')]
-    bundler = changegroup.getbundler(version, repo)
+    bundler = changegroup.getbundler(cgversion, repo)
 
     def d():
         state, chunks = bundler._generatechangelog(cl, nodes)

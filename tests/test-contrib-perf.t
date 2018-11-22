@@ -145,6 +145,7 @@ perfstatus
   $ hg perfbranchmap
   $ hg perfcca
   $ hg perfchangegroupchangelog
+  $ hg perfchangegroupchangelog --cgversion 01
   $ hg perfchangeset 2
   $ hg perfctxfiles 2
   $ hg perfdiffwd

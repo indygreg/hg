@@ -1188,7 +1188,16 @@ MAX_RE_SIZE = 20000
 
 def _buildregexmatch(kindpats, globsuffix):
     """Build a match function from a list of kinds and kindpats,
-    return regexp string and a matcher function."""
+    return regexp string and a matcher function.
+
+    Test too large input
+    >>> _buildregexmatch([
+    ...     ('relglob', '?' * MAX_RE_SIZE, '')
+    ... ], '$')
+    Traceback (most recent call last):
+    ...
+    OverflowError
+    """
     try:
         regex = '(?:%s)' % '|'.join([_regex(k, p, globsuffix)
                                      for (k, p, s) in kindpats])

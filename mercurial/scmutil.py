@@ -814,21 +814,29 @@ def parsefollowlinespattern(repo, rev, pat, msg):
             raise error.ParseError(msg)
         return files[0]
 
+def getorigvfs(ui, repo):
+    """return a vfs suitable to save 'orig' file
+
+    return None if no special directory is configured"""
+    origbackuppath = ui.config('ui', 'origbackuppath')
+    if not origbackuppath:
+        return None
+    return vfs.vfs(repo.wvfs.join(origbackuppath))
+
 def origpath(ui, repo, filepath):
     '''customize where .orig files are created
 
     Fetch user defined path from config file: [ui] origbackuppath = <path>
     Fall back to default (filepath with .orig suffix) if not specified
     '''
-    origbackuppath = ui.config('ui', 'origbackuppath')
-    if not origbackuppath:
+    origvfs = getorigvfs(ui, repo)
+    if origvfs is None:
         return filepath + ".orig"
 
     # Convert filepath from an absolute path into a path inside the repo.
     filepathfromroot = util.normpath(os.path.relpath(filepath,
                                                      start=repo.root))
 
-    origvfs = vfs.vfs(repo.wjoin(origbackuppath))
     origbackupdir = origvfs.dirname(filepathfromroot)
     if not origvfs.isdir(origbackupdir) or origvfs.islink(origbackupdir):
         ui.note(_('creating directory: %s\n') % origvfs.join(origbackupdir))

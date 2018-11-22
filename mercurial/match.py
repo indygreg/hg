@@ -1186,6 +1186,10 @@ def _buildmatch(kindpats, globsuffix, listsubrepos, root):
 
 MAX_RE_SIZE = 20000
 
+def _joinregexes(regexps):
+    """gather multiple regular expressions into a single one"""
+    return '(?:%s)' % '|'.join(regexps)
+
 def _buildregexmatch(kindpats, globsuffix):
     """Build a match function from a list of kinds and kindpats,
     return regexp string and a matcher function.
@@ -1199,7 +1203,7 @@ def _buildregexmatch(kindpats, globsuffix):
     OverflowError
     """
     try:
-        regex = '(?:%s)' % '|'.join([_regex(k, p, globsuffix)
+        regex = _joinregexes([_regex(k, p, globsuffix)
                                      for (k, p, s) in kindpats])
         if len(regex) <= MAX_RE_SIZE:
             return regex, _rematcher(regex)

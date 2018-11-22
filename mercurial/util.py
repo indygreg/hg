@@ -1535,6 +1535,7 @@ class propertycache(object):
 
 def clearcachedproperty(obj, prop):
     '''clear a cached property value, if one has been set'''
+    prop = pycompat.sysstr(prop)
     if prop in obj.__dict__:
         del obj.__dict__[prop]
 

@@ -1810,11 +1810,15 @@ class gitsubrepo(abstractsubrepo):
         if not opts.get(r'no_backup'):
             status = self.status(None)
             names = status.modified
+            origvfs = scmutil.getorigvfs(self.ui, self._subparent)
+            if origvfs is None:
+                origvfs = self.wvfs
             for name in names:
                 bakname = scmutil.origpath(self.ui, self._subparent, name)
                 self.ui.note(_('saving current version of %s as %s\n') %
                         (name, bakname))
-                self.wvfs.rename(name, bakname)
+                name = self.wvfs.join(name)
+                origvfs.rename(name, bakname)
 
         if not opts.get(r'dry_run'):
             self.get(substate, overwrite=True)

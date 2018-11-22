@@ -1201,7 +1201,7 @@ def _buildregexmatch(kindpats, globsuffix):
     ... ], '$')
     Traceback (most recent call last):
     ...
-    OverflowError
+    Abort: matcher pattern is too long (20009 bytes)
     """
     try:
         allgroups = []
@@ -1213,7 +1213,8 @@ def _buildregexmatch(kindpats, globsuffix):
         for idx, r in enumerate(regexps):
             piecesize = len(r)
             if (piecesize + 4) > MAX_RE_SIZE:
-                raise OverflowError
+                msg = _("matcher pattern is too long (%d bytes)") % piecesize
+                raise error.Abort(msg)
             elif (groupsize + 1 + piecesize) > MAX_RE_SIZE:
                 group = regexps[startidx:idx]
                 allgroups.append(_joinregexes(group))

@@ -975,6 +975,23 @@ def perfchangeset(ui, repo, rev, **opts):
     timer(d)
     fm.end()
 
+@command(b'perfignore', formatteropts)
+def perfignore(ui, repo, **opts):
+    """benchmark operation related to computing ignore"""
+    opts = _byteskwargs(opts)
+    timer, fm = gettimer(ui, opts)
+    dirstate = repo.dirstate
+
+    def setupone():
+        dirstate.invalidate()
+        clearfilecache(dirstate, b'_ignore')
+
+    def runone():
+        dirstate._ignore
+
+    timer(runone, setup=setupone, title=b"load")
+    fm.end()
+
 @command(b'perfindex', formatteropts)
 def perfindex(ui, repo, **opts):
     import mercurial.revlog

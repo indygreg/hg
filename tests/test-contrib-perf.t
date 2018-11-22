@@ -86,6 +86,7 @@ perfstatus
    perfhelper-pathcopies
                  find statistic about potential parameters for the
                  'perftracecopies'
+   perfignore    benchmark operation related to computing ignore
    perfindex     (no help text available)
    perflinelogedits
                  (no help text available)
@@ -166,6 +167,7 @@ perfstatus
   fncache already up to date
 #endif
   $ hg perfheads
+  $ hg perfignore
   $ hg perfindex
   $ hg perflinelogedits -n 1
   $ hg perfloadmarkers

@@ -2251,6 +2251,9 @@ def perfbranchmapload(ui, repo, filter=b'', list=False, **opts):
         repo = repoview.repoview(repo, filter)
     else:
         repo = repo.unfiltered()
+
+    repo.branchmap() # make sure we have a relevant, up to date branchmap
+
     # try once without timer, the filter may not be cached
     if branchmap.read(repo) is None:
         raise error.Abort(b'No branchmap cached for %s repo'

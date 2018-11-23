@@ -1164,19 +1164,39 @@ def perftemplating(ui, repo, testedtemplate=None, **opts):
 @command(b'perfhelper-tracecopies', formatteropts +
          [
           (b'r', b'revs', [], b'restrict search to these revisions'),
+          (b'', b'timing', False, b'provides extra data (costly)'),
          ])
 def perfhelpertracecopies(ui, repo, revs=[], **opts):
     """find statistic about potential parameters for the `perftracecopies`
 
     This command find source-destination pair relevant for copytracing testing.
     It report value for some of the parameters that impact copy tracing time.
+
+    If `--timing` is set, rename detection is run and the associated timing
+    will be reported. The extra details comes at the cost of a slower command
+    execution.
+
+    Since the rename detection is only run once, other factors might easily
+    affect the precision of the timing. However it should give a good
+    approximation of which revision pairs are very costly.
     """
     opts = _byteskwargs(opts)
     fm = ui.formatter(b'perf', opts)
-    header = '%12s %12s %12s %12s\n'
-    output = ("%(source)12s %(destination)12s "
-              "%(nbrevs)12d %(nbmissingfiles)12d\n")
-    fm.plain(header % ("source", "destination", "nb-revs", "nb-files"))
+    dotiming = opts[b'timing']
+
+    if dotiming:
+        header = '%12s %12s %12s %12s %12s %12s\n'
+        output = ("%(source)12s %(destination)12s "
+                  "%(nbrevs)12d %(nbmissingfiles)12d "
+                  "%(nbrenamedfiles)12d %(time)18.5f\n")
+        header_names = ("source", "destination", "nb-revs", "nb-files",
+                        "nb-renames", "time")
+        fm.plain(header % header_names)
+    else:
+        header = '%12s %12s %12s %12s\n'
+        output = ("%(source)12s %(destination)12s "
+                  "%(nbrevs)12d %(nbmissingfiles)12d\n")
+        fm.plain(header % ("source", "destination", "nb-revs", "nb-files"))
 
     if not revs:
         revs = ['all()']
@@ -1195,18 +1215,26 @@ def perfhelpertracecopies(ui, repo, revs=[], **opts):
                 missing = copies._computeforwardmissing(base, parent)
                 if not missing:
                     continue
-                fm.startitem()
                 data = {
                     b'source': base.hex(),
                     b'destination': parent.hex(),
                     b'nbrevs': len(repo.revs('%d::%d', b, p)),
                     b'nbmissingfiles': len(missing),
                 }
+                if dotiming:
+                    begin = util.timer()
+                    renames = copies.pathcopies(base, parent)
+                    end = util.timer()
+                    # not very stable timing since we did only one run
+                    data['time'] = end - begin
+                    data['nbrenamedfiles'] = len(renames)
+                fm.startitem()
                 fm.data(**data)
                 out = data.copy()
                 out['source'] = fm.hexfunc(base.node())
                 out['destination'] = fm.hexfunc(parent.node())
                 fm.plain(output % out)
+
     fm.end()
 
 @command(b'perfcca', formatteropts)

@@ -976,7 +976,7 @@ coreconfigitem('push', 'pushvars.server',
     default=False,
 )
 coreconfigitem('storage', 'mmap-threshold',
-    default=None,
+    default='1MB',
     alias=[('experimental', 'mmapindexthreshold')],
 )
 coreconfigitem('storage', 'new-repo-backend',

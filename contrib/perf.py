@@ -2285,9 +2285,15 @@ def perfbranchmap(ui, repo, *filternames, **opts):
 @command(b'perfbranchmapupdate', [
      (b'', b'base', [], b'subset of revision to start from'),
      (b'', b'target', [], b'subset of revision to end with'),
+     (b'', b'clear-caches', False, b'clear cache between each runs')
     ] + formatteropts)
 def perfbranchmapupdate(ui, repo, base=(), target=(), **opts):
     """benchmark branchmap update from for <base> revs to <target> revs
+
+    If `--clear-caches` is passed, the following items will be reset before
+    each update:
+        * the changelog instance and associated indexes
+        * the rev-branch-cache instance
 
     Examples:
 
@@ -2301,6 +2307,7 @@ def perfbranchmapupdate(ui, repo, base=(), target=(), **opts):
     from mercurial import repoview
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
+    clearcaches = opts[b'clear_caches']
     unfi = repo.unfiltered()
     x = [None] # used to pass data between closure
 
@@ -2366,6 +2373,9 @@ def perfbranchmapupdate(ui, repo, base=(), target=(), **opts):
 
         def setup():
             x[0] = base.copy()
+            if clearcaches:
+                unfi._revbranchcache = None
+                clearchangelog(repo)
 
         def bench():
             x[0].update(targetrepo, newrevs)

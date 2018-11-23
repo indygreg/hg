@@ -451,6 +451,8 @@ class fncache(object):
         self.vfs = vfs
         self.entries = None
         self._dirty = False
+        # set of new additions to fncache
+        self.addls = set()
 
     def _load(self):
         '''fill the entries from the fncache file'''
@@ -479,17 +481,28 @@ class fncache(object):
                 fp.write(encodedir('\n'.join(self.entries) + '\n'))
             fp.close()
             self._dirty = False
+        if self.addls:
+            # if we have just new entries, let's append them to the fncache
+            tr.addbackup('fncache')
+            fp = self.vfs('fncache', mode='ab', atomictemp=True)
+            if self.addls:
+                fp.write(encodedir('\n'.join(self.addls) + '\n'))
+            fp.close()
+            self.entries = None
+            self.addls = set()
 
     def add(self, fn):
         if self.entries is None:
             self._load()
         if fn not in self.entries:
-            self._dirty = True
-            self.entries.add(fn)
+            self.addls.add(fn)
 
     def remove(self, fn):
         if self.entries is None:
             self._load()
+        if fn in self.addls:
+            self.addls.remove(fn)
+            return
         try:
             self.entries.remove(fn)
             self._dirty = True
@@ -497,6 +510,8 @@ class fncache(object):
             pass
 
     def __contains__(self, fn):
+        if fn in self.addls:
+            return True
         if self.entries is None:
             self._load()
         return fn in self.entries
@@ -504,7 +519,7 @@ class fncache(object):
     def __iter__(self):
         if self.entries is None:
             self._load()
-        return iter(self.entries)
+        return iter(self.entries | self.addls)
 
 class _fncachevfs(vfsmod.abstractvfs, vfsmod.proxyvfs):
     def __init__(self, vfs, fnc, encode):
@@ -580,6 +595,7 @@ class fncachestore(basicstore):
 
     def invalidatecaches(self):
         self.fncache.entries = None
+        self.fncache.addls = set()
 
     def markremoved(self, fn):
         self.fncache.remove(fn)

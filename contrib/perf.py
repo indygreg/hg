@@ -2227,7 +2227,7 @@ def perfbranchmap(ui, repo, *filternames, **opts):
      (b'f', b'filter', b'', b'Specify repoview filter'),
      (b'', b'list', False, b'List brachmap filter caches'),
     ] + formatteropts)
-def perfbranchmapread(ui, repo, filter=b'', list=False, **opts):
+def perfbranchmapload(ui, repo, filter=b'', list=False, **opts):
     """benchmark reading the branchmap"""
     opts = _byteskwargs(opts)
 

@@ -2247,7 +2247,9 @@ def perfbranchmapload(ui, repo, filter=b'', list=False, **opts):
         raise error.Abort(b'No branchmap cached for %s repo'
                           % (filter or b'unfiltered'))
     timer, fm = gettimer(ui, opts)
-    timer(lambda: branchmap.read(repo) and None)
+    def bench():
+        branchmap.read(repo)
+    timer(bench)
     fm.end()
 
 @command(b'perfloadmarkers')

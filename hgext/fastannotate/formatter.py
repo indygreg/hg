@@ -39,23 +39,26 @@ class defaultformatter(object):
             orig = hexfunc
             hexfunc = lambda x: None if x is None else orig(x)
             wnode = hexfunc(repo[None].p1().node()) + '+'
-            wrev = str(repo[None].p1().rev())
+            wrev = '%d' % repo[None].p1().rev()
             wrevpad = ''
             if not opts.get('changeset'): # only show + if changeset is hidden
                 wrev += '+'
                 wrevpad = ' '
-            revenc = lambda x: wrev if x is None else str(x) + wrevpad
-            csetenc = lambda x: wnode if x is None else str(x) + ' '
+            revenc = lambda x: wrev if x is None else ('%d' % x) + wrevpad
+            def csetenc(x):
+                if x is None:
+                    return wnode
+                return pycompat.bytestr(x) + ' '
         else:
-            revenc = csetenc = str
+            revenc = csetenc = pycompat.bytestr
 
         # opt name, separator, raw value (for json/plain), encoder (for plain)
         opmap = [('user', ' ', lambda x: getctx(x).user(), ui.shortuser),
                  ('number', ' ', lambda x: getctx(x).rev(), revenc),
                  ('changeset', ' ', lambda x: hexfunc(x[0]), csetenc),
                  ('date', ' ', lambda x: getctx(x).date(), datefunc),
-                 ('file', ' ', lambda x: x[2], str),
-                 ('line_number', ':', lambda x: x[1] + 1, str)]
+                 ('file', ' ', lambda x: x[2], pycompat.bytestr),
+                 ('line_number', ':', lambda x: x[1] + 1, pycompat.bytestr)]
         fieldnamemap = {'number': 'rev', 'changeset': 'node'}
         funcmap = [(get, sep, fieldnamemap.get(op, op), enc)
                    for op, sep, get, enc in opmap

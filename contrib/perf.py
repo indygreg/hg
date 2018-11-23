@@ -465,6 +465,12 @@ def clearfilecache(obj, attrname):
         delattr(obj, attrname)
     obj._filecache.pop(attrname, None)
 
+def clearchangelog(repo):
+    if repo is not repo.unfiltered():
+        object.__setattr__(repo, r'_clcachekey', None)
+        object.__setattr__(repo, r'_clcache', None)
+    clearfilecache(repo.unfiltered(), 'changelog')
+
 # perf commands
 
 @command(b'perfwalk', formatteropts)

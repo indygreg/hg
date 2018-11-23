@@ -2232,10 +2232,13 @@ def perfbranchmap(ui, repo, *filternames, **opts):
 @command(b'perfbranchmapload', [
      (b'f', b'filter', b'', b'Specify repoview filter'),
      (b'', b'list', False, b'List brachmap filter caches'),
+     (b'', b'clear-revlogs', False, b'refresh changelog and manifest'),
+
     ] + formatteropts)
 def perfbranchmapload(ui, repo, filter=b'', list=False, **opts):
     """benchmark reading the branchmap"""
     opts = _byteskwargs(opts)
+    clearrevlogs = opts[b'clear_revlogs']
 
     if list:
         for name, kind, st in repo.cachevfs.readdir(stat=True):
@@ -2253,9 +2256,12 @@ def perfbranchmapload(ui, repo, filter=b'', list=False, **opts):
         raise error.Abort(b'No branchmap cached for %s repo'
                           % (filter or b'unfiltered'))
     timer, fm = gettimer(ui, opts)
+    def setup():
+        if clearrevlogs:
+            clearchangelog(repo)
     def bench():
         branchmap.read(repo)
-    timer(bench)
+    timer(bench, setup=setup)
     fm.end()
 
 @command(b'perfloadmarkers')

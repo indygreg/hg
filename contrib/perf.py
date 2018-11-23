@@ -999,11 +999,18 @@ def perfindex(ui, repo, **opts):
     timer, fm = gettimer(ui, opts)
     mercurial.revlog._prereadsize = 2**24 # disable lazy parser in old hg
     n = repo[b"tip"].node()
-    svfs = getsvfs(repo)
+
+    unfi = repo.unfiltered()
+    # find the filecache func directly
+    # This avoid polluting the benchmark with the filecache logic
+    makecl = unfi.__class__.changelog.func
+    def setup():
+        # probably not necessary, but for good measure
+        clearchangelog(unfi)
     def d():
-        cl = mercurial.revlog.revlog(svfs, b"00changelog.i")
+        cl = makecl(unfi)
         cl.rev(n)
-    timer(d)
+    timer(d, setup=setup)
     fm.end()
 
 @command(b'perfstartup', formatteropts)

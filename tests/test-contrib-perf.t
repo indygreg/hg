@@ -143,6 +143,7 @@ perfstatus
   $ hg perfunidiff --alldata 1
   $ hg perfbookmarks
   $ hg perfbranchmap
+  $ hg perfbranchmapload
   $ hg perfcca
   $ hg perfchangegroupchangelog
   $ hg perfchangegroupchangelog --cgversion 01

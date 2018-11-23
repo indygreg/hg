@@ -2247,17 +2247,24 @@ def perfbranchmapload(ui, repo, filter=b'', list=False, **opts):
                 ui.status(b'%s - %s\n'
                           % (filtername, util.bytecount(st.st_size)))
         return
-    if filter:
-        repo = repoview.repoview(repo, filter)
-    else:
+    if not filter:
+        filter = None
+    subsettable = getbranchmapsubsettable()
+    if filter is None:
         repo = repo.unfiltered()
+    else:
+        repo = repoview.repoview(repo, filter)
 
     repo.branchmap() # make sure we have a relevant, up to date branchmap
 
+    currentfilter = filter
     # try once without timer, the filter may not be cached
-    if branchmap.read(repo) is None:
-        raise error.Abort(b'No branchmap cached for %s repo'
-                          % (filter or b'unfiltered'))
+    while branchmap.read(repo) is None:
+        currentfilter = subsettable.get(currentfilter)
+        if currentfilter is None:
+            raise error.Abort(b'No branchmap cached for %s repo'
+                              % (filter or b'unfiltered'))
+        repo = repo.filtered(currentfilter)
     timer, fm = gettimer(ui, opts)
     def setup():
         if clearrevlogs:

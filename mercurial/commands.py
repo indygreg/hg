@@ -320,6 +320,14 @@ def annotate(ui, repo, *pats, **opts):
         # to mimic the behavior of Mercurial before version 1.5
         opts['file'] = True
 
+    if (not opts.get('user') and not opts.get('changeset')
+        and not opts.get('date') and not opts.get('file')):
+        opts['number'] = True
+
+    linenumber = opts.get('line_number') is not None
+    if linenumber and (not opts.get('changeset')) and (not opts.get('number')):
+        raise error.Abort(_('at least one of -n/-c is required for -l'))
+
     rev = opts.get('rev')
     if rev:
         repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
@@ -372,14 +380,6 @@ def annotate(ui, repo, *pats, **opts):
         'path': 'file',
         'lineno': 'line_number',
     }
-
-    if (not opts.get('user') and not opts.get('changeset')
-        and not opts.get('date') and not opts.get('file')):
-        opts['number'] = True
-
-    linenumber = opts.get('line_number') is not None
-    if linenumber and (not opts.get('changeset')) and (not opts.get('number')):
-        raise error.Abort(_('at least one of -n/-c is required for -l'))
 
     ui.pager('annotate')
 

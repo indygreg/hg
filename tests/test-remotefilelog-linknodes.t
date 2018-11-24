@@ -1,3 +1,5 @@
+#require no-windows
+
 # Tests for the complicated linknode logic in remotefilelog.py::ancestormap()
 
   $ . "$TESTDIR/remotefilelog-library.sh"

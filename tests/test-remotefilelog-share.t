@@ -1,3 +1,5 @@
+#require no-windows
+
   $ . "$TESTDIR/remotefilelog-library.sh"
 
   $ cat >> $HGRCPATH <<EOF

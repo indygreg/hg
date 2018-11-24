@@ -1,3 +1,5 @@
+#require no-windows
+
   $ . "$TESTDIR/remotefilelog-library.sh"
 
 Set up an extension to make sure remotefilelog clientsetup() runs

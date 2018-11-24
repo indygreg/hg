@@ -333,6 +333,7 @@ def annotate(ui, repo, *pats, **opts):
         repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
     ctx = scmutil.revsingle(repo, rev)
 
+    ui.pager('annotate')
     rootfm = ui.formatter('annotate', opts)
     if ui.debugflag:
         shorthex = pycompat.identity
@@ -380,8 +381,6 @@ def annotate(ui, repo, *pats, **opts):
         'path': 'file',
         'lineno': 'line_number',
     }
-
-    ui.pager('annotate')
 
     if rootfm.isplain():
         def makefunc(get, fmt):

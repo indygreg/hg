@@ -358,15 +358,20 @@ def annotate(ui, repo, *pats, **opts):
         formatrev = b'%d'.__mod__
         formathex = shorthex
 
-    opmap = [('user', ' ', lambda x: x.fctx.user(), ui.shortuser),
-             ('rev', ' ', lambda x: scmutil.intrev(x.fctx), formatrev),
-             ('node', ' ', lambda x: hex(scmutil.binnode(x.fctx)), formathex),
-             ('date', ' ', lambda x: x.fctx.date(), util.cachefunc(datefunc)),
-             ('path', ' ', lambda x: x.fctx.path(), pycompat.bytestr),
-             ('lineno', ':', lambda x: x.lineno, pycompat.bytestr),
-            ]
-    opnamemap = {'rev': 'number', 'node': 'changeset', 'path': 'file',
-                 'lineno': 'line_number'}
+    opmap = [
+        ('user', ' ', lambda x: x.fctx.user(), ui.shortuser),
+        ('rev', ' ', lambda x: scmutil.intrev(x.fctx), formatrev),
+        ('node', ' ', lambda x: hex(scmutil.binnode(x.fctx)), formathex),
+        ('date', ' ', lambda x: x.fctx.date(), util.cachefunc(datefunc)),
+        ('path', ' ', lambda x: x.fctx.path(), pycompat.bytestr),
+        ('lineno', ':', lambda x: x.lineno, pycompat.bytestr),
+    ]
+    opnamemap = {
+        'rev': 'number',
+        'node': 'changeset',
+        'path': 'file',
+        'lineno': 'line_number',
+    }
 
     if (not opts.get('user') and not opts.get('changeset')
         and not opts.get('date') and not opts.get('file')):

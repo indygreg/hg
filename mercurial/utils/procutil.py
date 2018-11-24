@@ -241,7 +241,7 @@ def hgexecutable():
                 _sethgexecutable(encoding.environ['EXECUTABLEPATH'])
             else:
                 _sethgexecutable(pycompat.sysexecutable)
-        elif (os.path.basename(
+        elif (not pycompat.iswindows and os.path.basename(
             pycompat.fsencode(getattr(mainmod, '__file__', ''))) == 'hg'):
             _sethgexecutable(pycompat.fsencode(mainmod.__file__))
         else:

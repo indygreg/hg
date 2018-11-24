@@ -34,15 +34,8 @@ osutil = policy.importmod(r'osutil')
 class RepackAlreadyRunning(error.Abort):
     pass
 
-if util.safehasattr(util, '_hgexecutable'):
-    # Before 5be286db
-    _hgexecutable = util.hgexecutable
-else:
-    from mercurial.utils import procutil
-    _hgexecutable = procutil.hgexecutable
-
 def backgroundrepack(repo, incremental=True, packsonly=False):
-    cmd = [_hgexecutable(), '-R', repo.origroot, 'repack']
+    cmd = [procutil.hgexecutable(), '-R', repo.origroot, 'repack']
     msg = _("(running background repack)\n")
     if incremental:
         cmd.append('--incremental')

@@ -412,8 +412,7 @@ def annotate(ui, repo, *pats, **opts):
         rootfm.startitem()
         rootfm.data(path=abs)
         if not opts.get('text') and fctx.isbinary():
-            rootfm.plain(_("%s: binary file\n")
-                         % ((pats and m.rel(abs)) or abs))
+            rootfm.plain(_("%s: binary file\n") % m.rel(abs))
             continue
 
         fm = rootfm.nested('lines', tmpl='{rev}: {line}')

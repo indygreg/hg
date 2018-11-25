@@ -1086,7 +1086,7 @@ index_segment_span(indexObject *self, Py_ssize_t start_rev, Py_ssize_t end_rev)
 	return (end_offset - start_offset) + (int64_t)end_size;
 }
 
-/* returns revs[startidx:endidx] without empty trailing revs */
+/* returns endidx so that revs[startidx:endidx] has no empty trailing revs */
 static Py_ssize_t trim_endidx(indexObject *self, const Py_ssize_t *revs,
                               Py_ssize_t startidx, Py_ssize_t endidx)
 {

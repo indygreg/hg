@@ -242,7 +242,14 @@ static inline int index_get_length(indexObject *self, Py_ssize_t rev)
 		return (int)ret;
 	} else {
 		const char *data = index_deref(self, rev);
-		return (int)getbe32(data + 8);
+		int tmp = (int)getbe32(data + 8);
+		if (tmp < 0) {
+			PyErr_Format(PyExc_OverflowError,
+			             "revlog entry size out of bound (%d)",
+			             tmp);
+			return -1;
+		}
+		return tmp;
 	}
 }
 

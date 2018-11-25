@@ -540,18 +540,12 @@ def perfheads(ui, repo, **opts):
 
 @command(b'perftags', formatteropts)
 def perftags(ui, repo, **opts):
-    import mercurial.changelog
-    import mercurial.manifest
-
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
-    svfs = getsvfs(repo)
     repocleartagscache = repocleartagscachefunc(repo)
     def s():
-        repo.changelog = mercurial.changelog.changelog(svfs)
-        rootmanifest = mercurial.manifest.manifestrevlog(svfs)
-        repo.manifestlog = mercurial.manifest.manifestlog(svfs, repo,
-                                                          rootmanifest)
+        clearchangelog(repo)
+        clearfilecache(repo.unfiltered(), 'manifest')
         repocleartagscache()
     def t():
         return len(repo.tags())

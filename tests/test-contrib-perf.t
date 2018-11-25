@@ -83,7 +83,7 @@ perfstatus
    perffncachewrite
                  (no help text available)
    perfheads     (no help text available)
-   perfhelper-tracecopies
+   perfhelper-pathcopies
                  find statistic about potential parameters for the
                  'perftracecopies'
    perfindex     (no help text available)

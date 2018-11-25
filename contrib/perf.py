@@ -1162,12 +1162,12 @@ def perftemplating(ui, repo, testedtemplate=None, **opts):
     timer(format)
     fm.end()
 
-@command(b'perfhelper-tracecopies', formatteropts +
+@command(b'perfhelper-pathcopies', formatteropts +
          [
           (b'r', b'revs', [], b'restrict search to these revisions'),
           (b'', b'timing', False, b'provides extra data (costly)'),
          ])
-def perfhelpertracecopies(ui, repo, revs=[], **opts):
+def perfhelperpathcopies(ui, repo, revs=[], **opts):
     """find statistic about potential parameters for the `perftracecopies`
 
     This command find source-destination pair relevant for copytracing testing.

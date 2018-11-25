@@ -1587,7 +1587,7 @@ class localrepository(object):
                         self.dirstate.copy(None, f)
 
     def filectx(self, path, changeid=None, fileid=None, changectx=None):
-        """changeid can be a changeset revision, node, or tag.
+        """changeid must be a changeset revision, if specified.
            fileid can be a file revision or node."""
         return context.filectx(self, path, changeid, fileid,
                                changectx=changectx)

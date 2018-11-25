@@ -836,6 +836,7 @@ def perfmergecalculate(ui, repo, rev, **opts):
 
 @command(b'perfpathcopies', [], b"REV REV")
 def perfpathcopies(ui, repo, rev1, rev2, **opts):
+    """benchmark the copy tracing logic"""
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     ctx1 = scmutil.revsingle(repo, rev1, rev1)

@@ -104,7 +104,7 @@ perfstatus
                  (no help text available)
    perfparents   (no help text available)
    perfpathcopies
-                 (no help text available)
+                 benchmark the copy tracing logic
    perfphases    benchmark phasesets computation
    perfphasesremote
                  benchmark time needed to analyse phases of the remote server

@@ -768,7 +768,7 @@ class revlog(object):
         return chain, stopped
 
     def ancestors(self, revs, stoprev=0, inclusive=False):
-        """Generate the ancestors of 'revs' in reverse topological order.
+        """Generate the ancestors of 'revs' in reverse revision order.
         Does not generate revs lower than stoprev.
 
         See the documentation for ancestor.lazyancestors for more details."""

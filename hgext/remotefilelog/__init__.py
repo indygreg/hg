@@ -67,7 +67,7 @@ Configs:
       particular, minimum number of packs files > gencountlimit.
 
     ``remotefilelog.history.generations`` list for specifying the lower bound of
-      each generation of the historhy pack files. For example, list [
+      each generation of the history pack files. For example, list [
       '100MB', '1MB'] or ['1MB', '100MB'] will lead to three generations: [
       0, 1MB), [1MB, 100MB) and [100MB, infinity).
 

@@ -252,7 +252,7 @@ class historypack(basepack.basepack):
             return self._index[end:end + entrylen]
         else:
             while start < end - entrylen:
-                mid = start + (end - start) / 2
+                mid = start + (end - start) // 2
                 mid = mid - ((mid - origstart) % entrylen)
                 midnode = self._index[mid:mid + NODELENGTH]
                 if midnode == node:

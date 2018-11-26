@@ -251,7 +251,7 @@ class histpacktests(unittest.TestCase):
         This causes it to use a 2^16 fanout table instead."""
         total = basepack.SMALLFANOUTCUTOFF + 1
         revisions = []
-        for i in xrange(total):
+        for i in pycompat.xrange(total):
             filename = b"foo-%d" % i
             node = self.getFakeHash()
             p1 = self.getFakeHash()

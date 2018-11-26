@@ -15,6 +15,7 @@ import silenttestrunner
 
 from mercurial.node import nullid
 from mercurial import (
+    pycompat,
     ui as uimod,
 )
 # Load the local remotefilelog, not the system one
@@ -35,13 +36,14 @@ class histpacktests(unittest.TestCase):
     def makeTempDir(self):
         tempdir = tempfile.mkdtemp()
         self.tempdirs.append(tempdir)
-        return tempdir
+        return pycompat.fsencode(tempdir)
 
     def getHash(self, content):
         return hashlib.sha1(content).digest()
 
     def getFakeHash(self):
-        return ''.join(chr(random.randint(0, 255)) for _ in range(20))
+        return b''.join(pycompat.bytechr(random.randint(0, 255))
+                        for _ in range(20))
 
     def createPack(self, revisions=None):
         """Creates and returns a historypack containing the specified revisions.
@@ -53,7 +55,7 @@ class histpacktests(unittest.TestCase):
             revisions = [("filename", self.getFakeHash(), nullid, nullid,
                           self.getFakeHash(), None)]
 
-        packdir = self.makeTempDir()
+        packdir = pycompat.fsencode(self.makeTempDir())
         packer = historypack.mutablehistorypack(uimod.ui(), packdir,
                                                 version=2)
 
@@ -107,7 +109,7 @@ class histpacktests(unittest.TestCase):
         chain.
         """
         revisions = []
-        filename = "foo"
+        filename = b"foo"
         lastnode = nullid
         for i in range(10):
             node = self.getFakeHash()
@@ -136,7 +138,7 @@ class histpacktests(unittest.TestCase):
         revisions = []
         random.seed(0)
         for i in range(100):
-            filename = "filename-%s" % i
+            filename = b"filename-%d" % i
             entries = []
             p2 = nullid
             linknode = nullid
@@ -172,7 +174,7 @@ class histpacktests(unittest.TestCase):
 
     def testGetNodeInfo(self):
         revisions = []
-        filename = "foo"
+        filename = b"foo"
         lastnode = nullid
         for i in range(10):
             node = self.getFakeHash()
@@ -193,7 +195,7 @@ class histpacktests(unittest.TestCase):
         """Test the getmissing() api.
         """
         revisions = []
-        filename = "foo"
+        filename = b"foo"
         for i in range(10):
             node = self.getFakeHash()
             p1 = self.getFakeHash()
@@ -223,7 +225,7 @@ class histpacktests(unittest.TestCase):
         pack = self.createPack()
 
         try:
-            pack.add('filename', nullid, nullid, nullid, nullid, None)
+            pack.add(b'filename', nullid, nullid, nullid, nullid, None)
             self.assertTrue(False, "historypack.add should throw")
         except RuntimeError:
             pass
@@ -250,7 +252,7 @@ class histpacktests(unittest.TestCase):
         total = basepack.SMALLFANOUTCUTOFF + 1
         revisions = []
         for i in xrange(total):
-            filename = "foo-%s" % i
+            filename = b"foo-%d" % i
             node = self.getFakeHash()
             p1 = self.getFakeHash()
             p2 = self.getFakeHash()

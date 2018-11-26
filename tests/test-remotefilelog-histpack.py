@@ -161,11 +161,11 @@ class histpacktests(unittest.TestCase):
         pack = self.createPack(revisions)
 
         # Verify the pack contents
-        for (filename, node), (p1, p2, lastnode) in allentries.iteritems():
+        for (filename, node), (p1, p2, lastnode) in allentries.items():
             ancestors = pack.getancestors(filename, node)
             self.assertEquals(ancestorcounts[(filename, node)],
                               len(ancestors))
-            for anode, (ap1, ap2, alinknode, copyfrom) in ancestors.iteritems():
+            for anode, (ap1, ap2, alinknode, copyfrom) in ancestors.items():
                 ep1, ep2, elinknode = allentries[(filename, anode)]
                 self.assertEquals(ap1, ep1)
                 self.assertEquals(ap2, ep2)

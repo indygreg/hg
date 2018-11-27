@@ -1189,7 +1189,8 @@ static PyObject *index_slicechunktodensity(indexObject *self, PyObject *args)
 			goto bail;
 		}
 		if (revnum < 0 || revnum >= idxlen) {
-			PyErr_SetString(PyExc_IndexError, "index out of range");
+			PyErr_Format(PyExc_IndexError,
+			             "index out of range: %zd", revnum);
 			goto bail;
 		}
 		revs[i] = revnum;

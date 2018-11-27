@@ -475,6 +475,8 @@ class fncache(object):
     def write(self, tr):
         if self._dirty:
             assert self.entries is not None
+            self.entries = self.entries | self.addls
+            self.addls = set()
             tr.addbackup('fncache')
             fp = self.vfs('fncache', mode='wb', atomictemp=True)
             if self.entries:

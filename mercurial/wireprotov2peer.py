@@ -458,7 +458,10 @@ class clienthandler(object):
         self._redirects.append((requestid, res))
 
     def _processredirect(self, rid, res):
-        """Called to continue processing a response from a redirect."""
+        """Called to continue processing a response from a redirect.
+
+        Returns a bool indicating if the redirect is still serviceable.
+        """
         response = self._responses[rid]
 
         try:
@@ -470,7 +473,7 @@ class clienthandler(object):
                 response._oninputcomplete()
 
             if rid not in self._futures:
-                return
+                return bool(data)
 
             if response.command not in COMMAND_DECODERS:
                 self._futures[rid].set_result(response.objects())

@@ -1190,16 +1190,15 @@ def _buildregexmatch(kindpats, globsuffix):
     try:
         regex = '(?:%s)' % '|'.join([_regex(k, p, globsuffix)
                                      for (k, p, s) in kindpats])
-        if len(regex) > 20000:
-            raise OverflowError
-        return regex, _rematcher(regex)
-    except OverflowError:
+        if len(regex) <= 20000:
+            return regex, _rematcher(regex)
         # We're using a Python with a tiny regex engine and we
         # made it explode, so we'll divide the pattern list in two
         # until it works
         l = len(kindpats)
         if l < 2:
-            raise
+            # TODO: raise error.Abort here
+            raise OverflowError
         regexa, a = _buildregexmatch(kindpats[:l//2], globsuffix)
         regexb, b = _buildregexmatch(kindpats[l//2:], globsuffix)
         return regex, lambda s: a(s) or b(s)

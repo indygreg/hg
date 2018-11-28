@@ -1,3 +1,9 @@
+TRANSITIONAL CONFIG
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > sparse-revlog = yes
+  > EOF
+
   $ cat > $TESTTMP/hook.sh << 'EOF'
   > echo "test-hook-close-phase: $HG_NODE:  $HG_OLDPHASE -> $HG_PHASE"
   > EOF
@@ -841,6 +847,7 @@ Check we deny its usage on older repository
   fncache
   generaldelta
   revlogv1
+  sparserevlog
   store
   $ echo X > X
   $ hg add X
@@ -867,6 +874,7 @@ Check it works fine with repository that supports it.
   generaldelta
   internal-phase
   revlogv1
+  sparserevlog
   store
   $ mkcommit A
   test-debug-phase: new rev 0:  x -> 1

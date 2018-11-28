@@ -377,25 +377,30 @@ class clienthandler(object):
         # This can raise. The caller can handle it.
         response._onresponsedata(meta['data'])
 
-        # If we got a content redirect response, we want to fetch it and
-        # expose the data as if we received it inline. But we also want to
-        # keep our internal request accounting in order. Our strategy is to
-        # basically put meaningful response handling on pause until EOS occurs
-        # and the stream accounting is in a good state. At that point, we follow
-        # the redirect and replace the response object with its data.
+        # We need to be careful about resolving futures prematurely. If a
+        # response is a redirect response, resolving the future before the
+        # redirect is processed would result in the consumer seeing an
+        # empty stream of objects, since they'd be consuming our
+        # response.objects() instead of the redirect's response.objects().
+        #
+        # Our strategy is to not resolve/finish the request until either
+        # EOS occurs or until the initial response object is fully received.
 
-        redirect = response._redirect
-        handlefuture = False if redirect else True
-
+        # Always react to eos.
         if meta['eos']:
             response._oninputcomplete()
             del self._requests[frame.requestid]
 
-            if redirect:
-                self._followredirect(frame.requestid, redirect)
-                return
+        # Not EOS but we haven't decoded the initial response object yet.
+        # Return and wait for more data.
+        elif not response._seeninitial:
+            return
 
-        if not handlefuture:
+        # The specification says no objects should follow the initial/redirect
+        # object. So it should be safe to handle the redirect object if one is
+        # decoded, without having to wait for EOS.
+        if response._redirect:
+            self._followredirect(frame.requestid, response._redirect)
             return
 
         # If the command has a decoder, we wait until all input has been

@@ -127,11 +127,11 @@ static int find_lines(lazymanifest *self, char *data, Py_ssize_t len)
 		if (!next) {
 			return MANIFEST_MALFORMED;
 		}
-		if ((next - data) < 22) {
-			/* We should have at least 22 bytes in a line:
+		if ((next - data) < 42) {
+			/* We should have at least 42 bytes in a line:
 			   1 byte filename
 			   1 NUL
-			   20 bytes of hash
+			   40 bytes of hash
 			   so we can give up here.
 			*/
 			return MANIFEST_TOO_SHORT_LINE;

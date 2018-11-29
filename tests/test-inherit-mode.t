@@ -70,7 +70,7 @@ new directories are setgid
   00770 ./.hg/cache/
   00660 ./.hg/cache/branch2-served
   00711 ./.hg/cache/checkisexec
-  00777 ./.hg/cache/checklink
+  007.. ./.hg/cache/checklink (re)
   00600 ./.hg/cache/checklink-target
   00660 ./.hg/cache/manifestfulltextcache (reporevlogstore !)
   00660 ./.hg/cache/rbc-names-v1

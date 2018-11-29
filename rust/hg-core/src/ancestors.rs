@@ -57,7 +57,9 @@ impl<G: Graph> AncestorsIterator<G> {
         };
         this.seen.insert(NULL_REVISION);
         for rev in filtered_initrevs {
-            this.conditionally_push_parents(rev)?;
+            let parents = this.graph.parents(rev)?;
+            this.conditionally_push_rev(parents.0);
+            this.conditionally_push_rev(parents.1);
         }
         Ok(this)
     }
@@ -68,17 +70,6 @@ impl<G: Graph> AncestorsIterator<G> {
             self.seen.insert(rev);
             self.visit.push(rev);
         }
-    }
-
-    #[inline]
-    fn conditionally_push_parents(
-        &mut self,
-        rev: Revision,
-    ) -> Result<(), GraphError> {
-        let parents = self.graph.parents(rev)?;
-        self.conditionally_push_rev(parents.0);
-        self.conditionally_push_rev(parents.1);
-        Ok(())
     }
 
     /// Consumes partially the iterator to tell if the given target
@@ -109,9 +100,9 @@ impl<G: Graph> AncestorsIterator<G> {
 ///
 /// - there's no filtering of invalid parent revisions. Actually, it should be
 ///   consistent and more efficient to filter them from the end caller.
-/// - we don't use the equivalent of `heapq.heapreplace()`, but we should, for
-///   the same reasons (using `peek_mut`)
-/// - we don't have the optimization for adjacent revs (case where p1 == rev-1)
+/// - we don't have the optimization for adjacent revs
+///   (case where p1 == rev-1), because it amounts to update the first element
+///   of the heap without sifting, which Rust's BinaryHeap doesn't let us do.
 /// - we save a few pushes by comparing with `stoprev` before pushing
 ///
 /// Error treatment:
@@ -129,13 +120,25 @@ impl<G: Graph> Iterator for AncestorsIterator<G> {
     type Item = Revision;
 
     fn next(&mut self) -> Option<Revision> {
-        let current = match self.visit.pop() {
+        let current = match self.visit.peek() {
             None => {
                 return None;
             }
-            Some(i) => i,
+            Some(c) => *c,
         };
-        self.conditionally_push_parents(current).unwrap_or(());
+        let parents = self
+            .graph
+            .parents(current)
+            .unwrap_or((NULL_REVISION, NULL_REVISION));
+        let p1 = parents.0;
+        if p1 < self.stoprev || self.seen.contains(&p1) {
+            self.visit.pop();
+        } else {
+            *(self.visit.peek_mut().unwrap()) = p1;
+            self.seen.insert(p1);
+        };
+
+        self.conditionally_push_rev(parents.1);
         Some(current)
     }
 }

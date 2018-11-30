@@ -1,5 +1,7 @@
 #require symlink execbit
   $ cat << EOF >> $HGRCPATH
+  > [phases]
+  > publish=False
   > [extensions]
   > amend=
   > rebase=
@@ -428,6 +430,58 @@ In-memory rebase that fails due to merge conflicts
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
+  $ hg rebase --abort
+  saved backup bundle to $TESTTMP/repo1/repo3/.hg/strip-backup/c1e524d4287c-f91f82e1-backup.hg
+  rebase aborted
+
+Retrying without in-memory merge won't lose working copy changes
+  $ cd ..
+  $ hg clone repo3 repo3-dirty -q
+  $ cd repo3-dirty
+  $ echo dirty > a
+  $ hg rebase -s 2 -d 7
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  rebasing 4:e860deea161a "e"
+  merging e
+  transaction abort!
+  rollback completed
+  hit merge conflicts; re-running rebase without in-memory merge
+  rebase aborted
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  rebasing 4:e860deea161a "e"
+  merging e
+  warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+BROKEN: working copy change to "a" was lost
+  $ cat a
+  a
+
+Retrying without in-memory merge won't lose merge state
+  $ cd ..
+  $ hg clone repo3 repo3-merge-state -q
+  $ cd repo3-merge-state
+  $ hg merge 4
+  merging e
+  warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
+  2 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ hg resolve -l
+  U e
+BROKEN: these should not say "created no changes to commit"
+  $ hg rebase -s 2 -d 7
+  rebasing 2:177f92b77385 "c"
+  note: rebase of 2:177f92b77385 created no changes to commit
+  rebasing 3:055a42cdd887 "d"
+  note: rebase of 3:055a42cdd887 created no changes to commit
+  rebasing 4:e860deea161a "e"
+  note: rebase of 4:e860deea161a created no changes to commit
+  saved backup bundle to $TESTTMP/repo1/repo3-merge-state/.hg/strip-backup/177f92b77385-4da7ba9e-rebase.hg
+BROKEN: merge state lost
+  $ hg resolve -l
 
 ==========================
 Test for --confirm option|

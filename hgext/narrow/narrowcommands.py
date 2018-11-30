@@ -412,15 +412,13 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
 
     # Only print the current narrowspec.
     if only_show:
-        include, exclude = repo.narrowpats
-
         ui.pager('tracked')
         fm = ui.formatter('narrow', opts)
-        for i in sorted(include):
+        for i in sorted(oldincludes):
             fm.startitem()
             fm.write('status', '%s ', 'I', label='narrow.included')
             fm.write('pat', '%s\n', i, label='narrow.included')
-        for i in sorted(exclude):
+        for i in sorted(oldexcludes):
             fm.startitem()
             fm.write('status', '%s ', 'X', label='narrow.excluded')
             fm.write('pat', '%s\n', i, label='narrow.excluded')

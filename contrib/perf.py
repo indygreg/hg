@@ -992,13 +992,19 @@ def perfignore(ui, repo, **opts):
     timer(runone, setup=setupone, title=b"load")
     fm.end()
 
-@command(b'perfindex', formatteropts)
+@command(b'perfindex', [
+            (b'', b'rev', '', b'revision to be looked up (default tip)'),
+         ] + formatteropts)
 def perfindex(ui, repo, **opts):
     import mercurial.revlog
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
     mercurial.revlog._prereadsize = 2**24 # disable lazy parser in old hg
-    n = repo[b"tip"].node()
+    if opts['rev'] is None:
+        n = repo[b"tip"].node()
+    else:
+        rev = scmutil.revsingle(repo, opts['rev'])
+        n = repo[rev].node()
 
     unfi = repo.unfiltered()
     # find the filecache func directly

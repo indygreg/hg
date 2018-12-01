@@ -865,7 +865,11 @@ def rebase(ui, repo, **opts):
         except error.InMemoryMergeConflictsError:
             ui.warn(_('hit merge conflicts; re-running rebase without in-memory'
                       ' merge\n'))
-            _dorebase(ui, repo, action='abort', opts={})
+            # TODO: Make in-memory merge not use the on-disk merge state, so
+            # we don't have to clean it here
+            mergemod.mergestate.clean(repo)
+            clearstatus(repo)
+            clearcollapsemsg(repo)
             return _dorebase(ui, repo, action, opts, inmemory=False)
     else:
         return _dorebase(ui, repo, action, opts)

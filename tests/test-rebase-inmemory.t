@@ -422,7 +422,6 @@ In-memory rebase that fails due to merge conflicts
   transaction abort!
   rollback completed
   hit merge conflicts; re-running rebase without in-memory merge
-  rebase aborted
   rebasing 2:177f92b77385 "c"
   rebasing 3:055a42cdd887 "d"
   rebasing 4:e860deea161a "e"
@@ -447,17 +446,10 @@ Retrying without in-memory merge won't lose working copy changes
   transaction abort!
   rollback completed
   hit merge conflicts; re-running rebase without in-memory merge
-  rebase aborted
-  rebasing 2:177f92b77385 "c"
-  rebasing 3:055a42cdd887 "d"
-  rebasing 4:e860deea161a "e"
-  merging e
-  warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
-  [1]
-BROKEN: working copy change to "a" was lost
+  abort: uncommitted changes
+  [255]
   $ cat a
-  a
+  dirty
 
 Retrying without in-memory merge won't lose merge state
   $ cd ..

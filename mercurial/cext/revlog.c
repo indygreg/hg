@@ -1516,7 +1516,8 @@ static int ntobj_init(nodetreeObject *self, PyObject *args)
 {
 	PyObject *index;
 	unsigned capacity;
-	if (!PyArg_ParseTuple(args, "O!I", &indexType, &index, &capacity))
+	if (!PyArg_ParseTuple(args, "O!I", &HgRevlogIndex_Type, &index,
+	                      &capacity))
 		return -1;
 	Py_INCREF(index);
 	return nt_init(&self->nt, (indexObject *)index, capacity);
@@ -2581,7 +2582,7 @@ static PyGetSetDef index_getset[] = {
     {NULL} /* Sentinel */
 };
 
-PyTypeObject indexType = {
+PyTypeObject HgRevlogIndex_Type = {
     PyVarObject_HEAD_INIT(NULL, 0) /* header */
     "parsers.index",               /* tp_name */
     sizeof(indexObject),           /* tp_basicsize */
@@ -2637,7 +2638,7 @@ PyObject *parse_index2(PyObject *self, PyObject *args)
 	indexObject *idx;
 	int ret;
 
-	idx = PyObject_New(indexObject, &indexType);
+	idx = PyObject_New(indexObject, &HgRevlogIndex_Type);
 	if (idx == NULL)
 		goto bail;
 
@@ -2714,9 +2715,9 @@ static int rustla_init(rustlazyancestorsObject *self, PyObject *args)
 	Py_ssize_t i;
 
 	indexObject *index;
-	if (!PyArg_ParseTuple(args, "O!O!lO!", &indexType, &index, &PyList_Type,
-	                      &initrevsarg, &stoprev, &PyBool_Type,
-	                      &inclusivearg))
+	if (!PyArg_ParseTuple(args, "O!O!lO!", &HgRevlogIndex_Type, &index,
+	                      &PyList_Type, &initrevsarg, &stoprev,
+	                      &PyBool_Type, &inclusivearg))
 		return -1;
 
 	Py_INCREF(index);
@@ -2843,11 +2844,11 @@ static PyTypeObject rustlazyancestorsType = {
 
 void revlog_module_init(PyObject *mod)
 {
-	indexType.tp_new = PyType_GenericNew;
-	if (PyType_Ready(&indexType) < 0)
+	HgRevlogIndex_Type.tp_new = PyType_GenericNew;
+	if (PyType_Ready(&HgRevlogIndex_Type) < 0)
 		return;
-	Py_INCREF(&indexType);
-	PyModule_AddObject(mod, "index", (PyObject *)&indexType);
+	Py_INCREF(&HgRevlogIndex_Type);
+	PyModule_AddObject(mod, "index", (PyObject *)&HgRevlogIndex_Type);
 
 	nodetreeType.tp_new = PyType_GenericNew;
 	if (PyType_Ready(&nodetreeType) < 0)

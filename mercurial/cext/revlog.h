@@ -10,6 +10,6 @@
 
 #include <Python.h>
 
-extern PyTypeObject indexType;
+extern PyTypeObject HgRevlogIndex_Type;
 
 #endif /* _HG_REVLOG_H_ */

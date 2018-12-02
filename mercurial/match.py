@@ -1237,7 +1237,7 @@ def _buildregexmatch(kindpats, globsuffix):
             except re.error:
                 if s:
                     raise error.Abort(_("%s: invalid pattern (%s): %s") %
-                                     (s, k, p))
+                                      (s, k, p))
                 else:
                     raise error.Abort(_("invalid pattern (%s): %s") % (k, p))
         raise error.Abort(_("invalid pattern"))

@@ -12,4 +12,8 @@
 
 extern PyTypeObject HgRevlogIndex_Type;
 
+#define HgRevlogIndex_Check(op) PyObject_TypeCheck(op, &HgRevlogIndex_Type)
+
+int HgRevlogIndex_GetParents(PyObject *op, int rev, int *ps);
+
 #endif /* _HG_REVLOG_H_ */

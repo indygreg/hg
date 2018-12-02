@@ -194,6 +194,33 @@ static inline int index_get_parents(indexObject *self, Py_ssize_t rev, int *ps,
 	return 0;
 }
 
+/*
+ * Get parents of the given rev.
+ *
+ * If the specified rev is out of range, IndexError will be raised. If the
+ * revlog entry is corrupted, ValueError may be raised.
+ *
+ * Returns 0 on success or -1 on failure.
+ */
+int HgRevlogIndex_GetParents(PyObject *op, int rev, int *ps)
+{
+	int tiprev;
+	if (!op || !HgRevlogIndex_Check(op) || !ps) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	tiprev = (int)index_length((indexObject *)op) - 1;
+	if (rev < -1 || rev > tiprev) {
+		PyErr_Format(PyExc_IndexError, "rev out of range: %d", rev);
+		return -1;
+	} else if (rev == -1) {
+		ps[0] = ps[1] = -1;
+		return 0;
+	} else {
+		return index_get_parents((indexObject *)op, rev, ps, tiprev);
+	}
+}
+
 static inline int64_t index_get_start(indexObject *self, Py_ssize_t rev)
 {
 	uint64_t offset;

@@ -1185,7 +1185,7 @@ def _buildmatch(kindpats, globsuffix, listsubrepos, root):
         return regex, lambda f: any(mf(f) for mf in matchfuncs)
 
 MAX_RE_SIZE = 20000
-_BASE_SIZE = len('(?:)') - 1
+_BASE_SIZE = len('(?:)')
 
 def _joinregexes(regexps):
     """gather multiple regular expressions into a single one"""
@@ -1215,7 +1215,7 @@ def _buildregexmatch(kindpats, globsuffix):
             if (piecesize + 4) > MAX_RE_SIZE:
                 msg = _("matcher pattern is too long (%d bytes)") % piecesize
                 raise error.Abort(msg)
-            elif (groupsize + 1 + piecesize) > MAX_RE_SIZE:
+            elif (groupsize + piecesize) > MAX_RE_SIZE:
                 group = regexps[startidx:idx]
                 allgroups.append(_joinregexes(group))
                 startidx = idx

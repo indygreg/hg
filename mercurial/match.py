@@ -1212,7 +1212,7 @@ def _buildregexmatch(kindpats, globsuffix):
         groupsize = _BASE_SIZE
         for idx, r in enumerate(regexps):
             piecesize = len(r)
-            if (piecesize + 4) > MAX_RE_SIZE:
+            if (piecesize + _BASE_SIZE) > MAX_RE_SIZE:
                 msg = _("matcher pattern is too long (%d bytes)") % piecesize
                 raise error.Abort(msg)
             elif (groupsize + piecesize) > MAX_RE_SIZE:

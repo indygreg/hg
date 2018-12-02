@@ -2710,26 +2710,14 @@ struct rustlazyancestorsObjectStruct {
 };
 
 /* FFI exposed from Rust code */
-rustlazyancestorsObject *
-rustlazyancestors_init(indexObject *index,
-                       /* to pass index_get_parents() */
-                       int (*)(indexObject *, Py_ssize_t, int *, int),
-                       /* intrevs vector */
-                       Py_ssize_t initrevslen, long *initrevs, long stoprev,
-                       int inclusive);
+rustlazyancestorsObject *rustlazyancestors_init(indexObject *index,
+                                                /* intrevs vector */
+                                                Py_ssize_t initrevslen,
+                                                long *initrevs, long stoprev,
+                                                int inclusive);
 void rustlazyancestors_drop(rustlazyancestorsObject *self);
 int rustlazyancestors_next(rustlazyancestorsObject *self);
 int rustlazyancestors_contains(rustlazyancestorsObject *self, long rev);
-
-static int index_get_parents_checked(indexObject *self, Py_ssize_t rev, int *ps,
-                                     int maxrev)
-{
-	if (rev < 0 || rev >= index_length(self)) {
-		PyErr_SetString(PyExc_ValueError, "rev out of range");
-		return -1;
-	}
-	return index_get_parents(self, rev, ps, maxrev);
-}
 
 /* CPython instance methods */
 static int rustla_init(rustlazyancestorsObject *self, PyObject *args)
@@ -2768,12 +2756,12 @@ static int rustla_init(rustlazyancestorsObject *self, PyObject *args)
 	if (PyErr_Occurred())
 		goto bail;
 
-	self->iter = rustlazyancestors_init(index, index_get_parents, linit,
-	                                    initrevs, stoprev, inclusive);
+	self->iter =
+	    rustlazyancestors_init(index, linit, initrevs, stoprev, inclusive);
 	if (self->iter == NULL) {
 		/* if this is because of GraphError::ParentOutOfRange
-		 * index_get_parents_checked() has already set the proper
-		 * ValueError */
+		 * HgRevlogIndex_GetParents() has already set the proper
+		 * exception */
 		goto bail;
 	}
 

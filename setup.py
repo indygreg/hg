@@ -968,6 +968,7 @@ extmodules = [
                   'hg-direct-ffi',
                   include_dirs=common_include_dirs,
                   depends=common_depends + ['mercurial/cext/charencode.h',
+                                            'mercurial/cext/revlog.h',
                                             'rust/hg-core/src/ancestors.rs',
                                             'rust/hg-core/src/lib.rs']),
     Extension('mercurial.cext.osutil', ['mercurial/cext/osutil.c'],

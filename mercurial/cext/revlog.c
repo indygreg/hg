@@ -17,6 +17,7 @@
 
 #include "bitmanipulation.h"
 #include "charencode.h"
+#include "revlog.h"
 #include "util.h"
 
 #ifdef IS_PY3K
@@ -1511,8 +1512,6 @@ static int nt_init(nodetree *self, indexObject *index, unsigned capacity)
 	return 0;
 }
 
-static PyTypeObject indexType;
-
 static int ntobj_init(nodetreeObject *self, PyObject *args)
 {
 	PyObject *index;
@@ -2582,7 +2581,7 @@ static PyGetSetDef index_getset[] = {
     {NULL} /* Sentinel */
 };
 
-static PyTypeObject indexType = {
+PyTypeObject indexType = {
     PyVarObject_HEAD_INIT(NULL, 0) /* header */
     "parsers.index",               /* tp_name */
     sizeof(indexObject),           /* tp_basicsize */

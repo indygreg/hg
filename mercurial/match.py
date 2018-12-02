@@ -1185,11 +1185,10 @@ def _buildmatch(kindpats, globsuffix, listsubrepos, root):
         return regex, lambda f: any(mf(f) for mf in matchfuncs)
 
 MAX_RE_SIZE = 20000
-_BASE_SIZE = len('(?:)')
 
 def _joinregexes(regexps):
     """gather multiple regular expressions into a single one"""
-    return '(?:%s)' % '|'.join(regexps)
+    return '|'.join(regexps)
 
 def _buildregexmatch(kindpats, globsuffix):
     """Build a match function from a list of kinds and kindpats,
@@ -1209,17 +1208,17 @@ def _buildregexmatch(kindpats, globsuffix):
         fullregexp = _joinregexes(regexps)
 
         startidx = 0
-        groupsize = _BASE_SIZE
+        groupsize = 0
         for idx, r in enumerate(regexps):
             piecesize = len(r)
-            if (piecesize + _BASE_SIZE) > MAX_RE_SIZE:
+            if piecesize > MAX_RE_SIZE:
                 msg = _("matcher pattern is too long (%d bytes)") % piecesize
                 raise error.Abort(msg)
             elif (groupsize + piecesize) > MAX_RE_SIZE:
                 group = regexps[startidx:idx]
                 allgroups.append(_joinregexes(group))
                 startidx = idx
-                groupsize = _BASE_SIZE
+                groupsize = 0
             groupsize += piecesize + 1
 
         if startidx == 0:
@@ -1233,7 +1232,7 @@ def _buildregexmatch(kindpats, globsuffix):
     except re.error:
         for k, p, s in kindpats:
             try:
-                _rematcher('(?:%s)' % _regex(k, p, globsuffix))
+                _rematcher(_regex(k, p, globsuffix))
             except re.error:
                 if s:
                     raise error.Abort(_("%s: invalid pattern (%s): %s") %

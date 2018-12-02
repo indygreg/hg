@@ -19,18 +19,18 @@ Test operators and basic patterns
   $ fileset -v a1
   (symbol 'a1')
   * matcher:
-  <patternmatcher patterns='(?:a1$)'>
+  <patternmatcher patterns='a1$'>
   a1
   $ fileset -v 'a*'
   (symbol 'a*')
   * matcher:
-  <patternmatcher patterns='(?:a[^/]*$)'>
+  <patternmatcher patterns='a[^/]*$'>
   a1
   a2
   $ fileset -v '"re:a\d"'
   (string 're:a\\d')
   * matcher:
-  <patternmatcher patterns='(?:a\\d)'>
+  <patternmatcher patterns='a\\d'>
   a1
   a2
   $ fileset -v '!re:"a\d"'
@@ -41,7 +41,7 @@ Test operators and basic patterns
   * matcher:
   <predicatenmatcher
     pred=<not
-      <patternmatcher patterns='(?:a\\d)'>>>
+      <patternmatcher patterns='a\\d'>>>
   b1
   b2
   $ fileset -v 'path:a1 or glob:b?'
@@ -53,7 +53,7 @@ Test operators and basic patterns
       (symbol 'glob')
       (symbol 'b?')))
   * matcher:
-  <patternmatcher patterns='(?:a1(?:/|$)|b.$)'>
+  <patternmatcher patterns='a1(?:/|$)|b.$'>
   a1
   b1
   b2
@@ -196,7 +196,7 @@ Show parsed tree at stages:
         (string 'b'))))
   * matcher:
   <unionmatcher matchers=[
-    <patternmatcher patterns='(?:a1$|a2$)'>,
+    <patternmatcher patterns='a1$|a2$'>,
     <intersectionmatcher
       m1=<predicatenmatcher pred=clean>,
       m2=<predicatenmatcher pred=grep('b')>>]>
@@ -216,7 +216,7 @@ Union of basic patterns:
       (symbol 'path')
       (symbol 'b1')))
   * matcher:
-  <patternmatcher patterns='(?:a1$|a2$|b1(?:/|$))'>
+  <patternmatcher patterns='a1$|a2$|b1(?:/|$)'>
   a1
   a2
   b1
@@ -237,7 +237,7 @@ OR expression should be reordered by weight:
       (string 'b')))
   * matcher:
   <unionmatcher matchers=[
-    <patternmatcher patterns='(?:a1$|b2$)'>,
+    <patternmatcher patterns='a1$|b2$'>,
     <predicatenmatcher pred=grep('a')>,
     <predicatenmatcher pred=grep('b')>]>
   a1
@@ -254,8 +254,8 @@ Use differencematcher for 'x and not y':
     (symbol 'a1'))
   * matcher:
   <differencematcher
-    m1=<patternmatcher patterns='(?:a[^/]*$)'>,
-    m2=<patternmatcher patterns='(?:a1$)'>>
+    m1=<patternmatcher patterns='a[^/]*$'>,
+    m2=<patternmatcher patterns='a1$'>>
   a2
 
   $ fileset -p optimized -s '!binary() and a*'
@@ -267,7 +267,7 @@ Use differencematcher for 'x and not y':
       None))
   * matcher:
   <differencematcher
-    m1=<patternmatcher patterns='(?:a[^/]*$)'>,
+    m1=<patternmatcher patterns='a[^/]*$'>,
     m2=<predicatenmatcher pred=binary>>
   a1
   a2
@@ -286,8 +286,8 @@ Use differencematcher for 'x and not y':
     (symbol 'a1'))
   * matcher:
   <differencematcher
-    m1=<patternmatcher patterns='(?:a[^/]*$)'>,
-    m2=<patternmatcher patterns='(?:a1$)'>>
+    m1=<patternmatcher patterns='a[^/]*$'>,
+    m2=<patternmatcher patterns='a1$'>>
   a2
 
   $ fileset -p analyzed -p optimized -s 'binary() - a*'
@@ -309,7 +309,7 @@ Use differencematcher for 'x and not y':
   <intersectionmatcher
     m1=<predicatenmatcher
       pred=<not
-        <patternmatcher patterns='(?:a[^/]*$)'>>>,
+        <patternmatcher patterns='a[^/]*$'>>>,
     m2=<predicatenmatcher pred=binary>>
 
 Test files status
@@ -551,7 +551,7 @@ Test files properties
       None))
   * matcher:
   <intersectionmatcher
-    m1=<patternmatcher patterns='(?:b[^/]*$)'>,
+    m1=<patternmatcher patterns='b[^/]*$'>,
     m2=<predicatenmatcher pred=binary>>
   bin
 

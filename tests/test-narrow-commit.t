@@ -51,7 +51,7 @@ Can not modify dirstate outside
   $ touch outside/f1
   $ hg debugwalk -v -I 'relglob:f1'
   * matcher:
-  <includematcher includes='(?:(?:|.*/)f1(?:/|$))'>
+  <includematcher includes='(?:|.*/)f1(?:/|$)'>
   f  inside/f1  inside/f1
   $ hg add .
   $ hg add outside/f1

@@ -526,7 +526,8 @@ class repacker(object):
 
             # Filter orderednodes to just the nodes we want to serialize (it
             # currently also has the edge nodes' ancestors).
-            orderednodes = filter(lambda node: node in nodes, orderednodes)
+            orderednodes = list(filter(lambda node: node in nodes,
+                                orderednodes))
 
             # Garbage collect old nodes:
             if self.garbagecollect:

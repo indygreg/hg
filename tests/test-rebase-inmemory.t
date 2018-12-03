@@ -463,17 +463,12 @@ Retrying without in-memory merge won't lose merge state
   [1]
   $ hg resolve -l
   U e
-BROKEN: these should not say "created no changes to commit"
   $ hg rebase -s 2 -d 7
   rebasing 2:177f92b77385 "c"
-  note: rebase of 2:177f92b77385 created no changes to commit
-  rebasing 3:055a42cdd887 "d"
-  note: rebase of 3:055a42cdd887 created no changes to commit
-  rebasing 4:e860deea161a "e"
-  note: rebase of 4:e860deea161a created no changes to commit
-  saved backup bundle to $TESTTMP/repo1/repo3-merge-state/.hg/strip-backup/177f92b77385-4da7ba9e-rebase.hg
-BROKEN: merge state lost
+  abort: outstanding merge conflicts
+  [255]
   $ hg resolve -l
+  U e
 
 ==========================
 Test for --confirm option|

@@ -540,7 +540,7 @@ class rebaseruntime(object):
             p1, p2, base = defineparents(repo, rev, self.destmap,
                                          self.state, self.skipped,
                                          self.obsoletenotrebased)
-            if len(repo[None].parents()) == 2:
+            if not self.inmemory and len(repo[None].parents()) == 2:
                 repo.ui.debug('resuming interrupted rebase\n')
             else:
                 overrides = {('ui', 'forcemerge'): opts.get('tool', '')}

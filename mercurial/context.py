@@ -1805,6 +1805,11 @@ class overlayworkingctx(committablectx):
         else:
             return self._wrappedctx[path].flags()
 
+    def __contains__(self, key):
+        if key in self._cache:
+            return self._cache[key]['exists']
+        return key in self.p1()
+
     def _existsinparent(self, path):
         try:
             # ``commitctx` raises a ``ManifestLookupError`` if a path does not
@@ -1839,7 +1844,7 @@ class overlayworkingctx(committablectx):
         components = path.split('/')
         for i in pycompat.xrange(len(components)):
             component = "/".join(components[0:i])
-            if component in self.p1() and self._cache[component]['exists']:
+            if component in self:
                 fail(path, component)
 
         # Test the other direction -- that this path from p2 isn't a directory
@@ -1851,7 +1856,7 @@ class overlayworkingctx(committablectx):
             if len(mfiles) == 1 and mfiles[0] == path:
                 return
             # omit the files which are deleted in current IMM wctx
-            mfiles = [m for m in mfiles if self._cache[m]['exists']]
+            mfiles = [m for m in mfiles if m in self]
             if not mfiles:
                 return
             raise error.Abort("error: file '%s' cannot be written because "

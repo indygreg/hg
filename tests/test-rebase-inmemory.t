@@ -243,12 +243,16 @@ Test reporting of path conflicts
   $ echo c > c/c
   $ hg add c/c
   $ hg ci -m 'c/c'
-BROKEN: This should be a conflict, should not crash
-  $ hg rebase -r . -d 3 -n 2>&1 | grep KeyError
-  KeyError: 'c'
-BROKEN: This should be a conflict, should not crash
-  $ hg rebase -r 3 -d . -n 2>&1 | grep KeyError
-  KeyError: 'c/c'
+  $ hg rebase -r . -d 3 -n
+  starting dry-run rebase; repository will not be changed
+  rebasing 8:755f0104af9b "c/c" (tip)
+  abort: error: 'c/c' conflicts with file 'c' in 3.
+  [255]
+  $ hg rebase -r 3 -d . -n
+  starting dry-run rebase; repository will not be changed
+  rebasing 3:844a7de3e617 "c"
+  abort: error: file 'c' cannot be written because  'c/' is a folder in 755f0104af9b (containing 1 entries: c/c)
+  [255]
 
   $ cd ..
 

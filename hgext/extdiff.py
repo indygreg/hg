@@ -383,8 +383,9 @@ class savedcmd(object):
 
     def __init__(self, path, cmdline):
         # We can't pass non-ASCII through docstrings (and path is
-        # in an unknown encoding anyway)
-        docpath = stringutil.escapestr(path)
+        # in an unknown encoding anyway), but avoid double separators on
+        # Windows
+        docpath = stringutil.escapestr(path).replace(b'\\\\', b'\\')
         self.__doc__ %= {r'path': pycompat.sysstr(stringutil.uirepr(docpath))}
         self._cmdline = cmdline
 

@@ -239,6 +239,16 @@ Test reporting of path conflicts
   |/
   o  0: b173517d0057 'a'
   
+  $ mkdir c
+  $ echo c > c/c
+  $ hg add c/c
+  $ hg ci -m 'c/c'
+BROKEN: This should be a conflict, should not crash
+  $ hg rebase -r . -d 3 -n 2>&1 | grep KeyError
+  KeyError: 'c'
+BROKEN: This should be a conflict, should not crash
+  $ hg rebase -r 3 -d . -n 2>&1 | grep KeyError
+  KeyError: 'c/c'
 
   $ cd ..
 

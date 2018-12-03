@@ -472,7 +472,15 @@ class unixforkingservice(object):
                 # waiting for recv() will receive ECONNRESET.
                 self._unlinksocket()
                 exiting = True
-            ready = selector.select(timeout=h.pollinterval)
+            try:
+                ready = selector.select(timeout=h.pollinterval)
+            except OSError as inst:
+                # selectors2 raises ETIMEDOUT if timeout exceeded while
+                # handling signal interrupt. That's probably wrong, but
+                # we can easily get around it.
+                if inst.errno != errno.ETIMEDOUT:
+                    raise
+                ready = []
             if not ready:
                 # only exit if we completed all queued requests
                 if exiting:

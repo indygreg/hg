@@ -694,8 +694,6 @@ Test --confirm option when there is a conflict
   o  0:cb9a9f314b8b test
      a
   
-#if execbit
-
 Test a metadata-only in-memory merge
   $ cd $TESTTMP
   $ hg init no_exception
@@ -720,5 +718,3 @@ issue5960: this was raising an AttributeError exception
   diff --git a/foo.txt b/foo.txt
   old mode 100644
   new mode 100755
-
-#endif

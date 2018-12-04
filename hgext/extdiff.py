@@ -429,6 +429,7 @@ def uisetup(ui):
             if args:
                 cmdline += ' ' + args
         command(cmd, extdiffopts[:], _('hg %s [OPTION]... [FILE]...') % cmd,
+                helpcategory=command.CATEGORY_FILE_CONTENTS,
                 inferrepo=True)(savedcmd(path, cmdline))
 
 # tell hggettext to extract docstrings from these functions:

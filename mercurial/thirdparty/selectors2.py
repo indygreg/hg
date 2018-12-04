@@ -708,7 +708,7 @@ else:
                     if expires is not None:
                         current_time = monotonic()
                         if current_time > expires:
-                            raise OSError(errno=errno.ETIMEDOUT)
+                            raise OSError(errno.ETIMEDOUT, 'Connection timed out')
                         if recalc_timeout:
                             if "timeout" in kwargs:
                                 kwargs["timeout"] = expires - current_time

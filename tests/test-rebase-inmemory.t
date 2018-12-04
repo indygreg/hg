@@ -1,5 +1,7 @@
 #require symlink execbit
   $ cat << EOF >> $HGRCPATH
+  > [phases]
+  > publish=False
   > [extensions]
   > amend=
   > rebase=
@@ -54,6 +56,7 @@ Rebase a simple DAG:
   b (no-eol)
   $ hg cat -r 2 c
   c (no-eol)
+  $ cd ..
 
 Case 2:
   $ hg init repo2
@@ -177,7 +180,7 @@ Test reporting of path conflicts
   
   $ hg rebase -r . -d 2
   rebasing 4:daf7dfc139cb "a/a" (tip)
-  saved backup bundle to $TESTTMP/repo1/repo2/.hg/strip-backup/daf7dfc139cb-fdbfcf4f-rebase.hg
+  saved backup bundle to $TESTTMP/repo2/.hg/strip-backup/daf7dfc139cb-fdbfcf4f-rebase.hg
 
   $ hg tglog
   @  4: c6ad37a4f250 'a/a'
@@ -218,7 +221,7 @@ Test reporting of path conflicts
   
   $ hg rebase -r . -d 5
   rebasing 7:855e9797387e "added a back!" (tip)
-  saved backup bundle to $TESTTMP/repo1/repo2/.hg/strip-backup/855e9797387e-81ee4c5d-rebase.hg
+  saved backup bundle to $TESTTMP/repo2/.hg/strip-backup/855e9797387e-81ee4c5d-rebase.hg
 
   $ hg tglog
   @  7: bb3f02be2688 'added a back!'
@@ -237,7 +240,46 @@ Test reporting of path conflicts
   |/
   o  0: b173517d0057 'a'
   
+  $ mkdir c
+  $ echo c > c/c
+  $ hg add c/c
+  $ hg ci -m 'c/c'
+  $ hg rebase -r . -d 3 -n
+  starting dry-run rebase; repository will not be changed
+  rebasing 8:755f0104af9b "c/c" (tip)
+  abort: error: 'c/c' conflicts with file 'c' in 3.
+  [255]
+  $ hg rebase -r 3 -d . -n
+  starting dry-run rebase; repository will not be changed
+  rebasing 3:844a7de3e617 "c"
+  abort: error: file 'c' cannot be written because  'c/' is a folder in 755f0104af9b (containing 1 entries: c/c)
+  [255]
 
+  $ cd ..
+
+Test path auditing (issue5818)
+
+  $ mkdir lib_
+  $ ln -s lib_ lib
+  $ hg init repo
+  $ cd repo
+  $ mkdir -p ".$TESTTMP/lib"
+  $ touch ".$TESTTMP/lib/a"
+  $ hg add ".$TESTTMP/lib/a"
+  $ hg ci -m 'a'
+
+  $ touch ".$TESTTMP/lib/b"
+  $ hg add ".$TESTTMP/lib/b"
+  $ hg ci -m 'b'
+
+  $ hg up -q '.^'
+  $ touch ".$TESTTMP/lib/c"
+  $ hg add ".$TESTTMP/lib/c"
+  $ hg ci -m 'c'
+  created new head
+  $ hg rebase -s 1 -d .
+  rebasing 1:* "b" (glob)
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/*-rebase.hg (glob)
   $ cd ..
 
 Test dry-run rebasing
@@ -420,7 +462,6 @@ In-memory rebase that fails due to merge conflicts
   transaction abort!
   rollback completed
   hit merge conflicts; re-running rebase without in-memory merge
-  rebase aborted
   rebasing 2:177f92b77385 "c"
   rebasing 3:055a42cdd887 "d"
   rebasing 4:e860deea161a "e"
@@ -428,6 +469,46 @@ In-memory rebase that fails due to merge conflicts
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
+  $ hg rebase --abort
+  saved backup bundle to $TESTTMP/repo3/.hg/strip-backup/c1e524d4287c-f91f82e1-backup.hg
+  rebase aborted
+
+Retrying without in-memory merge won't lose working copy changes
+  $ cd ..
+  $ hg clone repo3 repo3-dirty -q
+  $ cd repo3-dirty
+  $ echo dirty > a
+  $ hg rebase -s 2 -d 7
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  rebasing 4:e860deea161a "e"
+  merging e
+  transaction abort!
+  rollback completed
+  hit merge conflicts; re-running rebase without in-memory merge
+  abort: uncommitted changes
+  [255]
+  $ cat a
+  dirty
+
+Retrying without in-memory merge won't lose merge state
+  $ cd ..
+  $ hg clone repo3 repo3-merge-state -q
+  $ cd repo3-merge-state
+  $ hg merge 4
+  merging e
+  warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
+  2 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ hg resolve -l
+  U e
+  $ hg rebase -s 2 -d 7
+  rebasing 2:177f92b77385 "c"
+  abort: outstanding merge conflicts
+  [255]
+  $ hg resolve -l
+  U e
 
 ==========================
 Test for --confirm option|

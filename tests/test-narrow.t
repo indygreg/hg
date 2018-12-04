@@ -214,6 +214,29 @@ Updates to nullid if necessary
   000000000000
   $ cd ..
 
+Narrowing doesn't resurrect old commits (unlike what regular `hg strip` does)
+  $ hg clone --narrow ssh://user@dummy/master narrow-obsmarkers --include d0 --include d3 -q
+  $ cd narrow-obsmarkers
+  $ echo a >> d0/f2
+  $ hg add d0/f2
+  $ hg ci -m 'modify d0/'
+  $ echo a >> d3/f2
+  $ hg add d3/f2
+  $ hg commit --amend -m 'modify d0/ and d3/'
+  $ hg log -T "{rev}: {desc}\n"
+  5: modify d0/ and d3/
+  3: add d10/f
+  2: add d3/f
+  1: add d2/f
+  0: add d0/f
+  $ hg tracked --removeinclude d3 --force-delete-local-changes -q
+  $ hg log -T "{rev}: {desc}\n"
+  3: add d10/f
+  2: add d3/f
+  1: add d2/f
+  0: add d0/f
+  $ cd ..
+
 Can remove last include, making repo empty
   $ hg clone --narrow ssh://user@dummy/master narrow-empty --include d0 -r 5
   adding changesets

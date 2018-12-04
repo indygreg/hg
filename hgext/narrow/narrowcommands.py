@@ -215,7 +215,9 @@ def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
                 urev = max(repo.revs('(::%n) - %ln + null',
                                      repo['.'].node(), visibletostrip))
                 hg.clean(repo, urev)
-            repair.strip(ui, unfi, tostrip, topic='narrow')
+            overrides = {('devel', 'strip-obsmarkers'): False}
+            with ui.configoverride(overrides, 'narrow'):
+                repair.strip(ui, unfi, tostrip, topic='narrow')
 
         todelete = []
         for f, f2, size in repo.store.datafiles():

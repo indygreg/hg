@@ -108,9 +108,9 @@ Non store repo:
   .hg/undo.dirstate
   .hg/undo.phaseroots
   .hg/wcache
-  .hg/wcache/checkisexec
-  .hg/wcache/checklink
-  .hg/wcache/checklink-target
+  .hg/wcache/checkisexec (execbit !)
+  .hg/wcache/checklink (symlink !)
+  .hg/wcache/checklink-target (symlink !)
   $ cd ..
 
 Non fncache repo:
@@ -149,9 +149,9 @@ Non fncache repo:
   .hg/undo.desc
   .hg/undo.dirstate
   .hg/wcache
-  .hg/wcache/checkisexec
-  .hg/wcache/checklink
-  .hg/wcache/checklink-target
+  .hg/wcache/checkisexec (execbit !)
+  .hg/wcache/checklink (symlink !)
+  .hg/wcache/checklink-target (symlink !)
   $ cd ..
 
 Encoding of reserved / long paths in the store

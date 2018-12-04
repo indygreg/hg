@@ -31,7 +31,6 @@ share shouldn't have a full cache dir, original repo should
   $ test -d .hg/cache
   [1]
   $ ls -1 .hg/wcache || true
-  ls: .hg/wcache: $ENOENT$ (no-execbit no-symlink !)
   checkisexec (execbit !)
   checklink (symlink !)
   checklink-target (symlink !)

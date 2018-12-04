@@ -126,11 +126,10 @@ impl<G: Graph> Iterator for AncestorsIterator<G> {
             }
             Some(c) => *c,
         };
-        let parents = self
+        let (p1, p2) = self
             .graph
             .parents(current)
             .unwrap_or((NULL_REVISION, NULL_REVISION));
-        let p1 = parents.0;
         if p1 < self.stoprev || self.seen.contains(&p1) {
             self.visit.pop();
         } else {
@@ -138,7 +137,7 @@ impl<G: Graph> Iterator for AncestorsIterator<G> {
             self.seen.insert(p1);
         };
 
-        self.conditionally_push_rev(parents.1);
+        self.conditionally_push_rev(p2);
         Some(current)
     }
 }

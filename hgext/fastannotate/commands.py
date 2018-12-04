@@ -261,8 +261,9 @@ def debugbuildannotatecache(ui, repo, *pats, **opts):
         repo.prefetchfastannotate(paths)
     else:
         # server, or full repo
+        progress = ui.makeprogress(_('building'), total=len(paths))
         for i, path in enumerate(paths):
-            ui.progress(_('building'), i, total=len(paths))
+            progress.update(i)
             with facontext.annotatecontext(repo, path) as actx:
                 try:
                     if actx.isuptodate(rev):
@@ -281,5 +282,4 @@ def debugbuildannotatecache(ui, repo, *pats, **opts):
                         # cache for other files.
                         ui.warn(_('fastannotate: %s: failed to '
                                   'build cache: %r\n') % (path, ex))
-        # clear the progress bar
-        ui.write()
+        progress.complete()

@@ -398,7 +398,8 @@ class _annotatecontext(object):
 
         # 3rd DFS does the actual annotate
         visit = initvisit[:]
-        progress = 0
+        progress = self.ui.makeprogress(('building cache'),
+                                        total=len(newmainbranch))
         while visit:
             f = visit[-1]
             if f in hist:
@@ -437,10 +438,7 @@ class _annotatecontext(object):
             del pcache[f]
 
             if ismainbranch: # need to write to linelog
-                if not self.ui.quiet:
-                    progress += 1
-                    self.ui.progress(_('building cache'), progress,
-                                     total=len(newmainbranch))
+                progress.increment()
                 bannotated = None
                 if len(pl) == 2 and self.opts.followmerge: # merge
                     bannotated = curr[0]
@@ -450,8 +448,7 @@ class _annotatecontext(object):
             elif showpath: # not append linelog, but we need to record path
                 self._node2path[f.node()] = f.path()
 
-        if progress: # clean progress bar
-            self.ui.write()
+        progress.complete()
 
         result = [
             ((self.revmap.rev2hsh(fr) if isinstance(fr, int) else fr.node()), l)

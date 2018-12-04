@@ -72,6 +72,7 @@ cleanbutpackages:
 	rm -rf build mercurial/locale
 	$(MAKE) -C doc clean
 	$(MAKE) -C contrib/chg distclean
+	rm -rf rust/target
 
 clean: cleanbutpackages
 	rm -rf packages

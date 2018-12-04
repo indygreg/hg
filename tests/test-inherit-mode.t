@@ -103,7 +103,7 @@ new directories are setgid
   00660 ./.hg/undo.dirstate
   00770 ./.hg/wcache/
   00711 ./.hg/wcache/checkisexec
-  00777 ./.hg/wcache/checklink
+  007.. ./.hg/wcache/checklink (re)
   00600 ./.hg/wcache/checklink-target
   00700 ./dir/
   00600 ./dir/bar

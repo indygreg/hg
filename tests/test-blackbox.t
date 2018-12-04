@@ -347,7 +347,8 @@ Test missing log directory, which shouldn't be created automatically
   > EOF
   $ hg log --debug
   removing $TESTTMP/gone/.hg
-  warning: cannot write to blackbox.log: $ENOENT$
+  warning: cannot write to blackbox.log: $ENOENT$ (no-windows !)
+  warning: cannot write to blackbox.log: $TESTTMP/gone/.hg/blackbox.log: $ENOTDIR$ (windows !)
   $ cd ..
 
 #if chg

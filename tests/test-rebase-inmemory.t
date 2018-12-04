@@ -257,6 +257,32 @@ Test reporting of path conflicts
 
   $ cd ..
 
+Test path auditing (issue5818)
+
+  $ mkdir lib_
+  $ ln -s lib_ lib
+  $ hg init repo
+  $ cd repo
+  $ mkdir -p ".$TESTTMP/lib"
+  $ touch ".$TESTTMP/lib/a"
+  $ hg add ".$TESTTMP/lib/a"
+  $ hg ci -m 'a'
+
+  $ touch ".$TESTTMP/lib/b"
+  $ hg add ".$TESTTMP/lib/b"
+  $ hg ci -m 'b'
+
+  $ hg up -q '.^'
+  $ touch ".$TESTTMP/lib/c"
+  $ hg add ".$TESTTMP/lib/c"
+  $ hg ci -m 'c'
+  created new head
+  $ hg rebase -s 1 -d .
+  rebasing 1:* "b" (glob)
+  abort: path '*/lib/b' traverses symbolic link '*/lib' (glob)
+  [255]
+  $ cd ..
+
 Test dry-run rebasing
 
   $ hg init repo3

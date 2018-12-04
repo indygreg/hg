@@ -56,6 +56,7 @@ Rebase a simple DAG:
   b (no-eol)
   $ hg cat -r 2 c
   c (no-eol)
+  $ cd ..
 
 Case 2:
   $ hg init repo2
@@ -179,7 +180,7 @@ Test reporting of path conflicts
   
   $ hg rebase -r . -d 2
   rebasing 4:daf7dfc139cb "a/a" (tip)
-  saved backup bundle to $TESTTMP/repo1/repo2/.hg/strip-backup/daf7dfc139cb-fdbfcf4f-rebase.hg
+  saved backup bundle to $TESTTMP/repo2/.hg/strip-backup/daf7dfc139cb-fdbfcf4f-rebase.hg
 
   $ hg tglog
   @  4: c6ad37a4f250 'a/a'
@@ -220,7 +221,7 @@ Test reporting of path conflicts
   
   $ hg rebase -r . -d 5
   rebasing 7:855e9797387e "added a back!" (tip)
-  saved backup bundle to $TESTTMP/repo1/repo2/.hg/strip-backup/855e9797387e-81ee4c5d-rebase.hg
+  saved backup bundle to $TESTTMP/repo2/.hg/strip-backup/855e9797387e-81ee4c5d-rebase.hg
 
   $ hg tglog
   @  7: bb3f02be2688 'added a back!'
@@ -444,7 +445,7 @@ In-memory rebase that fails due to merge conflicts
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
   $ hg rebase --abort
-  saved backup bundle to $TESTTMP/repo1/repo3/.hg/strip-backup/c1e524d4287c-f91f82e1-backup.hg
+  saved backup bundle to $TESTTMP/repo3/.hg/strip-backup/c1e524d4287c-f91f82e1-backup.hg
   rebase aborted
 
 Retrying without in-memory merge won't lose working copy changes

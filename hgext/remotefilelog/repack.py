@@ -495,18 +495,20 @@ class repacker(object):
                 byfile.setdefault(entry.filename, {})[entry.node] = entry
 
         count = 0
+        repackprogress = ui.makeprogress(_("repacking data"), unit=self.unit,
+                                            total=len(byfile))
         for filename, entries in sorted(byfile.iteritems()):
-            ui.progress(_("repacking data"), count, unit=self.unit,
-                        total=len(byfile))
+            repackprogress.update(count)
 
             ancestors = {}
             nodes = list(node for node in entries)
             nohistory = []
+            buildprogress = ui.makeprogress(_("building history"), unit='nodes',
+                                            total=len(nodes))
             for i, node in enumerate(nodes):
                 if node in ancestors:
                     continue
-                ui.progress(_("building history"), i, unit='nodes',
-                            total=len(nodes))
+                buildprogress.update(i)
                 try:
                     ancestors.update(self.fullhistory.getancestors(filename,
                         node, known=ancestors))
@@ -515,7 +517,7 @@ class repacker(object):
                     # corresponding history entries for them. It's not a big
                     # deal, but the entries won't be delta'd perfectly.
                     nohistory.append(node)
-            ui.progress(_("building history"), None)
+            buildprogress.complete()
 
             # Order the nodes children first, so we can produce reverse deltas
             orderednodes = list(reversed(self._toposort(ancestors)))
@@ -547,9 +549,11 @@ class repacker(object):
             nobase = set()
             referenced = set()
             nodes = set(nodes)
+            processprogress = ui.makeprogress(_("processing nodes"),
+                                              unit='nodes',
+                                              total=len(orderednodes))
             for i, node in enumerate(orderednodes):
-                ui.progress(_("processing nodes"), i, unit='nodes',
-                            total=len(orderednodes))
+                processprogress.update(i)
                 # Find delta base
                 # TODO: allow delta'ing against most recent descendant instead
                 # of immediate child
@@ -620,10 +624,10 @@ class repacker(object):
 
                 entries[node].datarepacked = True
 
-            ui.progress(_("processing nodes"), None)
+            processprogress.complete()
             count += 1
 
-        ui.progress(_("repacking data"), None)
+        repackprogress.complete()
         target.close(ledger=ledger)
 
     def repackhistory(self, ledger, target):
@@ -634,7 +638,8 @@ class repacker(object):
             if entry.historysource:
                 byfile.setdefault(entry.filename, {})[entry.node] = entry
 
-        count = 0
+        progress = ui.makeprogress(_("repacking history"), unit=self.unit,
+                                   total=len(byfile))
         for filename, entries in sorted(byfile.iteritems()):
             ancestors = {}
             nodes = list(node for node in entries)
@@ -678,11 +683,9 @@ class repacker(object):
                 if node in entries:
                     entries[node].historyrepacked = True
 
-            count += 1
-            ui.progress(_("repacking history"), count, unit=self.unit,
-                        total=len(byfile))
+            progress.increment()
 
-        ui.progress(_("repacking history"), None)
+        progress.complete()
         target.close(ledger=ledger)
 
     def _toposort(self, ancestors):

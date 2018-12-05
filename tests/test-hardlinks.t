@@ -230,7 +230,7 @@ Create hardlinked copy r4 of r3 (on Linux, we would call 'cp -al'):
 the symlink should be followed or not. It does behave differently on Linux and
 BSD. Just remove it so the test pass on both platforms.
 
-  $ rm -f r4/.hg/cache/checklink
+  $ rm -f r4/.hg/wcache/checklink
 
 r4 has hardlinks in the working dir (not just inside .hg):
 

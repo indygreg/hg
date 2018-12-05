@@ -479,7 +479,7 @@ def _docreatecmd(ui, repo, pats, opts):
 
         # use an uncommitted transaction to generate the bundle to avoid
         # pull races. ensure we don't print the abort message to stderr.
-        tr = repo.transaction('commit', report=lambda x: None)
+        tr = repo.transaction('shelve', report=lambda x: None)
 
         interactive = opts.get('interactive', False)
         includeunknown = (opts.get('unknown', False) and

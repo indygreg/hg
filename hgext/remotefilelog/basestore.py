@@ -77,14 +77,15 @@ class basestore(object):
         ui = self.ui
         entries = ledger.sources.get(self, [])
         count = 0
+        progress = ui.makeprogress(_("cleaning up"), unit="files",
+                                   total=len(entries))
         for entry in entries:
             if entry.gced or (entry.datarepacked and entry.historyrepacked):
-                ui.progress(_("cleaning up"), count, unit="files",
-                            total=len(entries))
+                progress.update(count)
                 path = self._getfilepath(entry.filename, entry.node)
                 util.tryunlink(path)
             count += 1
-        ui.progress(_("cleaning up"), None)
+        progress.complete()
 
         # Clean up the repo cache directory.
         self._cleanupdirectory(self._getrepocachepath())
@@ -302,8 +303,6 @@ class basestore(object):
     def gc(self, keepkeys):
         ui = self.ui
         cachepath = self._path
-        _removing = _("removing unnecessary files")
-        _truncating = _("enforcing cache limit")
 
         # prune cache
         import Queue
@@ -316,7 +315,9 @@ class basestore(object):
         # keep files newer than a day even if they aren't needed
         limit = time.time() - (60 * 60 * 24)
 
-        ui.progress(_removing, count, unit="files")
+        progress = ui.makeprogress(_("removing unnecessary files"),
+                                   unit="files")
+        progress.update(0)
         for root, dirs, files in os.walk(cachepath):
             for file in files:
                 if file == 'repos':
@@ -326,7 +327,7 @@ class basestore(object):
                 if '/packs/' in root:
                     continue
 
-                ui.progress(_removing, count, unit="files")
+                progress.update(count)
                 path = os.path.join(root, file)
                 key = os.path.relpath(path, cachepath)
                 count += 1
@@ -357,16 +358,17 @@ class basestore(object):
                         ui.warn(msg % path)
                         continue
                     removed += 1
-        ui.progress(_removing, None)
+        progress.complete()
 
         # remove oldest files until under limit
         limit = ui.configbytes("remotefilelog", "cachelimit")
         if size > limit:
             excess = size - limit
+            progress = ui.makeprogress(_("enforcing cache limit"), unit="bytes",
+                                       total=excess)
             removedexcess = 0
             while queue and size > limit and size > 0:
-                ui.progress(_truncating, removedexcess, unit="bytes",
-                            total=excess)
+                progress.update(removedexcess)
                 atime, oldpath, oldpathstat = queue.get()
                 try:
                     shallowutil.unlinkfile(oldpath)
@@ -379,7 +381,7 @@ class basestore(object):
                 size -= oldpathstat.st_size
                 removed += 1
                 removedexcess += oldpathstat.st_size
-        ui.progress(_truncating, None)
+            progress.complete()
 
         ui.status(_("finished: removed %s of %s files (%0.2f GB to %0.2f GB)\n")
                   % (removed, count,

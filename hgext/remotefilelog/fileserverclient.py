@@ -361,9 +361,9 @@ class fileserverclient(object):
 
         fromcache = total - len(missed)
         count = [fromcache]
-        progress.update(count[0], total=total)
+        progress.update(fromcache, total=total)
         self.ui.log("remotefilelog", "remote cache hit rate is %r of %r\n",
-                    count[0], total, hit=count[0], total=total)
+                    fromcache, total, hit=fromcache, total=total)
 
         oldumask = os.umask(0o002)
         try:

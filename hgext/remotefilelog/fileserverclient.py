@@ -42,7 +42,6 @@ fetched = 0
 fetchmisses = 0
 
 _lfsmod = None
-_downloading = _('downloading')
 
 def getcachekey(reponame, file, id):
     pathhash = node.hex(hashlib.sha1(file).digest())
@@ -332,7 +331,8 @@ class fileserverclient(object):
         cache.request(request)
 
         total = count
-        self.ui.progress(_downloading, 0, total=count)
+        progress = self.ui.makeprogress(_('downloading'), total=count)
+        progress.update(0)
 
         missed = []
         count = 0
@@ -352,7 +352,7 @@ class fileserverclient(object):
                 # receive progress reports
                 parts = missingid.split("_")
                 count += int(parts[2])
-                self.ui.progress(_downloading, count, total=total)
+                progress.update(count)
                 continue
 
             missed.append(missingid)
@@ -362,7 +362,7 @@ class fileserverclient(object):
 
         count = [total - len(missed)]
         fromcache = count[0]
-        self.ui.progress(_downloading, count[0], total=total)
+        progress.update(count[0], total=total)
         self.ui.log("remotefilelog", "remote cache hit rate is %r of %r\n",
                     count[0], total, hit=count[0], total=total)
 
@@ -372,7 +372,7 @@ class fileserverclient(object):
             if missed:
                 def progresstick():
                     count[0] += 1
-                    self.ui.progress(_downloading, count[0], total=total)
+                    progress.update(count[0])
                 # When verbose is true, sshpeer prints 'running ssh...'
                 # to stdout, which can interfere with some command
                 # outputs
@@ -427,7 +427,7 @@ class fileserverclient(object):
                 request = "set\n%d\n%s\n" % (count[0], "\n".join(missed))
                 cache.request(request)
 
-            self.ui.progress(_downloading, None)
+            progress.complete()
 
             # mark ourselves as a user of this cache
             writedata.markrepo(self.repo.path)

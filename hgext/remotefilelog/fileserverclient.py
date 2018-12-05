@@ -317,8 +317,8 @@ class fileserverclient(object):
         writedata = self.writedata
 
         repo = self.repo
-        count = len(fileids)
-        request = "get\n%d\n" % count
+        total = len(fileids)
+        request = "get\n%d\n" % total
         idmap = {}
         reponame = repo.name
         for file, id in fileids:
@@ -330,8 +330,7 @@ class fileserverclient(object):
 
         cache.request(request)
 
-        total = count
-        progress = self.ui.makeprogress(_('downloading'), total=count)
+        progress = self.ui.makeprogress(_('downloading'), total=total)
         progress.update(0)
 
         missed = []

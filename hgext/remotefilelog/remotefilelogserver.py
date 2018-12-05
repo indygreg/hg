@@ -388,14 +388,12 @@ def gcserver(ui, repo):
     days = repo.ui.configint("remotefilelog", "serverexpiration")
     expiration = time.time() - (days * 24 * 60 * 60)
 
-    _removing = _("removing old server cache")
-    count = 0
-    ui.progress(_removing, count, unit="files")
+    progress = ui.makeprogress(_("removing old server cache"), unit="files")
+    progress.update(0)
     for root, dirs, files in os.walk(cachepath):
         for file in files:
             filepath = os.path.join(root, file)
-            count += 1
-            ui.progress(_removing, count, unit="files")
+            progress.increment()
             if filepath in neededfiles:
                 continue
 
@@ -403,4 +401,4 @@ def gcserver(ui, repo):
             if stat.st_mtime < expiration:
                 os.remove(filepath)
 
-    ui.progress(_removing, None)
+    progress.complete()

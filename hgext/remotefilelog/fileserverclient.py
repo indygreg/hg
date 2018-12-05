@@ -359,8 +359,8 @@ class fileserverclient(object):
         global fetchmisses
         fetchmisses += len(missed)
 
-        count = [total - len(missed)]
-        fromcache = count[0]
+        fromcache = total - len(missed)
+        count = [fromcache]
         progress.update(count[0], total=total)
         self.ui.log("remotefilelog", "remote cache hit rate is %r of %r\n",
                     count[0], total, hit=count[0], total=total)

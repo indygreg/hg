@@ -811,14 +811,14 @@ def gcclient(ui, cachepath):
     validrepos = []
     keepkeys = set()
 
-    _analyzing = _("analyzing repositories")
-
     sharedcache = None
     filesrepacked = False
 
     count = 0
+    progress = ui.makeprogress(_("analyzing repositories"), unit="repos",
+                               total=len(repos))
     for path in repos:
-        ui.progress(_analyzing, count, unit="repos", total=len(repos))
+        progress.update(count)
         count += 1
         try:
             path = ui.expandpath(os.path.normpath(path))
@@ -868,7 +868,7 @@ def gcclient(ui, cachepath):
             return fileserverclient.getcachekey(reponame, fname, hex(fnode))
         keepkeys = repackmod.keepset(repo, keyfn=keyfn, lastkeepkeys=keepkeys)
 
-    ui.progress(_analyzing, None)
+    progress.complete()
 
     # write list of valid repos back
     oldumask = os.umask(0o002)

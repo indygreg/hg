@@ -40,8 +40,6 @@ else:
     from mercurial.utils import procutil
     _hgexecutable = procutil.hgexecutable
 
-_prefetching = _('prefetching')
-
 # These make*stores functions are global so that other extensions can replace
 # them.
 def makelocalstores(repo):
@@ -233,9 +231,9 @@ def wraprepo(repo):
             serverfiles = skip.copy()
             visited = set()
             visited.add(nullrev)
-            revnum = 0
             revcount = len(revs)
-            self.ui.progress(_prefetching, revnum, total=revcount)
+            progress = self.ui.makeprogress(_('prefetching'), total=revcount)
+            progress.update(0)
             for rev in sorted(revs):
                 ctx = repo[rev]
                 if pats:
@@ -264,12 +262,11 @@ def wraprepo(repo):
                     files.update(diff)
 
                 visited.add(mfrev)
-                revnum += 1
-                self.ui.progress(_prefetching, revnum, total=revcount)
+                progress.increment()
 
             files.difference_update(skip)
             serverfiles.difference_update(skip)
-            self.ui.progress(_prefetching, None)
+            progress.complete()
 
             # Fetch files known to be on the server
             if serverfiles:

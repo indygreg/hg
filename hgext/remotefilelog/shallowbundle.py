@@ -171,7 +171,6 @@ def addchangegroupfiles(orig, repo, source, revmap, trp, expectedfiles, *args):
     if not shallowutil.isenabled(repo):
         return orig(repo, source, revmap, trp, expectedfiles, *args)
 
-    files = 0
     newfiles = 0
     visited = set()
     revisiondatas = {}
@@ -184,14 +183,14 @@ def addchangegroupfiles(orig, repo, source, revmap, trp, expectedfiles, *args):
     # files in topological order.
 
     # read all the file chunks but don't add them
+    progress = repo.ui.makeprogress(_('files'), total=expectedfiles)
     while True:
         chunkdata = source.filelogheader()
         if not chunkdata:
             break
-        files += 1
         f = chunkdata["filename"]
         repo.ui.debug("adding %s revisions\n" % f)
-        repo.ui.progress(_('files'), files, total=expectedfiles)
+        progress.increment()
 
         if not repo.shallowmatch(f):
             fl = repo.file(f)
@@ -289,6 +288,6 @@ def addchangegroupfiles(orig, repo, source, revmap, trp, expectedfiles, *args):
         processed.add((f, node))
         skipcount = 0
 
-    repo.ui.progress(_('files'), None)
+    progress.complete()
 
     return len(revisiondatas), newfiles

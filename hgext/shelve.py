@@ -446,11 +446,8 @@ def _includeunknownfiles(repo, pats, opts, extra):
 
 def _finishshelve(repo):
     if phases.supportinternal(repo):
-        backupname = 'dirstate.shelve'
         tr = repo.currenttransaction()
-        repo.dirstate.savebackup(tr, backupname)
         tr.close()
-        repo.dirstate.restorebackup(None, backupname)
     else:
         _aborttransaction(repo)
 

@@ -334,7 +334,6 @@ class fileserverclient(object):
         progress.update(0)
 
         missed = []
-        count = 0
         while True:
             missingid = cache.receiveline()
             if not missingid:
@@ -350,8 +349,7 @@ class fileserverclient(object):
             if missingid.startswith("_hits_"):
                 # receive progress reports
                 parts = missingid.split("_")
-                count += int(parts[2])
-                progress.update(count)
+                progress.increment(int(parts[2]))
                 continue
 
             missed.append(missingid)
@@ -360,7 +358,6 @@ class fileserverclient(object):
         fetchmisses += len(missed)
 
         fromcache = total - len(missed)
-        count = [fromcache]
         progress.update(fromcache, total=total)
         self.ui.log("remotefilelog", "remote cache hit rate is %r of %r\n",
                     fromcache, total, hit=fromcache, total=total)
@@ -369,9 +366,6 @@ class fileserverclient(object):
         try:
             # receive cache misses from master
             if missed:
-                def progresstick():
-                    count[0] += 1
-                    progress.update(count[0])
                 # When verbose is true, sshpeer prints 'running ssh...'
                 # to stdout, which can interfere with some command
                 # outputs
@@ -393,8 +387,8 @@ class fileserverclient(object):
                                 _getfiles = _getfiles_threaded
                             else:
                                 _getfiles = _getfiles_optimistic
-                            _getfiles(remote, self.receivemissing, progresstick,
-                                      missed, idmap, step)
+                            _getfiles(remote, self.receivemissing,
+                                      progress.increment, missed, idmap, step)
                         elif remote.capable("x_rfl_getfile"):
                             if remote.capable('batch'):
                                 batchdefault = 100
@@ -403,7 +397,7 @@ class fileserverclient(object):
                             batchsize = self.ui.configint(
                                 'remotefilelog', 'batchsize', batchdefault)
                             _getfilesbatch(
-                                remote, self.receivemissing, progresstick,
+                                remote, self.receivemissing, progress.increment,
                                 missed, idmap, batchsize)
                         else:
                             raise error.Abort("configured remotefilelog server"
@@ -411,12 +405,12 @@ class fileserverclient(object):
 
                     self.ui.log("remotefilefetchlog",
                                 "Success\n",
-                                fetched_files = count[0] - fromcache,
+                                fetched_files = progress.pos - fromcache,
                                 total_to_fetch = total - fromcache)
                 except Exception:
                     self.ui.log("remotefilefetchlog",
                                 "Fail\n",
-                                fetched_files = count[0] - fromcache,
+                                fetched_files = progress.pos - fromcache,
                                 total_to_fetch = total - fromcache)
                     raise
                 finally:

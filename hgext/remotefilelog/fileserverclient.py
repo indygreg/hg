@@ -422,8 +422,7 @@ class fileserverclient(object):
                 finally:
                     self.ui.verbose = verbose
                 # send to memcache
-                count[0] = len(missed)
-                request = "set\n%d\n%s\n" % (count[0], "\n".join(missed))
+                request = "set\n%d\n%s\n" % (len(missed), "\n".join(missed))
                 cache.request(request)
 
             progress.complete()

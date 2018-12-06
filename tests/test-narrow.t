@@ -237,6 +237,21 @@ Narrowing doesn't resurrect old commits (unlike what regular `hg strip` does)
   0: add d0/f
   $ cd ..
 
+Widening doesn't lose bookmarks
+  $ hg clone --narrow ssh://user@dummy/master widen-bookmarks --include d0 -q
+  $ cd widen-bookmarks
+  $ hg bookmark my-bookmark
+  $ hg log -T "{rev}: {desc} {bookmarks}\n"
+  1: add d10/f my-bookmark
+  0: add d0/f 
+  $ hg tracked --addinclude d3 -q
+  $ hg log -T "{rev}: {desc} {bookmarks}\n"
+  3: add d10/f my-bookmark
+  2: add d3/f 
+  1: add d2/f 
+  0: add d0/f 
+  $ cd ..
+
 Can remove last include, making repo empty
   $ hg clone --narrow ssh://user@dummy/master narrow-empty --include d0 -r 5
   adding changesets

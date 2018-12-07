@@ -87,7 +87,7 @@
   $ hg pull -q
   $ hg rebase -d tip
   rebasing 1:4549721d828f "xx2"
-  note: rebase of 1:4549721d828f "xx2" created no changes to commit
+  note: not rebasing 1:4549721d828f "xx2", its destination already has all its changes
   rebasing 2:5ef6d97e851c "xxy"
   saved backup bundle to $TESTTMP/shallow/.hg/strip-backup/4549721d828f-b084e33c-rebase.hg (glob)
   $ hg log -f x --template '{node|short}\n'

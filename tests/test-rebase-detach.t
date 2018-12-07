@@ -304,7 +304,7 @@ Ensure --continue restores a correct state (issue3046) and phase:
   continue: hg rebase --continue
   $ hg rebase -c
   rebasing 3:17b4880d2402 "B2" (tip)
-  note: rebase of 3:17b4880d2402 "B2" (tip) created no changes to commit
+  note: not rebasing 3:17b4880d2402 "B2" (tip), its destination already has all its changes
   saved backup bundle to $TESTTMP/a7/.hg/strip-backup/17b4880d2402-1ae1f6cc-rebase.hg
   $ hg  log -G --template "{rev}:{phase} '{desc}' {branches}\n"
   o  2:draft 'C'

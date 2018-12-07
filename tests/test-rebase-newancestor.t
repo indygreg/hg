@@ -130,7 +130,7 @@ Full rebase all the way back from branching point:
   > c
   > EOF
   rebasing 1:1d1a643d390e "dev: create branch"
-  note: rebase of 1:1d1a643d390e "dev: create branch" created no changes to commit
+  note: not rebasing 1:1d1a643d390e "dev: create branch", its destination already has all its changes
   rebasing 2:ec2c14fb2984 "dev: f-dev stuff"
   rebasing 4:4b019212aaf6 "dev: merge default"
   file 'f-default' was deleted in local [dest] but was modified in other [source].

@@ -157,7 +157,7 @@ Branch name containing a dash (issue3181)
   
   $ hg rebase -b 'max(branch("dev-two"))' -d dev-one --keepbranches
   rebasing 5:bc8139ee757c "dev-one named branch"
-  note: rebase of 5:bc8139ee757c "dev-one named branch" created no changes to commit
+  note: not rebasing 5:bc8139ee757c "dev-one named branch", its destination already has all its changes
   rebasing 6:42aa3cf0fa7a "F"
   rebasing 7:1a1e6f72ec38 "G"
   rebasing 8:904590360559 "H"
@@ -329,7 +329,7 @@ rebase 'b2' to another lower branch head
   $ hg up -qr 2
   $ hg rebase
   rebasing 2:792845bb77ee "b2"
-  note: rebase of 2:792845bb77ee "b2" created no changes to commit
+  note: not rebasing 2:792845bb77ee "b2", its destination already has all its changes
   saved backup bundle to $TESTTMP/case1/.hg/strip-backup/792845bb77ee-627120ee-rebase.hg
   $ hg tglog
   o  2: c062e3ecd6c6 'c1' c
@@ -395,7 +395,7 @@ rebase 'c1' to the branch head 'c2' that is closed
   $ hg rebase -r 3:: -d .
   rebasing 3:76abc1c6f8c7 "b1"
   rebasing 4:8427af5d86f2 "c2 closed" (tip)
-  note: rebase of 4:8427af5d86f2 "c2 closed" (tip) created no changes to commit
+  note: not rebasing 4:8427af5d86f2 "c2 closed" (tip), its destination already has all its changes
   saved backup bundle to $TESTTMP/case2/.hg/strip-backup/76abc1c6f8c7-cd698d13-rebase.hg
   $ hg tglog
   o  3: 117b0ed08075 'b1' x

@@ -62,7 +62,7 @@ already has one local mq patch
   committing changelog
   rebasing 3:148775c71080 "P1" (p1.patch qtip)
   resolving manifests
-  note: rebase of 3:148775c71080 created no changes to commit
+  note: rebase of 3:148775c71080 "P1" (p1.patch qtip) created no changes to commit
   rebase merging completed
   updating mq patch p0.patch to 5:9ecc820b1737
   $TESTTMP/a/.hg/patches/p0.patch
@@ -143,10 +143,10 @@ already has one local mq patch
 
   $ HGMERGE=internal:fail hg rebase
   rebasing 1:b4bffa6e4776 "r1" (qbase r1)
-  note: rebase of 1:b4bffa6e4776 created no changes to commit
+  note: rebase of 1:b4bffa6e4776 "r1" (qbase r1) created no changes to commit
   rebasing 2:c0fd129beb01 "r2" (r2)
   rebasing 3:6ff5b8feed8e "r3" (r3)
-  note: rebase of 3:6ff5b8feed8e created no changes to commit
+  note: rebase of 3:6ff5b8feed8e "r3" (r3) created no changes to commit
   rebasing 4:094320fec554 "r4" (r4)
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
@@ -160,10 +160,10 @@ already has one local mq patch
   already rebased 2:c0fd129beb01 "r2" (r2) as 1660ab13ce9a
   already rebased 3:6ff5b8feed8e "r3" (r3) as 1660ab13ce9a
   rebasing 4:094320fec554 "r4" (r4)
-  note: rebase of 4:094320fec554 created no changes to commit
+  note: rebase of 4:094320fec554 "r4" (r4) created no changes to commit
   rebasing 5:681a378595ba "r5" (r5)
   rebasing 6:512a1f24768b "r6" (qtip r6)
-  note: rebase of 6:512a1f24768b created no changes to commit
+  note: rebase of 6:512a1f24768b "r6" (qtip r6) created no changes to commit
   saved backup bundle to $TESTTMP/b/.hg/strip-backup/b4bffa6e4776-b9bfb84d-rebase.hg
 
   $ hg tglog

@@ -500,7 +500,7 @@ Interactions between collapse and keepbranches
   
   $ hg rebase -s 5 -d 4
   rebasing 5:fbfb97b1089a "E" (tip)
-  note: rebase of 5:fbfb97b1089a created no changes to commit
+  note: rebase of 5:fbfb97b1089a "E" (tip) created no changes to commit
   saved backup bundle to $TESTTMP/e/.hg/strip-backup/fbfb97b1089a-553e1d85-rebase.hg
   $ hg tglog
   @  4: f338eb3c2c7c 'E'

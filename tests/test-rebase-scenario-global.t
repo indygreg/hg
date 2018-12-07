@@ -138,7 +138,7 @@ if they have the same contents)
   $ hg rebase -s 4 -d 7
   rebasing 4:9520eea781bc "E"
   rebasing 6:eea13746799a "G"
-  note: rebase of 6:eea13746799a created no changes to commit
+  note: rebase of 6:eea13746799a "G" created no changes to commit
   saved backup bundle to $TESTTMP/a3/.hg/strip-backup/9520eea781bc-fcd8edd4-rebase.hg
   $ f E.orig
   E.orig: file not found
@@ -169,7 +169,7 @@ F onto E - rebase of a branching point (skip G):
   $ hg rebase -s 5 -d 4
   rebasing 5:24b6387c8c8c "F"
   rebasing 6:eea13746799a "G"
-  note: rebase of 6:eea13746799a created no changes to commit
+  note: rebase of 6:eea13746799a "G" created no changes to commit
   rebasing 7:02de42196ebe "H" (tip)
   saved backup bundle to $TESTTMP/a4/.hg/strip-backup/24b6387c8c8c-c3fe765d-rebase.hg
 

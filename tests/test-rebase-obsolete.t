@@ -129,10 +129,10 @@ set.
   grafting 3:32af7686d403 "D"
   $ hg rebase  -s 42ccdea3bb16 -d .
   rebasing 1:42ccdea3bb16 "B"
-  note: rebase of 1:42ccdea3bb16 created no changes to commit
+  note: rebase of 1:42ccdea3bb16 "B" created no changes to commit
   rebasing 2:5fddd98957c8 "C"
   rebasing 3:32af7686d403 "D"
-  note: rebase of 3:32af7686d403 created no changes to commit
+  note: rebase of 3:32af7686d403 "D" created no changes to commit
   $ hg log -G
   o  10:5ae4c968c6ac C
   |
@@ -1456,7 +1456,7 @@ Rebase merge where successor of one parent is ancestor of destination
   rebasing 2:b18e25de2cf5 "D" (D)
   note: not rebasing 3:7fb047a69f22 "E" (E), already in destination as 1:112478962961 "B" (B)
   rebasing 5:66f1a38021c9 "F" (F tip)
-  note: rebase of 5:66f1a38021c9 created no changes to commit
+  note: rebase of 5:66f1a38021c9 "F" (F tip) created no changes to commit
   $ hg log -G
   o  6:8f47515dda15 D
   |
@@ -1492,7 +1492,7 @@ Rebase merge where successor of other parent is ancestor of destination
   note: not rebasing 2:b18e25de2cf5 "D" (D), already in destination as 1:112478962961 "B" (B)
   rebasing 3:7fb047a69f22 "E" (E)
   rebasing 5:66f1a38021c9 "F" (F tip)
-  note: rebase of 5:66f1a38021c9 created no changes to commit
+  note: rebase of 5:66f1a38021c9 "F" (F tip) created no changes to commit
 
   $ hg log -G
   o  6:533690786a86 E

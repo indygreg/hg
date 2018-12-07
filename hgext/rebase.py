@@ -573,8 +573,8 @@ class rebaseruntime(object):
                 ui.debug('rebased as %s\n' % short(newnode))
             else:
                 if not self.collapsef:
-                    ui.warn(_('note: rebase of %d:%s created no changes '
-                              'to commit\n') % (rev, ctx))
+                    ui.warn(_('note: rebase of %s created no changes '
+                              'to commit\n') % desc)
                     self.skipped.add(rev)
                 self.state[rev] = p1
                 ui.debug('next revision set to %d\n' % p1)

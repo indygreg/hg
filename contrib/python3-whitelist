@@ -305,6 +305,7 @@ test-largefiles-cache.t
 test-largefiles-misc.t
 test-largefiles-small-disk.t
 test-largefiles-update.t
+test-largefiles-wireproto.t
 test-largefiles.t
 test-lfconvert.t
 test-lfs-bundle.t

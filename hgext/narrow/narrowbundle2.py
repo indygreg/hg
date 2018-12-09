@@ -20,6 +20,7 @@ from mercurial import (
     changegroup,
     error,
     exchange,
+    localrepo,
     narrowspec,
     repair,
     repository,
@@ -179,14 +180,13 @@ def _handlechangespec(op, inpart):
 
     if clkills:
         # preserve bookmarks that repair.strip() would otherwise strip
-        bmstore = repo._bookmarks
+        op._bookmarksbackup = repo._bookmarks
         class dummybmstore(dict):
             def applychanges(self, repo, tr, changes):
                 pass
-        repo._bookmarks = dummybmstore()
+        localrepo.localrepository._bookmarks.set(repo, dummybmstore())
         chgrpfile = repair.strip(op.ui, repo, list(clkills), backup=True,
                                  topic='widen')
-        repo._bookmarks = bmstore
         if chgrpfile:
             op._widen_uninterr = repo.ui.uninterruptable()
             op._widen_uninterr.__enter__()
@@ -270,5 +270,10 @@ def setup():
         origcghandler(op, inpart)
         if util.safehasattr(op, '_widen_bundle'):
             handlechangegroup_widen(op, inpart)
+        if util.safehasattr(op, '_bookmarksbackup'):
+            localrepo.localrepository._bookmarks.set(op.repo,
+                                                     op._bookmarksbackup)
+            del op._bookmarksbackup
+
     wrappedcghandler.params = origcghandler.params
     bundle2.parthandlermapping['changegroup'] = wrappedcghandler

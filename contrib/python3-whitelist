@@ -483,6 +483,7 @@ test-push-checkheads-unpushed-D5.t
 test-push-checkheads-unpushed-D6.t
 test-push-checkheads-unpushed-D7.t
 test-push-http.t
+test-push-race.t
 test-push-warn.t
 test-push.t
 test-pushvars.t

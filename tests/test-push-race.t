@@ -28,31 +28,31 @@ A set of extension and shell functions ensures this scheduling.
   > configtable = {}
   > configitem = registrar.configitem(configtable)
   > 
-  > configitem('delaypush', 'ready-path',
+  > configitem(b'delaypush', b'ready-path',
   >     default=None,
   > )
-  > configitem('delaypush', 'release-path',
+  > configitem(b'delaypush', b'release-path',
   >     default=None,
   > )
   > 
   > def delaypush(orig, pushop):
   >     # notify we are done preparing
   >     ui = pushop.repo.ui
-  >     readypath = ui.config('delaypush', 'ready-path')
+  >     readypath = ui.config(b'delaypush', b'ready-path')
   >     if readypath is not None:
   >         with open(readypath, 'w') as r:
   >             r.write('foo')
-  >         ui.status('wrote ready: %s\n' % readypath)
+  >         ui.status(b'wrote ready: %s\n' % readypath)
   >     # now wait for the other process to be done
-  >     watchpath = ui.config('delaypush', 'release-path')
+  >     watchpath = ui.config(b'delaypush', b'release-path')
   >     if watchpath is not None:
-  >         ui.status('waiting on: %s\n' % watchpath)
+  >         ui.status(b'waiting on: %s\n' % watchpath)
   >         limit = 100
   >         while 0 < limit and not os.path.exists(watchpath):
   >             limit -= 1
   >             time.sleep(0.1)
   >         if limit <= 0:
-  >             ui.warn('exiting without watchfile: %s' % watchpath)
+  >             ui.warn(b'exiting without watchfile: %s' % watchpath)
   >         else:
   >             # delete the file at the end of the push
   >             def delete():
@@ -65,7 +65,7 @@ A set of extension and shell functions ensures this scheduling.
   >     return orig(pushop)
   > 
   > def uisetup(ui):
-  >     extensions.wrapfunction(exchange, '_pushbundle2', delaypush)
+  >     extensions.wrapfunction(exchange, b'_pushbundle2', delaypush)
   > EOF
 
   $ waiton () {

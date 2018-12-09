@@ -183,8 +183,6 @@ def _handlechangespec(op, inpart):
         class dummybmstore(dict):
             def applychanges(self, repo, tr, changes):
                 pass
-            def recordchange(self, tr): # legacy version
-                pass
         repo._bookmarks = dummybmstore()
         chgrpfile = repair.strip(op.ui, repo, list(clkills), backup=True,
                                  topic='widen')

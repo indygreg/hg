@@ -89,6 +89,16 @@ another file or die after 5 seconds. If the scripts is awaited by hg, the
 script will die after the timeout before we could touch the file and the
 resulting file will not exists. If not, we will touch the file and see it.
 
+  $ cat >> fakepager.py <<EOF
+  > import sys
+  > printed = False
+  > for line in sys.stdin:
+  >     sys.stdout.write(line)
+  >     printed = True
+  > if not printed:
+  >     sys.stdout.write('paged empty output!\n')
+  > EOF
+
   $ cat > $TESTTMP/wait-output.sh << EOF
   > #!/bin/sh
   > for i in \`$TESTDIR/seq.py 50\`; do
@@ -107,6 +117,8 @@ resulting file will not exists. If not, we will touch the file and see it.
   > [extensions]
   > logtoprocess=
   > pager=
+  > [pager]
+  > pager = "$PYTHON" $TESTTMP/fakepager.py
   > [logtoprocess]
   > commandfinish=$TESTTMP/wait-output.sh
   > EOF

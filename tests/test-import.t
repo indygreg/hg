@@ -66,7 +66,7 @@ regardless of the commit message in the patch)
   new changesets 80971e65b431
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ HGEDITOR=cat hg --config ui.patch="$PYTHON ../dummypatch.py" --cwd b import --edit ../exported-tip.patch
+  $ HGEDITOR=cat hg --config ui.patch="\"$PYTHON\" ../dummypatch.py" --cwd b import --edit ../exported-tip.patch
   applying ../exported-tip.patch
   second change
   

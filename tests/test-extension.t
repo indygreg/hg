@@ -165,7 +165,7 @@ Check that extensions are loaded in phases:
   > def custompredicate(repo, subset, x):
   >     return smartset.baseset([r for r in subset if r in {0}])
   > EOF
-  $ $PYTHON $TESTTMP/unflush.py foo.py
+  $ "$PYTHON" $TESTTMP/unflush.py foo.py
 
   $ cp foo.py bar.py
   $ echo 'foo = foo.py' >> $HGRCPATH
@@ -264,7 +264,7 @@ limit mark, regardless of importing module or not.)
   > def extsetup():
   >     print('ambigabs.s=%s' % ambigabs.s, flush=True)
   > NO_CHECK_EOF
-  $ $PYTHON $TESTTMP/unflush.py loadabs.py
+  $ "$PYTHON" $TESTTMP/unflush.py loadabs.py
   $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}/libroot; hg --config extensions.loadabs=loadabs.py root)
   ambigabs.s=libroot/ambig.py
   $TESTTMP/a
@@ -280,7 +280,7 @@ limit mark, regardless of importing module or not.)
   > def extsetup():
   >     print('ambigrel.s=%s' % ambigrel.s, flush=True)
   > NO_CHECK_EOF
-  $ $PYTHON $TESTTMP/unflush.py loadrel.py
+  $ "$PYTHON" $TESTTMP/unflush.py loadrel.py
   $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}/libroot; hg --config extensions.loadrel=loadrel.py root)
   ambigrel.s=libroot/mod/ambig.py
   $TESTTMP/a
@@ -1825,7 +1825,7 @@ Prohibit the use of unicode strings as the default value of options
   > def ext(*args, **opts):
   >     print(opts[b'opt'], flush=True)
   > EOF
-  $ $PYTHON $TESTTMP/unflush.py $TESTTMP/test_unicode_default_value.py
+  $ "$PYTHON" $TESTTMP/unflush.py $TESTTMP/test_unicode_default_value.py
   $ cat > $TESTTMP/opt-unicode-default/.hg/hgrc << EOF
   > [extensions]
   > test_unicode_default_value = $TESTTMP/test_unicode_default_value.py

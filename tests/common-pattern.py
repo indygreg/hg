@@ -143,6 +143,12 @@ _errors = {
         br'Only one usage of each socket address'
         br' \(protocol/network address/port\) is normally permitted',
     ),
+    br'$EADDRNOTAVAIL$': (
+        # strerror()
+        br'Cannot assign requested address',
+
+        # FormatMessage(WSAEADDRNOTAVAIL)
+    )
 }
 
 for replace, msgs in _errors.items():
